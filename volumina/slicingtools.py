@@ -181,12 +181,17 @@ class SliceProjection( object ):
         return tuple(slicing)
 
     def __call__( self, domainArray ):
-        assert domainArray.ndim == self.domainDim, "ndim %d != %d" % (domainArray.ndim, self.domainDim)
-        slicing = np.squeeze(domainArray)
-        assert slicing.ndim == 2, "dim %d != 2" % slicing.ndim
+        """Projects the n-d slicing 'domainArray' to 2 dimensions"""
+
+        assert domainArray.ndim == self.domainDim, "ndim %d != %d (domainArray.shape=%r, domainDim=%r)" % (domainArray.ndim, self.domainDim, domainArray.shape, self.domainDim)
+        slicing = self.domainDim*[0]
+        slicing[self._abscissa], slicing[self._ordinate] = slice(None,None), slice(None,None)
+        
+        projectedArray = domainArray[slicing]
+        assert projectedArray.ndim == 2, "dim %d != 2" % projectedArray.ndim
         if self.handednessSwitched():
-            slicing = np.swapaxes(slicing,0,1)
-        return slicing
+            projectedArray = np.swapaxes(projectedArray,0,1)
+        return projectedArray
 
 #*******************************************************************************
 # T e s t                                                                      *

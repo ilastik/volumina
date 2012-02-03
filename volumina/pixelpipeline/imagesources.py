@@ -93,7 +93,8 @@ class GrayscaleImageRequest( object ):
         return self.toImage()
         
     def toImage( self ):
-        a = self._arrayreq.getResult().squeeze()
+        a = self._arrayreq.getResult()
+        assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
         img = gray2qimage(a, self._normalize)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
@@ -162,7 +163,7 @@ class AlphaModulatedImageRequest( object ):
         return self.toImage()
 
     def toImage( self ):
-        a = self._arrayreq.getResult().squeeze()
+        a = self._arrayreq.getResult()
         shape = a.shape + (4,)
         d = np.empty(shape, dtype=np.uint8)
         d[:,:,0] = a[:,:]*self._tintColor.redF()
@@ -213,8 +214,8 @@ class ColortableImageSource( ImageSource ):
     def request( self, qrect ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
-            print Fore.RED + "  ColortableImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
-            % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height()) \
+            print Fore.RED + "  ColortableImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d) = %r" \
+            % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height(), rect2slicing(qrect)) \
             + Fore.RESET
             volumina.printLock.release()
             
@@ -231,14 +232,13 @@ class ColortableImageRequest( object ):
         self._arrayreq = arrayrequest
         self._colorTable = colorTable
 
-
     def wait(self):
         self._arrayreq.wait()
         return self.toImage()
         
     def toImage( self ):
         a = self._arrayreq.getResult()
-        a = a.squeeze()
+        assert a.ndim == 2
         img = gray2qimage(a)
         img.setColorTable(self._colorTable)# = img.convertToFormat(QImage.Format_ARGB32_Premultiplied, self._colorTable)
         img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
@@ -328,14 +328,13 @@ class RGBAImageRequest( object ):
         self._requestsFinished = 4 * [False,]
 
     def wait(self):
-        for req in requests:
+        for req in self._requests:
             req.wait()
         return self.toImage()
 
     def toImage( self ):
         for i, req in enumerate(self._requests):
             a = self._requests[i].getResult()
-            a = a.squeeze()
             if self._normalize[i] is not None:
                 a = a.astype(np.float32)
                 a = (a - self._normalize[i][0])*255.0 / (self._normalize[i][1]-self._normalize[i][0])
@@ -394,6 +393,7 @@ class RandomImageRequest( object ):
 
     def wait(self):
         d = (np.random.random(self.shape) * 255).astype(np.uint8)        
+        assert a.ndim == 2
         img = gray2qimage(d)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
