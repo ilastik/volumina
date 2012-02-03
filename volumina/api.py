@@ -410,15 +410,16 @@ if __name__ == '__main__':
             inputSlots = [InputSlot('shape')]
             outputSlots = [OutputSlot("output")]
 
-            def notifyConnectAll(self):
+            def setOutputs(self):
                 print "notifyConnectAll"
                 oslot = self.outputs['output']
                 oslot._shape = self.inputs['shape'].value
                 oslot._dtype = numpy.uint8
                 oslot._axistags = vigra.defaultAxistags(len(oslot._shape))
 
-            def getOutSlot(self, slot, key, result):
+            def execute(self, slot, roi, result):
                 result[:] = numpy.random.randint(0, 255)
+                return result
 
         g = Graph()
         lenaLazyflow = OpImageReader(g)

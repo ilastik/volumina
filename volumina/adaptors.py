@@ -21,33 +21,39 @@ except ImportError:
 if _has_lazyflow:
     class Op5ifyer(Operator):
         name = "5Difyer"
-        inputSlots = [InputSlot("Input")]
-        outputSlots = [OutputSlot("Output")]
-        def notifyConnectAll(self):
-            shape = self.inputs["Input"].shape
-            assert len(shape) in [2,3], shape
+        inputSlots = [InputSlot("input")]
+        outputSlots = [OutputSlot("output")]
+        def setupOutputs(self):
+            shape = self.inputs["input"].shape
+            assert len(shape) in [2,3,4], shape
             if len(shape) == 2:
                 outShape = (1,) + shape + (1,1,)
-            else:
+            elif len(shape) == 3:
                 outShape = (1,) + shape + (1,)
-            self.ndim = len(shape)
-            self.outputs["Output"]._shape = outShape
-            self.outputs["Output"]._dtype = self.inputs["Input"].dtype
-            self.outputs["Output"]._axistags = self.inputs["Input"].axistags
-
-        def getOutSlot(self, slot, key, resultArea):
-            assert key[0] == slice(0,1,None)
-            assert key[-1] == slice(0,1,None)
-            if self.ndim == 3:
-                req = self.inputs["Input"][key[1:-1]].writeInto(resultArea[0,:,:,:,0])
             else:
+                outShape = (1,) + shape
+            
+            self.ndim = len(shape)
+            self.outputs["output"]._shape = outShape
+            self.outputs["output"]._dtype = self.inputs["input"].dtype
+            self.outputs["output"]._axistags = self.inputs["input"].axistags
+
+        def execute(self, slot, roi, resultArea):
+            key = roi.toSlice()
+            assert key[0] == slice(0,1,None)
+            if self.ndim == 3:
+                assert key[-1] == slice(0,1,None)
+                req = self.inputs["input"][key[1:-1]].writeInto(resultArea[0,:,:,:,0])
+            elif self.ndim ==2:
+                assert key[-1] == slice(0,1,None)
                 assert key[-2] == slice(0,1,None)
-                req = self.inputs["Input"][key[1:-1]].writeInto(resultArea[0,:,:,0,0])
+                req = self.inputs["input"][key[1:-2]].writeInto(resultArea[0,:,:,0,0])
+            else:
+                req = self.inputs["input"][key[1:]].writeInto(resultArea[0,:,:,:,:]) 
             return req.wait()
 
         def notifyDirty(self,slot,key):
             self.outputs["Output"].setDirty(key)
-
 
 
 class Array5d( object ):
