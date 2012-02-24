@@ -14,13 +14,16 @@ class CrosshairControler(QObject):
         self._brushingModel = brushingModel
         self._brushingModel.brushSizeChanged.connect(self._setBrushSize)
         self._brushingModel.brushColorChanged.connect(self._setBrushColor)
+        self._imageViews = imageViews
     
-    def _setBrushSize(self):
-        pass
+    def _setBrushSize(self, size):
+        for v in self._imageViews:
+            v._crossHairCursor.setBrushSize(size)
     
-    def _setBrushColor(self):
-        pass
-
+    def _setBrushColor(self, color):
+        for v in self._imageViews:
+            v._crossHairCursor.setBrushColor(color)
+            
 #*******************************************************************************
 # B r u s h i n g I n t e r p r e t e r                                        *
 #*******************************************************************************
@@ -161,7 +164,7 @@ class BrushingControler(QObject):
         slicing = [slice(brushStrokeOffset.x(), brushStrokeOffset.x()+labels.shape[0]), \
                    slice(brushStrokeOffset.y(), brushStrokeOffset.y()+labels.shape[1])]
         slicing.insert(activeView, slicingPos[activeView])
-        slicing = (t,) + tuple(slicing) + (c,)
+        slicing = (slice(t,t+1),) + tuple(slicing) + (slice(c,c+1),)
         
         #make the labels 5d for correct graph compatibility
         newshape = list(labels.shape)

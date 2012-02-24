@@ -11,7 +11,8 @@ from imageScene2D import ImageScene2D
 from imageView2D import ImageView2D
 from positionModel import PositionModel
 from navigationControler import NavigationControler, NavigationInterpreter
-from brushingcontroler import BrushingInterpreter, BrushingControler
+from brushingcontroler import BrushingInterpreter, BrushingControler, \
+                              CrosshairControler
 from brushingmodel import BrushingModel
 from slicingtools import SliceProjection
 from pixelpipeline.slicesources import SyncedSliceSources
@@ -101,7 +102,7 @@ class VolumeEditor( QObject ):
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
         # brushing control
-        #self.crosshairControler = CrosshairControler() 
+        self.crosshairControler = CrosshairControler(self.brushingModel, self.imageViews) 
         self.brushingControler = BrushingControler(self.brushingModel, self.posModel, labelsink)        
         self.brushingInterpreter = BrushingInterpreter(self.navCtrl, self.brushingControler)
 
