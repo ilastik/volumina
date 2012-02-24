@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QObject, QEvent, QPointF, Qt, QRectF
-from PyQt4.QtGui import QPainter, QPen, QApplication, QGraphicsView
+from PyQt4.QtGui import QPainter, QPen, QBrush, QApplication, QGraphicsView
 
 from eventswitch import InterpreterABC
 from navigationControler import NavigationInterpreter
@@ -127,7 +127,7 @@ class BrushingInterpreter( QObject ):
 
         o = imageview.scene().data2scene.map(QPointF(imageview.oldX,imageview.oldY))
         n = imageview.scene().data2scene.map(QPointF(imageview.x,imageview.y))
-        pen = QPen(self._brushingCtrl._brushingModel.drawColor, self._brushingCtrl._brushingModel.brushSize)
+        pen = QPen( QBrush(self._brushingCtrl._brushingModel.drawColor), self._brushingCtrl._brushingModel.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         imageview.scene().drawLine(o, n, pen)
         self._brushingCtrl._brushingModel.moveTo(imageview.mousePos)
         

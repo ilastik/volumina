@@ -30,7 +30,7 @@
 from PyQt4.QtCore import pyqtSignal, QObject, Qt, QSize, QPointF, QRectF, \
                          QRect, QPoint, QSizeF
 from PyQt4.QtGui  import QPen, QGraphicsScene, QColor, \
-                         QImage, QPainter, QGraphicsLineItem
+                         QImage, QPainter, QGraphicsLineItem, QBrush
 
 import numpy
 import qimage2ndarray
@@ -154,7 +154,7 @@ class BrushingModel(QObject):
         
         #print "BrushingModel.moveTo(pos=%r)" % (pos) 
         line = QGraphicsLineItem(oldX, oldY, x, y)
-        line.setPen(QPen(Qt.white, self.brushSize))
+        line.setPen(QPen( QBrush(Qt.black), self.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         self.scene.addItem(line)
 
         #update bounding Box 
