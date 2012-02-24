@@ -22,7 +22,7 @@ class CrosshairControler(QObject):
     
     def _setBrushColor(self, color):
         for v in self._imageViews:
-            v._crossHairCursor.setBrushColor(color)
+            v._crossHairCursor.setColor(color)
             
 #*******************************************************************************
 # B r u s h i n g I n t e r p r e t e r                                        *
