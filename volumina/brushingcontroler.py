@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QObject, QEvent, QPointF, Qt, QRectF
-from PyQt4.QtGui import QPainter, QPen, QApplication, QGraphicsView
+from PyQt4.QtGui import QPainter, QPen, QBrush, QApplication, QGraphicsView
 
 from eventswitch import InterpreterABC
 from navigationControler import NavigationInterpreter
@@ -14,13 +14,16 @@ class CrosshairControler(QObject):
         self._brushingModel = brushingModel
         self._brushingModel.brushSizeChanged.connect(self._setBrushSize)
         self._brushingModel.brushColorChanged.connect(self._setBrushColor)
+        self._imageViews = imageViews
     
-    def _setBrushSize(self):
-        pass
+    def _setBrushSize(self, size):
+        for v in self._imageViews:
+            v._crossHairCursor.setBrushSize(size)
     
-    def _setBrushColor(self):
-        pass
-
+    def _setBrushColor(self, color):
+        for v in self._imageViews:
+            v._crossHairCursor.setColor(color)
+            
 #*******************************************************************************
 # B r u s h i n g I n t e r p r e t e r                                        *
 #*******************************************************************************
@@ -124,7 +127,7 @@ class BrushingInterpreter( QObject ):
 
         o = imageview.scene().data2scene.map(QPointF(imageview.oldX,imageview.oldY))
         n = imageview.scene().data2scene.map(QPointF(imageview.x,imageview.y))
-        pen = QPen(self._brushingCtrl._brushingModel.drawColor, self._brushingCtrl._brushingModel.brushSize)
+        pen = QPen( QBrush(self._brushingCtrl._brushingModel.drawColor), self._brushingCtrl._brushingModel.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         imageview.scene().drawLine(o, n, pen)
         self._brushingCtrl._brushingModel.moveTo(imageview.mousePos)
         
@@ -160,8 +163,8 @@ class BrushingControler(QObject):
         
         slicing = [slice(brushStrokeOffset.x(), brushStrokeOffset.x()+labels.shape[0]), \
                    slice(brushStrokeOffset.y(), brushStrokeOffset.y()+labels.shape[1])]
-        slicing.insert(activeView, slicingPos[activeView])
-        slicing = (t,) + tuple(slicing) + (c,)
+        slicing.insert(activeView, slice(slicingPos[activeView], slicingPos[activeView]+1))
+        slicing = (slice(t,t+1),) + tuple(slicing) + (slice(c,c+1),)
         
         #make the labels 5d for correct graph compatibility
         newshape = list(labels.shape)

@@ -91,12 +91,10 @@ class RelabelingArraySource( QObject ):
         if not is_pure_slicing(slicing):
             raise Exception('ArraySource: slicing is not pure')
         assert(len(slicing) == len(self._array.shape)), \
-            "slicing into an array of shape=%r requested, but the slicing object is %r" % (slicing, self._array.shape)
+            "slicing into an array of shape=%r requested, but the slicing object is %r" % (self._array.shape, slicing)
         a = self._array[slicing]
         if self._relabeling is not None:
-            a = self._relabeling[a].astype(np.uint8)
-        else:
-            a = a.astype(np.uint8) #FIXME  
+            a = self._relabeling[a]
         return ArrayRequest(a)
         
     def setDirty( self, slicing ):
