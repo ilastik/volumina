@@ -1,8 +1,13 @@
 from functools import partial
-from PyQt4.QtCore import QPoint
+from PyQt4.QtCore import QPoint,pyqtSignal
 from PyQt4.QtGui import QMenu, QAction
 from volumina.layer import GrayscaleLayer, RGBALayer
 from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
+from exportDlg import ExportDialog
+from debian_bundle import parent_dir
+from lazyflow.graph import Graph
+from lazyflow.operators.obsolete.operators import OpArrayPiper
+from lazyflow.roi import roiToSlice
 
 def _add_actions_grayscalelayer( layer, menu ):
     def adjust_thresholds_callback():
@@ -65,20 +70,41 @@ def _add_actions( layer, menu ):
         _add_actions_rgbalayer( layer, menu )
     else:
         pass
-
-
-
-def layercontextmenu( layer, pos, parent=None ):
+    
+def layercontextmenu( layer, pos, graph, parent=None ):
     '''Show a context menu to manipulate properties of layer.
 
     layer -- a volumina layer instance
     pos -- QPoint 
 
     '''
+    def onExport():
+        
+        shape = layer.datasources[0]._array.shape
+        start = [0 for x in shape]
+        stop = [x for x in shape]
+        sl = roiToSlice(start,stop)
+        inputArray = layer.datasources[0].request(sl).wait()
+        expDlg = ExportDialog(parent = menu)
+        g = Graph()
+        piper = OpArrayPiper(g)
+        piper.inputs["Input"].setValue(inputArray)
+        expDlg.setInput(piper.outputs["Output"],g)
+        expDlg.show()
+        
+    
     menu = QMenu("Menu", parent)
     title = QAction("%s" % layer.name, menu)
     title.setEnabled(False)
+    
+    export = QAction("Export...",menu)
+    export.setStatusTip("Export Layer...")
+    export.triggered.connect(onExport)
+    
+    
     menu.addAction(title)
+    menu.addAction(export)
     menu.addSeparator()
     _add_actions( layer, menu )
     menu.exec_(pos)    
+
