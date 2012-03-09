@@ -69,7 +69,6 @@ if _has_lazyflow:
             self.outputs["Output"].setDirty(key)
 
 
-
 class Array5d( object ):
     '''Embed a array with dim = 3 into the volumina coordinate system.'''
     def __init__( self, array, dtype=np.uint8):
