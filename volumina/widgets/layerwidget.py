@@ -320,7 +320,8 @@ if __name__ == "__main__":
     import sys, numpy
 
     from PyQt4.QtGui import QApplication, QPushButton, QHBoxLayout, QVBoxLayout
-
+    from volumina.pixelpipeline.datasources import ArraySource
+    
     app = QApplication(sys.argv)
             
     model = LayerStackModel()
@@ -350,6 +351,15 @@ if __name__ == "__main__":
     o5.name = "Fancy Layer III"
     o5.opacity = 0.65
     model.append(o5)
+    
+    o6 = Layer()
+    o6.name = "Lazyflow Layer"
+    o6.opacity = 1
+    
+    testVolume = numpy.random.rand(100,100,100,3).astype('uint8')
+    source = [ArraySource(testVolume)]
+    o6._datasources = source
+    model.append(o6)
 
     view = LayerWidget(None, model)
     view.show()
