@@ -4,7 +4,6 @@ from PyQt4.QtGui import QMenu, QAction
 from volumina.layer import GrayscaleLayer, RGBALayer
 from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
 from exportDlg import ExportDialog
-from debian_bundle import parent_dir
 from lazyflow.graph import Graph
 from lazyflow.operators.obsolete.operators import OpArrayPiper
 from lazyflow.roi import roiToSlice
