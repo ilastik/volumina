@@ -410,7 +410,7 @@ if __name__ == '__main__':
             inputSlots = [InputSlot('shape')]
             outputSlots = [OutputSlot("output")]
 
-            def notifyConnectAll(self):
+            def setOutputs(self):
                 print "notifyConnectAll"
                 oslot = self.outputs['output']
                 shape = oslot._shape = self.inputs['shape'].value
@@ -440,8 +440,9 @@ if __name__ == '__main__':
 
                 oslot._axistags = t 
 
-            def getOutSlot(self, slot, key, result):
+            def execute(self, slot, roi, result):
                 result[:] = numpy.random.randint(0, 255)
+                return result
 
         g = Graph()
         lenaLazyflow = OpImageReader(g)

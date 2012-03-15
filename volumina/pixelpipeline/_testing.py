@@ -18,12 +18,14 @@ if has_lazyflow:
             super(OpDelay, self).__init__(g)
             self._delay_factor = delay_factor
 
-        def getOutSlot(self, slot, key, resultArea):
+        def execute(self, slot, roi, resultArea):
+            key = roi.toSlice()
             req = self.inputs["Input"][key].writeInto(resultArea)
             req.wait()
             t = self._delay_factor*resultArea.nbytes
             print "Delay: " + str(t) + " secs."
-            time.sleep(t)    
+            time.sleep(t)
+            return resultArea
 
 #*******************************************************************************
 # O p D a t a P r o v i d e r                                                  *
@@ -43,8 +45,10 @@ if has_lazyflow:
             oslot._shape = self._data.shape
             oslot._dtype = self._data.dtype
 
-        def getOutSlot(self, slot, key, result):
+        def execute(self, slot, roi, result):
+            key = roi.toSlice()
             result[:] = self._data[key]
+            return result
 
         def setInSlot(self, slot, key, value):
             self._data[key] = value
