@@ -419,10 +419,10 @@ if __name__ == '__main__':
             inputSlots = [InputSlot('shape')]
             outputSlots = [OutputSlot("output")]
 
-            def setOutputs(self):
-                print "notifyConnectAll"
+            def setupOutputs(self):
                 oslot = self.outputs['output']
-                shape = oslot._shape = self.inputs['shape'].value
+                shape = oslot.meta.shape = self.inputs['shape'].value
+                assert shape is not None
                 oslot._dtype = numpy.uint8
                 t = vigra.AxisTags()
 
@@ -466,11 +466,12 @@ if __name__ == '__main__':
     v = Viewer()
     v.show()
 
-    v.addLayer(lena(), name='lena gray')
-    v.addLayer(lenaRGB, name='lena RGB', interpretChannelsAs='RGB')
+    #v.addLayer(lena(), name='lena gray')
+    #v.addLayer(lenaRGB, name='lena RGB', interpretChannelsAs='RGB')
 
     if haveLazyflow:
-        v.addLayer(lenaLazyflow.outputs['Image'], name='lena lazyflow', interpretChannelsAs='RGB')
+        #v.addLayer(lenaLazyflow.outputs['Image'], name='lena lazyflow', interpretChannelsAs='RGB')
+        pass
 
     d = (numpy.random.random((1000, 800, 50)) * 255).astype(numpy.uint8)
     assert d.ndim == 3
@@ -478,20 +479,20 @@ if __name__ == '__main__':
     #FIXME: this does not work
     #d = d.view(vigra.VigraArray)
 
-    v.addLayer(d, display='randomcolors', name="numpy 3D", visible=True)
-    v.addLayer(d[numpy.newaxis, ..., numpy.newaxis], display='randomcolors', \
-               name="numpy 5D", visible=False)
+    #v.addLayer(d, display='randomcolors', name="numpy 3D", visible=True)
+    #v.addLayer(d[numpy.newaxis, ..., numpy.newaxis], display='randomcolors', \
+    #           name="numpy 5D", visible=False)
 
     #test adding and removing layers
     oldLen = len(v.layerstack)
-    l = v.addLayer(numpy.zeros((1000,800,50), dtype=numpy.uint8))
-    assert len(v.layerstack) == oldLen+1
-    v.removeLayer(l)
-    assert len(v.layerstack) == oldLen
-    l = v.addLayer(numpy.zeros((1000,800,50), dtype=numpy.uint8), name="xxx")
-    assert len(v.layerstack) == oldLen+1
-    v.removeLayer("xxx")
-    assert len(v.layerstack) == oldLen
+    #l = v.addLayer(numpy.zeros((1000,800,50), dtype=numpy.uint8))
+    #assert len(v.layerstack) == oldLen+1
+    #v.removeLayer(l)
+    #assert len(v.layerstack) == oldLen
+    #l = v.addLayer(numpy.zeros((1000,800,50), dtype=numpy.uint8), name="xxx")
+    #assert len(v.layerstack) == oldLen+1
+    #v.removeLayer("xxx")
+    #assert len(v.layerstack) == oldLen
 
     v.title = 'My Data Example'
     if haveLazyflow:
@@ -499,8 +500,8 @@ if __name__ == '__main__':
         op = OpOnDemand(g)
         op.inputs['shape'].setValue(d.shape)
         v.addLayer(op.outputs['output'], name='lazyflow 3D', visible=True)
-        op2 = OpOnDemand(g)
-        op2.inputs['shape'].setValue((1,) + d.shape + (1,))
-        v.addLayer(op2.outputs['output'], name='lazyflow 5D', visible=True)
+        #op2 = OpOnDemand(g)
+        #op2.inputs['shape'].setValue((1,) + d.shape + (1,))
+        #v.addLayer(op2.outputs['output'], name='lazyflow 5D', visible=True)
 
     app.exec_()
