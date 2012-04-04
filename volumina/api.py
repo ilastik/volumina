@@ -10,7 +10,7 @@ from volumina.imageEditor import ImageEditor
 from volumina.imageEditorWidget import ImageEditorWidget
 from volumina.volumeEditorWidget import VolumeEditorWidget
 
-from PyQt4.QtCore import QRectF
+from PyQt4.QtCore import QRectF, QTimer
 from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp, \
     QImage, QPainter
 from PyQt4.uic import loadUi
@@ -74,6 +74,15 @@ class Viewer(QMainWindow):
         f = self.actionCurrentView.font()
         f.setBold(True)
         self.actionCurrentView.setFont(f)
+
+        #make sure the layer stack widget, which is the right widget
+        #managed by the splitter self.splitter shows up correctly
+        #TODO: find a proper way of doing this within the designer
+        def adjustSplitter():
+            s = self.splitter.sizes()
+            s = [int(0.66*s[0]), s[0]-int(0.66*s[0])]
+            self.splitter.setSizes(s)
+        QTimer.singleShot(0, adjustSplitter)
 
 
     def renderScreenshot(self, axis, blowup=1, filename="/tmp/volumina_screenshot.png"):
@@ -410,7 +419,7 @@ if __name__ == '__main__':
             inputSlots = [InputSlot('shape')]
             outputSlots = [OutputSlot("output")]
 
-            def notifyConnectAll(self):
+            def setOutputs(self):
                 print "notifyConnectAll"
                 oslot = self.outputs['output']
                 shape = oslot._shape = self.inputs['shape'].value
@@ -440,8 +449,9 @@ if __name__ == '__main__':
 
                 oslot._axistags = t 
 
-            def getOutSlot(self, slot, key, result):
+            def execute(self, slot, roi, result):
                 result[:] = numpy.random.randint(0, 255)
+                return result
 
         g = Graph()
         lenaLazyflow = OpImageReader(g)
