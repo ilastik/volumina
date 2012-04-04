@@ -419,10 +419,10 @@ if __name__ == '__main__':
             inputSlots = [InputSlot('shape')]
             outputSlots = [OutputSlot("output")]
 
-            def setOutputs(self):
-                print "notifyConnectAll"
+            def setupOutputs(self):
                 oslot = self.outputs['output']
-                shape = oslot._shape = self.inputs['shape'].value
+                shape = oslot.meta.shape = self.inputs['shape'].value
+                assert shape is not None
                 oslot._dtype = numpy.uint8
                 t = vigra.AxisTags()
 
