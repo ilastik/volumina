@@ -3,6 +3,7 @@ from PyQt4.QtGui import QPainter, QImage
 import numpy
 
 import volumina
+from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, ColortableImageSource
 
 import threading
 from collections import deque
@@ -77,15 +78,26 @@ class ImageSceneRenderThread(QThread):
             toUpdate[patchNr] = 1
 
 
+        firstOpaqueLayer = 1000000000000000000
+        for i, (visible, layerOpacity, layerImageSource) in enumerate(self._stackedIms):
+            if visible and layerOpacity == 1.0 and not isinstance(layerImageSource, (AlphaModulatedImageSource, ColortableImageSource)): 
+                firstOpaqueLayer = i
+                break
+
         for patchNr in toUpdate.nonzero()[0]: 
             self._compositeNext[patchNr] = QImage(self._tiling._imageRect[patchNr].size(), QImage.Format_ARGB32_Premultiplied)
-            self._compositeNext[patchNr].fill(Qt.black)
+            self._compositeNext[patchNr].fill(Qt.white)
             p = QPainter(self._compositeNext[patchNr])
+
             for i, v in enumerate(reversed(self._stackedIms)):
                 visible, layerOpacity, layerImageSource = v
                 if not visible:
                     continue
+
                 layerNr = len(self._stackedIms) - i - 1
+                if layerNr > firstOpaqueLayer:
+                    continue
+
                 patch = self._imageLayersNext[layerNr, patchNr]
                 p.setOpacity(layerOpacity)
                 if patch is not None:
