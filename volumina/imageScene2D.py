@@ -102,17 +102,17 @@ class ImageScene2D(QGraphicsScene):
     def stackedImageSources(self, s):
         self._stackedImageSources = s
         s.layerDirty.connect(self._onLayerDirty)
-        self._initializePatches()
         s.stackChanged.connect(self._onStackChanged)
         s.aboutToResize.connect(self._onAboutToResize)
         self._numLayers = len(s)
-        self._initializePatches()
 
     def _onAboutToResize(self, newSize):
-        if self._renderThread:
-            self._renderThread.stop()
+        self._renderThread.stop()
+        assert not self._renderThread.isRunning()
+
         self._numLayers = newSize
-        self._initializePatches()
+        #render thread will be re-started when the stack has actually changed
+        #to the new size, which will be when stackChanged is emitted
 
     @property
     def showDebugPatches(self):
@@ -150,23 +150,25 @@ class ImageScene2D(QGraphicsScene):
         r = self.scene2data.mapRect(QRect(0,0,sceneShape[0], sceneShape[1]))
         sliceShape = (r.width(), r.height())
         
-        del self._renderThread
         if self._dirtyIndicator:
             self.removeItem(self._dirtyIndicator)
         del self._dirtyIndicator
+        self._dirtyIndicator = None
+
+        if self._renderThread is None:
+            self._renderThread = ImageSceneRenderThread(self.stackedImageSources, parent=self)
 
         self._tiling = Tiling(sliceShape, self.data2scene)
+
         self._dirtyIndicator = DirtyIndicator(self._tiling)
         self.addItem(self._dirtyIndicator)
             
-        self._renderThread = ImageSceneRenderThread(self.stackedImageSources, parent=self)
-        self._renderThread.start(self._tiling)
-       
-        def scheduleRedraw(rect):
-            self.invalidate(QRectF(rect), QGraphicsScene.BackgroundLayer)
-        self._renderThread.patchAvailable.connect(scheduleRedraw)
+        self._renderThread.patchAvailable.connect(self.scheduleRedraw)
+
+        self._onStackChanged()
         
-        self._initializePatches()
+    def scheduleRedraw(self, rect):
+        self.invalidate(QRectF(rect), QGraphicsScene.BackgroundLayer)
 
     def __init__( self ):
         QGraphicsScene.__init__(self)
@@ -194,11 +196,8 @@ class ImageScene2D(QGraphicsScene):
         self.destroyed.connect(cleanup)
     
     def _initializePatches(self):
-        if not self._renderThread:
-            return
-              
-        self._renderThread.stop()
-        
+        assert not self._renderThread.isRunning()
+
         self._brushingLayer  = TiledImageLayer(self._tiling)
 
         shape = (self._numLayers, len(self._tiling))
@@ -206,7 +205,10 @@ class ImageScene2D(QGraphicsScene):
         self._requestsNew       = numpy.ndarray(shape, dtype = object)
 
         self._renderThread.start(self._tiling)
-   
+  
+    def _numRequestsUnfinished(self, patchNr):
+        return len(numpy.where(self._requestsOld[:,patchNr])[0])/float(self._numLayers)
+    
     def drawLine(self, fromPoint, toPoint, pen):
         tileId = self._tiling.containsF(toPoint)
         if tileId is None:
@@ -222,7 +224,7 @@ class ImageScene2D(QGraphicsScene):
         painter.end()
         p.dataVer += 1
         p.unlock()
-        self._schedulePatchRedraw(tileId)
+        self.scheduleRedraw(self._tiling._imageRectF[tileId])
 
     def _onPatchFinished(self, image, request, patchNr, layerNr):
         r = self._requestsOld[layerNr, patchNr]
@@ -238,6 +240,9 @@ class ImageScene2D(QGraphicsScene):
         self._renderThread._dataPending.set()
 
     def _requestPatch(self, layerNr, patchNr):
+        if not self._renderThread.isRunning():
+            return
+
         request = self._stackedImageSources.getImageSource(layerNr).request(self._tiling._imageRect[patchNr])
         r = self._requestsNew[layerNr, patchNr]
 
@@ -250,8 +255,6 @@ class ImageScene2D(QGraphicsScene):
         request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr)
 
     def _onLayerDirty(self, layerNr, rect):
-        print "ImageScene2D._onLayerDirty layerNr=%d, rect = %r" % (layerNr, rect)
-
         viewportRect = self.views()[0].mapToScene(self.views()[0].rect()).boundingRect()
         viewportRect = QRect(math.floor(viewportRect.x()), math.floor(viewportRect.y()), math.ceil(viewportRect.width()), math.ceil(viewportRect.height()))
         if not rect.isValid():
@@ -270,12 +273,10 @@ class ImageScene2D(QGraphicsScene):
                 r.cancel()
 
     def _onStackChanged(self):
-        if self._renderThread:
-            self._renderThread.start(self._tiling)
+        self._initializePatches()
         self._invalidateRect()
 
     def _invalidateRect(self, rect = QRect()):
-        print "imageScene2D._invalidateRect %r" % rect
         if not self._renderThread:
             return
 
@@ -297,7 +298,7 @@ class ImageScene2D(QGraphicsScene):
                 self._requestPatch(l, tileId)
                 
     def drawForeground(self, painter, rect):
-        if self._numLayers == 0 or not self._renderThread:
+        if self._numLayers == 0 or not self._renderThread or not self._renderThread.isRunning():
             return
 
         patches = self._tiling.intersectedF(rect)
@@ -313,25 +314,13 @@ class ImageScene2D(QGraphicsScene):
         self._dirtyIndicator.setVisible(settled)
         self._slicingPositionSettled = settled
    
-    def tileProgress(self, tileId):
-        numDirtyLayers = 0
-        for layer in self._imageLayers:
-            _p = layer[tileId]
-            _p.lock()
-            if _p.imgVer != _p.dataVer:
-                numDirtyLayers += 1
-            _p.unlock()
-        progress = 1.0 - numDirtyLayers/float(self._numLayers)
-        return progress
-        
     def drawBackground(self, painter, rect):
-        if self._numLayers == 0 or not self._renderThread:
+        if self._numLayers == 0 or not self._renderThread or not self._renderThread.isRunning():
             return
 
         #Find all patches that intersect the given 'rect'.
 
         patches = self._tiling.intersectedF(rect)
-        print "ImageScene2D.drawBackground for rect = %r: %r" % (rect, patches,)
 
         for patchNr in patches:
             img = self._renderThread._compositeCurrent[patchNr]
@@ -341,9 +330,6 @@ class ImageScene2D(QGraphicsScene):
 
         #calculate progress information for 'pie' progress indicators on top
         #of each tile
-        '''
         for tileId in patches:
-            progress = self.tileProgress(tileId)
-            self._dirtyIndicator.setTileProgress(tileId, progress) 
-        '''
+            self._dirtyIndicator.setTileProgress(tileId, 1.0-self._numRequestsUnfinished(tileId)) 
                     

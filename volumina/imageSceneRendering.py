@@ -37,8 +37,10 @@ class ImageSceneRenderThread(QThread):
         self._stopped = True
         self._dataPending.set()
         self.wait()
+        assert not self.isRunning()
         
     def start(self, tiling):
+        self._queue = deque()
         self._tiling = tiling
         self._stopped = False
 

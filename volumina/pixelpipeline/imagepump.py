@@ -68,11 +68,13 @@ class StackedImageSources( QObject ):
         ims.isDirty.disconnect( self._curryRegistry['I'][ims] )
         layer.opacityChanged.disconnect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.disconnect( self._curryRegistry['V'][layer] )
+
+    def remove( self, layer ):
         del self._curryRegistry['I'][ims]
         del self._curryRegistry['V'][layer]
         del self._curryRegistry['O'][layer]
-        del self._layerToIms[layer]
         del self._imsToLayer[ims]
+        del self._layerToIms[layer]
         self.stackChanged.emit()
 
     def isRegistered( self, layer ):
@@ -119,14 +121,22 @@ class ImagePump( object ):
 
         ## handle layers removed from layerStackModel
         def onRowsAboutToBeRemoved( parent, start, end):
-            self._stackedImageSources.aboutToResize.emit(len(self._layerStackModel)-(end-start+1))
+            newSize = len(self._layerStackModel)-(end-start+1)
+            for i in xrange(start, end + 1):
+                layer = self._layerStackModel[i]
+                self._stackedImageSources.deregister(layer)
+            self._stackedImageSources.aboutToResize.emit(newSize)
+        layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
+
+        def onRowsRemoved(srcParent, srcStart, srcEnd, destParent, destRow):
             for i in xrange(start, end + 1):
                 layer = self._layerStackModel[i]
                 self._removeLayer( layer )
-        layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
-
+        layerStackModel.rowsRemoved.connect(onRowsRemoved)
+        
         def onRowsAboutToBeInserted(parent, start, end):
-            self._stackedImageSources.aboutToResize.emit(len(self._layerStackModel)+(end-start+1))
+            newSize = len(self._layerStackModel)+(end-start+1)
+            self._stackedImageSources.aboutToResize.emit(newSize)
         layerStackModel.rowsAboutToBeInserted.connect(onRowsAboutToBeInserted)
 
         ## handle new layers in layerStackModel
@@ -163,7 +173,6 @@ class ImagePump( object ):
         self._stackedImageSources.register(layer, imageSource)
 
     def _removeLayer( self, layer ):
-        self._stackedImageSources.deregister(layer)
         for ss in self._layerToSliceSrcs[layer]:
             self._syncedSliceSources.remove(ss)
         del self._layerToSliceSrcs[layer] 

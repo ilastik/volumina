@@ -95,6 +95,7 @@ class Tiling(object):
         self.rectF = []
         self._imageRect  = []
         self.rect  = []
+        self.sliceShape = sliceShape
 
         for patchNr in range(patchAccessor.patchCount):
             #the patch accessor uses the data coordinate system
