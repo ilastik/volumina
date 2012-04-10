@@ -242,28 +242,46 @@ class ImageScene2D(QGraphicsScene):
     def _requestPatch(self, layerNr, patchNr):
         if not self._renderThread.isRunning():
             return
+        
+        lastVisibleLayer = self._stackedImageSources._lastVisibleLayer
+        if layerNr < lastVisibleLayer:
+          request = self._stackedImageSources.getImageSource(layerNr).request(self._tiling._imageRect[patchNr])
+          r = self._requestsNew[layerNr, patchNr]
 
-        request = self._stackedImageSources.getImageSource(layerNr).request(self._tiling._imageRect[patchNr])
-        r = self._requestsNew[layerNr, patchNr]
+          if r is not None:
+              r.cancel()
+              self._requestsNew[layerNr, patchNr] = request
+          else:
+              self._requestsOld[layerNr, patchNr] = request
 
-        if r is not None:
-            r.cancel()
-            self._requestsNew[layerNr, patchNr] = request
-        else:
-            self._requestsOld[layerNr, patchNr] = request
-
-        request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr)
+          request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr)
 
     def _onLayerDirty(self, layerNr, rect):
         viewportRect = self.views()[0].mapToScene(self.views()[0].rect()).boundingRect()
         viewportRect = QRect(math.floor(viewportRect.x()), math.floor(viewportRect.y()), math.ceil(viewportRect.width()), math.ceil(viewportRect.height()))
         if not rect.isValid():
             rect = viewportRect
+            #self._cancelLayer(layerNr)     
+            self._updatableTiles = []
+            
+            for p in self._brushingLayer:
+                p.lock()
+                p.image.fill(0)
+                p.imgVer = p.dataVer
+                p.unlock()
         else:
             rect = rect.intersected(viewportRect)
         for tileId in self._tiling.intersected(rect):
             self._requestPatch(layerNr, tileId)
            
+    def _cancelLayer(self,layer):
+        # for r in self._requestsNew[layer,:].flat:
+        #     if r is not None:
+        #         r.cancel()
+        for r in self._requestsOld[layer,:].flat:
+            if r is not None:
+                r.cancel()
+
     def _cancelAll(self):
         for r in self._requestsNew.flat:
             if r is not None:
@@ -296,6 +314,7 @@ class ImageScene2D(QGraphicsScene):
         for tileId in self._tiling.intersected(rect):
             for l in range(self._numLayers):
                 self._requestPatch(l, tileId)
+
                 
     def drawForeground(self, painter, rect):
         if self._numLayers == 0 or not self._renderThread or not self._renderThread.isRunning():

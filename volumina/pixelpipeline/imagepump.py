@@ -30,6 +30,7 @@ class StackedImageSources( QObject ):
         self._imsToLayer = {} #look up image source -> corresponding layer
         
         layerStackModel.orderChanged.connect( self.stackChanged )
+        self._lastVisibleLayer = 1e10
 
     def __len__( self ):
         return self._layerStackModel.rowCount()
@@ -85,12 +86,23 @@ class StackedImageSources( QObject ):
         if layer.visible:
             self.layerDirty.emit(self._layerStackModel.layerIndex(layer), rect)
 
+    def _updateLastVisibleLayer(self):
+        for i, layer in enumerate(self._layerStackModel):
+          if layer.visible and layer.opacity == 1.0 and not isinstance(layerImageSource, (AlphaModulatedImageSource, ColortableImageSource)): 
+            self._lastVisibleLayer = i
+            break          
+
     def _onOpacityChanged( self, layer, opacity ):
+        self._updateLastVisibleLayer()
         if layer.visible:
             self.layerDirty.emit(self._layerStackModel.layerIndex(layer), QRect())
 
     def _onVisibleChanged( self, layer, visible ):
+        self._updateLastVisibleLayer()
         self.layerDirty.emit(self._layerStackModel.layerIndex(layer), QRect())
+
+    def lastVisibleLayer(self):
+        return self._lastVisibleLayer
 
 
 

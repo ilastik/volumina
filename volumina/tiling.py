@@ -66,6 +66,9 @@ class ImageTile(object):
         #eventually replace self.image with the new data.
         self.reqVer  = -2
     
+    def clear(self):
+        self.image.fill(0)
+
     def paint(self, painter):
         self.lock()
         painter.drawImage(self._topLeft, self.image)
@@ -82,7 +85,7 @@ class ImageTile(object):
 
 class Tiling(object):
     # base tile size: blockSize x blockSize
-    blockSize = 256
+    blockSize = 128
     #
     # overlap between tiles 
     # positive number prevents rendering artifacts between tiles for certain zoom levels

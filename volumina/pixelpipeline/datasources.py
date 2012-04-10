@@ -21,6 +21,9 @@ class ArrayRequest( object ):
 
     def cancel( self ):
         pass
+
+    def submit( self ):
+        pass
         
     # callback( result = result, **kwargs )
     def notify( self, callback, **kwargs ):
@@ -87,6 +90,9 @@ class RelabelingArraySource( QObject ):
         self._relabeling = relabeling
         self.setDirty(5*(slice(None),))
 
+    def submit( self ):
+        pass
+
     def request( self, slicing ):
         if not is_pure_slicing(slicing):
             raise Exception('ArraySource: slicing is not pure')
@@ -121,6 +127,9 @@ class LazyflowRequest( object ):
         
     def cancel( self ):
         self._lazyflow_request.cancel()
+
+    def submit( self ):
+        self._lazyflow_request.submit()
 
     def notify( self, callback, **kwargs ):
         self._lazyflow_request.notify( callback, **kwargs)
@@ -197,6 +206,9 @@ class ConstantRequest( object ):
         return self._result
     
     def cancel( self ):
+        pass
+
+    def submit ( self ):
         pass
         
     def adjustPriority(self, delta):

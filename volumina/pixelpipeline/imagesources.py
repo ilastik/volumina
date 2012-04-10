@@ -344,6 +344,7 @@ class RGBAImageRequest( object ):
             self._data[:,:,i] = a
         img = array2qimage(self._data)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
+
     def notify( self, callback, **kwargs ):
         for i in xrange(4):
             self._requests[i].notify(self._onNotify, package = (i, callback, kwargs))
@@ -374,6 +375,7 @@ class RGBAImageRequest( object ):
             callback = package[1]
             kwargs = package[2]
             callback( img, **kwargs )
+
 assert issubclass(RGBAImageRequest, RequestABC)
 
 
