@@ -2,6 +2,7 @@ from functools import partial
 from PyQt4.QtCore import QObject, pyqtSignal, QRect
 from slicesources import SliceSource, SyncedSliceSources
 from imagesourcefactories import createImageSource
+from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, ColortableImageSource
 
 class StackedImageSources( QObject ):
     """
@@ -30,6 +31,7 @@ class StackedImageSources( QObject ):
         self._imsToLayer = {} #look up image source -> corresponding layer
         
         layerStackModel.orderChanged.connect( self.stackChanged )
+        self.stackChanged.connect( self._updateLastVisibleLayer)
         self._lastVisibleLayer = 1e10
 
     def __len__( self ):
@@ -60,7 +62,6 @@ class StackedImageSources( QObject ):
         imageSource.isDirty.connect( self._curryRegistry['I'][imageSource] ) 
         layer.opacityChanged.connect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.connect( self._curryRegistry['V'][layer] )
-
         self.stackChanged.emit()
 
     def deregister( self, layer ):
@@ -69,6 +70,7 @@ class StackedImageSources( QObject ):
         ims.isDirty.disconnect( self._curryRegistry['I'][ims] )
         layer.opacityChanged.disconnect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.disconnect( self._curryRegistry['V'][layer] )
+        self._layerToIms.pop(layer)
 
     def remove( self, layer ):
         del self._curryRegistry['I'][ims]
@@ -88,7 +90,7 @@ class StackedImageSources( QObject ):
 
     def _updateLastVisibleLayer(self):
         for i, layer in enumerate(self._layerStackModel):
-          if layer.visible and layer.opacity == 1.0 and not isinstance(layerImageSource, (AlphaModulatedImageSource, ColortableImageSource)): 
+          if layer.visible and layer.opacity == 1.0 and not isinstance(self._layerToIms[layer], (AlphaModulatedImageSource, ColortableImageSource)): 
             self._lastVisibleLayer = i
             break          
 
@@ -137,10 +139,12 @@ class ImagePump( object ):
             for i in xrange(start, end + 1):
                 layer = self._layerStackModel[i]
                 self._stackedImageSources.deregister(layer)
+                self._removeLayer( layer )
             self._stackedImageSources.aboutToResize.emit(newSize)
         layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
 
-        def onRowsRemoved(srcParent, srcStart, srcEnd, destParent, destRow):
+        def onRowsRemoved(parent,start,end):
+            return
             for i in xrange(start, end + 1):
                 layer = self._layerStackModel[i]
                 self._removeLayer( layer )

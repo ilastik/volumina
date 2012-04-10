@@ -107,8 +107,9 @@ class ImageScene2D(QGraphicsScene):
         self._numLayers = len(s)
 
     def _onAboutToResize(self, newSize):
-        self._renderThread.stop()
-        assert not self._renderThread.isRunning()
+        if self._renderThread:
+          self._renderThread.stop()
+          assert not self._renderThread.isRunning()
 
         self._numLayers = newSize
         #render thread will be re-started when the stack has actually changed
@@ -146,7 +147,7 @@ class ImageScene2D(QGraphicsScene):
         
         #The coordinate system of the data handles things differently.
         #The x axis points down and the y axis points to the right.
-        
+
         r = self.scene2data.mapRect(QRect(0,0,sceneShape[0], sceneShape[1]))
         sliceShape = (r.width(), r.height())
         
@@ -184,6 +185,7 @@ class ImageScene2D(QGraphicsScene):
         self._stackedImageSources = None
         self._numLayers = 0 #current number of 'layers'
         self._showDebugPatches = False
+        self._renderThread = None
     
         self.data2scene = QTransform(0,1,1,0,0,0) 
         self.scene2data = self.data2scene.transposed()
@@ -196,15 +198,17 @@ class ImageScene2D(QGraphicsScene):
         self.destroyed.connect(cleanup)
     
     def _initializePatches(self):
-        assert not self._renderThread.isRunning()
+        if not self._renderThread:
+          return
 
-        self._brushingLayer  = TiledImageLayer(self._tiling)
+        if not self._renderThread.isRunning():
+          self._brushingLayer  = TiledImageLayer(self._tiling)
 
-        shape = (self._numLayers, len(self._tiling))
-        self._requestsOld       = numpy.ndarray(shape, dtype = object)
-        self._requestsNew       = numpy.ndarray(shape, dtype = object)
+          shape = (self._numLayers, len(self._tiling))
+          self._requestsOld       = numpy.ndarray(shape, dtype = object)
+          self._requestsNew       = numpy.ndarray(shape, dtype = object)
 
-        self._renderThread.start(self._tiling)
+          self._renderThread.start(self._tiling)
   
     def _numRequestsUnfinished(self, patchNr):
         return len(numpy.where(self._requestsOld[:,patchNr])[0])/float(self._numLayers)
@@ -244,7 +248,8 @@ class ImageScene2D(QGraphicsScene):
             return
         
         lastVisibleLayer = self._stackedImageSources._lastVisibleLayer
-        if layerNr < lastVisibleLayer:
+        
+        if layerNr <= lastVisibleLayer and self._stackedImageSources._layerStackModel[layerNr].visible:
           request = self._stackedImageSources.getImageSource(layerNr).request(self._tiling._imageRect[patchNr])
           r = self._requestsNew[layerNr, patchNr]
 
