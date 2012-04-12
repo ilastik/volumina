@@ -104,7 +104,13 @@ class ImageScene2D(QGraphicsScene):
         s.layerDirty.connect(self._onLayerDirty)
         s.stackChanged.connect(self._onStackChanged)
         s.aboutToResize.connect(self._onAboutToResize)
+        s.resizeFinished.connect(self._onResizeFinished)
         self._numLayers = len(s)
+
+    def _onResizeFinished(self, newSize):
+        if self._renderThread:
+          self._renderThread.start(self._tiling)
+
 
     def _onAboutToResize(self, newSize):
         if self._renderThread:

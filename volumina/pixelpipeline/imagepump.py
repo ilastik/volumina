@@ -18,6 +18,7 @@ class StackedImageSources( QObject ):
     layerDirty    = pyqtSignal(int, QRect)
     stackChanged  = pyqtSignal()
     aboutToResize = pyqtSignal(int)
+    resizeFinished = pyqtSignal(int)
 
     def __init__( self, layerStackModel ):
         super(StackedImageSources, self).__init__()
@@ -144,6 +145,8 @@ class ImagePump( object ):
         layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
 
         def onRowsRemoved(parent,start,end):
+            newSize = len(self._layerStackModel)-(end-start+1)
+            self._stackedImageSources.resizeFinished.emit(newSize)
             return
             for i in xrange(start, end + 1):
                 layer = self._layerStackModel[i]
