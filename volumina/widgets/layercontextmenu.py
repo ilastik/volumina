@@ -1,10 +1,10 @@
 from functools import partial
 from PyQt4.QtCore import QPoint,pyqtSignal
 from PyQt4.QtGui import QMenu, QAction
-from volumina.layer import GrayscaleLayer, RGBALayer
+from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer
 from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
+from volumina.events import Event
 from exportDlg import ExportDialog
-from debian_bundle import parent_dir
 from lazyflow.graph import Graph
 from lazyflow.operators.obsolete.operators import OpArrayPiper
 from lazyflow.roi import roiToSlice
@@ -68,10 +68,10 @@ def _add_actions( layer, menu ):
         _add_actions_grayscalelayer( layer, menu )
     elif isinstance( layer, RGBALayer ):
         _add_actions_rgbalayer( layer, menu )
-    else:
-        pass
-    
-def layercontextmenu( layer, pos, graph, parent=None ):
+    Event.trigger("layerContextMenuRequested", layer = layer, menu = menu)
+
+
+def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
     '''Show a context menu to manipulate properties of layer.
 
     layer -- a volumina layer instance

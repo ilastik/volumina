@@ -26,12 +26,18 @@ class SliceRequest( object ):
 
     def notify( self, callback, **kwargs ):
         self._ar.notify(self._onNotify, package = (callback, kwargs))
+        return self
 
     def cancel( self ):
         self._ar.cancel()
+
+    def submit( self ):
+        self._ar.submit()
+        return self
         
     def adjustPriority(self, delta):
         self._ar.adjustPriority(delta)
+        return self
 
     def _onNotify( self, result, package ):
         callback, kwargs = package

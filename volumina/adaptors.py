@@ -55,7 +55,6 @@ if _has_lazyflow:
                 result[sl] = tmpres
                 return result
 
-
 class Array5d( object ):
     '''Embed a array with dim = 3 into the volumina coordinate system.'''
     def __init__( self, array, dtype=np.uint8):

@@ -8,12 +8,13 @@ from vtk import vtkRenderer, vtkConeSource, vtkPolyDataMapper, vtkActor, \
                     vtkMaskFields, vtkGeometryFilter, vtkThreshold, vtkDataObject, \
                     vtkDataSetAttributes, vtkCutter, vtkPlane, vtkPropAssembly, \
                     vtkGenericOpenGLRenderWindow, QVTKWidget, vtkOBJExporter, \
-                    vtkPropCollection
+                    vtkPropCollection, vtkAppendPolyData
 
 from PyQt4.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
                         QSizePolicy, QSpacerItem, QIcon, QFileDialog, \
                         QToolButton
 from PyQt4.QtCore import pyqtSignal, SIGNAL, QEvent, QTimer
+from PyQt4.QtGui import QMenu, QAction, QColor
 
 import qimage2ndarray
 
@@ -29,7 +30,9 @@ from slicingPlanesWidget import SlicingPlanesWidget
 
 # discover icon path
 from os import path
-
+from volumina.events import Event
+from volumina.layer import ColortableLayer
+from GenerateModelsFromLabels_thread import MeshExtractorDialog
 _icondir = path.split(__file__)[0]+'/../resources/icons'
 
 def convertVTPtoOBJ(vtpFilename, objFilename):
@@ -258,7 +261,6 @@ class OverviewScene(QWidget):
 
     def __init__(self, parent=None):
         super(OverviewScene, self).__init__(parent)
-        
         self.colorTable = None
         self.anaglyph = False
         self.sceneItems = []
@@ -319,6 +321,22 @@ class OverviewScene(QWidget):
         self.connect(bExportMesh, SIGNAL("clicked()"), self.exportMesh)
         bCutter.toggled.connect(self.useCutterToggled)
         self.connect(self.qvtk, SIGNAL("objectPicked"), self.__onObjectPicked)
+        
+        def layerContextMenu(layer, menu):
+          self.layerContextMenu(layer,menu)
+
+        Event.register("layerContextMenuRequested", layerContextMenu)
+
+    def layerContextMenu(self, layer, menu):
+      if isinstance( layer, ColortableLayer ):
+        def show3D():
+          data = layer._datasources[0].request((slice(0,1,None), slice(None,None,None), slice(None,None,None), slice(None,None,None), slice(0,1,None))).wait()[0,:,:,:,0]
+          self.SetColorTable(layer._colorTable)
+          self.DisplayObjectMeshes(data)#, suppressLabels=(), smooth=True):
+
+        show3dAction = QAction("Show in 3D Overview", menu)
+        show3dAction.triggered.connect(show3D)
+        menu.addAction(show3dAction)
 
     @property
     def useCutter(self):
@@ -407,7 +425,7 @@ class OverviewScene(QWidget):
     def DisplayObjectMeshes(self, v, suppressLabels=(), smooth=True):
         print "OverviewScene::DisplayObjectMeshes", suppressLabels
         self.dlg = MeshExtractorDialog(self)
-        self.connect(self.dlg, SIGNAL('done()'), self.onObjectMeshesComputed)
+        self.dlg.finished.connect(self.onObjectMeshesComputed)
         self.dlg.show()
         self.dlg.run(v, suppressLabels, smooth)
     

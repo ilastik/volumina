@@ -1,5 +1,5 @@
 from lazyflow.graph import  Operator, InputSlot, OutputSlot
-from lazyflow import operators
+from lazyflow.operators import OpArrayPiper  
 
 import numpy as np
 import time
@@ -10,7 +10,7 @@ class Op5ifyer(Operator):
     inputSlots = [InputSlot("Input", stype="ndarray")]
     outputSlots = [OutputSlot("Output", stype="ndarray")]
 
-    def notifyConnectAll(self):
+    def setupOutputs(self):
         shape = self.inputs["Input"].shape
         assert len(shape) == 3
         outShape = (1,) + shape[0:2] + (1,) + (shape[2],)
@@ -19,23 +19,27 @@ class Op5ifyer(Operator):
         self.outputs["Output"]._axistags = self.inputs["Input"].axistags
         
 
-    def getOutSlot(self, slot, key, resultArea):
+    def execute(self, slot, roi, resultArea):
+        key = roi.toSlice()
         assert key[0] == slice(0,1,None)
         assert key[-2] == slice(0,1,None)
         req = self.inputs["Input"][key[1:-2] + (key[-1],)].writeInto(resultArea[0,:,:,0,:])
         req.wait()
+        return resultArea
 
-class OpDelay(operators.OpArrayPiper):
+class OpDelay(OpArrayPiper):
     def __init__( self, g, delay_factor = 0.000001 ):
         super(OpDelay, self).__init__(g)
         self._delay_factor = delay_factor
 
-    def getOutSlot(self, slot, key, resultArea):
+    def execute(self, slot, roi, resultArea):
+        key = roi.toSlice()
         req = self.inputs["Input"][key].writeInto(resultArea)
         req.wait()
         t = self._delay_factor*resultArea.nbytes
         #print "Delay: " + str(t) + " secs."
         time.sleep(t)    
+        return resultArea
 
 class OpDataProvider5D(Operator):
     name = "Data Provider 5D"
@@ -51,10 +55,12 @@ class OpDataProvider5D(Operator):
         oslot._shape = self._data.shape
         oslot._dtype = self._data.dtype
     
-    def getOutSlot(self, slot, key, result):
+    def execute(self, slot, roi, result):
+        key = roi.toSlice()
         result[:] = self._data[key]
         result[:] = result / 10
-
+        return result
+    
     def setInSlot(self, slot, key, value):
         self._data[key] = value
         self.outputs["Output"].setDirty(key)

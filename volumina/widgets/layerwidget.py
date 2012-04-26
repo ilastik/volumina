@@ -34,7 +34,6 @@ class LayerPainter( object ):
         
         self.alphaTextWidth = self.fm.boundingRect(u"\u03B1=100.0%").width()
         
-
     def sizeHint(self, mode):
        if mode == 'ReadOnly':
            return QSize(1,self.fm.height()+5)
@@ -44,7 +43,10 @@ class LayerPainter( object ):
            raise RuntimeError("Unknown mode")   
 
     def overEyeIcon(self, x, y):
-        return QPoint(x,y) in QRect(self.iconXOffset,0,self.iconSize,self.iconSize)
+        #with a sufficiently large height (100)
+        #we make sure that the user can also click below the eye to toggle
+        #the layer
+        return QPoint(x,y) in QRect(self.iconXOffset,0,self.iconSize,100)
 
     def percentForPosition(self, x, y, checkBoundaries=True):
         if checkBoundaries and (y < self.progressYOffset or y > self.progressYOffset + self.progressHeight) \
@@ -62,23 +64,24 @@ class LayerPainter( object ):
     def _progressWidth(self):
         return self.rect.width()-self.progressXOffset-10
 
-    def paint(self, painter, rect, palette, mode):
+    def paint(self, painter, rect, palette, mode, isSelected):
         if not self.layer.visible:
             palette.setCurrentColorGroup(QPalette.Disabled)
         
         self.rect = rect
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.translate(rect.x(), rect.y())
-        painter.setFont(QFont())
         
         painter.setBrush(palette.text())
         
-        if mode != 'ReadOnly':
+        if isSelected:
             painter.save()
             painter.setBrush(palette.highlight())
             painter.drawRect(rect)
             painter.restore()
+
+        painter.translate(rect.x(), rect.y())
+        painter.setFont(QFont())
         
         textOffsetX = self.progressXOffset
         textOffsetY = max(self.fm.height()-self.iconSize,0)/2.0+self.fm.height()
@@ -128,6 +131,9 @@ class LayerDelegate(QStyledItemDelegate):
         self.currentIndex = -1
         self._view = layersView
         self._layerPainter = LayerPainter()
+
+        #whether to draw all layers expanded
+        self.expandAll = True
     
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)
@@ -143,11 +149,13 @@ class LayerDelegate(QStyledItemDelegate):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
             self._layerPainter.layer = layer
-            if option.state & QStyle.State_Selected:
+            isSelected = option.state & QStyle.State_Selected
+            if isSelected:
                 painter.fillRect(option.rect, QColor(0,255,0,10))
-                self._layerPainter.paint(painter, option.rect, option.palette, 'Expanded')
+            if self.expandAll or option.state & QStyle.State_Selected:
+                self._layerPainter.paint(painter, option.rect, option.palette, 'Expanded', isSelected)
             else:
-                self._layerPainter.paint(painter, option.rect, option.palette, 'ReadOnly')
+                self._layerPainter.paint(painter, option.rect, option.palette, 'ReadOnly', False)
         else:
             QStyledItemDelegate.paint(self, painter, option, index)
 
@@ -155,7 +163,7 @@ class LayerDelegate(QStyledItemDelegate):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
             self._layerPainter.layer = layer
-            mode = "Expanded" if self._view.currentIndex() == index else 'ReadOnly'
+            mode = "Expanded" if self.expandAll or self._view.currentIndex() == index else 'ReadOnly'
             return self._layerPainter.sizeHint( mode )
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
@@ -220,7 +228,7 @@ class LayerEditor(QWidget):
         
     def paintEvent(self, e):
         painter = QPainter(self)
-        self._layerPainter.paint(painter, self.rect(), self.palette(), 'Editable')
+        self._layerPainter.paint(painter, self.rect(), self.palette(), 'Editable', True)
         
     def mouseMoveEvent(self, event):
         if self.lmbDown:

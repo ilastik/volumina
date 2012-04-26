@@ -1,8 +1,8 @@
-#from vtk import *
-#from PyQt4.QtCore import *
-#from PyQt4.QtGui import *
+from vtk import *
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 from functools import partial
-
+import numpy
 import sys, h5py, copy
 from numpy2vtk import toVtkImageData
 
@@ -11,7 +11,7 @@ from numpy2vtk import toVtkImageData
 #*******************************************************************************
 
 class MeshExtractor(QThread):
-
+    done = pyqtSignal()
     progress = pyqtSignal(float)
     newStep  = pyqtSignal(QString)
 
@@ -160,14 +160,14 @@ class MeshExtractor(QThread):
             
         print " ==> list of labels:", self.meshes.keys()
         #print "MeshExtractor::done"
-        self.emit(SIGNAL('done()'))
+        self.done.emit()
 
 #*******************************************************************************
 # M e s h E x t r a c t o r D i a l o g                                        *
 #*******************************************************************************
 
 class MeshExtractorDialog(QDialog):
-    done = pyqtSignal()
+    finished = pyqtSignal()
     
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
@@ -214,11 +214,12 @@ class MeshExtractorDialog(QDialog):
         self.extractor.Smooth(smooth)
         self.extractor.progress.connect(self.__onCurrentStepProgressChanged, Qt.BlockingQueuedConnection)
         self.extractor.newStep.connect(self.__onNewStep, Qt.BlockingQueuedConnection)
-        self.extractor.finished.connect(self.onMeshesExtracted)
+        self.extractor.done.connect(self.onMeshesExtracted)
         self.extractor.start()
     
     def onMeshesExtracted(self):
-        self.done.emit()
+        self.finished.emit()
+        self.close()
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
