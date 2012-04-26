@@ -8,7 +8,8 @@ import os
 import os.path as path
 import numpy as np
 from volumina.slicingtools import sl, slicing2shape
-import vigra
+import vigra,numpy
+from lazyflow.roi import TinyVector
 
 ###
 ### lazyflow input
@@ -20,54 +21,39 @@ except ImportError:
     _has_lazyflow = False
 
 if _has_lazyflow:
-    class Op5ifyer(Operator):
-        name = "5Difyer"
-        inputSlots = [InputSlot("Input")]
-        outputSlots = [OutputSlot("Output")]
-        def notifyConnectAll(self):
-            inputAxistags = self.inputs["Input"].axistags
-            inputShape = self.inputs["Input"].shape
-            assert len(inputShape) == len(inputAxistags), "Op5ifyer: my input coming from operator '%s' has inconsistent shape and axistags information" % (self.inputs["Input"].partner.operator.name)
-            outShape = 5*[1,]
-            voluminaOrder = ['t', 'x', 'y', 'z', 'c']
-            inputOrder = []
-            order = []
-            self.slicing = 5*[0]
-            for i, channel in enumerate(inputAxistags):
-                assert channel.key in voluminaOrder
-                order.append(voluminaOrder.index(channel.key))
-                outShape[ voluminaOrder.index(channel.key) ] = inputShape[i] 
-                self.slicing[ voluminaOrder.index(channel.key) ] = slice(None,None)
-                inputOrder.append(channel.key)
-            assert order == sorted(order)
-            self.keyStart = voluminaOrder.index(inputOrder[0])
-            self.keyStop = voluminaOrder.index(inputOrder[-1])
 
-            self.ndim = len(inputShape)
-            self.outputs["Output"]._shape = outShape
-            self.outputs["Output"]._dtype = self.inputs["Input"].dtype
-          
-            t = vigra.AxisTags()
-            t.insert(0, vigra.AxisInfo('t', vigra.AxisType.Time))
-            t.insert(1, vigra.AxisInfo('x', vigra.AxisType.Space))
-            t.insert(2, vigra.AxisInfo('y', vigra.AxisType.Space))
-            t.insert(3, vigra.AxisInfo('z', vigra.AxisType.Space))
-            t.insert(4, vigra.AxisInfo('c', vigra.AxisType.Channels))
-
-            self.outputs["Output"]._axistags = t 
-
-        def execute(self, slot, key, resultArea):
-            key = key.toSlice()
-            assert resultArea.ndim == 5
-            inputSlicing = key[slice(self.keyStart, self.keyStop+1)]
-            assert len(inputSlicing) == len(self.inputs["Input"]._shape), "inputSlicing = %r, input shape = %r" % (inputSlicing, self.inputs["Input"]._shape)
-            req = self.inputs["Input"][inputSlicing].writeInto(resultArea[self.slicing])
-            req.wait()
-            return resultArea 
-
-        def notifyDirty(self,slot,key):
-            self.outputs["Output"].setDirty(key)
-
+        class Op5ifyer(Operator):
+            name = "Op5ifyer"
+            inputSlots = [InputSlot("input")]
+            outputSlots = [OutputSlot("output")]
+            
+            def setupOutputs(self):
+                inputAxistags = self.inputs["input"]._axistags
+                inputShape = list(self.inputs["input"]._shape)
+                self.resSl = [slice(0,stop,None) for stop in list(self.inputs["input"]._shape)]
+                
+                defaultTags = vigra.defaultAxistags('txyzc')
+                
+                for tag in [tag for tag in defaultTags if tag not in inputAxistags]:
+                    inputAxistags.insert(defaultTags.index(tag.key),tag)
+                    inputShape.insert(defaultTags.index(tag.key),1)
+                    self.resSl.insert(defaultTags.index(tag.key),0)
+                
+                self.outputs["output"]._dtype = self.inputs["input"]._dtype
+                self.outputs["output"]._shape = tuple(inputShape)
+                self.outputs["output"]._axistags = inputAxistags
+                
+            def execute(self,slot,roi,result):
+                
+                sl = [slice(0,roi.stop[i]-roi.start[i],None) if sl != 0\
+                      else 0 for i,sl in enumerate(self.resSl)]
+                
+                roi.start = TinyVector([i for i,k in zip(roi.start,sl) if k != 0])
+                roi.stop = TinyVector([i for i,k in zip(roi.stop,sl) if k != 0])
+                
+                tmpres = self.inputs["input"](start=roi.start,stop=roi.stop).wait()
+                result[sl] = tmpres
+                return result
 
 
 class Array5d( object ):
