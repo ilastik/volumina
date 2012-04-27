@@ -3,7 +3,17 @@ from PyQt4.QtGui import QPixmap, QIcon
 
 import numpy
 
-from lazyflow.graph import Graph
+###
+### lazyflow input
+###
+_has_lazyflow = True
+try:
+    from lazyflow.graph import Graph
+except ImportError as e:
+    exceptStr = str(e)
+    _has_lazyflow = False
+
+
 from volumina.volumeEditor import VolumeEditor
 from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.pixelpipeline.datasources import ArraySource
@@ -32,6 +42,8 @@ class PyVolumeEditorWidgetPlugin(QPyDesignerCustomWidgetPlugin):
 
         editor = VolumeEditor(layerstack, labelsink=None)  
         widget = VolumeEditorWidget(parent=parent)
+        if not _has_lazyflow:
+            widget.setEnabled(False)
         widget.init(editor)
         editor.dataShape = a.shape
         return widget
