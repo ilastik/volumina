@@ -1,9 +1,20 @@
-from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette, QDialogButtonBox
+from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
+                        QDialogButtonBox, QMessageBox
 from PyQt4.QtCore import QRegExp, Qt
 from PyQt4 import uic
-import os,numpy
-from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
-from lazyflow.roi import TinyVector
+import os
+
+###
+### lazyflow input
+###
+_has_lazyflow = True
+try:
+    from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
+    from lazyflow.roi import TinyVector
+except ImportError as e:
+    exceptStr = str(e)
+    _has_lazyflow = False
+
 
 class ExportDialog(QDialog):
     def __init__(self, parent=None):
@@ -189,7 +200,6 @@ class ExportDialog(QDialog):
             r.indexIn(self.lineEditOutputShapeList[i].displayText())
             key.append(slice(int(r.cap(1)), int(r.cap(3)), 1))
         return key
-        
     
     def createRoiForOutputShape(self):
         start = []
@@ -201,32 +211,42 @@ class ExportDialog(QDialog):
             if r.cap(1) != '' and r.cap(3) != '':
                 start.append(int(r.cap(1)))
                 stop.append(int(r.cap(3)))
-        return [TinyVector(start), TinyVector(stop)]
-
+        if _has_lazyflow:
+                return [TinyVector(start), TinyVector(stop)]
+        return []
+        
     def accept(self, *args, **kwargs):
             if self.radioButtonStack.isChecked():
                 key = self.createKeyForOutputShape()
-                writer = OpStackWriter(self.graph)
-                writer.inputs["input"].connect(self.input)
-                writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
-                writer.inputs["dummy"].setValue(["zt"])
-                writer.outputs["WritePNGStack"][key].allocate().wait()
+                if _has_lazyflow:
+                    writer = OpStackWriter(self.graph)
+                    writer.inputs["input"].connect(self.input)
+                    writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
+                    writer.inputs["dummy"].setValue(["zt"])
+                    writer.outputs["WritePNGStack"][key].allocate().wait()
                 
             if self.radioButtonH5.isChecked():
                 h5Key = self.createRoiForOutputShape()
-                writerH5 = OpH5Writer(self.graph)
-                writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
-                writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
-                writerH5.inputs["input"].connect(self.input)
-                writerH5.inputs["blockShape"].setValue(int(self.spinBoxHdf5BlockShape.value()))
-                writerH5.inputs["dataType"].setValue(str(self.comboBoxHdf5DataType.currentText()))
-                writerH5.inputs["roi"].setValue(h5Key)
-                writerH5.inputs["normalize"].setValue(self.createNormalizeValue())
-                writerH5.outputs["WriteImage"][:].allocate().wait()
+                if _has_lazyflow:
+                    writerH5 = OpH5Writer(self.graph)
+                    writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
+                    writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
+                    writerH5.inputs["input"].connect(self.input)
+                    writerH5.inputs["blockShape"].setValue(int(self.spinBoxHdf5BlockShape.value()))
+                    writerH5.inputs["dataType"].setValue(str(self.comboBoxHdf5DataType.currentText()))
+                    writerH5.inputs["roi"].setValue(h5Key)
+                    writerH5.inputs["normalize"].setValue(self.createNormalizeValue())
+                    writerH5.outputs["WriteImage"][:].allocate().wait()
             return QDialog.accept(self, *args, **kwargs)
         
-        
-            
+    def show(self):
+        if not _has_lazyflow:
+            popUp = QMessageBox(parent=self)
+            popUp.setTextFormat(1)
+            popUp.setText("<font size=\"4\"> Lazyflow could not be imported:</font> <br><br><b><font size=\"4\" color=\"#8A0808\">%s</font></b>"%(exceptStr))
+            popUp.show()
+            popUp.exec_()
+        QDialog.show(self)
         
 if __name__ == '__main__':
     from PyQt4.QtGui import QApplication
