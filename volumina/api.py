@@ -13,7 +13,7 @@ from volumina.widgets.layerwidget import LayerWidget
 
 from PyQt4.QtCore import QRectF, QTimer
 from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp, \
-    QImage, QPainter
+    QImage, QPainter, QMessageBox
 from PyQt4.uic import loadUi
 import volumina.icons_rc
 
@@ -24,12 +24,13 @@ import colorsys
 import random
 import vigra
 
-haveLazyflow = True
+_has_lazyflow = True
 try:
     from volumina.adaptors import Op5ifyer
     from lazyflow.operators.generic import OpMultiArraySlicer
-except ImportError:
-    haveLazyflow = False
+except ImportError as e:
+    exceptStr = str(e)
+    _has_lazyflow = False
 from volumina.adaptors import Array5d
 
 #******************************************************************************
@@ -43,7 +44,6 @@ class Viewer(QMainWindow):
         title -- window title
 
     """
-
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         uiDirectory = os.path.split(volumina.__file__)[0]
@@ -76,6 +76,8 @@ class Viewer(QMainWindow):
             s = [int(0.66*s[0]), s[0]-int(0.66*s[0])]
             self.splitter.setSizes(s)
         QTimer.singleShot(0, adjustSplitter)
+        if not _has_lazyflow:
+            self.setEnabled(False)
 
     def initLayerstackModel(self):
         self.layerstack = LayerStackModel()
@@ -341,6 +343,8 @@ class Viewer(QMainWindow):
                 self.menuView.removeAction(w.selectedCenter)
                 self.menuView.removeAction(w.selectedZoomToOriginal)
                 self.menuView.removeAction(w.rubberBandZoom)
+                
+            
 
             #remove 3D viewer
             splitterSizes = self.splitter.sizes()
@@ -352,7 +356,10 @@ class Viewer(QMainWindow):
             self.viewer.init(self.editor)
             self.splitter.insertWidget(0, self.viewer)
             self.splitter.setSizes(splitterSizes)
-
+            
+            if not _has_lazyflow:
+                self.viewer.setEnabled(False)
+                
     def _renderScreenshot(self, s, blowup, filename, patchNumber):
         progress = 0
         for patchNumber in range(len(s._tiling)):
@@ -391,7 +398,15 @@ class Viewer(QMainWindow):
                 qColor = QColor(*color)
                 colors.append(qColor.rgba())
         return colors
-
+    
+    def show(self):
+        if not _has_lazyflow:
+            popUp = QMessageBox(parent=self)
+            popUp.setTextFormat(1)
+            popUp.setText("<font size=\"4\"> Lazyflow could not be imported:</font> <br><br><b><font size=\"4\" color=\"#8A0808\">%s</font></b>"%(exceptStr))
+            popUp.show()
+            popUp.exec_()
+        QMainWindow.show(self)
 
 #******************************************************************************
 #* if __name__ == '__main__':                                                 *
@@ -406,7 +421,7 @@ if __name__ == '__main__':
     lenaRGB = vigra.impex.readImage(lenaFile).view(numpy.ndarray).swapaxes(0,1).astype(numpy.uint8)
 
 
-    if haveLazyflow:
+    if _has_lazyflow:
         from lazyflow.operators import OpImageReader
         from lazyflow.graph import Operator, OutputSlot, InputSlot
         from lazyflow.graph import Graph
@@ -472,7 +487,7 @@ if __name__ == '__main__':
     v.addLayer(lena(), name='lena gray')
     v.addLayer(lenaRGB, name='lena RGB', interpretChannelsAs='RGB')
 
-    if haveLazyflow:
+    if _has_lazyflow:
         v.addLayer(lenaLazyflow.outputs['Image'], name='lena lazyflow', interpretChannelsAs='RGB')
 
     d = (numpy.random.random((1000, 800, 50)) * 255).astype(numpy.uint8)
@@ -497,7 +512,7 @@ if __name__ == '__main__':
     #assert len(v.layerstack) == oldLen
 
     v.title = 'My Data Example'
-    if haveLazyflow:
+    if _has_lazyflow:
         g = Graph()
         op = OpOnDemand(g)
         op.inputs['shape'].setValue(d.shape)

@@ -10,7 +10,7 @@ import os
 _has_lazyflow = True
 try:
     from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
-    from lazyflow.roi import TinyVector
+    from lazyflow.roi import NotSoTinyVector
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -19,7 +19,8 @@ except ImportError as e:
 class ExportDialog(QDialog):
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
-        
+        if not _has_lazyflow:
+            QDialog.setEnabled(self,False)
         self.initUic()
 
     def initUic(self):
