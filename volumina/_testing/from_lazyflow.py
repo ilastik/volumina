@@ -1,5 +1,13 @@
-from lazyflow.graph import  Operator, InputSlot, OutputSlot
-from lazyflow.operators import OpArrayPiper  
+###
+### lazyflow input
+###
+_has_lazyflow = True
+try:
+    from lazyflow.graph import  Operator, InputSlot, OutputSlot
+    from lazyflow.operators import OpArrayPiper  
+except ImportError as e:
+    exceptStr = str(e)
+    _has_lazyflow = False
 
 import numpy as np
 import time
