@@ -9,14 +9,13 @@ import os.path as path
 import numpy as np
 from volumina.slicingtools import sl, slicing2shape
 import vigra,numpy
-from lazyflow.roi import TinyVector
-
 ###
 ### lazyflow input
 ###
 _has_lazyflow = True
 try:
     from lazyflow.graph import Operator, InputSlot, OutputSlot
+    from lazyflow.roi import TinyVector
 except ImportError:
     _has_lazyflow = False
 

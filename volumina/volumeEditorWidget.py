@@ -241,9 +241,19 @@ if __name__ == "__main__":
     import numpy as np
     from PyQt4.QtCore import QObject, QRectF, QTime
     from PyQt4.QtGui import QColor
-    
+
+###
+### lazyflow input
+###
+_has_lazyflow = True
+try:
     from lazyflow.graph import Graph, Operator, InputSlot, OutputSlot
     from lazyflow import operators
+except ImportError as e:
+    exceptStr = str(e)
+    _has_lazyflow = False
+
+    
     from volumina.pixelpipeline.datasources import LazyflowSource, ConstantSource
     from volumina.pixelpipeline._testing import OpDataProvider
     from volumina._testing.from_lazyflow import OpDataProvider5D, OpDelay
@@ -514,17 +524,17 @@ if __name__ == "__main__":
             if len(shape) == 3:
                 shape = (1,)+shape+(1,)
                 
-            if "l" in sys.argv:
-                from lazyflow import operators
-                opLabels = operators.OpSparseLabelArray(g)                                
-                opLabels.inputs["shape"].setValue(shape[:-1] + (1,))
-                opLabels.inputs["eraser"].setValue(100)                
-                opLabels.inputs["Input"][0,0,0,0,0] = 1                    
-                opLabels.inputs["Input"][0,0,0,1,0] = 2
-                labelsrc = LazyflowSinkSource(opLabels, opLabels.outputs["Output"], opLabels.inputs["Input"])
-                layer = ColortableLayer( labelsrc, colorTable = [QColor(0,0,0,0).rgba(), QColor(255,0,0,255).rgba(), QColor(0,0,255,255).rgba()] )
-                layer.name = "Labels"
-                layerstack.append(layer)
+#            if "l" in sys.argv:
+#                from lazyflow import operators
+#                opLabels = operators.OpSparseLabelArray(g)                                
+#                opLabels.inputs["shape"].setValue(shape[:-1] + (1,))
+#                opLabels.inputs["eraser"].setValue(100)                
+#                opLabels.inputs["Input"][0,0,0,0,0] = 1                    
+#                opLabels.inputs["Input"][0,0,0,1,0] = 2
+#                labelsrc = LazyflowSinkSource(opLabels, opLabels.outputs["Output"], opLabels.inputs["Input"])
+#                layer = ColortableLayer( labelsrc, colorTable = [QColor(0,0,0,0).rgba(), QColor(255,0,0,255).rgba(), QColor(0,0,255,255).rgba()] )
+#                layer.name = "Labels"
+#                layerstack.append(layer)
 
             if "label" in argv or "l" in argv:
                 self.editor = VolumeEditor(shape, layerstack, labelsink=labelsrc)
