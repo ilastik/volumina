@@ -80,7 +80,7 @@ class ImageSceneRenderThread(QThread):
 
         firstOpaqueLayer = 1000000000000000000
         for i, (visible, layerOpacity, layerImageSource) in enumerate(self._stackedIms):
-            if visible and layerOpacity == 1.0 and not isinstance(layerImageSource, (AlphaModulatedImageSource, ColortableImageSource)): 
+            if visible and layerOpacity == 1.0 and layerImageSource.isOpaque():
                 firstOpaqueLayer = i
                 break
 
