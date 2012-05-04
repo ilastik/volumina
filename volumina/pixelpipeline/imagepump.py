@@ -43,10 +43,14 @@ class StackedImageSources( QObject ):
         return (layer.visible, layer.opacity, self._layerToIms[layer])
 
     def __iter__( self ):
-        return ( (layer.visible, layer.opacity, self._layerToIms[layer]) for layer in self._layerStackModel )
+        return ( (layer.visible, layer.opacity, self._layerToIms[layer])
+                 for layer in self._layerStackModel
+                 if layer in self._layerToIms.keys() )
                 
     def __reversed__( self ):
-        return ( (layer.visible, layer.opacity, self._layerToIms[layer]) for layer in reversed(self._layerStackModel) )
+        return ( (layer.visible, layer.opacity, self._layerToIms[layer])
+                 for layer in reversed(self._layerStackModel)
+                 if layer in self._layerToIms.keys() )
 
     def getImageSource( self, index ):
         return self._layerToIms[self._layerStackModel[index]]
@@ -91,9 +95,15 @@ class StackedImageSources( QObject ):
 
     def _updateLastVisibleLayer(self):
         for i, layer in enumerate(self._layerStackModel):
-          if layer.visible and layer.opacity == 1.0 and not isinstance(self._layerToIms[layer], (AlphaModulatedImageSource, ColortableImageSource)): 
-            self._lastVisibleLayer = i
-            break          
+          try:
+              if  layer in self._layerToIms.keys() \
+              and layer.visible \
+              and layer.opacity == 1.0 \
+              and not isinstance(self._layerToIms[layer], (AlphaModulatedImageSource, ColortableImageSource)): 
+                self._lastVisibleLayer = i
+                break
+          except:
+              print "Breakpoint here..."
 
     def _onOpacityChanged( self, layer, opacity ):
         self._updateLastVisibleLayer()
