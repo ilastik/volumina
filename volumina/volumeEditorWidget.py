@@ -59,7 +59,13 @@ class VolumeEditorWidget(QWidget):
         self.toggleSelectedHUD.toggled.connect(self._toggleSelectedHud)
 
 
-    def _onShapeChanged(self):
+
+    def _setupVolumeExtent( self ):
+        '''Setup min/max values of position/coordinate control elements.
+
+        Position/coordinate information is read from the volumeEditor's positionModel.
+
+        '''
         self.quadview.statusBar.channelSpinBox.setRange(0,self.editor.posModel.shape5D[-1] - 1)
         self.quadview.statusBar.timeSpinBox.setRange(0,self.editor.posModel.shape5D[0] - 1)
         
@@ -123,8 +129,11 @@ class VolumeEditorWidget(QWidget):
         # shortcuts
         self._initShortcuts()
 
-        self.editor.shapeChanged.connect(self._onShapeChanged)
+        def onShapeChanged(self):
+            self._setupVolumeExtent()
+        self.editor.shapeChanged.connect(onShapeChanged)
         
+        self._setupVolumeExtent()
         self.updateGeometry()
         self.update()
         self.quadview.update()
