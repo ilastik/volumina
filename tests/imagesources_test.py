@@ -95,6 +95,13 @@ class RGBAImageSourceTest( ut.TestCase ):
         img = self.ims_none.request(QRect(0,0,129,104)).wait()
         #img.save('none.tif')
 
+    def testOpaqueness( self ):
+        ims_opaque = RGBAImageSource( self.red, self.green, self.blue, ConstantSource(), RGBALayer(self.red, self.green, self.blue, alpha_missing_value = 255), guarantees_opaqueness = True )
+        self.assertTrue( ims_opaque.isOpaque() )
+        ims_notopaque = RGBAImageSource( self.red, self.green, self.blue, ConstantSource(), RGBALayer(self.red, self.green, self.blue, alpha_missing_value = 100) )
+        self.assertFalse( ims_notopaque.isOpaque() )
+        
+
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
 #*******************************************************************************

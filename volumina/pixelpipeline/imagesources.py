@@ -28,6 +28,10 @@ class ImageSource( QObject ):
 
     isDirty = pyqtSignal( QRect )
 
+    def __init__( self, guarantees_opaqueness = False, parent = None ):
+        super(ImageSource, self).__init__( parent = parent )
+        self._opaque = guarantees_opaqueness
+
     def request( self, rect ):
         raise NotImplementedError
 
@@ -49,6 +53,20 @@ class ImageSource( QObject ):
             self.isDirty.emit(QRect()) # empty rect == everything is dirty
         else:
             self.isDirty.emit(slicing2rect( slicing ))
+
+    def isOpaque( self ):
+        '''Image is opaque everywhere (i.e. no pixel has an alpha value != 255).
+
+        If the ImageSource can give an opaqueness guarantee,
+        performance can be improved since layers occluded by this
+        source don't have to be rendered in some cases.
+
+        Warning: Can cause rendering bugs: In doubt return False.
+
+        '''
+        return self._opaque
+
+        
 assert issubclass(ImageSource, SourceABC)
 
 #*******************************************************************************
@@ -58,7 +76,7 @@ assert issubclass(ImageSource, SourceABC)
 class GrayscaleImageSource( ImageSource ):
     def __init__( self, arraySource2D, layer ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(GrayscaleImageSource, self).__init__()
+        super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True )
         self._arraySource2D = arraySource2D
         
         self._layer = layer
@@ -275,7 +293,7 @@ assert issubclass(ColortableImageRequest, RequestABC)
 #*******************************************************************************
 
 class RGBAImageSource( ImageSource ):
-    def __init__( self, red, green, blue, alpha, layer ):
+    def __init__( self, red, green, blue, alpha, layer, guarantees_opaqueness = False ):
         '''
         If you don't want to set all the channels,
         a ConstantSource may be used as a replacement for
@@ -289,7 +307,7 @@ class RGBAImageSource( ImageSource ):
         for channel in channels: 
                 assert isinstance(channel, SourceABC) , 'channel has wrong type: %s' % str(type(channel))
 
-        super(RGBAImageSource, self).__init__()
+        super(RGBAImageSource, self).__init__( guarantees_opaqueness = guarantees_opaqueness )
         self._channels = channels
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)
