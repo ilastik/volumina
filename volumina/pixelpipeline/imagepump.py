@@ -95,15 +95,12 @@ class StackedImageSources( QObject ):
 
     def _updateLastVisibleLayer(self):
         for i, layer in enumerate(self._layerStackModel):
-          try:
-              if  layer in self._layerToIms.keys() \
-              and layer.visible \
-              and layer.opacity == 1.0 \
-              and not isinstance(self._layerToIms[layer], (AlphaModulatedImageSource, ColortableImageSource)): 
-                self._lastVisibleLayer = i
-                break
-          except:
-              print "Breakpoint here..."
+          if  layer in self._layerToIms.keys() \
+          and layer.visible \
+          and layer.opacity == 1.0 \
+          and not isinstance(self._layerToIms[layer], (AlphaModulatedImageSource, ColortableImageSource)): 
+            self._lastVisibleLayer = i
+            break
 
     def _onOpacityChanged( self, layer, opacity ):
         self._updateLastVisibleLayer()
