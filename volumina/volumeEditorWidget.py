@@ -129,11 +129,11 @@ class VolumeEditorWidget(QWidget):
         # shortcuts
         self._initShortcuts()
 
-        def onShapeChanged(self):
+        def onShapeChanged():
             self._setupVolumeExtent()
+
         self.editor.shapeChanged.connect(onShapeChanged)
         
-        self._setupVolumeExtent()
         self.updateGeometry()
         self.update()
         self.quadview.update()
