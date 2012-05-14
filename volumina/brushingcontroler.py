@@ -156,6 +156,9 @@ class BrushingControler(QObject):
         self._isDrawing = False
         self._brushingModel.endDrawing(pos)
         
+    def setDataSink(self, dataSink):
+        self._dataSink = dataSink
+        
     def _writeIntoSink(self, brushStrokeOffset, labels):
         activeView = self._positionModel.activeView
         slicingPos = self._positionModel.slicingPos

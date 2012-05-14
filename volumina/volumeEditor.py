@@ -160,6 +160,9 @@ class VolumeEditor( QObject ):
         assert(False)
         self.posModel.channel = self.posModel.channel-1
 
+    def setLabelSink(self, labelsink):
+        self.brushingControler.setDataSink(labelsink)
+
     ##
     ## private
     ##
