@@ -1,6 +1,8 @@
+Volumina - Volume Slicing and Editing Library
+=============================================
+
 [![Build Status](https://secure.travis-ci.org/Ilastik/volumina.png)](http://travis-ci.org/Ilastik/volumina)
 
-**Volumina - Volume Slicer and Editor Library**
 
 Developing with Volumina
 ========================
@@ -28,6 +30,7 @@ link them into the virtual environment:
 
      $ cd voluminave/lib/python2.7/site-packages/ 
      $ ln -s /usr/lib/python2.7/dist-packages/PyQt4/
+     $ ln -s /usr/lib/python2.7/dist-packages/sip.so
      $ ln -s /usr/lib/python2.7/dist-packages/sipdistutils.py
      $ ln -s /usr/lib/python2.7/dist-packages/sipconfig.py
      $ ln -s /usr/lib/python2.7/dist-packages/sipconfig_nd.py

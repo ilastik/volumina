@@ -22,7 +22,6 @@ import sys
 import numpy
 import colorsys
 import random
-import vigra
 
 _has_lazyflow = True
 try:
@@ -415,6 +414,7 @@ class Viewer(QMainWindow):
 if __name__ == '__main__':
     from scipy.misc import lena
     from volumina import _testing
+    import vigra
 
     lenaFile = os.path.split(volumina._testing.__file__)[0]+"/lena.png"
 

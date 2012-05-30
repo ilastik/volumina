@@ -8,7 +8,15 @@ import os
 import os.path as path
 import numpy as np
 from volumina.slicingtools import sl, slicing2shape
-import vigra,numpy
+import numpy
+
+_has_vigra = True
+try:
+    import vigra
+except ImportError:
+    _has_vigra = False
+
+
 ###
 ### lazyflow input
 ###
@@ -19,7 +27,7 @@ try:
 except ImportError:
     _has_lazyflow = False
 
-if _has_lazyflow:
+if _has_lazyflow and _has_vigra:
 
         class Op5ifyer(Operator):
             name = "Op5ifyer"
