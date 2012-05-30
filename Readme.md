@@ -1,4 +1,4 @@
-Volumina - Volume Slicing and Editing Library
+**Volumina** - Volume Slicing and Editing Library
 =============================================
 
 [![Build Status](https://secure.travis-ci.org/Ilastik/volumina.png)](http://travis-ci.org/Ilastik/volumina)
