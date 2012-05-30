@@ -1,6 +1,6 @@
 [![Build Status](https://secure.travis-ci.org/Ilastik/volumina.png)](http://travis-ci.org/Ilastik/volumina)
 
-volumeeditor - Volume Slicer and Editor
+**Volumina - Volume Slicer and Editor Library**
 
 Developing with Volumina
 ========================
@@ -11,8 +11,11 @@ Virtual Python Environment
 --------------------------
 
 Make a new virtualenv for volumina
+
     $ virtualenv voluminave/
+
 and activate it
+
     $ source voluminave/bin/activate
 
 
