@@ -53,6 +53,9 @@ class ArraySource( QObject ):
             raise Exception('dirty region: slicing is not pure')
         self.isDirty.emit( slicing )
 
+    def getShape(self):
+        return self._array.shape
+
 assert issubclass(ArraySource, SourceABC)
 
 #*******************************************************************************
@@ -107,6 +110,9 @@ class RelabelingArraySource( QObject ):
         if not is_pure_slicing(slicing):
             raise Exception('dirty region: slicing is not pure')
         self.isDirty.emit( slicing )
+
+    def getShape(self):
+        return self._array.shape
         
 #*******************************************************************************
 # L a z y f l o w R e q u e s t                                                *
@@ -155,8 +161,8 @@ class LazyflowSource( QObject ):
             volumina.printLock.release()
         if not is_pure_slicing(slicing):
             raise Exception('LazyflowSource: slicing is not pure')
-        if self._outslot.shape is not None:
-            assert len(self._outslot.shape) == len(slicing), "shape mismatch: outslot of '%s' has shape = %r <--> slicing = %r" % (self._outslot.operator.name, self._outslot.shape, slicing)
+        if self._outslot.meta.shape is not None:
+            assert len(self._outslot.meta.shape) == len(slicing), "shape mismatch: outslot of '%s' has shape = %r <--> slicing = %r" % (self._outslot.operator.name, self._outslot.meta.shape, slicing)
             reqobj = self._outslot[slicing].allocate(priority = self._priority)        
         else:
             reqobj = ArrayRequest( np.zeros(slicing2shape(slicing), dtype=np.uint8 ) )
@@ -169,6 +175,9 @@ class LazyflowSource( QObject ):
         if not is_pure_slicing(slicing):
             raise Exception('dirty region: slicing is not pure')
         self.isDirty.emit( slicing )
+
+    def getShape(self):
+        return self._outslot.meta.shape
         
 assert issubclass(LazyflowSource, SourceABC)
 
@@ -246,6 +255,10 @@ class ConstantSource( QObject ):
         if not is_pure_slicing(slicing):
             raise Exception('dirty region: slicing is not pure')
         self.isDirty.emit( slicing )
+
+    def getShape(self):
+        return ()
+        
 assert issubclass(ConstantSource, SourceABC)
 
 
@@ -327,7 +340,7 @@ if has_lazyflow:
 
             g = Graph()
             op = OpDataProvider(g, self.raw)
-            self.source = LazyflowSource(op, "Data")
+            self.source = LazyflowSource(op.Data, "Data")
 
 if __name__ == '__main__':
     ut.main()

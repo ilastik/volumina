@@ -91,7 +91,7 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
     def onExport():
         
         if _has_lazyflow:
-            shape = layer.datasources[0]._array.shape
+            shape = layer.datasources[0].getShape()
             start = [0 for x in shape]
             stop = [x for x in shape]
             sl = roiToSlice(start,stop)
