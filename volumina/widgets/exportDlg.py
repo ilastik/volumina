@@ -10,7 +10,7 @@ import os
 _has_lazyflow = True
 try:
     from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
-    from lazyflow.roi import NotSoTinyVector
+    from lazyflow.roi import TinyVector
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -210,8 +210,10 @@ class ExportDialog(QDialog):
             r.indexIn(self.lineEditOutputShapeList[i].displayText())
             #TODO: FIX THIS, its hacky
             if r.cap(1) != '' and r.cap(3) != '':
-                start.append(int(r.cap(1)))
-                stop.append(int(r.cap(3)))
+                c1 = int(r.cap(1))
+                c3 = int(r.cap(3)) + 1 # GUI input is [start, stop] but keys are [start, stop), so add 1
+                start.append(c1)
+                stop.append(c3)
         if _has_lazyflow:
                 return [TinyVector(start), TinyVector(stop)]
         return []
