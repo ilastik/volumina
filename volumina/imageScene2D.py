@@ -143,6 +143,7 @@ class ImageScene2D(QGraphicsScene):
         where the origin of the coordinate system is in the upper left corner
         of the screen and 'x' points right and 'y' points down
         """   
+        self._cancelAll()
             
         assert len(sceneShape) == 2
         self.setSceneRect(0,0, *sceneShape)
@@ -192,6 +193,8 @@ class ImageScene2D(QGraphicsScene):
         self._numLayers = 0 #current number of 'layers'
         self._showDebugPatches = False
         self._renderThread = None
+        self._requestsNew = None
+        self._requestsOld = None
     
         self.data2scene = QTransform(0,1,1,0,0,0) 
         self.scene2data = self.data2scene.transposed()
@@ -294,12 +297,14 @@ class ImageScene2D(QGraphicsScene):
                 r.cancel()
 
     def _cancelAll(self):
-        for r in self._requestsNew.flat:
-            if r is not None:
-                r.cancel()
-        for r in self._requestsOld.flat:
-            if r is not None:
-                r.cancel()
+        if self._requestsNew is not None:
+            for r in self._requestsNew.flat:
+                if r is not None:
+                    r.cancel()
+        if self._requestsOld is not None:
+            for r in self._requestsOld.flat:
+                if r is not None:
+                    r.cancel()
 
     def _onStackChanged(self):
         self._initializePatches()
