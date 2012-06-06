@@ -187,7 +187,6 @@ class LazyflowSinkSource( LazyflowSource ):
         self._outputSlot = outslot
         self._inputSlot = inslot
         self._priority = priority
-        self._outputSlot.registerDirtyCallback(self.setDirty)
 
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
