@@ -144,26 +144,29 @@ class ImagePump( object ):
         ## handle layers removed from layerStackModel
         def onRowsAboutToBeRemoved( parent, start, end):
             newSize = len(self._layerStackModel)-(end-start+1)
+            self._stackedImageSources.aboutToResize.emit(newSize)
             for i in xrange(start, end + 1):
                 layer = self._layerStackModel[i]
                 self._stackedImageSources.deregister(layer)
                 self._removeLayer( layer )
-            self._stackedImageSources.aboutToResize.emit(newSize)
         layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
 
         def onRowsRemoved(parent,start,end):
-            newSize = len(self._layerStackModel)-(end-start+1)
+            newSize = len(self._layerStackModel)
             self._stackedImageSources.resizeFinished.emit(newSize)
-            return
-            for i in xrange(start, end + 1):
-                layer = self._layerStackModel[i]
-                self._removeLayer( layer )
         layerStackModel.rowsRemoved.connect(onRowsRemoved)
         
         def onRowsAboutToBeInserted(parent, start, end):
+            # This function just forwards the signal to the image sources.
+            # Layers are actually added in obDataChanged(), below
             newSize = len(self._layerStackModel)+(end-start+1)
             self._stackedImageSources.aboutToResize.emit(newSize)
         layerStackModel.rowsAboutToBeInserted.connect(onRowsAboutToBeInserted)
+
+        def onRowsInserted(parent, start, end):
+            newSize = len(self._layerStackModel)
+            self._stackedImageSources.resizeFinished.emit(newSize)
+        layerStackModel.rowsInserted.connect(onRowsInserted)
 
         ## handle new layers in layerStackModel
         def onDataChanged( startIndexItem, endIndexItem):
@@ -177,7 +180,6 @@ class ImagePump( object ):
                 if not self._stackedImageSources.isRegistered(layer): 
                     self._addLayer(layer)
         layerStackModel.dataChanged.connect(onDataChanged)
-
 
     def _createSources( self, layer ):
         def sliceSrcOrNone( datasrc ):
