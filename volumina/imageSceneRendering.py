@@ -33,7 +33,7 @@ class ImageSceneRenderThread(QThread):
         self._stopped = False
 
         self._stackedIms = stackedImageSources
-
+        
     def stop(self):
         self._stopped = True
         self._dataPending.set()
@@ -66,14 +66,16 @@ class ImageSceneRenderThread(QThread):
         while len(self._queue) > 0:
             self._dataPending.clear()
 
-            layerNr, patchNr, image = self._queue.popleft()
+            layerNr, patchNr, image, tiling, numLayers = self._queue.popleft()
+            if tiling != self._tiling or numLayers != self._numLayers:
+                continue            
             if (layerNr, patchNr) in processed:
                 continue
             processed.add((layerNr, patchNr))
 
             rect = self._tiling._imageRect[patchNr]
             bbox = bbox.united(rect)
-            
+
             self._imageLayersNext[layerNr,patchNr] = image
             toUpdate[patchNr] = 1
 
@@ -109,7 +111,7 @@ class ImageSceneRenderThread(QThread):
         self._compositeNext[:] = None
 
         self.patchAvailable.emit(bbox)
-    
+
     def run(self):
         while not self._stopped:
             self._runImpl()

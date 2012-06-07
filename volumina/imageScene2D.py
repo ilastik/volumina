@@ -42,6 +42,8 @@ from imageSceneRendering import ImageSceneRenderThread
 from volumina.tiling import *
 import math
 
+import threading
+
 #*******************************************************************************
 # I m a g e S c e n e 2 D                                                      *
 #*******************************************************************************
@@ -108,16 +110,15 @@ class ImageScene2D(QGraphicsScene):
         self._numLayers = len(s)
 
     def _onResizeFinished(self, newSize):
-        if self._renderThread:
-          self._renderThread.start(self._tiling)
-
+          if self._renderThread:
+              self._renderThread.start(self._tiling)
 
     def _onAboutToResize(self, newSize):
         if self._renderThread:
-          self._renderThread.stop()
+          self._numLayers = newSize
+          self.reshapeRequests()
           assert not self._renderThread.isRunning()
 
-        self._numLayers = newSize
         #render thread will be re-started when the stack has actually changed
         #to the new size, which will be when stackChanged is emitted
 
@@ -165,6 +166,8 @@ class ImageScene2D(QGraphicsScene):
 
         if self._renderThread is None:
             self._renderThread = ImageSceneRenderThread(self.stackedImageSources, parent=self)
+        else:
+            self._renderThread.stop()
 
         self._tiling = Tiling(sliceShape, self.data2scene)
 
@@ -210,14 +213,15 @@ class ImageScene2D(QGraphicsScene):
         if not self._renderThread:
           return
 
-        if not self._renderThread.isRunning():
-          self._brushingLayer  = TiledImageLayer(self._tiling)
+        self.reshapeRequests()
+        self._brushingLayer  = TiledImageLayer(self._tiling)
+        self._renderThread.start(self._tiling)
 
-          shape = (self._numLayers, len(self._tiling))
-          self._requestsOld       = numpy.ndarray(shape, dtype = object)
-          self._requestsNew       = numpy.ndarray(shape, dtype = object)
-
-          self._renderThread.start(self._tiling)
+    def reshapeRequests(self):
+        self._renderThread.stop()
+        shape = (self._numLayers, len(self._tiling))
+        self._requestsOld       = numpy.ndarray(shape, dtype = object)
+        self._requestsNew       = numpy.ndarray(shape, dtype = object)
   
     def _numRequestsUnfinished(self, patchNr):
         return len(numpy.where(self._requestsOld[:,patchNr])[0])/float(self._numLayers)
@@ -239,27 +243,33 @@ class ImageScene2D(QGraphicsScene):
         p.unlock()
         self.scheduleRedraw(self._tiling._imageRectF[tileId])
 
-    def _onPatchFinished(self, image, request, patchNr, layerNr):
-        r = self._requestsOld[layerNr, patchNr]
+    def _onPatchFinished(self, image, request, patchNr, layerNr, tiling, numLayers):
+        reqs_old = self._requestsOld
+        reqs_new = self._requestsNew
+        if layerNr >= reqs_old.shape[0] or tiling != self._tiling:
+            return       
+        r = reqs_old[layerNr, patchNr]
         if r == request:
-            self._requestsOld[layerNr, patchNr] = self._requestsNew[layerNr, patchNr]
-            self._requestsNew[layerNr, patchNr] = None
-        elif request == self._requestsNew[layerNr, patchNr]:
-            self._requestsOld[layerNr, patchNr] = self._requestsNew[layerNr, patchNr] = None
+            reqs_old[layerNr, patchNr] = reqs_new[layerNr, patchNr]
+            reqs_new[layerNr, patchNr] = None
+        elif request == reqs_new[layerNr, patchNr]:
+            reqs_old[layerNr, patchNr] = reqs_new[layerNr, patchNr] = None
         else:
             return
 
-        self._renderThread._queue.appendleft((layerNr, patchNr, image))
+        self._renderThread._queue.appendleft((layerNr, patchNr, image, tiling, numLayers))
         self._renderThread._dataPending.set()
 
-    def _requestPatch(self, layerNr, patchNr):
+    def _requestPatch(self, layerNr, patchNr, tiling):
         if not self._renderThread.isRunning():
             return
         
         lastVisibleLayer = self._stackedImageSources._lastVisibleLayer
         
+        numLayers = len(self._stackedImageSources)
+        
         if layerNr <= lastVisibleLayer and self._stackedImageSources._layerStackModel[layerNr].visible:
-          request = self._stackedImageSources.getImageSource(layerNr).request(self._tiling._imageRect[patchNr])
+          request = self._stackedImageSources.getImageSource(layerNr).request(tiling._imageRect[patchNr])
           r = self._requestsNew[layerNr, patchNr]
 
           if r is not None:
@@ -268,14 +278,13 @@ class ImageScene2D(QGraphicsScene):
           else:
               self._requestsOld[layerNr, patchNr] = request
 
-          request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr)
+          request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr, tiling=tiling, numLayers=numLayers)
 
     def _onLayerDirty(self, layerNr, rect):
         viewportRect = self.views()[0].mapToScene(self.views()[0].rect()).boundingRect()
         viewportRect = QRect(math.floor(viewportRect.x()), math.floor(viewportRect.y()), math.ceil(viewportRect.width()), math.ceil(viewportRect.height()))
         if not rect.isValid():
             rect = viewportRect
-            #self._cancelLayer(layerNr)     
             self._updatableTiles = []
             
             for p in self._brushingLayer:
@@ -285,13 +294,12 @@ class ImageScene2D(QGraphicsScene):
                 p.unlock()
         else:
             rect = rect.intersected(viewportRect)
-        for tileId in self._tiling.intersected(rect):
-            self._requestPatch(layerNr, tileId)
+        
+        tiling = self._tiling
+        for tileId in tiling.intersected(rect):
+            self._requestPatch(layerNr, tileId, tiling)
            
     def _cancelLayer(self,layer):
-        # for r in self._requestsNew[layer,:].flat:
-        #     if r is not None:
-        #         r.cancel()
         for r in self._requestsOld[layer,:].flat:
             if r is not None:
                 r.cancel()
@@ -326,10 +334,11 @@ class ImageScene2D(QGraphicsScene):
                 p.image.fill(0)
                 p.imgVer = p.dataVer
                 p.unlock()
-            
-        for tileId in self._tiling.intersected(rect):
+        
+        tiling = self._tiling
+        for tileId in tiling.intersected(rect):
             for l in range(self._numLayers):
-                self._requestPatch(l, tileId)
+                self._requestPatch(l, tileId, tiling)
 
                 
     def drawForeground(self, painter, rect):
