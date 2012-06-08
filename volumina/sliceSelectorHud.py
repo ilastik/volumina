@@ -31,7 +31,7 @@ from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
 
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QPolygonF, QSpinBox, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QPalette
+                        QCheckBox, QWidget, QPalette, QFrame
 import sys, random
 import numpy, qimage2ndarray
 
@@ -249,7 +249,6 @@ class SpinBoxImageView(QHBoxLayout):
     def on_downLabel(self):
         self.spinBox.setValue(self.spinBox.value() - 1)
         
-            
 class ImageView2DHud(QWidget):
     dockButtonClicked = pyqtSignal()
     maximizeButtonClicked = pyqtSignal()
@@ -269,22 +268,42 @@ class ImageView2DHud(QWidget):
         self.labelsheight = 20 
         
         self.layout.addSpacing(4)
-        self.createAxisLabel()
-        self.layout.addSpacing(1)
-        
+
+        self.axisLabel = self.createAxisLabel()
         self.sliceSelector = SpinBoxImageView(backgroundColor, foregroundColor, value, self.labelsheight, 12)
-        self.layout.addLayout(self.sliceSelector)
+
+        # Add left-hand items into a sub-layout so we can draw a frame around them
+        leftHudLayout = QHBoxLayout()
+        leftHudLayout.setContentsMargins(0,0,0,0)
+        leftHudLayout.setSpacing(0)
+        leftHudLayout.addWidget( self.axisLabel )
+        leftHudLayout.addSpacing(1)
+        leftHudLayout.addLayout(self.sliceSelector)
+
+        def setupFrameStyle( frame ):
+            # Use this function to add a consistent frame style to all HUD elements
+            frame.setFrameShape( QFrame.Box )
+            frame.setFrameShadow( QFrame.Raised )
+            frame.setLineWidth( 2 )
+        
+        leftHudFrame = QFrame()
+        leftHudFrame.setLayout( leftHudLayout )
+        setupFrameStyle( leftHudFrame )
+        
+        self.layout.addWidget( leftHudFrame )
         self.layout.addStretch()
         
         self.dockButton = LabelButtons(backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
         self.dockButton.clicked.connect(self.on_dockButton)
         self.dockButton.setUndockIcon()
+        setupFrameStyle( self.dockButton )
         self.layout.addWidget(self.dockButton)
         self.layout.addSpacing(4)
         
         self.maxButton = LabelButtons(backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
         self.maxButton.clicked.connect(self.on_maxButton)
         self.maxButton.setMaximizeIcon()
+        setupFrameStyle( self.maxButton )
         self.layout.addWidget(self.maxButton)
         self.layout.addSpacing(4)
     
@@ -298,11 +317,11 @@ class ImageView2DHud(QWidget):
         self.maximizeButtonClicked.emit()
         
     def createAxisLabel(self):
-        self.axisLabel = QLabel()
-        self.axisLabel.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        axisLabel = QLabel()
+        axisLabel.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         pixmap = self.createAxisLabelPixmap()
-        self.axisLabel.setPixmap(pixmap)  
-        self.layout.addWidget(self.axisLabel)
+        axisLabel.setPixmap(pixmap)
+        return axisLabel
     
     def createAxisLabelPixmap(self, opacity=0.6):
         pixmap = QPixmap(250, 250)
