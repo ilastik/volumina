@@ -181,8 +181,8 @@ class ImageScene2D(QGraphicsScene):
     def scheduleRedraw(self, rect):
         self.invalidate(QRectF(rect), QGraphicsScene.BackgroundLayer)
 
-    def __init__( self ):
-        QGraphicsScene.__init__(self)
+    def __init__( self, parent=None ):
+        QGraphicsScene.__init__( self, parent=parent )
         self._updatableTiles = []
 
         # tiled rendering of patches
@@ -195,7 +195,6 @@ class ImageScene2D(QGraphicsScene):
         self._stackedImageSources = None
         self._numLayers = 0 #current number of 'layers'
         self._showDebugPatches = False
-        self._renderThread = None
         self._requestsNew = None
         self._requestsOld = None
     
