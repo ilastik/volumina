@@ -60,6 +60,8 @@ class ImageView2D(QGraphicsView):
         QGraphicsView.__init__(self)
         self.setScene(imagescene2d)
         
+        self.mousePos = QPointF(0,0)
+        
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
