@@ -203,11 +203,13 @@ class ImageScene2D(QGraphicsScene):
         
         self._slicingPositionSettled = True
     
-        def cleanup():
-            if self._renderThread:
-                self._renderThread.stop()
-        self.destroyed.connect(cleanup)
+        self.destroyed.connect(self.__cleanup)
     
+    def __cleanup( self ):
+        if self._renderThread:
+            self._renderThread.stop()
+        
+
     def _initializePatches(self):
         if not self._renderThread:
           return
