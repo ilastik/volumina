@@ -94,6 +94,10 @@ class StackedImageSources( QObject ):
             self.layerDirty.emit(self._layerStackModel.layerIndex(layer), rect)
 
     def _updateLastVisibleLayer(self):
+        # By default, assume all layers are visible
+        self._lastVisibleLayer = len(self._layerStackModel) - 1
+
+        # Search for the first totally opaque layer (if any)
         for i, layer in enumerate(self._layerStackModel):
           if  layer in self._layerToIms.keys() \
           and layer.visible \
