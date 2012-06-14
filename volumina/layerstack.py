@@ -90,14 +90,15 @@ class LayerStackModel(QAbstractListModel):
         if parent.isValid():
             return False
         oldRowCount = self.rowCount()
+        #for some reason, row can be negative!
         beginRow = max(0,row)
-        endRow   = min(row+count-1, len(self._layerStack))
+        endRow   = min(beginRow+count-1, len(self._layerStack))
         self.beginInsertRows(parent, beginRow, endRow) 
         while(beginRow <= endRow):
             self._layerStack.insert(row, Layer())
             beginRow += 1
         self.endInsertRows()
-        assert self.rowCount() == oldRowCount+1
+        assert self.rowCount() == oldRowCount+1, "oldRowCount = %d, self.rowCount() = %d" % (oldRowCount, self.rowCount())
         return True
             
     def removeRows(self, row, count, parent = QModelIndex()):
