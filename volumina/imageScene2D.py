@@ -282,19 +282,20 @@ class ImageScene2D(QGraphicsScene):
           request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr, tiling=tiling, numLayers=numLayers)
 
     def _onLayerDirty(self, layerNr, rect):
-        viewportRect = self.views()[0].mapToScene(self.views()[0].rect()).boundingRect()
-        viewportRect = QRect(math.floor(viewportRect.x()), math.floor(viewportRect.y()), math.ceil(viewportRect.width()), math.ceil(viewportRect.height()))
-        if not rect.isValid():
-            rect = viewportRect
-            self._updatableTiles = []
-            
-            for p in self._brushingLayer:
-                p.lock()
-                p.image.fill(0)
-                p.imgVer = p.dataVer
-                p.unlock()
-        else:
-            rect = rect.intersected(viewportRect)
+        if self.views():
+            viewportRect = self.views()[0].mapToScene(self.views()[0].rect()).boundingRect()
+            viewportRect = QRect(math.floor(viewportRect.x()), math.floor(viewportRect.y()), math.ceil(viewportRect.width()), math.ceil(viewportRect.height()))
+            if not rect.isValid():
+                rect = viewportRect
+                self._updatableTiles = []
+
+                for p in self._brushingLayer:
+                    p.lock()
+                    p.image.fill(0)
+                    p.imgVer = p.dataVer
+                    p.unlock()
+            else:
+                rect = rect.intersected(viewportRect)
         
         tiling = self._tiling
         for tileId in tiling.intersected(rect):
