@@ -261,32 +261,33 @@ class ImageScene2D(QGraphicsScene):
         self._renderThread._queue.appendleft((layerNr, patchNr, image, tiling, numLayers))
         self._renderThread._dataPending.set()
 
-    def _requestPatch(self, layerNr, patchNr, tiling):
+    def _requestPatch(self, layerNr, patchNr, tiling, up_to_last_visible=True):
         if not self._renderThread.isRunning():
             return
-        
-        lastVisibleLayer = self._stackedImageSources._lastVisibleLayer
+        lastVisibleLayer = self._stackedImageSources.lastVisibleLayer()
         
         numLayers = len(self._stackedImageSources)
         
-        if layerNr <= lastVisibleLayer:
-          request = self._stackedImageSources.getImageSource(layerNr).request(tiling._imageRect[patchNr])
-          r = self._requestsNew[layerNr, patchNr]
-
-          if r is not None:
-              r.cancel()
-              self._requestsNew[layerNr, patchNr] = request
-          else:
-              self._requestsOld[layerNr, patchNr] = request
-
-          request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr, tiling=tiling, numLayers=numLayers)
+        request = self._stackedImageSources.getImageSource(layerNr).request(tiling._imageRect[patchNr])
+        r = self._requestsNew[layerNr, patchNr]
+        
+        if r is not None:
+            r.cancel()
+            self._requestsNew[layerNr, patchNr] = request
+        else:
+            self._requestsOld[layerNr, patchNr] = request
+        request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr, tiling=tiling, numLayers=numLayers)
 
     def _onLayerDirty(self, layerNr, rect):
+        if layerNr <= self._stackedImageSources.lastVisibleLayer():
+            self._updateLayer(layerNr, rect)
+
+    def _updateLayer(self, layerNr, dirty_rect):
         if self.views():
             viewportRect = self.views()[0].mapToScene(self.views()[0].rect()).boundingRect()
             viewportRect = QRect(math.floor(viewportRect.x()), math.floor(viewportRect.y()), math.ceil(viewportRect.width()), math.ceil(viewportRect.height()))
-            if not rect.isValid():
-                rect = viewportRect
+            if not dirty_rect.isValid():
+                dirty_rect = viewportRect
                 self._updatableTiles = []
 
                 for p in self._brushingLayer:
@@ -295,12 +296,12 @@ class ImageScene2D(QGraphicsScene):
                     p.imgVer = p.dataVer
                     p.unlock()
             else:
-                rect = rect.intersected(viewportRect)
+                dirty_rect = dirty_rect.intersected(viewportRect)
         
         tiling = self._tiling
-        for tileId in tiling.intersected(rect):
+        for tileId in tiling.intersected(dirty_rect):
             self._requestPatch(layerNr, tileId, tiling)
-           
+
     def _cancelLayer(self,layer):
         for r in self._requestsOld[layer,:].flat:
             if r is not None:

@@ -102,7 +102,7 @@ class StackedImageSources( QObject ):
           if  layer in self._layerToIms.keys() \
           and layer.visible \
           and layer.opacity == 1.0 \
-          and not isinstance(self._layerToIms[layer], (AlphaModulatedImageSource, ColortableImageSource)): 
+          and self._layerToIms[layer].isOpaque(): 
             self._lastVisibleLayer = i
             break
 
