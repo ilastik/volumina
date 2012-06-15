@@ -269,7 +269,7 @@ class ImageScene2D(QGraphicsScene):
         
         numLayers = len(self._stackedImageSources)
         
-        if layerNr <= lastVisibleLayer and self._stackedImageSources._layerStackModel[layerNr].visible:
+        if layerNr <= lastVisibleLayer:
           request = self._stackedImageSources.getImageSource(layerNr).request(tiling._imageRect[patchNr])
           r = self._requestsNew[layerNr, patchNr]
 
