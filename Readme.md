@@ -3,6 +3,15 @@
 
 [![Build Status](https://secure.travis-ci.org/Ilastik/volumina.png)](http://travis-ci.org/Ilastik/volumina)
 
+Installing
+==========
+First, test volumina
+
+   $ python setup.py nosetests
+
+and then install it:
+
+    $ python setup.py install
 
 Developing with Volumina
 ========================
