@@ -7,7 +7,7 @@ Installing
 ==========
 First, test volumina
 
-   $ python setup.py nosetests
+    $ python setup.py nosetests
 
 and then install it:
 
