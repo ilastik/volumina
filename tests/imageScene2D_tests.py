@@ -21,7 +21,7 @@ class ImageScene2DTest( ut.TestCase ):
 
 
     def testToggleVisibilityOfOneLayer( self ):
-        layerstack = LayerStackModel(self.app)
+        layerstack = LayerStackModel()
         sims = StackedImageSources( layerstack )
 
         GRAY = 201
