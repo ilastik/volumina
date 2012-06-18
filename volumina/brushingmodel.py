@@ -60,6 +60,7 @@ class BrushingModel(QObject):
         self.brushSize = self.defaultBrushSize
         self.drawColor = self.defaultColor
         self._temp_color = None
+        self._temp_number = None
         self.drawnNumber = self.defaultDrawnNumber
 
         self.pos = None
@@ -82,6 +83,7 @@ class BrushingModel(QObject):
     def setErasing(self):
         self.erasing = True
         self._temp_color = self.drawColor
+        self._temp_number = self.drawnNumber
         self.setBrushColor(self.erasingColor)
         self.brushColorChanged.emit(self.erasingColor)
         self.setDrawnNumber(self.erasingNumber)
@@ -90,7 +92,7 @@ class BrushingModel(QObject):
         self.erasing = False
         self.setBrushColor(self._temp_color)
         self.brushColorChanged.emit(self.drawColor)
-        self.setDrawnNumber(self.drawnNumber)
+        self.setDrawnNumber(self._temp_number)
 
     def setBrushSize(self, size):
         self.brushSize = size
