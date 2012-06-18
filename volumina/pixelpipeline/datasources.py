@@ -5,6 +5,8 @@ from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, in
 from volumina.config import cfg
 import numpy as np
 
+import volumina.adaptors
+
 #*******************************************************************************
 # A r r a y R e q u e s t                                                      *
 #*******************************************************************************
@@ -144,9 +146,15 @@ class LazyflowSource( QObject ):
 
     def __init__( self, outslot, priority = 0 ):
         super(LazyflowSource, self).__init__()
-        self._outslot = outslot
+
+        # Attach an Op5ifyer to ensure the data will display correctly
+        op5 = volumina.adaptors.Op5ifyer( outslot.graph )
+        op5.input.connect( outslot )
+
+        self._outslot = op5.output
         self._priority = priority
         self._outslot.notifyDirty(self._setDirtyLF)
+        
 
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
@@ -174,7 +182,6 @@ assert issubclass(LazyflowSource, SourceABC)
 class LazyflowSinkSource( LazyflowSource ):
     def __init__( self, operator, outslot, inslot, priority = 0 ):
         LazyflowSource.__init__(self, outslot)
-        self._outputSlot = outslot
         self._inputSlot = inslot
         self._priority = priority
 
@@ -185,12 +192,16 @@ class LazyflowSinkSource( LazyflowSource ):
             volumina.printLock.release()
         if not is_pure_slicing(slicing):
             raise Exception('LazyflowSinkSource: slicing is not pure')
-        reqobj = self._outslot[slicing].allocate(priority = self._priority)        
+        reqobj = self._outslot[slicing].allocate(priority = self._priority)
         return LazyflowRequest( reqobj )
 
     def put( self, slicing, array ):
-        self._inputSlot[slicing] = array
-        pure = index2slice(slicing)
+        # Convert the data from volumina ordering to whatever axistags the input slot uses
+        transposeOrder = ['txyzc'.index(k) for k in [tag.key for tag in self._inputSlot.axistags]]
+        transposedArray = np.transpose(array, transposeOrder)        
+        transposedSlicing = [slicing[i] for i in transposeOrder]
+
+        self._inputSlot[transposedSlicing] = transposedArray
         
 #*******************************************************************************
 # C o n s t a n t R e q u e s t                                                *
