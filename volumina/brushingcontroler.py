@@ -1,4 +1,4 @@
-from PyQt4.QtCore import QObject, QEvent, QPointF, Qt, QRectF
+from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QRectF
 from PyQt4.QtGui import QPainter, QPen, QBrush, QApplication, QGraphicsView
 
 from eventswitch import InterpreterABC
@@ -47,6 +47,13 @@ class BrushingInterpreter( QObject ):
         self._temp_erasing = False # indicates, if user pressed shift
                                    # for temporary erasing (in
                                    # contrast to selecting the eraser brush)
+
+        self._lineItems = [] # list of line items that have been
+                            # added to the qgraphicsscene for drawing indication
+
+        # clear the temporary line items once they
+        # have been pushed to the sink
+        self._brushingCtrl.wroteToSink.connect(self.clearLines)
 
     def start( self ):
         if self._current_state == self.FINAL:
@@ -128,14 +135,23 @@ class BrushingInterpreter( QObject ):
         o = imageview.scene().data2scene.map(QPointF(imageview.oldX,imageview.oldY))
         n = imageview.scene().data2scene.map(QPointF(imageview.x,imageview.y))
         pen = QPen( QBrush(self._brushingCtrl._brushingModel.drawColor), self._brushingCtrl._brushingModel.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
-        imageview.scene().drawLine(o, n, pen)
+        line = imageview.scene().addLine(o.x(), o.y(), n.x(), n.y(), pen)
+        self._lineItems.append(line)
         self._brushingCtrl._brushingModel.moveTo(imageview.mousePos)
+
+    def clearLines(self):
+      lines = self._lineItems
+      self._lineItems = []
+      for l in lines:
+        l.hide()
         
 #*******************************************************************************
 # B r u s h i n g C o n t r o l e r                                            *
 #*******************************************************************************
 
 class BrushingControler(QObject):
+    wroteToSink     = pyqtSignal()
+
     def __init__(self, brushingModel, positionModel, dataSink):
         QObject.__init__(self, parent=None)
         self._dataSink = dataSink
@@ -178,3 +194,4 @@ class BrushingControler(QObject):
         #newlabels = numpy.zeros
         
         self._dataSink.put(slicing, labels.reshape(tuple(newshape)))
+        self.wroteToSink.emit()
