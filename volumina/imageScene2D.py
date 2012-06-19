@@ -183,7 +183,6 @@ class ImageScene2D(QGraphicsScene):
 
     def __init__( self, parent=None ):
         QGraphicsScene.__init__( self, parent=parent )
-        self._updatableTiles = []
 
         # tiled rendering of patches
         self._tiling         = None
@@ -264,7 +263,6 @@ class ImageScene2D(QGraphicsScene):
     def _requestPatch(self, layerNr, patchNr, tiling, up_to_last_visible=True):
         if not self._renderThread.isRunning():
             return
-        lastVisibleLayer = self._stackedImageSources.lastVisibleLayer()
         
         numLayers = len(self._stackedImageSources)
         
@@ -288,7 +286,6 @@ class ImageScene2D(QGraphicsScene):
             viewportRect = QRect(math.floor(viewportRect.x()), math.floor(viewportRect.y()), math.ceil(viewportRect.width()), math.ceil(viewportRect.height()))
             if not dirty_rect.isValid():
                 dirty_rect = viewportRect
-                self._updatableTiles = []
 
                 for p in self._brushingLayer:
                     p.lock()
@@ -330,18 +327,9 @@ class ImageScene2D(QGraphicsScene):
             #we cancel all requests
             self._cancelAll()
 
-            self._updatableTiles = []
-            
-            for p in self._brushingLayer:
-                p.lock()
-                p.image.fill(0)
-                p.imgVer = p.dataVer
-                p.unlock()
-        
-        tiling = self._tiling
-        for tileId in tiling.intersected(rect):
-            for l in range(self._numLayers):
-                self._requestPatch(l, tileId, tiling)
+        # Update the visible portion of each layer        
+        for l in range(self._numLayers):
+            self._onLayerDirty(l, rect)
 
                 
     def drawForeground(self, painter, rect):
