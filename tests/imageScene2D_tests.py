@@ -42,16 +42,20 @@ class ImageScene2DTest( ut.TestCase ):
             p.end()
             return byte_view(img)
 
+        import time
+
         aimg = renderScene(scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
 
         layer.visible = False
+        time.sleep(1)
         aimg = renderScene(scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == 255)) # all white
         self.assertTrue(np.all(aimg[:,:,3] == 255))
 
         layer.visible = True
+        time.sleep(1)
         aimg = renderScene(scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
