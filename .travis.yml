@@ -1,10 +1,13 @@
-rvm:
-   - 1.9.3
+language: python
+python:
+   - "2.7"
 before_script: 
-   - sudo apt-get install python-nose python-qt4 python-qt4-dev python-numpy python-scipy python-vigra
-   - sudo pip install -r requirements/travis-buildserver.txt
+   - sudo apt-get install python-qt4 python-qt4-dev
+install:
+   - pip install -r requirements/development-stage1.txt --use-mirrors
+   - pip install -r requirements/development-stage2.txt --use-mirrors
 script:
-   - nosetests .
+   - python setup.py nosetests
 notifications:
   email:
     - bernhard.kausler@iwr.uni-heidelberg.de
