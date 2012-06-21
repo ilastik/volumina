@@ -2,7 +2,12 @@ language: python
 python:
    - "2.7"
 install:
-   - sudo apt-get install python-qt4 python-qt4-dev python-sip python-sip-dev python-numpy
+   - sudo apt-get install python-qt4 python-qt4-dev python-sip python-sip-dev
+   - ln -s /usr/lib/python2.7/dist-packages/PyQt4/ $VIRTUAL_ENV/lib/python2.7/site-packages/
+   - ln -s /usr/lib/python2.7/dist-packages/sip.so $VIRTUAL_ENV/lib/python2.7/site-packages/
+   - ln -s /usr/lib/python2.7/dist-packages/sipdistutils.py $VIRTUAL_ENV/lib/python2.7/site-packages/
+   - ln -s /usr/lib/python2.7/dist-packages/sipconfig.py $VIRTUAL_ENV/lib/python2.7/site-packages/
+   - ln -s /usr/lib/python2.7/dist-packages/sipconfig_nd.py $VIRTUAL_ENV/lib/python2.7/site-packages/
    - pip install -r requirements/development-stage1.txt --use-mirrors
    - pip install -r requirements/development-stage2.txt --use-mirrors
 script:
