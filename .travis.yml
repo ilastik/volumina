@@ -2,7 +2,7 @@ language: python
 python:
    - "2.7"
 before_script: 
-   - sudo apt-get install python-qt4 python-qt4-dev
+   - sudo apt-get install python-qt4 python-qt4-dev python-sip-dev
 install:
    - pip install -r requirements/development-stage1.txt --use-mirrors
    - pip install -r requirements/development-stage2.txt --use-mirrors
