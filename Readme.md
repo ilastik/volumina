@@ -20,7 +20,7 @@ Developing with Volumina
 
 After you entered a virtual environment you can automatically execute all the steps documented below by calling
 
-$ ./install-development-reqs-virtualenv-ubuntu.sh
+    $ ./install-development-reqs-virtualenv-ubuntu.sh
 
 from the "requirements" directory in the volumina repository.
 
