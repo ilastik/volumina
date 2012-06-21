@@ -18,8 +18,14 @@ Developing with Volumina
 
 *In the following we assume an Ubuntu system.*
 
-Virtual Python Environment
---------------------------
+After you entered a virtual environment you can automatically execute all the steps documented below by calling
+
+$ ./install-development-reqs-virtualenv-ubuntu.sh
+
+from the "requirements" directory in the volumina repository.
+
+1. Virtual Python Environment
+-----------------------------
 
 Make a new virtualenv for volumina
 
@@ -30,8 +36,8 @@ and activate it
     $ source voluminave/bin/activate
 
 
-Linking to PyQt and Sip 
------------------------ 
+2. Linking to PyQt and Sip 
+--------------------------
 
 Installing PyQt/Sip via pip is currently (May 2012) broken. Therefore
 install the development versions of Qt4, Sip, and PyQt4 globally and
@@ -45,10 +51,10 @@ link them into the virtual environment:
      $ ln -s /usr/lib/python2.7/dist-packages/sipconfig_nd.py
 
 
-Building the development requirements
--------------------------------------
-Make sure that g++ is installed on your system besides the usual gcc C++/C development toolchain.
-Install the dependencies using pip from the volumina repos root dir:
+3. Building the development requirements
+----------------------------------------
+Make sure that g++ is installed on your system besides the usual gcc C++/C development toolchain. qimage2ndarray depends on numpy without requiring the dependency (as of June 2012). Therefore we need to install our requirements in a two stage procedure:
 
-    $ pip install -r requirements/development.txt
+    $ pip install -r requirements/development-stage1.txt
+    $ pip install -r requirements/development-stage2.txt
 
