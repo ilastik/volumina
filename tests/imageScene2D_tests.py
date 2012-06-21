@@ -17,7 +17,7 @@ import volumina.pixelpipeline.imagesourcefactories as imsfac
 
 class ImageScene2DTest( ut.TestCase ):
     def setUp( self ):
-        self.app = QApplication([])
+        self.app = QApplication([], False)
 
 
     def testToggleVisibilityOfOneLayer( self ):
@@ -51,7 +51,7 @@ class ImageScene2DTest( ut.TestCase ):
         layer.visible = False
         time.sleep(1)
         aimg = renderScene(scene)
-        #self.assertTrue(np.all(aimg[:,:,0:3] == 255)) # all white
+        self.assertTrue(np.all(aimg[:,:,0:3] == 255)) # all white
         self.assertTrue(np.all(aimg[:,:,3] == 255))
 
         layer.visible = True
