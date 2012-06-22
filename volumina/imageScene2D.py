@@ -360,8 +360,9 @@ class ImageScene2D(QGraphicsScene):
         for patchNr in patches:
             img = self._renderThread._compositeCurrent[patchNr]
             if img is None:
-                continue
-            painter.drawImage(self._tiling._imageRect[patchNr], img)
+                self._invalidateRect(rect.toRect())
+            else:
+                painter.drawImage(self._tiling._imageRect[patchNr], img)
 
         #calculate progress information for 'pie' progress indicators on top
         #of each tile
