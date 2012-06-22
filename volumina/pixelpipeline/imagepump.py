@@ -15,7 +15,8 @@ class StackedImageSources( QObject ):
     specification as defined in the Layer object. 
 
     """    
-    layerDirty    = pyqtSignal(int, QRect)
+    layerDirty = pyqtSignal(int, QRect)
+    visibleChanged = pyqtSignal(int, bool)  
     stackChanged  = pyqtSignal()
     aboutToResize = pyqtSignal(int)
     resizeFinished = pyqtSignal(int)
@@ -113,7 +114,7 @@ class StackedImageSources( QObject ):
 
     def _onVisibleChanged( self, layer, visible ):
         self._updateLastVisibleLayer()
-        self.layerDirty.emit(self._layerStackModel.layerIndex(layer), QRect())
+        self.visibleChanged.emit(layer, visible)
 
     def lastVisibleLayer(self):
         return self._lastVisibleLayer
