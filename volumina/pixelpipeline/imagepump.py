@@ -114,7 +114,7 @@ class StackedImageSources( QObject ):
 
     def _onVisibleChanged( self, layer, visible ):
         self._updateLastVisibleLayer()
-        self.visibleChanged.emit(layer, visible)
+        self.visibleChanged.emit(self._layerStackModel.layerIndex(layer), visible)
 
     def lastVisibleLayer(self):
         return self._lastVisibleLayer

@@ -289,7 +289,7 @@ class ImageScene2D(QGraphicsScene):
             else:
                 otherLayers = range(self._stackedImageSources.lastVisibleLayer()+1)
                 otherLayers.remove(layerNr)
-                visibleOtherLayers = [ idx for idx in otherLayers if self._stackedImageSources[layerNr][0] ]
+                visibleOtherLayers = [ idx for idx in otherLayers if self._stackedImageSources[idx][0] ]
                 for l in visibleOtherLayers:
                     self._updateLayer(l, QRect())
 
