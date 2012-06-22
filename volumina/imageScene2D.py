@@ -104,6 +104,7 @@ class ImageScene2D(QGraphicsScene):
     def stackedImageSources(self, s):
         self._stackedImageSources = s
         s.layerDirty.connect(self._onLayerDirty)
+        s.visibleChanged.connect(self._onVisibleChanged)
         s.stackChanged.connect(self._onStackChanged)
         s.aboutToResize.connect(self._onAboutToResize)
         s.resizeFinished.connect(self._onResizeFinished)
@@ -277,8 +278,20 @@ class ImageScene2D(QGraphicsScene):
         request.notify(self._onPatchFinished, request=request, patchNr=patchNr, layerNr=layerNr, tiling=tiling, numLayers=numLayers)
 
     def _onLayerDirty(self, layerNr, rect):
-        if layerNr <= self._stackedImageSources.lastVisibleLayer():
+        layerIsVisible = self._stackedImageSources[layerNr][0]
+        if layerNr <= self._stackedImageSources.lastVisibleLayer() and layerIsVisible:
             self._updateLayer(layerNr, rect)
+
+    def _onVisibleChanged(self, layerNr, visible):
+        if layerNr <= self._stackedImageSources.lastVisibleLayer():
+            if visible:
+                self._updateLayer(layerNr, QRect())
+            else:
+                otherLayers = range(self._stackedImageSources.lastVisibleLayer()+1)
+                otherLayers.remove(layerNr)
+                visibleOtherLayers = [ idx for idx in otherLayers if self._stackedImageSources[layerNr][0] ]
+                for l in visibleOtherLayers:
+                    self._updateLayer(l, QRect())
 
     def _updateLayer(self, layerNr, dirty_rect):
         if self.views():
