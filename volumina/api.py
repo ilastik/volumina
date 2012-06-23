@@ -147,7 +147,7 @@ class Viewer(QMainWindow):
         print "  treating as %s" % viewerType
 
         aType = None
-        if hasattr(a, '_metaParent'):
+        if 'lazyflow' in a.__class__.__module__:
             aType = 'lazyflow'
         elif hasattr(a, 'axistags'):
             aType = 'vigra'
