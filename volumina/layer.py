@@ -15,7 +15,7 @@ class Layer( QObject ):
     visible -- boolean
     opacity -- float; range 0.0 - 1.0
     name -- string
-
+    layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
     '''
 
     '''changed is emitted whenever one of the more specialized
@@ -57,12 +57,25 @@ class Layer( QObject ):
     def datasources( self ):
         return self._datasources
 
+    @property
+    def layerId( self ):
+        # If we have no real id, use the name
+        if self._layerId is None:
+            return self._name
+        else:
+            return self._layerId
+    
+    @layerId.setter
+    def layerId( self, lid ):
+        self._layerId = lid
+
     def __init__( self ):
         super(Layer, self).__init__()
         self._name = "Unnamed Layer"
         self._visible = True
         self._opacity = 1.0
         self._datasources = []
+        self._layerId = None
 
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
