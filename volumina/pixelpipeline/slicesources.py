@@ -50,14 +50,19 @@ assert issubclass(SliceRequest, RequestABC)
 
 class SliceSource( QObject ):
     isDirty = pyqtSignal( object )
+    throughChanged = pyqtSignal( tuple, tuple ) # old, new
+    idChanged = pyqtSignal( tuple, tuple ) # old, new
 
     @property
     def through( self ):
         return self._through
     @through.setter
     def through( self, value ):
-        self._through = value
-        self.setDirty((slice(None), slice(None)))
+        if value != self._through:
+            old = self._through
+            self._through = value
+            self.throughChanged.emit(tuple(old), tuple(value))
+            self.idChanged.emit(tuple(old), tuple(value))
     
     def __init__(self, datasource, sliceProjection = projectionAlongTZC):
         assert isinstance(datasource, SourceABC) , 'wrong type: %s' % str(type(datasource)) 
@@ -68,9 +73,12 @@ class SliceSource( QObject ):
         self._datasource.isDirty.connect(self._onDatasourceDirty)
         self._through = len(sliceProjection.along) * [0]
 
+    def id( self ):
+        return self._through
+
     def setThrough( self, index, value ):
         assert index < len(self.through)
-        through = self.through
+        through = list(self.through)
         through[index] = value
         self.through = through
 
@@ -110,16 +118,20 @@ assert issubclass(SliceSource, SourceABC)
 
 class SyncedSliceSources( QObject ):
     isDirty = pyqtSignal( object )
+    throughChanged = pyqtSignal( tuple, tuple ) # old , new
 
     @property
     def through( self ):
         return self._through
     @through.setter
     def through( self, value ):
-        self._through = value
-        for src in self._srcs:
-            src.through = value
-        self.setDirty((slice(None), slice(None)))
+        if value != self._through:
+            old = self._through
+            self._through = value
+            for src in self._srcs:
+                src.through = value
+            self.throughChanged.emit(tuple(old), tuple(value))
+            #self.setDirty((slice(None), slice(None)))
 
     def __init__(self, through = None, slicesrcs = []):
         super(SyncedSliceSources, self).__init__()
@@ -131,7 +143,7 @@ class SyncedSliceSources( QObject ):
 
     def setThrough( self, index, value ):
         assert index < len(self.through)
-        through = self.through
+        through = list(self.through)
         through[index] = value
         self.through = through
 

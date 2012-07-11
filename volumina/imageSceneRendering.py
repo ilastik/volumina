@@ -48,7 +48,6 @@ class ImageSceneRenderThread(QThread):
         self._numLayers = len(self._stackedIms)
 
         shape = (self._numLayers, len(self._tiling))
-        self._imageLayersCurrent = numpy.ndarray(shape, dtype = object)
         self._imageLayersNext    = numpy.ndarray(shape, dtype = object)
         self._compositeCurrent    = numpy.ndarray((len(self._tiling),), dtype = object)
         self._compositeNext       = numpy.ndarray((len(self._tiling),), dtype = object)

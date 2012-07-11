@@ -16,7 +16,9 @@ class StackedImageSources( QObject ):
 
     """    
     layerDirty = pyqtSignal(int, QRect)
-    visibleChanged = pyqtSignal(int, bool)  
+    visibleChanged = pyqtSignal(int, bool)
+    opacityChanged = pyqtSignal(int, float)
+    syncedIdChanged = pyqtSignal( object, object ) # old id, new id
     stackChanged  = pyqtSignal()
     aboutToResize = pyqtSignal(int)
     resizeFinished = pyqtSignal(int)
@@ -24,9 +26,10 @@ class StackedImageSources( QObject ):
     def __init__( self, layerStackModel ):
         super(StackedImageSources, self).__init__()
         self._layerStackModel = layerStackModel
+
         #we need to store partial functions to which we connect
         #for later disconnection
-        self._curryRegistry = {'I':{}, "O":{}, "V":{}}
+        self._curryRegistry = {'I':{}, "O":{}, "V":{}, "Id":{}}
         #each layer has a single image source, which has been set-up according
         #to the layer's specification
         self._layerToIms = {} #look up layer -> corresponding image source
@@ -35,13 +38,15 @@ class StackedImageSources( QObject ):
         layerStackModel.orderChanged.connect( self.stackChanged )
         self.stackChanged.connect( self._updateLastVisibleLayer)
         self._lastVisibleLayer = 1e10
+        self.syncedId = (0,0,0)
 
     def __len__( self ):
         return self._layerStackModel.rowCount()
 
     def __getitem__(self, i):
         layer = self._layerStackModel[i]
-        return (layer.visible, layer.opacity, self._layerToIms[layer])
+        ims = self._layerToIms[layer]
+        return (layer.visible, layer.opacity, ims)
 
     def __iter__( self ):
         return ( (layer.visible, layer.opacity, self._layerToIms[layer])
@@ -64,10 +69,15 @@ class StackedImageSources( QObject ):
         self._curryRegistry['I'][imageSource] = partial(self._onImageSourceDirty, imageSource)
         self._curryRegistry['O'][layer] = partial(self._onOpacityChanged, layer)
         self._curryRegistry['V'][layer] = partial(self._onVisibleChanged, layer)
+        self._curryRegistry['Id'][imageSource] = partial(self._onImageSourceIdChanged, imageSource)
 
         imageSource.isDirty.connect( self._curryRegistry['I'][imageSource] ) 
         layer.opacityChanged.connect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.connect( self._curryRegistry['V'][layer] )
+        imageSource.idChanged.connect( self._curryRegistry['Id'][imageSource] )
+
+        self.syncedId = imageSource.id
+        
         self.stackChanged.emit()
 
     def deregister( self, layer ):
@@ -76,6 +86,7 @@ class StackedImageSources( QObject ):
         ims.isDirty.disconnect( self._curryRegistry['I'][ims] )
         layer.opacityChanged.disconnect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.disconnect( self._curryRegistry['V'][layer] )
+        ims.idChanged.disconnect( self._curryRegistry['Id'][ims] )
         self._layerToIms.pop(layer)
 
     def remove( self, layer ):
@@ -94,6 +105,13 @@ class StackedImageSources( QObject ):
         if layer.visible:
             self.layerDirty.emit(self._layerStackModel.layerIndex(layer), rect)
 
+    def _onImageSourceIdChanged( self, imageSource, oldId, newId ):
+        if not(newId == self.syncedId):
+            oldId = self.syncedId
+            self.syncedId = newId
+            self.syncedIdChanged.emit(oldId, self.syncedId) 
+        layer = self._imsToLayer[imageSource]
+
     def _updateLastVisibleLayer(self):
         # By default, assume all layers are visible
         self._lastVisibleLayer = len(self._layerStackModel) - 1
@@ -110,7 +128,7 @@ class StackedImageSources( QObject ):
     def _onOpacityChanged( self, layer, opacity ):
         self._updateLastVisibleLayer()
         if layer.visible:
-            self.layerDirty.emit(self._layerStackModel.layerIndex(layer), QRect())
+            self.opacityChanged.emit(self._layerStackModel.layerIndex(layer), opacity)
 
     def _onVisibleChanged( self, layer, visible ):
         self._updateLastVisibleLayer()
@@ -118,6 +136,12 @@ class StackedImageSources( QObject ):
 
     def lastVisibleLayer(self):
         return self._lastVisibleLayer
+
+    def _calcUid( self ):
+        uid = []
+        for v,o,ims in self:
+            uid.append(tuple(ims.id))
+        return tuple(uid)
 
 
 

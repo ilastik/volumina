@@ -24,9 +24,13 @@ class ImageSource( QObject ):
     isDirty -- a rectangular region has changed; transmits
                an empty QRect if the whole image is dirty
 
+    idChanged -- source represents a different image now (oldId, newId);
+                 id is some immutable object
+
     '''
 
     isDirty = pyqtSignal( QRect )
+    idChanged = pyqtSignal( object, object )
 
     def __init__( self, guarantees_opaqueness = False, parent = None ):
         super(ImageSource, self).__init__( parent = parent )
@@ -78,10 +82,12 @@ class GrayscaleImageSource( ImageSource ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
         super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True )
         self._arraySource2D = arraySource2D
-        
+        self.id = arraySource2D.id()
+
         self._layer = layer
         
         self._arraySource2D.isDirty.connect(self.setDirty)
+        self._arraySource2D.idChanged.connect(self._onIdChanged)
         self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
 
     def request( self, qrect ):
@@ -96,6 +102,11 @@ class GrayscaleImageSource( ImageSource ):
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s)
         return GrayscaleImageRequest( req, self._layer.normalize[0] )
+
+    def _onIdChanged( self, oldId, newId ):
+        self.id = newId
+        self.idChanged.emit(oldId, newId)
+        
 assert issubclass(GrayscaleImageSource, SourceABC)
 
 class GrayscaleImageRequest( object ):
