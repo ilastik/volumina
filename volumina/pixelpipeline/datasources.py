@@ -247,11 +247,15 @@ assert issubclass(ConstantRequest, RequestABC)
 
 class ConstantSource( QObject ):
     isDirty = pyqtSignal( object )
+    idChanged = pyqtSignal( object, object ) # old, new
 
     def __init__( self, constant = 0, dtype = np.uint8 ):
         super(ConstantSource, self).__init__()
         self._constant = constant
         self._dtype = dtype
+
+    def id( self ):
+        return id(self)
 
     def request( self, slicing ):
         assert is_pure_slicing(slicing)

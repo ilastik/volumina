@@ -1,6 +1,5 @@
 import unittest as ut
-import sys, os
-sys.path.append("../.")
+import os
 
 from PyQt4.QtGui import QImage, QPainter, QApplication
 from PyQt4.QtCore import QRect

@@ -51,7 +51,7 @@ assert issubclass(SliceRequest, RequestABC)
 class SliceSource( QObject ):
     isDirty = pyqtSignal( object )
     throughChanged = pyqtSignal( tuple, tuple ) # old, new
-    idChanged = pyqtSignal( tuple, tuple ) # old, new
+    idChanged = pyqtSignal( object, object ) # old, new
 
     @property
     def through( self ):

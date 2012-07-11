@@ -14,6 +14,21 @@ class StackedImageSources( QObject ):
     object that can be queried to produce images which adhere to the
     specification as defined in the Layer object. 
 
+    Imagesource indices in the stack correspond to row numbers. So the
+    topmost imagesource has an index 0, the second-to-the-top an index
+    of 1 and so on. This is different from other stacks, where the
+    bottommost item has the lowest index.
+
+    Layers from the underlying layerstack have to be registered
+    explicitly to become active in the StackedImageSources. If
+    registered layers are removed in the underlying layerstack they
+    become inactive, but are still registered internally. You have to
+    call 'deregister' explicitly to remove them from the internal
+    datastructures. The reason for this design is as follows. If
+    layers are moved around in the layerstack, they are removed and
+    readded internally. We can't distinguish between such a remove and
+    a permanent remove.
+
     """    
     layerDirty = pyqtSignal(int, QRect)
     visibleChanged = pyqtSignal(int, bool)
@@ -23,28 +38,65 @@ class StackedImageSources( QObject ):
     aboutToResize = pyqtSignal(int)
     resizeFinished = pyqtSignal(int)
 
+    class _ViewBase( object ):
+        def __init__( self, sims ):
+            self.sims = sims
+
+        def __len__( self ):
+            return len(self.sims)
+
+    class VisibleView( _ViewBase ):
+        def __iter__( self ):
+            return ( layer.visible
+                     for layer in self.sims._layerStackModel
+                     if self.sims.isActive(layer)  )
+
+        def __getitem__( self, row ):
+            return self.sims._getLayer(row).visible
+
+    class OpacityView( _ViewBase ):
+        def __iter__( self ):
+            return ( layer.opacity
+                     for layer in self.sims._layerStackModel
+                     if self.sims.isActive(layer) )
+
+        def __getitem__( self, row ):
+            return self.sims._getLayer(row).opacity
+
+    class ImageSourceView( _ViewBase ):
+        def __iter__( self ):
+            return ( self.sims._layerToIms[layer]
+                     for layer in self.sims._layerStackModel
+                     if self.sims.isActive(layer) )
+
+        def __getitem__( self, row ):
+            return self.sims._layerToIms[self.sims._getLayer(row)]
+
     def __init__( self, layerStackModel ):
         super(StackedImageSources, self).__init__()
         self._layerStackModel = layerStackModel
 
-        #we need to store partial functions to which we connect
-        #for later disconnection
+        # we need to store partial functions to which we connect
+        # for later disconnection
         self._curryRegistry = {'I':{}, "O":{}, "V":{}, "Id":{}}
-        #each layer has a single image source, which has been set-up according
-        #to the layer's specification
+
+        # Each layer has a single image source, which has been set-up according
+        # to the layer's specification.
+        # Note, that we don't maintain our own imagesource stack. We just observe
+        # the layerStackModel and mirror the stack order there
         self._layerToIms = {} #look up layer -> corresponding image source
         self._imsToLayer = {} #look up image source -> corresponding layer
+        self._firstOpaqueIdx = None
         
         layerStackModel.orderChanged.connect( self.stackChanged )
-        self.stackChanged.connect( self._updateLastVisibleLayer)
-        self._lastVisibleLayer = 1e10
+        self.stackChanged.connect( self._updateFirstOpaqueIdx )
         self.syncedId = (0,0,0)
 
     def __len__( self ):
-        return self._layerStackModel.rowCount()
+        return len([ _ for _ in self])
 
-    def __getitem__(self, i):
-        layer = self._layerStackModel[i]
+    def __getitem__(self, row):
+        layer = self._getLayer(row)
         ims = self._layerToIms[layer]
         return (layer.visible, layer.opacity, ims)
 
@@ -56,16 +108,34 @@ class StackedImageSources( QObject ):
     def __reversed__( self ):
         return ( (layer.visible, layer.opacity, self._layerToIms[layer])
                  for layer in reversed(self._layerStackModel)
-                 if layer in self._layerToIms.keys() )
+                 if self.isActive(layer) )
 
-    def getImageSource( self, index ):
-        return self._layerToIms[self._layerStackModel[index]]
+    def getVisible( self, row ):
+        return self._getLayer(row).visible
+
+    def getOpacity( self, row ):
+        return self._getLayer(row).opacity
+
+    def getImageSource( self, row ):
+        return self._layerToIms[self._getLayer(row)]
+
+    def viewVisible( self ):
+        return StackedImageSources.VisibleView( self )
+
+    def viewOpacity( self ):
+        return StackedImageSources.OpacityView( self )
+
+    def viewImageSources( self ):
+        return StackedImageSources.ImageSourceView( self )
 
     def register( self, layer, imageSource ):
-        assert not layer in self._layerToIms, "layer %s already registered" % str(layer)
+        if self.isRegistered(layer):
+            raise Exception("StackedImageSources.register(): layer %s already registered" % str(layer))
+        if layer not in self._layerStackModel:
+            raise Exception("StackedImageSources.register(): layer %s is not in LayerStackModel" % str(layer))
         self._layerToIms[layer] = imageSource
         self._imsToLayer[imageSource] = layer
-        
+
         self._curryRegistry['I'][imageSource] = partial(self._onImageSourceDirty, imageSource)
         self._curryRegistry['O'][layer] = partial(self._onOpacityChanged, layer)
         self._curryRegistry['V'][layer] = partial(self._onVisibleChanged, layer)
@@ -77,28 +147,51 @@ class StackedImageSources( QObject ):
         imageSource.idChanged.connect( self._curryRegistry['Id'][imageSource] )
 
         self.syncedId = imageSource.id
-        
+
         self.stackChanged.emit()
 
     def deregister( self, layer ):
-        assert layer in self._layerToIms, "layer %s is not registered; can't be deregistered" % str(layer)
+        if layer not in self._layerToIms:
+            raise Exception("StackedImageSources.deregister(): layer %s is not registered; can't be deregistered" % str(layer))
         ims = self._layerToIms[layer]
+
         ims.isDirty.disconnect( self._curryRegistry['I'][ims] )
         layer.opacityChanged.disconnect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.disconnect( self._curryRegistry['V'][layer] )
         ims.idChanged.disconnect( self._curryRegistry['Id'][ims] )
-        self._layerToIms.pop(layer)
-
-    def remove( self, layer ):
+        
         del self._curryRegistry['I'][ims]
-        del self._curryRegistry['V'][layer]
         del self._curryRegistry['O'][layer]
+        del self._curryRegistry['V'][layer]
+        del self._curryRegistry['Id'][ims]
+
         del self._imsToLayer[ims]
         del self._layerToIms[layer]
+
         self.stackChanged.emit()
 
     def isRegistered( self, layer ):
         return layer in self._layerToIms
+
+    def isActive( self, layer ):
+        if not self.isRegistered( layer ):
+            return False
+        elif layer not in self._layerStackModel:
+            return False
+        else:
+            return True
+
+    def firstFullyOpaque(self):
+        '''Return index of the first fully opaque imagesource.
+
+        An imagesource is fully opaque when:
+        * it is visible
+        * its opacity is 1.0
+        * the corresponding layer is opaque (i.e. there are
+          no transparent 'holes' in the layer)
+        
+        '''
+        return self._firstOpaqueIdx
 
     def _onImageSourceDirty( self, imageSource, rect ):
         layer = self._imsToLayer[imageSource]
@@ -112,36 +205,29 @@ class StackedImageSources( QObject ):
             self.syncedIdChanged.emit(oldId, self.syncedId) 
         layer = self._imsToLayer[imageSource]
 
-    def _updateLastVisibleLayer(self):
-        # By default, assume all layers are visible
-        self._lastVisibleLayer = len(self._layerStackModel) - 1
-
-        # Search for the first totally opaque layer (if any)
-        for i, layer in enumerate(self._layerStackModel):
-          if  layer in self._layerToIms.keys() \
-          and layer.visible \
-          and layer.opacity == 1.0 \
-          and self._layerToIms[layer].isOpaque(): 
-            self._lastVisibleLayer = i
-            break
-
     def _onOpacityChanged( self, layer, opacity ):
-        self._updateLastVisibleLayer()
+        self._updateFirstOpaqueIdx()
         if layer.visible:
             self.opacityChanged.emit(self._layerStackModel.layerIndex(layer), opacity)
 
     def _onVisibleChanged( self, layer, visible ):
-        self._updateLastVisibleLayer()
+        self._updateFirstOpaqueIdx()
         self.visibleChanged.emit(self._layerStackModel.layerIndex(layer), visible)
 
-    def lastVisibleLayer(self):
-        return self._lastVisibleLayer
+    def _getLayer( self, ims_row ):
+        return [layer for layer in self._layerStackModel
+                       if self.isActive(layer)][ims_row]
 
-    def _calcUid( self ):
-        uid = []
-        for v,o,ims in self:
-            uid.append(tuple(ims.id))
-        return tuple(uid)
+    def _updateFirstOpaqueIdx(self):
+        self._firstOpaqueIdx = None
+
+        # Search for the first totally opaque and visible layer (if any)
+        for i, v in enumerate( self ):
+            if (v[0] # visible
+            and v[1] == 1.0 # opacity
+            and v[2].isOpaque()): # ims guarantees opaqueness
+                self._firstOpaqueIdx = i
+                break
 
 
 
