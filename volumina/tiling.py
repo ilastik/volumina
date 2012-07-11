@@ -239,9 +239,11 @@ class _TilesCache( object ):
         return self._compositeCache.getAt(stack_id, tile_no)
 
     @synchronous('_lock')
-    def setComposite( self, tile_no, img, stack_id ):
-        dirty = self._layerCacheDirty[stack_id][:,tile_no]        
-        progress = numpy.count_nonzero(dirty == False)/float(dirty.size)
+    def setComposite( self, stack_id, tile_no, img, visible ):
+        visible = numpy.asarray(visible)
+        dirty = self._layerCacheDirty[stack_id][:,tile_no]
+        assert(visible.size == dirty.size)
+        progress = numpy.count_nonzero(numpy.logical_and(dirty, visible) == False)/float(dirty.size)
         self._compositeCache.setAt(stack_id, tile_no, (img, progress))
 
     @synchronous('_lock')
@@ -379,7 +381,7 @@ class LazyTileProvider( QObject ):
             if stack_id in self._cache and self._cache.compositeDirty( tile_no, stack_id ):
                 self._cache.setCompositeDirty(tile_no, False, stack_id)
                 img = self._renderTile(tile_no, stack_id )
-                self._cache.setComposite( tile_no, img, stack_id )
+                self._cache.setComposite( stack_id, tile_no, img, self._sims.viewVisible() )
                 
                 # refresh dirty layer tiles        
                 for layer_nr in xrange(len(self._sims)):
@@ -432,7 +434,7 @@ class LazyTileProvider( QObject ):
 
     def _onOpacityChanged(self, layerNr, opacity):
         for tile_no in xrange(len(self.tiling)):
-            self._cache.setCompositeDirty(tile_no, True, self._current_stack_id)
+            self._cache.setCompositeDirtyAll(tile_no, True)
         self.changed.emit(QRectF())
 
     def _onStackChanged(self):
