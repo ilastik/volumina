@@ -236,11 +236,13 @@ class _TilesCache( object ):
     def tile( self, stack_id, tile_id ):
         return self._tileCache.getAt(stack_id, tile_id)
     @synchronous('_lock')
-    def setTile( self, stack_id, tile_id, img, stack_visible ):
+    def setTile( self, stack_id, tile_id, img, stack_visible, stack_occluded ):
         if len(stack_visible) > 0:
             visible = numpy.asarray(stack_visible)
+            occluded = numpy.asarray(stack_occluded)
+            visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
             dirty = numpy.asarray([self._layerCacheDirty.getAt(stack_id, (ims, tile_id)) for ims in self._sims.viewImageSources()])
-            progress = numpy.count_nonzero(numpy.logical_and(dirty, visible) == False)/float(dirty.size)
+            progress = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == False)/float(dirty.size)
         else:
             progress = 1.0
         self._tileCache.setAt(stack_id, tile_id, (img, progress))
@@ -377,7 +379,7 @@ class LazyTileProvider( QObject ):
             if stack_id in self._cache and self._cache.tileDirty( stack_id, tile_no ):
                 self._cache.setTileDirty(stack_id, tile_no, False)
                 img = self._renderTile( stack_id, tile_no )
-                self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible() )
+                self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible(), self._sims.viewOccluded() )
                 
                 # refresh dirty layer tiles 
                 for ims in self._sims.viewImageSources():

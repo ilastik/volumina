@@ -53,6 +53,15 @@ class StackedImageSources( QObject ):
         def __getitem__( self, row ):
             return self.sims._getLayer(row).visible
 
+    class OccludedView( _ViewBase ):
+        def __iter__( self ):
+            return ( self.sims._imsOccluded[self.sims._layerToIms[layer]]
+                     for layer in self.sims._layerStackModel
+                     if self.sims.isActive(layer) )
+
+        def __getitem__( self, row ):
+            return self.sims._imsOccluded[self.sims._layerToIms[self.sims._getLayer(row)]]
+
     class OpacityView( _ViewBase ):
         def __iter__( self ):
             return ( layer.opacity
@@ -122,6 +131,9 @@ class StackedImageSources( QObject ):
 
     def viewVisible( self ):
         return StackedImageSources.VisibleView( self )
+
+    def viewOccluded( self ):
+        return StackedImageSources.OccludedView( self )
 
     def viewOpacity( self ):
         return StackedImageSources.OpacityView( self )
@@ -248,7 +260,6 @@ class StackedImageSources( QObject ):
                 self._imsOccluded[v] = True
             else:
                 self._imsOccluded[v] = False
-
 
 
 #*******************************************************************************
