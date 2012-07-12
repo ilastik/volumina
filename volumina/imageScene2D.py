@@ -75,7 +75,7 @@ class ImageScene2D(QGraphicsScene):
     @stackedImageSources.setter
     def stackedImageSources(self, s):
         self._stackedImageSources = s
-        s.stackChanged.connect(self._onStackChanged)
+        s.sizeChanged.connect(self._onSizeChanged)
 
     @property
     def showTileOutlines(self):
@@ -122,7 +122,7 @@ class ImageScene2D(QGraphicsScene):
         self._dirtyIndicator = DirtyIndicator(self._tiling)
         self.addItem(self._dirtyIndicator)
 
-        self._onStackChanged()
+        self._onSizeChanged()
         if self._tileProvider:
             self._tileProvider.notifyThreadsToStop() # prevent ref cycle
 
@@ -172,7 +172,7 @@ class ImageScene2D(QGraphicsScene):
         p.unlock()
         self.scheduleRedraw(self._tiling._imageRectF[tileId])
 
-    def _onStackChanged(self):
+    def _onSizeChanged(self):
         self._brushingLayer  = TiledImageLayer(self._tiling)
                 
     def drawForeground(self, painter, rect):

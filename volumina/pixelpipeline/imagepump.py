@@ -34,7 +34,7 @@ class StackedImageSources( QObject ):
     visibleChanged = pyqtSignal(int, bool)
     opacityChanged = pyqtSignal(int, float)
     syncedIdChanged = pyqtSignal( object, object ) # old id, new id
-    stackChanged  = pyqtSignal()
+    sizeChanged  = pyqtSignal()
     orderChanged = pyqtSignal()
 
     class _ViewBase( object ):
@@ -85,9 +85,11 @@ class StackedImageSources( QObject ):
         # the layerStackModel and mirror the stack order there
         self._layerToIms = {} #look up layer -> corresponding image source
         self._imsToLayer = {} #look up image source -> corresponding layer
+        self._imsOccluded = {}
         self._firstOpaqueIdx = None
 
         layerStackModel.orderChanged.connect( self._onOrderChanged )
+        layerStackModel.sizeChanged.connect( self._onSizeChanged )
 
         self.syncedId = (0,0,0)
 
@@ -147,8 +149,8 @@ class StackedImageSources( QObject ):
 
         self.syncedId = imageSource.id
 
-        self._updateFirstOpaqueIdx()
-        self.stackChanged.emit()
+        self._updateOcclusionInfo()
+        self.sizeChanged.emit()
 
     def deregister( self, layer ):
         if layer not in self._layerToIms:
@@ -168,8 +170,8 @@ class StackedImageSources( QObject ):
         del self._imsToLayer[ims]
         del self._layerToIms[layer]
 
-        self._updateFirstOpaqueIdx()
-        self.stackChanged.emit()
+        self._updateOcclusionInfo()
+        self.sizeChanged.emit()
 
     def isRegistered( self, layer ):
         return layer in self._layerToIms
@@ -194,6 +196,9 @@ class StackedImageSources( QObject ):
         '''
         return self._firstOpaqueIdx
 
+    def isOccluded( self, ims ):
+        return self._imsOccluded[ims]
+
     def _onImageSourceDirty( self, imageSource, rect ):
         layer = self._imsToLayer[imageSource]
         if layer.visible:
@@ -206,24 +211,29 @@ class StackedImageSources( QObject ):
             self.syncedIdChanged.emit(oldId, self.syncedId) 
 
     def _onOpacityChanged( self, layer, opacity ):
-        self._updateFirstOpaqueIdx()
+        self._updateOcclusionInfo()
         if layer.visible:
             self.opacityChanged.emit(self._layerStackModel.layerIndex(layer), opacity)
 
     def _onVisibleChanged( self, layer, visible ):
-        self._updateFirstOpaqueIdx()
+        self._updateOcclusionInfo()
         self.visibleChanged.emit(self._layerStackModel.layerIndex(layer), visible)
 
     def _onOrderChanged( self ):
-        self._updateFirstOpaqueIdx()
+        self._updateOcclusionInfo()
         self.orderChanged.emit()
+
+    def _onSizeChanged( self ):
+        self._updateOcclusionInfo()
+        self.sizeChanged.emit()
 
     def _getLayer( self, ims_row ):
         return [layer for layer in self._layerStackModel
                        if self.isActive(layer)][ims_row]
 
-    def _updateFirstOpaqueIdx(self):
+    def _updateOcclusionInfo(self):
         self._firstOpaqueIdx = None
+        self._imsOccluded = {}
 
         # Search for the first totally opaque and visible layer (if any)
         for i, v in enumerate( self ):
@@ -232,6 +242,12 @@ class StackedImageSources( QObject ):
             and v[2].isOpaque()): # ims guarantees opaqueness
                 self._firstOpaqueIdx = i
                 break
+
+        for i, v in enumerate( self.viewImageSources() ):
+            if self._firstOpaqueIdx != None and i > self._firstOpaqueIdx:
+                self._imsOccluded[v] = True
+            else:
+                self._imsOccluded[v] = False
 
 
 

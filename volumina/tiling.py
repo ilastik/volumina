@@ -237,9 +237,12 @@ class _TilesCache( object ):
         return self._tileCache.getAt(stack_id, tile_id)
     @synchronous('_lock')
     def setTile( self, stack_id, tile_id, img, stack_visible ):
-        visible = numpy.asarray(stack_visible)
-        dirty = numpy.asarray([self._layerCacheDirty.getAt(stack_id, (ims, tile_id)) for ims in self._sims.viewImageSources()])
-        progress = numpy.count_nonzero(numpy.logical_and(dirty, visible) == False)/float(dirty.size)
+        if len(stack_visible) > 0:
+            visible = numpy.asarray(stack_visible)
+            dirty = numpy.asarray([self._layerCacheDirty.getAt(stack_id, (ims, tile_id)) for ims in self._sims.viewImageSources()])
+            progress = numpy.count_nonzero(numpy.logical_and(dirty, visible) == False)/float(dirty.size)
+        else:
+            progress = 1.0
         self._tileCache.setAt(stack_id, tile_id, (img, progress))
 
     @synchronous('_lock')
@@ -279,7 +282,7 @@ class _TilesCache( object ):
         self._tileCache.add( stack_id )
         self._tileCacheDirty.add( stack_id, default_factory=lambda:True )
         self._layerCache.add( stack_id )
-        self._layerCacheDirty.add( stack_id, default_factory=True )
+        self._layerCacheDirty.add( stack_id, default_factory=lambda:True )
         self._layerCacheTimestamp.add( stack_id, default_factory=float )
 
     @synchronous('_lock')
@@ -294,29 +297,30 @@ class _TilesCache( object ):
 
 class LazyTileProvider( QObject ):
     N_THREADS = 2
+    THREAD_HEARTBEAT = 0.2
+    QUEUE_SIZE = 100000
+    MAXSTACKS = 10
 
     Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling') 
     changed = pyqtSignal( QRectF )
 
     def __init__( self, tiling, stackedImageSources, parent=None ):
         QObject.__init__( self, parent = parent )
-        self._MAXSTACKS = 10
-
         self.isFrozen = False
 
         self.tiling = tiling
         self._sims = stackedImageSources
 
         self._current_stack_id = self._sims.syncedId
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._MAXSTACKS)
+        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self.MAXSTACKS)
 
-        self._dirtyLayerQueue = LifoQueue()
+        self._dirtyLayerQueue = LifoQueue(self.QUEUE_SIZE)
 
         self._sims.layerDirty.connect(self._onLayerDirty)
         self._sims.visibleChanged.connect(self._onVisibleChanged)
         self._sims.opacityChanged.connect(self._onOpacityChanged)
         self._sims.syncedIdChanged.connect(self._onSyncedIdChanged)
-        self._sims.stackChanged.connect(self._onStackChanged)
+        self._sims.sizeChanged.connect(self._onSizeChanged)
         self._sims.orderChanged.connect(self._onOrderChanged)
 
         self._keepRendering = True
@@ -329,7 +333,7 @@ class LazyTileProvider( QObject ):
 
         for tile_no in tile_nos:
             stack_id = self._current_stack_id
-            self._refreshTile( tile_no, stack_id )
+            self._refreshTile( stack_id, tile_no )
             qimg, progress = self._cache.tile(stack_id, tile_no)
             t = LazyTileProvider.Tile(tile_no,
                      qimg,
@@ -356,40 +360,41 @@ class LazyTileProvider( QObject ):
     def _dirtyLayersWorker( self ):
         while self._keepRendering:
             try:
-                ims, tile_nr, stack_id, image_req, timestamp = self._dirtyLayerQueue.get(True, 1)
+                ims, tile_nr, stack_id, image_req, timestamp, cache = self._dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
             except Empty:
                 continue
             try:
-                if timestamp > self._cache.layerTimestamp( stack_id, ims, tile_nr ):
+                if timestamp > cache.layerTimestamp( stack_id, ims, tile_nr ):
                     img = image_req.wait()
-                    self._cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
-                    if stack_id == self._current_stack_id:
+                    cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
+                    if stack_id == self._current_stack_id and cache is self._cache:
                         self.changed.emit(QRectF(self.tiling.imageRects[tile_nr]))
             except KeyError:
                 pass
 
-    def _refreshTile( self, tile_no, stack_id ):
+    def _refreshTile( self, stack_id, tile_no ):
         try:
             if stack_id in self._cache and self._cache.tileDirty( stack_id, tile_no ):
                 self._cache.setTileDirty(stack_id, tile_no, False)
-                img = self._renderTile(tile_no, stack_id )
+                img = self._renderTile( stack_id, tile_no )
                 self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible() )
                 
-                # refresh dirty layer tiles        
+                # refresh dirty layer tiles 
                 for ims in self._sims.viewImageSources():
-                    if self._cache.layerDirty(stack_id, ims, tile_no):
+                    if self._cache.layerDirty(stack_id, ims, tile_no) and not self._sims.isOccluded(ims):
                         req = (ims,
                                tile_no,
                                stack_id,
                                ims.request(self.tiling.imageRects[tile_no]),
-                               time.time())
+                               time.time(),
+                               self._cache)
                         self._dirtyLayerQueue.put( req )
         except KeyError:
             pass
 
-    def _renderTile( self, tile_nr, stack_id ):
+    def _renderTile( self, stack_id, tile_nr ):
         qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
-        qimg.fill(0)
+        qimg.fill(Qt.white)
 
         p = QPainter(qimg)
         for i, v in enumerate(reversed(self._sims)):
@@ -404,13 +409,14 @@ class LazyTileProvider( QObject ):
         p.end()
         return qimg
 
-    def _onLayerDirty(self, layerNr, rect):
+    def _onLayerDirty(self, row, rect):
         tile_nos = self.tiling.intersectedF( QRectF(rect) )
         for tile_no in tile_nos:
             for ims in self._sims.viewImageSources():
                 self._cache.setLayerDirty(self._current_stack_id, ims, tile_no, True)
-            self._cache.setCompositeDirty(self._current_stack_id, tile_no, True)
-        self.changed.emit(QRectF(rect))
+            self._cache.setTileDirty(self._current_stack_id, tile_no, True)
+        if self._sims.getVisible( row ):
+            self.changed.emit(QRectF(rect))
 
     def _onSyncedIdChanged( self, oldId, newId ):
         if newId not in self._cache:
@@ -423,31 +429,18 @@ class LazyTileProvider( QObject ):
             self._cache.setTileDirtyAll(tile_no, True)
         self.changed.emit(QRectF())
 
-    def _onOpacityChanged(self, layerNr, opacity):
-        for tile_no in xrange(len(self.tiling)):
-            self._cache.setTileDirtyAll(tile_no, True)
-        self.changed.emit(QRectF())
+    def _onOpacityChanged(self, row, opacity):
+        if self._sims.getVisible(row):
+            for tile_no in xrange(len(self.tiling)):
+                self._cache.setTileDirtyAll(tile_no, True)
+                self.changed.emit(QRectF())
 
-    def _onStackChanged(self):
-        print "onStackChanged!"
-        # FIXME
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._MAXSTACKS)
+    def _onSizeChanged(self):
+        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self.MAXSTACKS)
+        self._dirtyLayerQueue = LifoQueue(self.QUEUE_SIZE)
         self.changed.emit(QRectF())
         
     def _onOrderChanged(self):
         for tile_no in xrange(len(self.tiling)):
             self._cache.setTileDirtyAll(tile_no, True)
         self.changed.emit(QRectF())
-
-    def _onResizeFinished(self, newSize):
-        # FIXME
-        raise NotImplementedError
-        if self._renderThread:
-              self._renderThread.start(self.tiling)
-
-    def _onAboutToResize(self, newSize):
-        # FIXME
-        raise NotImplementedError
-        if self._renderThread:
-          self.reshapeRequests()
-          assert not self._renderThread.isRunning()

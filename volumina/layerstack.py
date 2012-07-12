@@ -14,6 +14,7 @@ class LayerStackModel(QAbstractListModel):
     canDeleteSelected = pyqtSignal("bool")
     
     orderChanged = pyqtSignal()
+    sizeChanged = pyqtSignal()
         
     def __init__(self, parent = None):
         QAbstractListModel.__init__(self, parent)
@@ -164,6 +165,7 @@ class LayerStackModel(QAbstractListModel):
         self.removeRow(row.row())
         if self.rowCount() > 0:
             self.selectionModel.select(self.index(0), QItemSelectionModel.Select)
+        self.sizeChanged.emit()
         self.updateGUI()
 
     @pyqtSignature("moveSelectedUp()")
