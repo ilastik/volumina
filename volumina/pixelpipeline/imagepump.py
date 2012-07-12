@@ -35,8 +35,7 @@ class StackedImageSources( QObject ):
     opacityChanged = pyqtSignal(int, float)
     syncedIdChanged = pyqtSignal( object, object ) # old id, new id
     stackChanged  = pyqtSignal()
-    aboutToResize = pyqtSignal(int)
-    resizeFinished = pyqtSignal(int)
+    orderChanged = pyqtSignal()
 
     class _ViewBase( object ):
         def __init__( self, sims ):
@@ -87,9 +86,9 @@ class StackedImageSources( QObject ):
         self._layerToIms = {} #look up layer -> corresponding image source
         self._imsToLayer = {} #look up image source -> corresponding layer
         self._firstOpaqueIdx = None
-        
-        layerStackModel.orderChanged.connect( self.stackChanged )
-        self.stackChanged.connect( self._updateFirstOpaqueIdx )
+
+        layerStackModel.orderChanged.connect( self._onOrderChanged )
+
         self.syncedId = (0,0,0)
 
     def __len__( self ):
@@ -148,6 +147,7 @@ class StackedImageSources( QObject ):
 
         self.syncedId = imageSource.id
 
+        self._updateFirstOpaqueIdx()
         self.stackChanged.emit()
 
     def deregister( self, layer ):
@@ -168,6 +168,7 @@ class StackedImageSources( QObject ):
         del self._imsToLayer[ims]
         del self._layerToIms[layer]
 
+        self._updateFirstOpaqueIdx()
         self.stackChanged.emit()
 
     def isRegistered( self, layer ):
@@ -203,7 +204,6 @@ class StackedImageSources( QObject ):
             oldId = self.syncedId
             self.syncedId = newId
             self.syncedIdChanged.emit(oldId, self.syncedId) 
-        layer = self._imsToLayer[imageSource]
 
     def _onOpacityChanged( self, layer, opacity ):
         self._updateFirstOpaqueIdx()
@@ -213,6 +213,10 @@ class StackedImageSources( QObject ):
     def _onVisibleChanged( self, layer, visible ):
         self._updateFirstOpaqueIdx()
         self.visibleChanged.emit(self._layerStackModel.layerIndex(layer), visible)
+
+    def _onOrderChanged( self ):
+        self._updateFirstOpaqueIdx()
+        self.orderChanged.emit()
 
     def _getLayer( self, ims_row ):
         return [layer for layer in self._layerStackModel
@@ -256,32 +260,32 @@ class ImagePump( object ):
         for layer in layerStackModel:
             self._addLayer( layer )
 
-        ## handle layers removed from layerStackModel
-        def onRowsAboutToBeRemoved( parent, start, end):
-            newSize = len(self._layerStackModel)-(end-start+1)
-            self._stackedImageSources.aboutToResize.emit(newSize)
-            for i in xrange(start, end + 1):
-                layer = self._layerStackModel[i]
-                self._stackedImageSources.deregister(layer)
-                self._removeLayer( layer )
-        layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
+        # ## handle layers removed from layerStackModel
+        # def onRowsAboutToBeRemoved( parent, start, end):
+        #     newSize = len(self._layerStackModel)-(end-start+1)
+        #     #self._stackedImageSources.aboutToResize.emit(newSize) FIXME
+        #     for i in xrange(start, end + 1):
+        #         layer = self._layerStackModel[i]
+        #         self._stackedImageSources.deregister(layer)
+        #         self._removeLayer( layer )
+        # layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
 
-        def onRowsRemoved(parent,start,end):
-            newSize = len(self._layerStackModel)
-            self._stackedImageSources.resizeFinished.emit(newSize)
-        layerStackModel.rowsRemoved.connect(onRowsRemoved)
+        # def onRowsRemoved(parent,start,end):
+        #     newSize = len(self._layerStackModel)
+        #     #self._stackedImageSources.resizeFinished.emit(newSize) FIXME
+        # layerStackModel.rowsRemoved.connect(onRowsRemoved)
         
-        def onRowsAboutToBeInserted(parent, start, end):
-            # This function just forwards the signal to the image sources.
-            # Layers are actually added in obDataChanged(), below
-            newSize = len(self._layerStackModel)+(end-start+1)
-            self._stackedImageSources.aboutToResize.emit(newSize)
-        layerStackModel.rowsAboutToBeInserted.connect(onRowsAboutToBeInserted)
+        # def onRowsAboutToBeInserted(parent, start, end):
+        #     # This function just forwards the signal to the image sources.
+        #     # Layers are actually added in obDataChanged(), below
+        #     newSize = len(self._layerStackModel)+(end-start+1)
+        #     # self._stackedImageSources.aboutToResize.emit(newSize) #FIXME
+        # layerStackModel.rowsAboutToBeInserted.connect(onRowsAboutToBeInserted)
 
-        def onRowsInserted(parent, start, end):
-            newSize = len(self._layerStackModel)
-            self._stackedImageSources.resizeFinished.emit(newSize)
-        layerStackModel.rowsInserted.connect(onRowsInserted)
+        # def onRowsInserted(parent, start, end):
+        #     newSize = len(self._layerStackModel)
+        #     #self._stackedImageSources.resizeFinished.emit(newSize) FIXME
+        # layerStackModel.rowsInserted.connect(onRowsInserted)
 
         ## handle new layers in layerStackModel
         def onDataChanged( startIndexItem, endIndexItem):

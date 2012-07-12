@@ -157,13 +157,13 @@ class TiledImageLayer(object):
 
 
 class _MultiCache( object ):
-    def __init__( self, first_uid, shape=(1,), dtype=object, fill_with=None, maxcaches=None ):
+    def __init__( self, first_uid, default_factory=lambda:None, maxcaches=None ):
         self._maxcaches = maxcaches
         self._caches = OrderedDict()
-        self.add( first_uid, shape, dtype, fill_with )
+        self.add( first_uid, default_factory=default_factory)
 
     def __iter__( self ):
-        return self._caches.iterkeys()
+        return iter(self._caches.keys())
 
     def __contains__( self, uid ):
         return uid in self._caches
@@ -171,10 +171,9 @@ class _MultiCache( object ):
     def __len__( self ):
         return len(self._caches)
 
-    def add( self, uid, shape=(1,), dtype=object, fill_with=None ):
+    def add( self, uid, default_factory=lambda:None ):
         if uid not in self:
-            cache = numpy.empty(shape, dtype)
-            cache[:] = fill_with
+            cache = defaultdict(default_factory)
             self._caches[uid] = cache
         else:
             raise Exception('MultiCache.add: uid %s is already in use' % str(uid))
@@ -186,18 +185,16 @@ class _MultiCache( object ):
         return old_uid
 
     def getAt( self, uid, key ):
-        '''raises KeyError if uid or key is invalid'''
+        '''raises KeyError if uid is invalid'''
         return self._caches[uid][key]
 
     def setAt( self, uid, key, value ):
-        '''raises KeyError if uid or key is invalid'''
+        '''raises KeyError if uid is invalid'''
         self._caches[uid][key] = value
 
-    def __getitem__( self, uid ):
-        return self._caches[uid]
 
 
-
+import inspect
 from functools import wraps
 def synchronous( tlockname ):
     """A decorator to place an instance based lock around a method """
@@ -214,88 +211,86 @@ def synchronous( tlockname ):
         return _synchronizer
     return _synched
 
-class _TilesCache( object ):
-    def __init__(self, first_stack_id, n_layer, n_tiles, maxstacks=None):
-        self._lock = Lock()
+    
 
-        self._n_layer = n_layer
-        self._n_tiles = n_tiles
-        self._compositeCache = _MultiCache(first_stack_id, self._n_tiles, dtype = object,maxcaches=maxstacks)
-        self._compositeCacheDirty = _MultiCache(first_stack_id, self._n_tiles, dtype = bool, fill_with=True, maxcaches=maxstacks)
-        self._layerCache = _MultiCache(first_stack_id, (self._n_layer, self._n_tiles), dtype = object, maxcaches=maxstacks)
-        self._layerCacheDirty = _MultiCache(first_stack_id, (self._n_layer, self._n_tiles), dtype = bool, fill_with=True, maxcaches=maxstacks)
-        self._layerCacheTimestamp = _MultiCache(first_stack_id, (self._n_layer, self._n_tiles), dtype = float, fill_with=0., maxcaches=maxstacks)
+class _TilesCache( object ):
+    def __init__(self, first_stack_id, sims, maxstacks=None):
+        self._lock = Lock()
+        self._sims = sims
+
+        self._tileCache = _MultiCache(first_stack_id, maxcaches=maxstacks)
+        self._tileCacheDirty = _MultiCache(first_stack_id, default_factory=lambda:True, maxcaches=maxstacks)
+        self._layerCache = _MultiCache(first_stack_id,  maxcaches=maxstacks)
+        self._layerCacheDirty = _MultiCache(first_stack_id, default_factory=lambda:True, maxcaches=maxstacks)
+        self._layerCacheTimestamp = _MultiCache(first_stack_id, default_factory=float, maxcaches=maxstacks)
     
     @synchronous('_lock')
     def __contains__( self, stack_id ):
-        return stack_id in self._compositeCache
+        return stack_id in self._tileCache
 
     @synchronous('_lock')
     def __len__( self ):
-        return len(self._compositeCache)
+        return len(self._tileCache)
 
     @synchronous('_lock')
-    def composite( self, tile_no, stack_id ):
-        return self._compositeCache.getAt(stack_id, tile_no)
-
+    def tile( self, stack_id, tile_id ):
+        return self._tileCache.getAt(stack_id, tile_id)
     @synchronous('_lock')
-    def setComposite( self, stack_id, tile_no, img, visible ):
-        visible = numpy.asarray(visible)
-        dirty = self._layerCacheDirty[stack_id][:,tile_no]
-        assert(visible.size == dirty.size)
+    def setTile( self, stack_id, tile_id, img, stack_visible ):
+        visible = numpy.asarray(stack_visible)
+        dirty = numpy.asarray([self._layerCacheDirty.getAt(stack_id, (ims, tile_id)) for ims in self._sims.viewImageSources()])
         progress = numpy.count_nonzero(numpy.logical_and(dirty, visible) == False)/float(dirty.size)
-        self._compositeCache.setAt(stack_id, tile_no, (img, progress))
+        self._tileCache.setAt(stack_id, tile_id, (img, progress))
 
     @synchronous('_lock')
-    def compositeDirty( self, tile_no, stack_id ):
-        return self._compositeCacheDirty.getAt(stack_id, tile_no)
+    def tileDirty( self, stack_id, tile_id ):
+        return self._tileCacheDirty.getAt(stack_id, tile_id)
+    @synchronous('_lock')
+    def setTileDirty( self, stack_id, tile_id, b):
+        self._tileCacheDirty.setAt(stack_id, tile_id, b)
+    @synchronous('_lock')
+    def setTileDirtyAll( self, tile_id, b):
+        for stack_id in self._tileCacheDirty:
+            self._tileCacheDirty.setAt(stack_id, tile_id, b)
 
     @synchronous('_lock')
-    def setCompositeDirty( self, tile_no, b, stack_id ):
-        self._compositeCacheDirty.setAt(stack_id, tile_no, b)
+    def layer(self, stack_id, layer_id, tile_id ):
+        return self._layerCache.getAt(stack_id, (layer_id, tile_id))
+    @synchronous('_lock')
+    def setLayer( self, stack_id, layer_id, tile_id, img ):
+        self._layerCache.setAt(stack_id, (layer_id, tile_id), img)
 
     @synchronous('_lock')
-    def setCompositeDirtyAll( self, tile_no, b):
-        for stack_id in self._compositeCacheDirty:
-            self._compositeCacheDirty.setAt(stack_id, tile_no, b)
+    def layerDirty(self, stack_id, layer_id, tile_id ):
+        return self._layerCacheDirty.getAt(stack_id, (layer_id, tile_id))
+    @synchronous('_lock')
+    def setLayerDirty( self, stack_id, layer_id, tile_id, b ):
+        self._layerCacheDirty.setAt(stack_id, (layer_id, tile_id), b)
 
     @synchronous('_lock')
-    def inLayer(self, layer_no, tile_no, stack_id ):
-        return self._layerCache.getAt(stack_id, (layer_no, tile_no))
-
+    def layerTimestamp(self, stack_id, layer_id, tile_id ):
+        return self._layerCacheTimestamp.getAt(stack_id, (layer_id, tile_id))
     @synchronous('_lock')
-    def setInLayer( self, layer_no, tile_no, value, stack_id ):
-        self._layerCache.setAt(stack_id, (layer_no, tile_no), value)
-
-    @synchronous('_lock')
-    def inLayerDirty(self, layer_no, tile_no, stack_id ):
-        return self._layerCacheDirty.getAt(stack_id, (layer_no, tile_no))
-    @synchronous('_lock')
-    def setInLayerDirty( self, layer_no, tile_no, value, stack_id ):
-        self._layerCacheDirty.setAt(stack_id, (layer_no, tile_no), value)
-
-    @synchronous('_lock')
-    def inLayerTimestamp(self, layer_no, tile_no, stack_id ):
-        return self._layerCacheTimestamp.getAt(stack_id, (layer_no, tile_no))
-    @synchronous('_lock')
-    def setInLayerTimestamp( self, layer_no, tile_no, value, stack_id ):
-        self._layerCacheTimestamp.setAt(stack_id, (layer_no, tile_no), value)
+    def setLayerTimestamp( self, stack_id, layer_id, tile_id, time):
+        self._layerCacheTimestamp.setAt(stack_id, (layer_id, tile_id), time)
 
     @synchronous('_lock')    
     def addStack( self, stack_id ):
-        self._compositeCache.add( stack_id, self._n_tiles, dtype = object )
-        self._compositeCacheDirty.add( stack_id, self._n_tiles, dtype = bool, fill_with=True )
-        self._layerCache.add(stack_id, (self._n_layer, self._n_tiles), dtype = object)
-        self._layerCacheDirty.add(stack_id, (self._n_layer, self._n_tiles), dtype = bool, fill_with=True)
-        self._layerCacheTimestamp.add(stack_id, (self._n_layer, self._n_tiles), dtype = float, fill_with=0.)
+        self._tileCache.add( stack_id )
+        self._tileCacheDirty.add( stack_id, default_factory=lambda:True )
+        self._layerCache.add( stack_id )
+        self._layerCacheDirty.add( stack_id, default_factory=True )
+        self._layerCacheTimestamp.add( stack_id, default_factory=float )
 
     @synchronous('_lock')
-    def updateTileIfNecessary( self, layer_nr, tile_nr, stack_id, req_timestamp, img):
-        if req_timestamp > self._layerCacheTimestamp.getAt(stack_id, (layer_nr, tile_nr)):
-            self._layerCache.setAt(stack_id, (layer_nr, tile_nr), img)                               
-            self._layerCacheDirty.setAt(stack_id, (layer_nr, tile_nr), False)        
-            self._layerCacheTimestamp.setAt(stack_id, (layer_nr, tile_nr), req_timestamp)        
-            self._compositeCacheDirty.setAt(stack_id, tile_nr, True)
+    def updateTileIfNecessary( self, stack_id, layer_id, tile_id, req_timestamp, img):
+        if req_timestamp > self._layerCacheTimestamp.getAt(stack_id, (layer_id, tile_id)):
+            self._layerCache.setAt(stack_id, (layer_id, tile_id), img)         
+            self._layerCacheDirty.setAt(stack_id, (layer_id, tile_id), False)
+            self._layerCacheTimestamp.setAt(stack_id, (layer_id, tile_id), req_timestamp)        
+            self._tileCacheDirty.setAt(stack_id, tile_id, True)
+
+
 
 class LazyTileProvider( QObject ):
     N_THREADS = 2
@@ -311,11 +306,9 @@ class LazyTileProvider( QObject ):
 
         self.tiling = tiling
         self._sims = stackedImageSources
-        self._shape = (len(self._sims), len(self.tiling))
 
         self._current_stack_id = self._sims.syncedId
-        self._cache = _TilesCache(self._current_stack_id, len(self._sims), len(self.tiling), maxstacks=self._MAXSTACKS)
-        self._clock = Lock()
+        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._MAXSTACKS)
 
         self._dirtyLayerQueue = LifoQueue()
 
@@ -324,8 +317,7 @@ class LazyTileProvider( QObject ):
         self._sims.opacityChanged.connect(self._onOpacityChanged)
         self._sims.syncedIdChanged.connect(self._onSyncedIdChanged)
         self._sims.stackChanged.connect(self._onStackChanged)
-        #self._sims.aboutToResize.connect(self._onAboutToResize)
-        #self._sims.resizeFinished.connect(self._onResizeFinished)
+        self._sims.orderChanged.connect(self._onOrderChanged)
 
         self._keepRendering = True
         
@@ -338,7 +330,7 @@ class LazyTileProvider( QObject ):
         for tile_no in tile_nos:
             stack_id = self._current_stack_id
             self._refreshTile( tile_no, stack_id )
-            qimg, progress = self._cache.composite(tile_no, stack_id)
+            qimg, progress = self._cache.tile(stack_id, tile_no)
             t = LazyTileProvider.Tile(tile_no,
                      qimg,
                      QRectF(self.tiling.imageRects[tile_no]),
@@ -364,13 +356,13 @@ class LazyTileProvider( QObject ):
     def _dirtyLayersWorker( self ):
         while self._keepRendering:
             try:
-                layer_nr, tile_nr, stack_id, image_req, timestamp = self._dirtyLayerQueue.get(True, 1)
+                ims, tile_nr, stack_id, image_req, timestamp = self._dirtyLayerQueue.get(True, 1)
             except Empty:
                 continue
             try:
-                if timestamp > self._cache.inLayerTimestamp( layer_nr, tile_nr, stack_id ):
+                if timestamp > self._cache.layerTimestamp( stack_id, ims, tile_nr ):
                     img = image_req.wait()
-                    self._cache.updateTileIfNecessary( layer_nr, tile_nr, stack_id, timestamp, img )
+                    self._cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
                     if stack_id == self._current_stack_id:
                         self.changed.emit(QRectF(self.tiling.imageRects[tile_nr]))
             except KeyError:
@@ -378,18 +370,18 @@ class LazyTileProvider( QObject ):
 
     def _refreshTile( self, tile_no, stack_id ):
         try:
-            if stack_id in self._cache and self._cache.compositeDirty( tile_no, stack_id ):
-                self._cache.setCompositeDirty(tile_no, False, stack_id)
+            if stack_id in self._cache and self._cache.tileDirty( stack_id, tile_no ):
+                self._cache.setTileDirty(stack_id, tile_no, False)
                 img = self._renderTile(tile_no, stack_id )
-                self._cache.setComposite( stack_id, tile_no, img, self._sims.viewVisible() )
+                self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible() )
                 
                 # refresh dirty layer tiles        
-                for layer_nr in xrange(len(self._sims)):
-                    if self._cache.inLayerDirty(layer_nr, tile_no, stack_id):
-                        req = (layer_nr,
+                for ims in self._sims.viewImageSources():
+                    if self._cache.layerDirty(stack_id, ims, tile_no):
+                        req = (ims,
                                tile_no,
                                stack_id,
-                               self._sims.getImageSource(layer_nr).request(self.tiling.imageRects[tile_no]),
+                               ims.request(self.tiling.imageRects[tile_no]),
                                time.time())
                         self._dirtyLayerQueue.put( req )
         except KeyError:
@@ -405,8 +397,7 @@ class LazyTileProvider( QObject ):
             if not visible:
                 continue
             
-            layer_nr = len(self._sims) - i - 1
-            patch = self._cache.inLayer(layer_nr, tile_nr, stack_id )
+            patch = self._cache.layer(stack_id, layerImageSource, tile_nr )
             if patch is not None:
                 p.setOpacity(layerOpacity)
                 p.drawImage(0,0, patch)
@@ -416,9 +407,9 @@ class LazyTileProvider( QObject ):
     def _onLayerDirty(self, layerNr, rect):
         tile_nos = self.tiling.intersectedF( QRectF(rect) )
         for tile_no in tile_nos:
-            for layer_no in xrange(len(self._sims)):
-                self._cache.setInLayerDirty(layer_no, tile_no, True, self._current_stack_id)
-            self._cache.setCompositeDirty(tile_no, True, self._current_stack_id)
+            for ims in self._sims.viewImageSources():
+                self._cache.setLayerDirty(self._current_stack_id, ims, tile_no, True)
+            self._cache.setCompositeDirty(self._current_stack_id, tile_no, True)
         self.changed.emit(QRectF(rect))
 
     def _onSyncedIdChanged( self, oldId, newId ):
@@ -429,31 +420,33 @@ class LazyTileProvider( QObject ):
 
     def _onVisibleChanged(self, layerNr, visible):
         for tile_no in xrange(len(self.tiling)):
-            self._cache.setCompositeDirtyAll(tile_no, True)
+            self._cache.setTileDirtyAll(tile_no, True)
         self.changed.emit(QRectF())
 
     def _onOpacityChanged(self, layerNr, opacity):
         for tile_no in xrange(len(self.tiling)):
-            self._cache.setCompositeDirtyAll(tile_no, True)
+            self._cache.setTileDirtyAll(tile_no, True)
         self.changed.emit(QRectF())
 
     def _onStackChanged(self):
-        #FIXME FIXME FIXME
         print "onStackChanged!"
-        shape = (len(self._sims), len(self.tiling))
-        if shape == self._shape:
-            raise NotImplementedError
-        else:
-            self._cache = _TilesCache(self._current_stack_id, len(self._sims), len(self.tiling), maxstacks=self._MAXSTACKS)
-            self._shape = shape
+        # FIXME
+        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._MAXSTACKS)
+        self.changed.emit(QRectF())
         
+    def _onOrderChanged(self):
+        for tile_no in xrange(len(self.tiling)):
+            self._cache.setTileDirtyAll(tile_no, True)
+        self.changed.emit(QRectF())
 
     def _onResizeFinished(self, newSize):
+        # FIXME
         raise NotImplementedError
         if self._renderThread:
               self._renderThread.start(self.tiling)
 
     def _onAboutToResize(self, newSize):
+        # FIXME
         raise NotImplementedError
         if self._renderThread:
           self.reshapeRequests()
