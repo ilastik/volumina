@@ -10,7 +10,7 @@ from PyQt4.QtGui import QGraphicsScene, QImage, QTransform, QPen, QColor, QBrush
 
 from imageSceneRendering import ImageSceneRenderThread
 
-from volumina.tiling import Tiling, LazyTileProvider, TiledImageLayer
+from volumina.tiling import Tiling, TileProvider, TiledImageLayer
 import math
 
 import threading
@@ -126,7 +126,7 @@ class ImageScene2D(QGraphicsScene):
         if self._tileProvider:
             self._tileProvider.notifyThreadsToStop() # prevent ref cycle
 
-        self._tileProvider = LazyTileProvider(self._tiling, self._stackedImageSources)
+        self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.changed.connect(self.invalidateViewports)
 
     def invalidateViewports( self, rectF ):

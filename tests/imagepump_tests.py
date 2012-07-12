@@ -8,7 +8,8 @@ from volumina.pixelpipeline.imagesources import GrayscaleImageSource
 from volumina.pixelpipeline.imagepump import StackedImageSources
 
 
-class StackedImageSourcesTest( ut. TestCase ):
+
+class StackedImageSourcesTest( ut.TestCase ):
     def setUp( self ):
         self.ds = ConstantSource()
 

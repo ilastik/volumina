@@ -297,7 +297,7 @@ class _TilesCache( object ):
 
 
 
-class LazyTileProvider( QObject ):
+class TileProvider( QObject ):
     N_THREADS = 2
     THREAD_HEARTBEAT = 0.2
     QUEUE_SIZE = 100000
@@ -337,7 +337,7 @@ class LazyTileProvider( QObject ):
             stack_id = self._current_stack_id
             self._refreshTile( stack_id, tile_no )
             qimg, progress = self._cache.tile(stack_id, tile_no)
-            t = LazyTileProvider.Tile(tile_no,
+            t = TileProvider.Tile(tile_no,
                      qimg,
                      QRectF(self.tiling.imageRects[tile_no]),
                      progress,
