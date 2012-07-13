@@ -80,15 +80,6 @@ class StackedImageSources( QObject ):
         def __getitem__( self, row ):
             return self.sims._layerToIms[self.sims._getLayer(row)]
 
-    class _LayerView( _ViewBase ):
-        def __iter__( self ):
-            return ( layer
-                     for layer in self.sims._layerStackModel
-                     if self.sims.isActive(layer) )
-
-        def __getitem__( self, row ):
-            return self.sims._getLayer(row)
-
     def __init__( self, layerStackModel ):
         super(StackedImageSources, self).__init__()
         self._layerStackModel = layerStackModel
@@ -177,9 +168,14 @@ class StackedImageSources( QObject ):
         self.sizeChanged.emit()
 
     def clear( self ):
-        all_layers = list(StackedImageSources._LayerView( self ))
+        all_layers = self.getRegisteredLayers()
         map( self._removeLayer, all_layers )
+        assert( len(self) == 0 )
+        assert( len(self.getRegisteredLayers() ) == 0 )
         self.sizeChanged.emit()
+
+    def getRegisteredLayers( self ):
+        return self._layerToIms.keys()
 
     def isRegistered( self, layer ):
         return layer in self._layerToIms
@@ -310,46 +306,6 @@ class ImagePump( object ):
         self._layerStackModel.layerRemoved.connect( self._onLayerRemoved )
         self._layerStackModel.stackCleared.connect( self._onStackCleared )
 
-        # ## handle layers removed from layerStackModel
-        # def onRowsAboutToBeRemoved( parent, start, end):
-        #     newSize = len(self._layerStackModel)-(end-start+1)
-        #     #self._stackedImageSources.aboutToResize.emit(newSize) FIXME
-        #     for i in xrange(start, end + 1):
-        #         layer = self._layerStackModel[i]
-        #         self._stackedImageSources.deregister(layer)
-        #         self._removeLayer( layer )
-        # layerStackModel.rowsAboutToBeRemoved.connect(onRowsAboutToBeRemoved)
-
-        # def onRowsRemoved(parent,start,end):
-        #     newSize = len(self._layerStackModel)
-        #     #self._stackedImageSources.resizeFinished.emit(newSize) FIXME
-        # layerStackModel.rowsRemoved.connect(onRowsRemoved)
-        
-        # def onRowsAboutToBeInserted(parent, start, end):
-        #     # This function just forwards the signal to the image sources.
-        #     # Layers are actually added in obDataChanged(), below
-        #     newSize = len(self._layerStackModel)+(end-start+1)
-        #     # self._stackedImageSources.aboutToResize.emit(newSize) #FIXME
-        # layerStackModel.rowsAboutToBeInserted.connect(onRowsAboutToBeInserted)
-
-        # def onRowsInserted(parent, start, end):
-        #     newSize = len(self._layerStackModel)
-        #     #self._stackedImageSources.resizeFinished.emit(newSize) FIXME
-        # layerStackModel.rowsInserted.connect(onRowsInserted)
-
-        ## handle new layers in layerStackModel
-        # def onDataChanged( startIndexItem, endIndexItem):
-        #     start = startIndexItem.row()
-        #     stop = endIndexItem.row() + 1
-
-        #     for i in xrange(start, stop):
-        #         layer = self._layerStackModel[i]
-        #         # model implementation removes and adds the same layer instance to move selections up/down
-        #         # therefore, check if the layer is already registered before adding as new
-        #         if not self._stackedImageSources.isRegistered(layer): 
-        #             self._addLayer(layer)
-        # layerStackModel.dataChanged.connect(onDataChanged)
-
     def _onLayerAdded( self, layer, row ):
         self._addLayer( layer )
 
@@ -358,9 +314,11 @@ class ImagePump( object ):
 
     def _onStackCleared( self ):
         self._stackedImageSources.clear()
-        for layer, sss in self._layerToSliceSrcs:
-            for ss in self._layerToSliceSrcs[layer]:
+        assert(len(self._stackedImageSources.getRegisteredLayers()) == 0)
+        for layer, sss in self._layerToSliceSrcs.iteritems():
+            for ss in sss:
                 self._syncedSliceSources.remove(ss)
+        assert(len(self._syncedSliceSources) == 0 )
         self._layerToSliceSrcs = {}
 
     def _createSources( self, layer ):

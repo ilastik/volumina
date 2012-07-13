@@ -1,11 +1,12 @@
 import unittest as ut
-from PyQt4.QtCore import QRect
+from PyQt4.QtCore import QRect, QObject
 
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
+from volumina.slicingtools import SliceProjection
 from volumina.pixelpipeline.datasources import ConstantSource
 from volumina.pixelpipeline.imagesources import GrayscaleImageSource
-from volumina.pixelpipeline.imagepump import StackedImageSources
+from volumina.pixelpipeline.imagepump import StackedImageSources, ImagePump
 
 
 
@@ -178,7 +179,57 @@ class StackedImageSourcesTest( ut.TestCase ):
         self.assertEqual(sims.firstFullyOpaque(), None)
         lsm.clear()
 
-        
+
+
+class ImagePumpTest( ut.TestCase ):
+    def setUp( self ):
+        self.ds = ConstantSource()
+
+        self.layer1 = GrayscaleLayer( self.ds )
+        self.layer1.visible = False
+        self.layer1.opacity = 0.1
+
+        self.layer2 = GrayscaleLayer( self.ds )
+        self.layer2.visible = True
+        self.layer2.opacity = 0.3
+
+        self.layer3 = GrayscaleLayer( self.ds ) 
+        self.layer3.visible = True
+        self.layer3.opacity = 1.0
+
+    def testAddingAndRemovingLayers( self ):
+        lsm = LayerStackModel()
+        ip = ImagePump( lsm, SliceProjection() )
+        self.assertEqual( len(lsm), 0 )
+        self.assertEqual( len(ip.stackedImageSources), 0 )
+        self.assertEqual( len(ip.syncedSliceSources), 0 )
+
+        lsm.append(self.layer1)
+        lsm.append(self.layer2)
+        lsm.append(self.layer3)
+
+        self.assertEqual( len(lsm), 3 )        
+        self.assertEqual( len(ip.stackedImageSources), 3 )
+        self.assertEqual( len(ip.syncedSliceSources), 3 )
+        self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 3 )
+        for layer in lsm:
+            self.assertTrue( ip.stackedImageSources.isActive(layer) )
+
+        lsm.deleteSelected()
+        self.assertEqual( len(lsm), 2 )
+        self.assertEqual( len(ip.stackedImageSources), 2 )
+        self.assertEqual( len(ip.syncedSliceSources), 2 )
+        self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 2 )
+        for layer in lsm:
+            self.assertTrue( ip.stackedImageSources.isActive(layer) )
+
+        lsm.clear()
+        self.assertEqual( len(lsm), 0 )
+        self.assertEqual( len(ip.stackedImageSources), 0 )
+        self.assertEqual( len(ip.syncedSliceSources), 0 )
+        self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 0 )
+
+
 
 if __name__=='__main__':
     ut.main()

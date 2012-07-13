@@ -137,7 +137,10 @@ class SyncedSliceSources( QObject ):
         super(SyncedSliceSources, self).__init__()
         self._srcs = set(slicesrcs)
         self._through = through
-        
+
+    def __len__( self ):
+        return len(self._srcs)
+
     def __iter__( self ):
         return iter(self._srcs)
 

@@ -178,7 +178,6 @@ class LayerStackModel(QAbstractListModel):
         while(beginRow <= endRow):
             del self._layerStack[row]
             beginRow += 1
-        
         self.endRemoveRows()
         return True
     

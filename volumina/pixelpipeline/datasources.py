@@ -249,8 +249,8 @@ class ConstantSource( QObject ):
     isDirty = pyqtSignal( object )
     idChanged = pyqtSignal( object, object ) # old, new
 
-    def __init__( self, constant = 0, dtype = np.uint8 ):
-        super(ConstantSource, self).__init__()
+    def __init__( self, constant = 0, dtype = np.uint8, parent=None ):
+        super(ConstantSource, self).__init__(parent=parent)
         self._constant = constant
         self._dtype = dtype
 
