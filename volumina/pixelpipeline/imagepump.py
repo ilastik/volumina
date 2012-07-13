@@ -80,6 +80,15 @@ class StackedImageSources( QObject ):
         def __getitem__( self, row ):
             return self.sims._layerToIms[self.sims._getLayer(row)]
 
+    class _LayerView( _ViewBase ):
+        def __iter__( self ):
+            return ( layer
+                     for layer in self.sims._layerStackModel
+                     if self.sims.isActive(layer) )
+
+        def __getitem__( self, row ):
+            return self.sims._getLayer(row)
+
     def __init__( self, layerStackModel ):
         super(StackedImageSources, self).__init__()
         self._layerStackModel = layerStackModel
@@ -98,7 +107,6 @@ class StackedImageSources( QObject ):
         self._firstOpaqueIdx = None
 
         layerStackModel.orderChanged.connect( self._onOrderChanged )
-        layerStackModel.sizeChanged.connect( self._onSizeChanged )
 
         self.syncedId = (0,0,0)
 
@@ -165,24 +173,12 @@ class StackedImageSources( QObject ):
         self.sizeChanged.emit()
 
     def deregister( self, layer ):
-        if layer not in self._layerToIms:
-            raise Exception("StackedImageSources.deregister(): layer %s is not registered; can't be deregistered" % str(layer))
-        ims = self._layerToIms[layer]
+        self._removeLayer( layer )
+        self.sizeChanged.emit()
 
-        ims.isDirty.disconnect( self._curryRegistry['I'][ims] )
-        layer.opacityChanged.disconnect( self._curryRegistry['O'][layer] )
-        layer.visibleChanged.disconnect( self._curryRegistry['V'][layer] )
-        ims.idChanged.disconnect( self._curryRegistry['Id'][ims] )
-        
-        del self._curryRegistry['I'][ims]
-        del self._curryRegistry['O'][layer]
-        del self._curryRegistry['V'][layer]
-        del self._curryRegistry['Id'][ims]
-
-        del self._imsToLayer[ims]
-        del self._layerToIms[layer]
-
-        self._updateOcclusionInfo()
+    def clear( self ):
+        all_layers = list(StackedImageSources._LayerView( self ))
+        map( self._removeLayer, all_layers )
         self.sizeChanged.emit()
 
     def isRegistered( self, layer ):
@@ -209,6 +205,13 @@ class StackedImageSources( QObject ):
         return self._firstOpaqueIdx
 
     def isOccluded( self, ims ):
+        '''Test if imagesource is below the first fully opaque layer.
+
+        An occluded imagesource cannot be 'seen' when looking at the
+        stack from 'above'. This property is useful to tune the image
+        rendering.
+        
+        '''
         return self._imsOccluded[ims]
 
     def _onImageSourceDirty( self, imageSource, rect ):
@@ -235,13 +238,29 @@ class StackedImageSources( QObject ):
         self._updateOcclusionInfo()
         self.orderChanged.emit()
 
-    def _onSizeChanged( self ):
-        self._updateOcclusionInfo()
-        self.sizeChanged.emit()
-
     def _getLayer( self, ims_row ):
         return [layer for layer in self._layerStackModel
                        if self.isActive(layer)][ims_row]
+
+    def _removeLayer( self, layer ):
+        if layer not in self._layerToIms:
+            raise Exception("StackedImageSources.deregister(): layer %s is not registered; can't be deregistered" % str(layer))
+        ims = self._layerToIms[layer]
+
+        ims.isDirty.disconnect( self._curryRegistry['I'][ims] )
+        layer.opacityChanged.disconnect( self._curryRegistry['O'][layer] )
+        layer.visibleChanged.disconnect( self._curryRegistry['V'][layer] )
+        ims.idChanged.disconnect( self._curryRegistry['Id'][ims] )
+        
+        del self._curryRegistry['I'][ims]
+        del self._curryRegistry['O'][layer]
+        del self._curryRegistry['V'][layer]
+        del self._curryRegistry['Id'][ims]
+
+        del self._imsToLayer[ims]
+        del self._layerToIms[layer]
+
+        self._updateOcclusionInfo()
 
     def _updateOcclusionInfo(self):
         self._firstOpaqueIdx = None
@@ -283,9 +302,13 @@ class ImagePump( object ):
     
         ## setup image source stack and slice sources
         self._stackedImageSources = StackedImageSources( layerStackModel )
-        self._syncedSliceSources = SyncedSliceSources( len(sliceProjection.along) * [0] )
-        for layer in layerStackModel:
+        self._syncedSliceSources = SyncedSliceSources( len(sliceProjection.along) * (0,) )
+        for layer in self._layerStackModel:
             self._addLayer( layer )
+
+        self._layerStackModel.layerAdded.connect( self._onLayerAdded )
+        self._layerStackModel.layerRemoved.connect( self._onLayerRemoved )
+        self._layerStackModel.stackCleared.connect( self._onStackCleared )
 
         # ## handle layers removed from layerStackModel
         # def onRowsAboutToBeRemoved( parent, start, end):
@@ -315,17 +338,30 @@ class ImagePump( object ):
         # layerStackModel.rowsInserted.connect(onRowsInserted)
 
         ## handle new layers in layerStackModel
-        def onDataChanged( startIndexItem, endIndexItem):
-            start = startIndexItem.row()
-            stop = endIndexItem.row() + 1
+        # def onDataChanged( startIndexItem, endIndexItem):
+        #     start = startIndexItem.row()
+        #     stop = endIndexItem.row() + 1
 
-            for i in xrange(start, stop):
-                layer = self._layerStackModel[i]
-                # model implementation removes and adds the same layer instance to move selections up/down
-                # therefore, check if the layer is already registered before adding as new
-                if not self._stackedImageSources.isRegistered(layer): 
-                    self._addLayer(layer)
-        layerStackModel.dataChanged.connect(onDataChanged)
+        #     for i in xrange(start, stop):
+        #         layer = self._layerStackModel[i]
+        #         # model implementation removes and adds the same layer instance to move selections up/down
+        #         # therefore, check if the layer is already registered before adding as new
+        #         if not self._stackedImageSources.isRegistered(layer): 
+        #             self._addLayer(layer)
+        # layerStackModel.dataChanged.connect(onDataChanged)
+
+    def _onLayerAdded( self, layer, row ):
+        self._addLayer( layer )
+
+    def _onLayerRemoved( self, layer, row ):
+        self._removeLayer( layer )
+
+    def _onStackCleared( self ):
+        self._stackedImageSources.clear()
+        for layer, sss in self._layerToSliceSrcs:
+            for ss in self._layerToSliceSrcs[layer]:
+                self._syncedSliceSources.remove(ss)
+        self._layerToSliceSrcs = {}
 
     def _createSources( self, layer ):
         def sliceSrcOrNone( datasrc ):
@@ -347,6 +383,8 @@ class ImagePump( object ):
         self._stackedImageSources.register(layer, imageSource)
 
     def _removeLayer( self, layer ):
+        self._stackedImageSources.deregister(layer)
         for ss in self._layerToSliceSrcs[layer]:
             self._syncedSliceSources.remove(ss)
-        del self._layerToSliceSrcs[layer] 
+        del self._layerToSliceSrcs[layer]
+

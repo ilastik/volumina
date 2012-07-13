@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from PyQt4.QtCore import QAbstractListModel, pyqtSignal, QModelIndex, Qt, \
                          QTimer, pyqtSignature, QString
 from PyQt4.QtGui import QItemSelectionModel
@@ -13,7 +12,9 @@ class LayerStackModel(QAbstractListModel):
     canDeleteSelected = pyqtSignal("bool")
     
     orderChanged = pyqtSignal()
-    elementsChanged = pyqtSignal() # layer added, removed, or exchanged
+    layerAdded = pyqtSignal( Layer, int ) # is now in row
+    layerRemoved = pyqtSignal( Layer, int ) # was in row
+    stackCleared = pyqtSignal()
         
     def __init__(self, parent = None):
         QAbstractListModel.__init__(self, parent)
@@ -22,6 +23,10 @@ class LayerStackModel(QAbstractListModel):
         self.selectionModel.selectionChanged.connect(self.updateGUI)
         self._movingRows = False
         QTimer.singleShot(0, self.updateGUI)
+
+    ####
+    ## High level API to manipulate the layerstack
+    ###
     
     def __len__(self):
         return self.rowCount()
@@ -39,19 +44,14 @@ class LayerStackModel(QAbstractListModel):
         #note that the 'index' function already has a different implementation
         #from Qt side
         return self._layerStack.index(layer)
-        
-    def updateGUI(self):
-        self.canMoveSelectedUp.emit(self.selectedRow()>0)
-        self.canMoveSelectedDown.emit(self.selectedRow()<self.rowCount()-1)
-        self.canDeleteSelected.emit(self.rowCount() > 0)
-        self.wantsUpdate()
-    
+
     def append(self, data):
         self.insert(0, data)
    
     def clear(self):
         if len(self) > 0:
             self.removeRows(0,len(self))
+            self.stackCleared.emit()
 
     def insert(self, index, data):
         self.insertRow(index)
@@ -66,9 +66,60 @@ class LayerStackModel(QAbstractListModel):
             self.dataChanged.emit(idx, idx)
             self.updateGUI()
         data.changed.connect(onChanged)
-        
+        self.layerAdded.emit( data, self._layerStack.index(data))
         self.updateGUI()
+
+    @pyqtSignature("deleteSelected()")
+    def deleteSelected(self):
+        assert len(self.selectionModel.selectedRows()) == 1
+        row = self.selectionModel.selectedRows()[0]
+        layer = self._layerStack[row.row()]
+        self.removeRow(row.row())
+        if self.rowCount() > 0:
+            self.selectionModel.select(self.index(0), QItemSelectionModel.Select)
+        self.layerRemoved.emit( layer, row.row() )
+        self.updateGUI()
+
+    @pyqtSignature("moveSelectedUp()")
+    def moveSelectedUp(self):
+        assert len(self.selectionModel.selectedRows()) == 1
+        row = self.selectionModel.selectedRows()[0]
+        if row.row() != 0:
+            oldRow = row.row()
+            newRow = oldRow - 1
+            d = self._layerStack[oldRow]
+            self.removeRow(oldRow)
+            self.insertRow(newRow)
+            self.setData(self.index(newRow), d)
+            self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
+            self.orderChanged.emit()
+            self.updateGUI()
     
+    @pyqtSignature("moveSelectedDown()")
+    def moveSelectedDown(self):
+        assert len(self.selectionModel.selectedRows()) == 1
+        row = self.selectionModel.selectedRows()[0]
+        if row.row() != self.rowCount() - 1:
+            oldRow = row.row()
+            newRow = oldRow + 1
+            d = self._layerStack[oldRow]
+            self.removeRow(oldRow)
+            self.insertRow(newRow)
+            self.setData(self.index(newRow), d)
+            self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
+            self.orderChanged.emit()
+            self.updateGUI()
+       
+    ####
+    ## Low level API. To add, remove etc. layers use the high level API from above.
+    ####
+ 
+    def updateGUI(self):
+        self.canMoveSelectedUp.emit(self.selectedRow()>0)
+        self.canMoveSelectedDown.emit(self.selectedRow()<self.rowCount()-1)
+        self.canDeleteSelected.emit(self.rowCount() > 0)
+        self.wantsUpdate()
+        
     def selectedRow(self):
         selected = self.selectionModel.selectedRows()
         if len(selected) == 1:
@@ -88,6 +139,12 @@ class LayerStackModel(QAbstractListModel):
         return 0
     
     def insertRows(self, row, count, parent = QModelIndex()):
+        '''Insert empty rows in the stack. 
+        
+        DO NOT USE THIS METHOD TO INSERT NEW LAYERS!
+        Always use the insert() or append() method.
+        
+        '''
         if parent.isValid():
             return False
         oldRowCount = self.rowCount()
@@ -103,6 +160,13 @@ class LayerStackModel(QAbstractListModel):
         return True
             
     def removeRows(self, row, count, parent = QModelIndex()):
+        '''Remove rows from the stack. 
+        
+        DO NOT USE THIS METHOD TO REMOVE LAYERS!
+        Use the deleteSelected() method instead.
+        
+        '''
+
         if parent.isValid():
             return False
         if row+count <= 0 or row >= len(self._layerStack):
@@ -140,6 +204,12 @@ class LayerStackModel(QAbstractListModel):
         return None
     
     def setData(self, index, value, role = Qt.EditRole):
+        '''Replace one layer with another. 
+        
+        DO NOT USE THIS METHOD TO INSERT NEW LAYERS!
+        Use deleteSelected() followed by insert() or append().
+        
+        '''
         layer = value
         if not isinstance(value, Layer):
             layer = value.toPyObject()
@@ -157,64 +227,3 @@ class LayerStackModel(QAbstractListModel):
         
     def wantsUpdate(self):
         self.layoutChanged.emit()
-
-    @pyqtSignature("deleteSelected()")
-    def deleteSelected(self):
-        assert len(self.selectionModel.selectedRows()) == 1
-        row = self.selectionModel.selectedRows()[0]
-        self.removeRow(row.row())
-        if self.rowCount() > 0:
-            self.selectionModel.select(self.index(0), QItemSelectionModel.Select)
-        self.elementsChanged.emit()
-        self.updateGUI()
-
-    @pyqtSignature("moveSelectedUp()")
-    def moveSelectedUp(self):
-        assert len(self.selectionModel.selectedRows()) == 1
-        row = self.selectionModel.selectedRows()[0]
-        if row.row() != 0:
-            with self._movingRows():
-                oldRow = row.row()
-                newRow = oldRow - 1
-                d = self._layerStack[oldRow]
-                self.removeRow(oldRow)
-                self.insertRow(newRow)
-                self.setData(self.index(newRow), d)
-                self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
-                self.orderChanged.emit()
-                self.updateGUI()
-    
-    @pyqtSignature("moveSelectedDown()")
-    def moveSelectedDown(self):
-        assert len(self.selectionModel.selectedRows()) == 1
-        row = self.selectionModel.selectedRows()[0]
-        if row.row() != self.rowCount() - 1:
-            with self._moving_rows():
-                oldRow = row.row()
-                newRow = oldRow + 1
-                d = self._layerStack[oldRow]
-                self.removeRow(oldRow)
-                self.insertRow(newRow)
-                self.setData(self.index(newRow), d)
-                self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
-                self.orderChanged.emit()
-                self.updateGUI()
-
-    @contextmanager
-    def _moving_rows( self ):
-        self._movingRows = True
-        yield
-        self._movingRows = False
-
-    def _onRowsRemoved( self, parent, start, end ):
-        if not self._movingRows:
-            self.elementsChanged.emit()
-
-    def _onRowsInserted( self, parent, start, end ):
-        if not self._movingRows:
-            self.elementsChanged.emit()
-
-    def _onDataChanged( self, topLeft, bottomRight ):
-        if not self._movingRows:
-            self.elementsChanged.emit()
-        

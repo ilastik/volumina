@@ -322,7 +322,7 @@ class TileProvider( QObject ):
         self._sims.visibleChanged.connect(self._onVisibleChanged)
         self._sims.opacityChanged.connect(self._onOpacityChanged)
         self._sims.syncedIdChanged.connect(self._onSyncedIdChanged)
-        self._sims.elementsChanged.connect(self._onElementsChanged)
+        self._sims.sizeChanged.connect(self._onSizeChanged)
         self._sims.orderChanged.connect(self._onOrderChanged)
 
         self._keepRendering = True
@@ -439,7 +439,7 @@ class TileProvider( QObject ):
                 self._cache.setTileDirtyAll(tile_no, True)
                 self.changed.emit(QRectF())
 
-    def _onElementsChanged(self):
+    def _onSizeChanged(self):
         self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self.MAXSTACKS)
         self._dirtyLayerQueue = LifoQueue(self.QUEUE_SIZE)
         self.changed.emit(QRectF())
