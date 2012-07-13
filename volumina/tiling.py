@@ -1,7 +1,7 @@
 import time
 import collections
 from collections import deque, defaultdict, OrderedDict
-from Queue import Queue, Empty, LifoQueue, PriorityQueue
+from Queue import Queue, Empty, Full, LifoQueue, PriorityQueue
 
 from threading import Thread, Event, Lock
 
@@ -392,7 +392,10 @@ class TileProvider( QObject ):
                                ims.request(self.tiling.imageRects[tile_no]),
                                time.time(),
                                self._cache)
-                        self._dirtyLayerQueue.put( req )
+                        try:
+                            self._dirtyLayerQueue.put_nowait( req )
+                        except Full:
+                            pass
         except KeyError:
             pass
 
