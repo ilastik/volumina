@@ -176,6 +176,9 @@ class ImageScene2D(QGraphicsScene):
         self._brushingLayer  = TiledImageLayer(self._tiling)
                 
     def drawForeground(self, painter, rect):
+        if self._tiling is None:
+            return
+
         tile_nos = self._tiling.intersectedF(rect)
 
         for tileId in tile_nos:
@@ -194,6 +197,9 @@ class ImageScene2D(QGraphicsScene):
         self._slicingPositionSettled = settled
    
     def drawBackground(self, painter, rectF):
+        if self._tileProvider is None:
+            return
+
         tiles = self._tileProvider.getTiles(rectF)
         for tile in tiles:
             # prevent flickering
