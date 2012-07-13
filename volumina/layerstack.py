@@ -1,12 +1,11 @@
+from contextlib import contextmanager
 from PyQt4.QtCore import QAbstractListModel, pyqtSignal, QModelIndex, Qt, \
                          QTimer, pyqtSignature, QString
 from PyQt4.QtGui import QItemSelectionModel
 
 from volumina.layer import Layer
 
-#*******************************************************************************
-# L a y e r S t a c k M o d e l                                                *
-#*******************************************************************************
+
 
 class LayerStackModel(QAbstractListModel):
     canMoveSelectedUp = pyqtSignal("bool")
@@ -14,13 +13,14 @@ class LayerStackModel(QAbstractListModel):
     canDeleteSelected = pyqtSignal("bool")
     
     orderChanged = pyqtSignal()
-    sizeChanged = pyqtSignal()
+    elementsChanged = pyqtSignal() # layer added, removed, or exchanged
         
     def __init__(self, parent = None):
         QAbstractListModel.__init__(self, parent)
         self._layerStack = []
         self.selectionModel = QItemSelectionModel(self)
         self.selectionModel.selectionChanged.connect(self.updateGUI)
+        self._movingRows = False
         QTimer.singleShot(0, self.updateGUI)
     
     def __len__(self):
@@ -165,7 +165,7 @@ class LayerStackModel(QAbstractListModel):
         self.removeRow(row.row())
         if self.rowCount() > 0:
             self.selectionModel.select(self.index(0), QItemSelectionModel.Select)
-        self.sizeChanged.emit()
+        self.elementsChanged.emit()
         self.updateGUI()
 
     @pyqtSignature("moveSelectedUp()")
@@ -173,27 +173,48 @@ class LayerStackModel(QAbstractListModel):
         assert len(self.selectionModel.selectedRows()) == 1
         row = self.selectionModel.selectedRows()[0]
         if row.row() != 0:
-            oldRow = row.row()
-            newRow = oldRow - 1
-            d = self._layerStack[oldRow]
-            self.removeRow(oldRow)
-            self.insertRow(newRow)
-            self.setData(self.index(newRow), d)
-            self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
-            self.orderChanged.emit()
-            self.updateGUI()
+            with self._movingRows():
+                oldRow = row.row()
+                newRow = oldRow - 1
+                d = self._layerStack[oldRow]
+                self.removeRow(oldRow)
+                self.insertRow(newRow)
+                self.setData(self.index(newRow), d)
+                self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
+                self.orderChanged.emit()
+                self.updateGUI()
     
     @pyqtSignature("moveSelectedDown()")
     def moveSelectedDown(self):
         assert len(self.selectionModel.selectedRows()) == 1
         row = self.selectionModel.selectedRows()[0]
         if row.row() != self.rowCount() - 1:
-            oldRow = row.row()
-            newRow = oldRow + 1
-            d = self._layerStack[oldRow]
-            self.removeRow(oldRow)
-            self.insertRow(newRow)
-            self.setData(self.index(newRow), d)
-            self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
-            self.orderChanged.emit()
-            self.updateGUI()
+            with self._moving_rows():
+                oldRow = row.row()
+                newRow = oldRow + 1
+                d = self._layerStack[oldRow]
+                self.removeRow(oldRow)
+                self.insertRow(newRow)
+                self.setData(self.index(newRow), d)
+                self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
+                self.orderChanged.emit()
+                self.updateGUI()
+
+    @contextmanager
+    def _moving_rows( self ):
+        self._movingRows = True
+        yield
+        self._movingRows = False
+
+    def _onRowsRemoved( self, parent, start, end ):
+        if not self._movingRows:
+            self.elementsChanged.emit()
+
+    def _onRowsInserted( self, parent, start, end ):
+        if not self._movingRows:
+            self.elementsChanged.emit()
+
+    def _onDataChanged( self, topLeft, bottomRight ):
+        if not self._movingRows:
+            self.elementsChanged.emit()
+        

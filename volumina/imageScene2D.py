@@ -75,7 +75,7 @@ class ImageScene2D(QGraphicsScene):
     @stackedImageSources.setter
     def stackedImageSources(self, s):
         self._stackedImageSources = s
-        s.sizeChanged.connect(self._onSizeChanged)
+        s.elementsChanged.connect(self._onElementsChanged)
 
     @property
     def showTileOutlines(self):
@@ -122,7 +122,7 @@ class ImageScene2D(QGraphicsScene):
         self._dirtyIndicator = DirtyIndicator(self._tiling)
         self.addItem(self._dirtyIndicator)
 
-        self._onSizeChanged()
+        self._onElementsChanged()
         if self._tileProvider:
             self._tileProvider.notifyThreadsToStop() # prevent ref cycle
 
