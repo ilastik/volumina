@@ -1,5 +1,6 @@
 import time
 import collections
+import warnings
 from collections import deque, defaultdict, OrderedDict
 from Queue import Queue, Empty, Full, LifoQueue, PriorityQueue
 
@@ -159,42 +160,24 @@ class TiledImageLayer(object):
 class _MultiCache( object ):
     def __init__( self, first_uid, default_factory=lambda:None, maxcaches=None ):
         self._maxcaches = maxcaches
-        self._caches = OrderedDict()
+        self.caches = OrderedDict()
         self.add( first_uid, default_factory=default_factory)
 
-    def __iter__( self ):
-        return iter(self._caches.keys())
-
-    def __contains__( self, uid ):
-        return uid in self._caches
-
-    def __len__( self ):
-        return len(self._caches)
-
     def add( self, uid, default_factory=lambda:None ):
-        if uid not in self:
+        if uid not in self.caches:
             cache = defaultdict(default_factory)
-            self._caches[uid] = cache
+            self.caches[uid] = cache
         else:
             raise Exception('MultiCache.add: uid %s is already in use' % str(uid))
 
         # remove oldest cache, if necessary
         old_uid = None
-        if self._maxcaches and len(self._caches) > self._maxcaches:
-            old_uid, v = self._caches.popitem(False) # removes item in LIFO order
+        if self._maxcaches and len(self.caches) > self._maxcaches:
+            old_uid, v = self.caches.popitem(False) # removes item in LIFO order
         return old_uid
 
-    def getAt( self, uid, key ):
-        '''raises KeyError if uid is invalid'''
-        return self._caches[uid][key]
-
-    def setAt( self, uid, key, value ):
-        '''raises KeyError if uid is invalid'''
-        self._caches[uid][key] = value
 
 
-
-import inspect
 from functools import wraps
 def synchronous( tlockname ):
     """A decorator to place an instance based lock around a method """
@@ -223,61 +206,61 @@ class _TilesCache( object ):
         self._layerCache = _MultiCache(first_stack_id,  maxcaches=maxstacks)
         self._layerCacheDirty = _MultiCache(first_stack_id, default_factory=lambda:True, maxcaches=maxstacks)
         self._layerCacheTimestamp = _MultiCache(first_stack_id, default_factory=float, maxcaches=maxstacks)
-    
+
     @synchronous('_lock')
     def __contains__( self, stack_id ):
-        return stack_id in self._tileCache
+        return stack_id in self._tileCache.caches
 
     @synchronous('_lock')
     def __len__( self ):
-        return len(self._tileCache)
+        return len(self._tileCache.caches)
 
     @synchronous('_lock')
     def tile( self, stack_id, tile_id ):
-        return self._tileCache.getAt(stack_id, tile_id)
+        return self._tileCache.caches[stack_id][tile_id]
     @synchronous('_lock')
     def setTile( self, stack_id, tile_id, img, stack_visible, stack_occluded ):
         if len(stack_visible) > 0:
             visible = numpy.asarray(stack_visible)
             occluded = numpy.asarray(stack_occluded)
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
-            dirty = numpy.asarray([self._layerCacheDirty.getAt(stack_id, (ims, tile_id)) for ims in self._sims.viewImageSources()])
+            dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()])
             progress = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == False)/float(dirty.size)
         else:
             progress = 1.0
-        self._tileCache.setAt(stack_id, tile_id, (img, progress))
+        self._tileCache.caches[stack_id][tile_id] = (img, progress)
 
     @synchronous('_lock')
     def tileDirty( self, stack_id, tile_id ):
-        return self._tileCacheDirty.getAt(stack_id, tile_id)
+        return self._tileCacheDirty.caches[stack_id][tile_id]
     @synchronous('_lock')
     def setTileDirty( self, stack_id, tile_id, b):
-        self._tileCacheDirty.setAt(stack_id, tile_id, b)
+        self._tileCacheDirty.caches[stack_id][tile_id] = b
     @synchronous('_lock')
     def setTileDirtyAll( self, tile_id, b):
-        for stack_id in self._tileCacheDirty:
-            self._tileCacheDirty.setAt(stack_id, tile_id, b)
+        for stack_id in self._tileCacheDirty.caches:
+            self._tileCacheDirty.caches[stack_id][tile_id] = b
 
     @synchronous('_lock')
     def layer(self, stack_id, layer_id, tile_id ):
-        return self._layerCache.getAt(stack_id, (layer_id, tile_id))
+        return self._layerCache.caches[stack_id][(layer_id,tile_id)]
     @synchronous('_lock')
     def setLayer( self, stack_id, layer_id, tile_id, img ):
-        self._layerCache.setAt(stack_id, (layer_id, tile_id), img)
+        self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
 
     @synchronous('_lock')
     def layerDirty(self, stack_id, layer_id, tile_id ):
-        return self._layerCacheDirty.getAt(stack_id, (layer_id, tile_id))
+        return self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)]
     @synchronous('_lock')
     def setLayerDirty( self, stack_id, layer_id, tile_id, b ):
-        self._layerCacheDirty.setAt(stack_id, (layer_id, tile_id), b)
+        self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
 
     @synchronous('_lock')
     def layerTimestamp(self, stack_id, layer_id, tile_id ):
-        return self._layerCacheTimestamp.getAt(stack_id, (layer_id, tile_id))
+        return self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]
     @synchronous('_lock')
     def setLayerTimestamp( self, stack_id, layer_id, tile_id, time):
-        self._layerCacheTimestamp.setAt(stack_id, (layer_id, tile_id), time)
+        self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = time
 
     @synchronous('_lock')    
     def addStack( self, stack_id ):
@@ -289,11 +272,11 @@ class _TilesCache( object ):
 
     @synchronous('_lock')
     def updateTileIfNecessary( self, stack_id, layer_id, tile_id, req_timestamp, img):
-        if req_timestamp > self._layerCacheTimestamp.getAt(stack_id, (layer_id, tile_id)):
-            self._layerCache.setAt(stack_id, (layer_id, tile_id), img)         
-            self._layerCacheDirty.setAt(stack_id, (layer_id, tile_id), False)
-            self._layerCacheTimestamp.setAt(stack_id, (layer_id, tile_id), req_timestamp)        
-            self._tileCacheDirty.setAt(stack_id, tile_id, True)
+        if req_timestamp > self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]:
+            self._layerCache.caches[stack_id][(layer_id, tile_id)]  = img         
+            self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = False
+            self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = req_timestamp        
+            self._tileCacheDirty.caches[stack_id][tile_id] = True
 
 
 
@@ -395,7 +378,7 @@ class TileProvider( QObject ):
                         try:
                             self._dirtyLayerQueue.put_nowait( req )
                         except Full:
-                            pass
+                            warnings.warn("Request queue full. Dropping tile refresh request. Increase queue size!")
         except KeyError:
             pass
 
