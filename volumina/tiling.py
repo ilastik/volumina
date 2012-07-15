@@ -66,7 +66,7 @@ class ImageTile(object):
 
 class Tiling(object):
     # base tile size: blockSize x blockSize
-    blockSize = 32
+    blockSize = 256
     #
     # overlap between tiles 
     # positive number prevents rendering artifacts between tiles for certain zoom levels
@@ -176,6 +176,10 @@ class _MultiCache( object ):
             old_uid, v = self.caches.popitem(False) # removes item in LIFO order
         return old_uid
 
+    def touch( self, uid ):
+        c = self.caches[uid]
+        del self.caches[uid]
+        self.caches[uid] = c
 
 
 from functools import wraps
@@ -271,6 +275,14 @@ class _TilesCache( object ):
         self._layerCacheTimestamp.add( stack_id, default_factory=float )
 
     @synchronous('_lock')
+    def touchStack( self, stack_id ):
+        self._tileCache.touch( stack_id )
+        self._tileCacheDirty.touch( stack_id )
+        self._layerCache.touch( stack_id )
+        self._layerCacheDirty.touch( stack_id )
+        self._layerCacheTimestamp.touch( stack_id )
+
+    @synchronous('_lock')
     def updateTileIfNecessary( self, stack_id, layer_id, tile_id, req_timestamp, img):
         if req_timestamp > self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]:
             self._layerCache.caches[stack_id][(layer_id, tile_id)]  = img         
@@ -283,23 +295,22 @@ class _TilesCache( object ):
 class TileProvider( QObject ):
     N_THREADS = 2
     THREAD_HEARTBEAT = 0.2
-    QUEUE_SIZE = 100000
-    MAXSTACKS = 10
 
     Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling') 
     changed = pyqtSignal( QRectF )
 
-    def __init__( self, tiling, stackedImageSources, parent=None ):
+    def __init__( self, tiling, stackedImageSources, cache_size = 10, request_queue_size = 20000, parent=None ):
         QObject.__init__( self, parent = parent )
-        self.isFrozen = False
 
         self.tiling = tiling
         self._sims = stackedImageSources
+        self._cache_size = cache_size
+        self._request_queue_size = request_queue_size
 
         self._current_stack_id = self._sims.syncedId
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self.MAXSTACKS)
+        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._cache_size)
 
-        self._dirtyLayerQueue = LifoQueue(self.QUEUE_SIZE)
+        self._dirtyLayerQueue = LifoQueue(self._request_queue_size)
 
         self._sims.layerDirty.connect(self._onLayerDirty)
         self._sims.visibleChanged.connect(self._onVisibleChanged)
@@ -328,18 +339,6 @@ class TileProvider( QObject ):
                      progress,
                      self.tiling)
             yield t
-
-    def freeze( self ):
-        raise NotImplementedError
-        self.isFrozen = True
-    
-    def settleAndFreeze( self, timeout=None ):
-        raise NotImplementedError
-        self.freeze()
-
-    def unfreeze( self ):
-        raise NotImplementedError
-        self.isFrozen = False
 
     def notifyThreadsToStop( self ):
         self._keepRendering = False
@@ -409,7 +408,9 @@ class TileProvider( QObject ):
             self.changed.emit(QRectF(rect))
 
     def _onSyncedIdChanged( self, oldId, newId ):
-        if newId not in self._cache:
+        if newId in self._cache:
+            self._cache.touchStack( newId )
+        else:
             self._cache.addStack( newId )
         self._current_stack_id = newId
         self.changed.emit(QRectF())
@@ -426,8 +427,8 @@ class TileProvider( QObject ):
                 self.changed.emit(QRectF())
 
     def _onSizeChanged(self):
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self.MAXSTACKS)
-        self._dirtyLayerQueue = LifoQueue(self.QUEUE_SIZE)
+        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._cache_size)
+        self._dirtyLayerQueue = LifoQueue(self._request_queue_size)
         self.changed.emit(QRectF())
         
     def _onOrderChanged(self):
