@@ -205,7 +205,7 @@ class _TilesCache( object ):
         self._lock = Lock()
         self._sims = sims
 
-        self._tileCache = _MultiCache(first_stack_id, maxcaches=maxstacks)
+        self._tileCache = _MultiCache(first_stack_id, maxcaches=maxstacks, default_factory=lambda:(None,0.))
         self._tileCacheDirty = _MultiCache(first_stack_id, default_factory=lambda:True, maxcaches=maxstacks)
         self._layerCache = _MultiCache(first_stack_id,  maxcaches=maxstacks)
         self._layerCacheDirty = _MultiCache(first_stack_id, default_factory=lambda:True, maxcaches=maxstacks)
@@ -229,7 +229,7 @@ class _TilesCache( object ):
             occluded = numpy.asarray(stack_occluded)
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
             dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()])
-            progress = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == False)/float(dirty.size)
+            progress = 1.-numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)/float(numpy.count_nonzero(visibleAndNotOccluded))
         else:
             progress = 1.0
         self._tileCache.caches[stack_id][tile_id] = (img, progress)

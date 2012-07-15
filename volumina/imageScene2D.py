@@ -146,7 +146,7 @@ class ImageScene2D(QGraphicsScene):
 
         self._tileProvider = None
         self._stackedImageSources = None
-        self._showTileOutlines = True
+        self._showTileOutlines = False
     
         self.data2scene = QTransform(0,1,1,0,0,0) 
         self.scene2data = self.data2scene.transposed()
@@ -196,5 +196,7 @@ class ImageScene2D(QGraphicsScene):
     def drawBackground(self, painter, rectF):
         tiles = self._tileProvider.getTiles(rectF)
         for tile in tiles:
-            painter.drawImage(tile.rectF, tile.qimg)
+            # prevent flickering
+            if not tile.progress < 1.0:
+                painter.drawImage(tile.rectF, tile.qimg)
             self._dirtyIndicator.setTileProgress(tile.id, tile.progress) 
