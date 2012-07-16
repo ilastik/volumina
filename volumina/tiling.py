@@ -375,6 +375,9 @@ class TileProvider( QObject ):
     def notifyThreadsToStop( self ):
         self._keepRendering = False
 
+    def join( self ):
+        return self._dirtyLayerQueue.join()
+
     def _dirtyLayersWorker( self ):
         while self._keepRendering:
             try:
@@ -389,6 +392,8 @@ class TileProvider( QObject ):
                         self.changed.emit(QRectF(self.tiling.imageRects[tile_nr]))
             except KeyError:
                 pass
+            finally:
+                self._dirtyLayerQueue.task_done()
 
     def _refreshTile( self, stack_id, tile_no ):
         try:

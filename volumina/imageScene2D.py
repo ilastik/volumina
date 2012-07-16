@@ -200,3 +200,6 @@ class ImageScene2D(QGraphicsScene):
             if not tile.progress < 1.0:
                 painter.drawImage(tile.rectF, tile.qimg)
             self._dirtyIndicator.setTileProgress(tile.id, tile.progress) 
+
+    def joinRendering( self ):
+        return self._tileProvider.join()
