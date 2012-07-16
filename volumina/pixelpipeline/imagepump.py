@@ -33,10 +33,10 @@ class StackedImageSources( QObject ):
     layerDirty = pyqtSignal(int, QRect)
     visibleChanged = pyqtSignal(int, bool)
     opacityChanged = pyqtSignal(int, float)
-    syncedIdChanged = pyqtSignal( object, object ) # old id, new id
     sizeChanged  = pyqtSignal()
     orderChanged = pyqtSignal()
     stackIdChanged = pyqtSignal( object, object ) # old id, new id
+    layerIdChanged = pyqtSignal( object, object, object ) # ims, old id, new id
 
     @property
     def stackId( self ):
@@ -169,8 +169,6 @@ class StackedImageSources( QObject ):
         layer.visibleChanged.connect( self._curryRegistry['V'][layer] )
         imageSource.idChanged.connect( self._curryRegistry['Id'][imageSource] )
 
-        self.syncedId = imageSource.id
-
         self._updateOcclusionInfo()
         self.sizeChanged.emit()
 
@@ -227,10 +225,7 @@ class StackedImageSources( QObject ):
             self.layerDirty.emit(self._layerStackModel.layerIndex(layer), rect)
 
     def _onImageSourceIdChanged( self, imageSource, oldId, newId ):
-        if not(newId == self.syncedId):
-            oldId = self.syncedId
-            self.syncedId = newId
-            self.syncedIdChanged.emit(oldId, self.syncedId) 
+        self.layerIdChanged.emit( imageSource, oldId, newId )
 
     def _onOpacityChanged( self, layer, opacity ):
         self._updateOcclusionInfo()
@@ -335,7 +330,6 @@ class ImagePump( object ):
         self._layerToSliceSrcs = {}
 
     def _onIdChanged( self, old, new ):
-        return
         self._stackedImageSources.stackId = new
 
     def _createSources( self, layer ):
