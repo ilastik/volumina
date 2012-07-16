@@ -276,15 +276,13 @@ class NavigationControler(QObject):
                     
     def changeTime(self, newTime):
         for i in range(3):
-            for src in self._sliceSources[i]:
-                src.setThrough(0, newTime)
+            self._sliceSources[i].setThrough(0, newTime)
     
     def changeChannel(self, newChannel):
         if self._model.shape is None:
             return
         for i in range(3):
-            for src in self._sliceSources[i]:
-                src.setThrough(2, newChannel)
+            self._sliceSources[i].setThrough(2, newChannel)
 
     def changeSliceRelative(self, delta, axis):
         if self._model.shape is None:
@@ -378,8 +376,7 @@ class NavigationControler(QObject):
         self._views[axis].hud.sliceSelector.setValue(num)
 
         #re-configure the slice source
-        for src in self._sliceSources[axis]:
-            src.setThrough(1, num)
+        self._sliceSources[axis].setThrough(1,num)
 
     def _positionValid(self, pos):
         if self._model.shape is None:
