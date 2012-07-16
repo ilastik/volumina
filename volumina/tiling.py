@@ -312,8 +312,8 @@ class TileProvider( QObject ):
     n_threads                 -- maximal number of request threads; this determines the
                                  maximal number of simultaneously running requests 
                                  to the pixelpipeline (default: 2)
-    layerIdChange_means_dirty -- interpret layerId changes as dirtyness; this voids the 
-                                 caching mechanism (default False)
+    layerIdChange_means_dirty -- layerId changes invalidate the cache; by default only 
+                                 stackId changes do that (default False)
     parent                    -- QObject
     
     '''
@@ -380,8 +380,6 @@ class TileProvider( QObject ):
             try:
                 if timestamp > cache.layerTimestamp( stack_id, ims, tile_nr ):
                     img = image_req.wait()
-                    import time
-                    time.sleep(0.3)
                     cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
                     if stack_id == self._current_stack_id and cache is self._cache:
                         self.changed.emit(QRectF(self.tiling.imageRects[tile_nr]))

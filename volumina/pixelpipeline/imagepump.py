@@ -333,7 +333,6 @@ class ImagePump( object ):
         self._layerToSliceSrcs = {}
 
     def _onIdChanged( self, old, new ):
-        return
         self._stackedImageSources.stackId = new
 
     def _createSources( self, layer ):
