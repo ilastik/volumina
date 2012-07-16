@@ -5,7 +5,7 @@ sys.path.append("../.")
 import numpy
 import os.path
 
-from PyQt4.QtCore import QRect
+from PyQt4.QtCore import QRect, pyqtSignal
 from PyQt4.QtGui import QImage
 
 import volumina._testing
@@ -13,14 +13,21 @@ from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageS
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.layer import GrayscaleLayer, RGBALayer
 
-#*******************************************************************************
-# G r a y s c a l e I m a g e S o u r c e T e s t                              *
-#*******************************************************************************
 
+
+class _ArraySource2d( ArraySource ):
+    idChanged = pyqtSignal( object, object )
+
+    def __init__( self, array ):
+        super(_ArraySource2d, self).__init__( array )
+        self.id = id(self)
+
+
+        
 class GrayscaleImageSourceTest( ut.TestCase ):
     def setUp( self ):
         self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
-        self.ars = ArraySource(self.raw)
+        self.ars = _ArraySource2d(self.raw)
         self.ims = GrayscaleImageSource( self.ars, GrayscaleLayer( self.ars ))
         
 
@@ -62,10 +69,10 @@ class RGBAImageSourceTest( ut.TestCase ):
         from volumina import _testing
         basedir = os.path.dirname(_testing.__file__)
         self.data = np.load(os.path.join(basedir, 'rgba129x104.npy'))
-        self.red = ArraySource(self.data[:,:,0])
-        self.green = ArraySource(self.data[:,:,1])
-        self.blue = ArraySource(self.data[:,:,2])
-        self.alpha = ArraySource(self.data[:,:,3])
+        self.red = _ArraySource2d(self.data[:,:,0])
+        self.green = _ArraySource2d(self.data[:,:,1])
+        self.blue = _ArraySource2d(self.data[:,:,2])
+        self.alpha = _ArraySource2d(self.data[:,:,3])
 
         self.ims_rgba = RGBAImageSource( self.red, self.green, self.blue, self.alpha, RGBALayer( self.red, self.green, self.blue, self.alpha) )
         self.ims_rgb = RGBAImageSource( self.red, self.green, self.blue, ConstantSource(), RGBALayer(self.red, self.green, self.blue) )
