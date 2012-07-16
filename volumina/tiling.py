@@ -296,19 +296,42 @@ class _TilesCache( object ):
 
 
 class TileProvider( QObject ):
-    N_THREADS = 2
     THREAD_HEARTBEAT = 0.2
 
     Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling') 
     changed = pyqtSignal( QRectF )
 
-    def __init__( self, tiling, stackedImageSources, cache_size = 10, request_queue_size = 100000, parent=None ):
+
+    '''TileProvider __init__
+    
+    Keyword Arguments:
+    cache_size                -- maximal number of encountered stacks 
+                                 to cache, i.e. slices if the imagesources 
+                                 draw from slicesources (default 10)
+    request_queue_size        -- maximal number of request to queue up (default 100000)
+    n_threads                 -- maximal number of request threads; this determines the
+                                 maximal number of simultaneously running requests 
+                                 to the pixelpipeline (default: 2)
+    layerIdChange_means_dirty -- interpret layerId changes as dirtyness; this voids the 
+                                 caching mechanism (default False)
+    parent                    -- QObject
+    
+    '''
+    def __init__( self, tiling,
+                  stackedImageSources,
+                  cache_size = 10,
+                  request_queue_size = 100000,
+                  n_threads = 2,
+                  layerIdChange_means_dirty=False,
+                  parent=None ):
         QObject.__init__( self, parent = parent )
 
         self.tiling = tiling
         self._sims = stackedImageSources
         self._cache_size = cache_size
         self._request_queue_size = request_queue_size
+        self._n_threads = n_threads
+        self._layerIdChange_means_dirty = layerIdChange_means_dirty
 
         self._current_stack_id = self._sims.stackId
         self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._cache_size)
@@ -321,10 +344,12 @@ class TileProvider( QObject ):
         self._sims.sizeChanged.connect(self._onSizeChanged)
         self._sims.orderChanged.connect(self._onOrderChanged)
         self._sims.stackIdChanged.connect(self._onStackIdChanged)
+        if self._layerIdChange_means_dirty:
+            self._sims.layerIdChanged.connect(self._onLayerIdChanged)
 
         self._keepRendering = True
         
-        self._dirtyLayerThreads = [Thread(target=self._dirtyLayersWorker) for i in range(self.N_THREADS)]
+        self._dirtyLayerThreads = [Thread(target=self._dirtyLayersWorker) for i in range(self._n_threads)]
         for thread in self._dirtyLayerThreads:
             thread.daemon = True
         [ thread.start() for thread in self._dirtyLayerThreads ]
@@ -421,8 +446,8 @@ class TileProvider( QObject ):
         self.changed.emit(QRectF())
 
     def _onLayerIdChanged( self, ims, oldId, newId ):
-        #FIXME
-        pass
+        if self._layerIdChange_means_dirty:
+            self._onLayerDirty( ims, QRect() )
 
     def _onVisibleChanged(self, ims, visible):
         for tile_no in xrange(len(self.tiling)):
