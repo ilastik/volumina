@@ -30,9 +30,9 @@ class StackedImageSources( QObject ):
     a permanent remove.
 
     """    
-    layerDirty = pyqtSignal(int, QRect)
-    visibleChanged = pyqtSignal(int, bool)
-    opacityChanged = pyqtSignal(int, float)
+    layerDirty = pyqtSignal(object, QRect)
+    visibleChanged = pyqtSignal(object, bool)
+    opacityChanged = pyqtSignal(object, float)
     sizeChanged  = pyqtSignal()
     orderChanged = pyqtSignal()
     stackIdChanged = pyqtSignal( object, object ) # old id, new id
@@ -219,22 +219,25 @@ class StackedImageSources( QObject ):
         '''
         return self._imsOccluded[ims]
 
+    def isVisible( self, ims ):
+        if self.isActive(self._imsToLayer[ims]):
+            return self._imsToLayer[ims].visible
+        else:
+            raise KeyError()
+
     def _onImageSourceDirty( self, imageSource, rect ):
-        layer = self._imsToLayer[imageSource]
-        if layer.visible:
-            self.layerDirty.emit(self._layerStackModel.layerIndex(layer), rect)
+        self.layerDirty.emit( imageSource, rect )
 
     def _onImageSourceIdChanged( self, imageSource, oldId, newId ):
         self.layerIdChanged.emit( imageSource, oldId, newId )
 
     def _onOpacityChanged( self, layer, opacity ):
         self._updateOcclusionInfo()
-        if layer.visible:
-            self.opacityChanged.emit(self._layerStackModel.layerIndex(layer), opacity)
+        self.opacityChanged.emit(self._layerToIms[layer], opacity)
 
     def _onVisibleChanged( self, layer, visible ):
         self._updateOcclusionInfo()
-        self.visibleChanged.emit(self._layerStackModel.layerIndex(layer), visible)
+        self.visibleChanged.emit(self._layerToIms[layer], visible)
 
     def _onOrderChanged( self ):
         self._updateOcclusionInfo()
@@ -246,7 +249,7 @@ class StackedImageSources( QObject ):
 
     def _removeLayer( self, layer ):
         if layer not in self._layerToIms:
-            raise Exception("StackedImageSources.deregister(): layer %s is not registered; can't be deregistered" % str(layer))
+            raise Exception("StackedImageSources._removeLayer(): layer %s is not registered; can't be removed" % str(layer))
         ims = self._layerToIms[layer]
 
         ims.isDirty.disconnect( self._curryRegistry['I'][ims] )

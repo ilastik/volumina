@@ -403,13 +403,13 @@ class TileProvider( QObject ):
         p.end()
         return qimg
 
-    def _onLayerDirty(self, row, rect):
+    def _onLayerDirty(self, ims, rect):
         tile_nos = self.tiling.intersectedF( QRectF(rect) )
         for tile_no in tile_nos:
             for ims in self._sims.viewImageSources():
                 self._cache.setLayerDirty(self._current_stack_id, ims, tile_no, True)
             self._cache.setTileDirty(self._current_stack_id, tile_no, True)
-        if self._sims.getVisible( row ):
+        if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):
             self.changed.emit(QRectF(rect))
 
     def _onStackIdChanged( self, oldId, newId ):
@@ -420,16 +420,21 @@ class TileProvider( QObject ):
         self._current_stack_id = newId
         self.changed.emit(QRectF())
 
-    def _onVisibleChanged(self, layerNr, visible):
+    def _onLayerIdChanged( self, ims, oldId, newId ):
+        #FIXME
+        pass
+
+    def _onVisibleChanged(self, ims, visible):
         for tile_no in xrange(len(self.tiling)):
             self._cache.setTileDirtyAll(tile_no, True)
-        self.changed.emit(QRectF())
+        if not self._sims.isOccluded( ims ):
+            self.changed.emit(QRectF())
 
-    def _onOpacityChanged(self, row, opacity):
-        if self._sims.getVisible(row):
-            for tile_no in xrange(len(self.tiling)):
-                self._cache.setTileDirtyAll(tile_no, True)
-                self.changed.emit(QRectF())
+    def _onOpacityChanged(self, ims, opacity):
+        for tile_no in xrange(len(self.tiling)):
+            self._cache.setTileDirtyAll(tile_no, True)
+        if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):        
+            self.changed.emit(QRectF())
 
     def _onSizeChanged(self):
         self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._cache_size)
