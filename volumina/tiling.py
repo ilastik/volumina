@@ -261,6 +261,10 @@ class _TilesCache( object ):
     @synchronous('_lock')
     def setLayerDirty( self, stack_id, layer_id, tile_id, b ):
         self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
+    @synchronous('_lock')
+    def setLayerDirtyAll( self, layer_id, tile_id, b ):
+        for stack_id in self._layerCacheDirty.caches:
+            self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
 
     @synchronous('_lock')
     def layerTimestamp(self, stack_id, layer_id, tile_id ):
@@ -306,7 +310,7 @@ class TileProvider( QObject ):
     
     Keyword Arguments:
     cache_size                -- maximal number of encountered stacks 
-                                 to cache, i.e. slices if the imagesources 
+                                 to cache, i.e. slices if the imagesources  
                                  draw from slicesources (default 10)
     request_queue_size        -- maximal number of request to queue up (default 100000)
     n_threads                 -- maximal number of request threads; this determines the
@@ -426,12 +430,11 @@ class TileProvider( QObject ):
         p.end()
         return qimg
 
-    def _onLayerDirty(self, ims, rect):
-        tile_nos = self.tiling.intersectedF( QRectF(rect) )
-        for tile_no in tile_nos:
+    def _onLayerDirty(self, ims ):
+        for tile_no in xrange(len(self.tiling)):
             for ims in self._sims.viewImageSources():
-                self._cache.setLayerDirty(self._current_stack_id, ims, tile_no, True)
-            self._cache.setTileDirty(self._current_stack_id, tile_no, True)
+                self._cache.setLayerDirtyAll(ims, tile_no, True)
+            self._cache.setTileDirtyAll(tile_no, True)
         if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):
             self.changed.emit(QRectF(rect))
 

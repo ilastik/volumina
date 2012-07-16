@@ -49,7 +49,8 @@ assert issubclass(SliceRequest, RequestABC)
 #*******************************************************************************
 
 class SliceSource( QObject ):
-    isDirty = pyqtSignal( object )
+    areaDirty = pyqtSignal( object )
+    isDirty = pyqtSignal()
     throughChanged = pyqtSignal( tuple, tuple ) # old, new
     idChanged = pyqtSignal( object, object ) # old, new
     
@@ -98,7 +99,7 @@ class SliceSource( QObject ):
         assert isinstance(slicing, tuple)
         if not is_pure_slicing(slicing):
             raise Exception('dirty region: slicing is not pure')
-        self.isDirty.emit( slicing )
+        self.areaDirty.emit( slicing )
 
     def _onDatasourceDirty( self, ds_slicing ):
         # embedding of slice in datasource space
@@ -109,7 +110,8 @@ class SliceSource( QObject ):
             dirty_area = [None] * 2
             dirty_area[0] = inter[self.sliceProjection.abscissa]
             dirty_area[1] = inter[self.sliceProjection.ordinate]
-            self.setDirty(tuple(dirty_area))            
+            self.setDirty(tuple(dirty_area))
+        self.isDirty.emit()
 assert issubclass(SliceSource, SourceABC)
 
 
@@ -119,7 +121,6 @@ assert issubclass(SliceSource, SourceABC)
 #*******************************************************************************
 
 class SyncedSliceSources( QObject ):
-    isDirty = pyqtSignal( object )
     throughChanged = pyqtSignal( tuple, tuple ) # old , new
     idChanged = pyqtSignal( object, object )
 
