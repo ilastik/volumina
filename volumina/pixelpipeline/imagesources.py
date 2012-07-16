@@ -82,7 +82,7 @@ class GrayscaleImageSource( ImageSource ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
         super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True )
         self._arraySource2D = arraySource2D
-        self.id = arraySource2D.id()
+        self.id = arraySource2D.id
 
         self._layer = layer
         

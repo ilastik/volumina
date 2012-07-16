@@ -52,6 +52,10 @@ class SliceSource( QObject ):
     isDirty = pyqtSignal( object )
     throughChanged = pyqtSignal( tuple, tuple ) # old, new
     idChanged = pyqtSignal( object, object ) # old, new
+    
+    @property
+    def id( self ):
+        return (self,tuple(self._through))
 
     @property
     def through( self ):
@@ -60,9 +64,10 @@ class SliceSource( QObject ):
     def through( self, value ):
         if value != self._through:
             old = self._through
+            old_id = self.id
             self._through = value
             self.throughChanged.emit(tuple(old), tuple(value))
-            self.idChanged.emit(tuple(old), tuple(value))
+            self.idChanged.emit(old_id, self.id)
     
     def __init__(self, datasource, sliceProjection = projectionAlongTZC):
         assert isinstance(datasource, SourceABC) , 'wrong type: %s' % str(type(datasource)) 
@@ -72,9 +77,6 @@ class SliceSource( QObject ):
         self._datasource = datasource
         self._datasource.isDirty.connect(self._onDatasourceDirty)
         self._through = len(sliceProjection.along) * [0]
-
-    def id( self ):
-        return self._through
 
     def setThrough( self, index, value ):
         assert index < len(self.through)
@@ -119,6 +121,11 @@ assert issubclass(SliceSource, SourceABC)
 class SyncedSliceSources( QObject ):
     isDirty = pyqtSignal( object )
     throughChanged = pyqtSignal( tuple, tuple ) # old , new
+    idChanged = pyqtSignal( object, object )
+
+    @property
+    def id( self ):
+        return (self, tuple(self._through))
 
     @property
     def through( self ):
@@ -127,11 +134,12 @@ class SyncedSliceSources( QObject ):
     def through( self, value ):
         if value != self._through:
             old = self._through
+            old_id = self.id
             self._through = value
             for src in self._srcs:
                 src.through = value
             self.throughChanged.emit(tuple(old), tuple(value))
-            #self.setDirty((slice(None), slice(None)))
+            self.idChanged.emit(old, self.id)
 
     def __init__(self, through = None, slicesrcs = []):
         super(SyncedSliceSources, self).__init__()
@@ -150,24 +158,14 @@ class SyncedSliceSources( QObject ):
         through[index] = value
         self.through = through
 
-    def setDirty( self, slicing ):
-        if not is_pure_slicing(slicing):
-            raise Exception('dirty region: slicing is not pure')
-        self.isDirty.emit( slicing )
-
     def add( self, sliceSrc ):
         assert isinstance( sliceSrc, SliceSource ), 'wrong type: %s' % str(type(sliceSrc))
         sliceSrc.through = self.through
         self._srcs.add( sliceSrc )
-        self.setDirty( (slice(None), slice(None)) ) 
 
     def remove( self, sliceSrc ):
         assert isinstance( sliceSrc, SliceSource )
         self._srcs.remove( sliceSrc )
-        self.setDirty( slice(None) )         
-
-
-
 
 
 

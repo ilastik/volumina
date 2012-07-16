@@ -299,7 +299,7 @@ class TileProvider( QObject ):
     Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling') 
     changed = pyqtSignal( QRectF )
 
-    def __init__( self, tiling, stackedImageSources, cache_size = 10, request_queue_size = 20000, parent=None ):
+    def __init__( self, tiling, stackedImageSources, cache_size = 10, request_queue_size = 100000, parent=None ):
         QObject.__init__( self, parent = parent )
 
         self.tiling = tiling
@@ -307,7 +307,7 @@ class TileProvider( QObject ):
         self._cache_size = cache_size
         self._request_queue_size = request_queue_size
 
-        self._current_stack_id = self._sims.syncedId
+        self._current_stack_id = self._sims.stackId
         self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._cache_size)
 
         self._dirtyLayerQueue = LifoQueue(self._request_queue_size)
@@ -315,9 +315,9 @@ class TileProvider( QObject ):
         self._sims.layerDirty.connect(self._onLayerDirty)
         self._sims.visibleChanged.connect(self._onVisibleChanged)
         self._sims.opacityChanged.connect(self._onOpacityChanged)
-        self._sims.syncedIdChanged.connect(self._onSyncedIdChanged)
         self._sims.sizeChanged.connect(self._onSizeChanged)
         self._sims.orderChanged.connect(self._onOrderChanged)
+        self._sims.stackIdChanged.connect(self._onStackIdChanged)
 
         self._keepRendering = True
         
@@ -352,6 +352,8 @@ class TileProvider( QObject ):
             try:
                 if timestamp > cache.layerTimestamp( stack_id, ims, tile_nr ):
                     img = image_req.wait()
+                    import time
+                    time.sleep(0.3)
                     cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
                     if stack_id == self._current_stack_id and cache is self._cache:
                         self.changed.emit(QRectF(self.tiling.imageRects[tile_nr]))
@@ -360,11 +362,11 @@ class TileProvider( QObject ):
 
     def _refreshTile( self, stack_id, tile_no ):
         try:
-            if stack_id in self._cache and self._cache.tileDirty( stack_id, tile_no ):
+            if self._cache.tileDirty( stack_id, tile_no ):
                 self._cache.setTileDirty(stack_id, tile_no, False)
                 img = self._renderTile( stack_id, tile_no )
                 self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible(), self._sims.viewOccluded() )
-                
+
                 # refresh dirty layer tiles 
                 for ims in self._sims.viewImageSources():
                     if self._cache.layerDirty(stack_id, ims, tile_no) and not self._sims.isOccluded(ims):
@@ -407,7 +409,7 @@ class TileProvider( QObject ):
         if self._sims.getVisible( row ):
             self.changed.emit(QRectF(rect))
 
-    def _onSyncedIdChanged( self, oldId, newId ):
+    def _onStackIdChanged( self, oldId, newId ):
         if newId in self._cache:
             self._cache.touchStack( newId )
         else:

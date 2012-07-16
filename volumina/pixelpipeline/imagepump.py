@@ -312,8 +312,8 @@ class ImagePump( object ):
         for layer in self._layerStackModel:
             self._addLayer( layer )
         self._stackedImageSources = StackedImageSources( layerStackModel )
-        self._stackedImageSources.stackId = self._syncedSliceSources.through
-        self._syncedSliceSources.throughChanged.connect( self._onThroughChanged )
+        self._stackedImageSources.stackId = self._syncedSliceSources.id
+        self._syncedSliceSources.idChanged.connect( self._onIdChanged )
 
         self._layerStackModel.layerAdded.connect( self._onLayerAdded )
         self._layerStackModel.layerRemoved.connect( self._onLayerRemoved )
@@ -334,7 +334,8 @@ class ImagePump( object ):
         assert(len(self._syncedSliceSources) == 0 )
         self._layerToSliceSrcs = {}
 
-    def _onThroughChanged( self, old, new ):
+    def _onIdChanged( self, old, new ):
+        return
         self._stackedImageSources.stackId = new
 
     def _createSources( self, layer ):
