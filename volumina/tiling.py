@@ -228,8 +228,11 @@ class _TilesCache( object ):
             visible = numpy.asarray(stack_visible)
             occluded = numpy.asarray(stack_occluded)
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
-            dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()])
-            progress = 1.-numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)/float(numpy.count_nonzero(visibleAndNotOccluded))
+            if numpy.count_nonzero(visibleAndNotOccluded) > 0:
+                dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()])
+                progress = 1.-numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)/float(numpy.count_nonzero(visibleAndNotOccluded))
+            else:
+                progress 1.0
         else:
             progress = 1.0
         self._tileCache.caches[stack_id][tile_id] = (img, progress)
