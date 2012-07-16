@@ -36,10 +36,13 @@ class ImageScene2DTest( ut.TestCase ):
         img = QImage(310,290,QImage.Format_ARGB32_Premultiplied)
         p = QPainter(img)
         s.render(p)
+        s.joinRendering()
+        s.render(p)
         p.end()
         return byte_view(img)
 
     def testBasicImageRenderingCapability( self ):
+        import time
         aimg = self.renderScene(self.scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
@@ -59,10 +62,6 @@ class ImageScene2DTest( ut.TestCase ):
         aimg = self.renderScene(self.scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
-
-    def tearDown( self ):
-        self.scene._renderThread.stop()
-        self.app.quit()
 
 if __name__ == '__main__':
     ut.main()
