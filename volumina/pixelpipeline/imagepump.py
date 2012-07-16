@@ -36,6 +36,17 @@ class StackedImageSources( QObject ):
     syncedIdChanged = pyqtSignal( object, object ) # old id, new id
     sizeChanged  = pyqtSignal()
     orderChanged = pyqtSignal()
+    stackIdChanged = pyqtSignal( object, object ) # old id, new id
+
+    @property
+    def stackId( self ):
+        return self._stackId
+
+    @stackId.setter
+    def stackId( self, v ):
+        old = self._stackId
+        self._stackId = v
+        self.stackIdChanged.emit( old, v )
 
     class _ViewBase( object ):
         def __init__( self, sims ):
@@ -99,7 +110,7 @@ class StackedImageSources( QObject ):
 
         layerStackModel.orderChanged.connect( self._onOrderChanged )
 
-        self.syncedId = (0,0,0)
+        self._stackId = 0
 
     def __len__( self ):
         return len([ _ for _ in self])
@@ -297,10 +308,12 @@ class ImagePump( object ):
         self._layerToSliceSrcs = {}
     
         ## setup image source stack and slice sources
-        self._stackedImageSources = StackedImageSources( layerStackModel )
         self._syncedSliceSources = SyncedSliceSources( len(sliceProjection.along) * (0,) )
         for layer in self._layerStackModel:
             self._addLayer( layer )
+        self._stackedImageSources = StackedImageSources( layerStackModel )
+        self._stackedImageSources.stackId = self._syncedSliceSources.through
+        self._syncedSliceSources.throughChanged.connect( self._onThroughChanged )
 
         self._layerStackModel.layerAdded.connect( self._onLayerAdded )
         self._layerStackModel.layerRemoved.connect( self._onLayerRemoved )
@@ -320,6 +333,9 @@ class ImagePump( object ):
                 self._syncedSliceSources.remove(ss)
         assert(len(self._syncedSliceSources) == 0 )
         self._layerToSliceSrcs = {}
+
+    def _onThroughChanged( self, old, new ):
+        self._stackedImageSources.stackId = new
 
     def _createSources( self, layer ):
         def sliceSrcOrNone( datasrc ):
