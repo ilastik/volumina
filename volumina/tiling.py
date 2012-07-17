@@ -506,7 +506,7 @@ class TileProvider( QObject ):
                 self._cache.setLayerDirtyAll(ims, tile_no, True)
             self._cache.setTileDirtyAll(tile_no, True)
         if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):
-            self.changed.emit(QRectF(rect))
+            self.changed.emit(QRectF())
 
     def _onStackIdChanged( self, oldId, newId ):
         if newId in self._cache:
