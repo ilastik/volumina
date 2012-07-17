@@ -1,3 +1,4 @@
+import threading
 from PyQt4.QtCore import QObject, pyqtSignal
 from asyncabcs import RequestABC, SourceABC
 import volumina
@@ -12,10 +13,14 @@ import volumina.adaptors
 #*******************************************************************************
 
 class ArrayRequest( object ):
-    def __init__( self, result ):
-        self._result = result
+    def __init__( self, array, slicing ):
+        self._array = array
+        self._slicing = slicing
+        self._result = None
 
     def wait( self ):
+        if not self._result:
+            self._result = self._array[self._slicing]
         return self._result
     
     def getResult(self):
@@ -29,7 +34,12 @@ class ArrayRequest( object ):
         
     # callback( result = result, **kwargs )
     def notify( self, callback, **kwargs ):
-        callback(self._result, **kwargs)
+        t = threading.Thread(target=self._doNotify, args=( callback, kwargs ))
+        t.start()
+
+    def _doNotify( self, callback, kwargs ):
+        result = self.wait()
+        callback(result, **kwargs)
 assert issubclass(ArrayRequest, RequestABC)
 
 #*******************************************************************************
@@ -48,7 +58,7 @@ class ArraySource( QObject ):
             raise Exception('ArraySource: slicing is not pure')
         assert(len(slicing) == len(self._array.shape)), \
             "slicing into an array of shape=%r requested, but the slicing object is %r" % (slicing, self._array.shape)  
-        return ArrayRequest(self._array[slicing])
+        return ArrayRequest(self._array, slicing)
 
     def setDirty( self, slicing):
         if not is_pure_slicing(slicing):
@@ -237,11 +247,15 @@ assert issubclass(ConstantRequest, RequestABC)
 
 class ConstantSource( QObject ):
     isDirty = pyqtSignal( object )
+    idChanged = pyqtSignal( object, object ) # old, new
 
-    def __init__( self, constant = 0, dtype = np.uint8 ):
-        super(ConstantSource, self).__init__()
+    def __init__( self, constant = 0, dtype = np.uint8, parent=None ):
+        super(ConstantSource, self).__init__(parent=parent)
         self._constant = constant
         self._dtype = dtype
+
+    def id( self ):
+        return id(self)
 
     def request( self, slicing ):
         assert is_pure_slicing(slicing)

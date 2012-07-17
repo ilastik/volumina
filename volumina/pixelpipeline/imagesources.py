@@ -24,13 +24,28 @@ class ImageSource( QObject ):
     isDirty -- a rectangular region has changed; transmits
                an empty QRect if the whole image is dirty
 
+    idChanged -- source represents a different image now (oldId, newId);
+                 id is some immutable object
+
     '''
 
     isDirty = pyqtSignal( QRect )
+    idChanged = pyqtSignal( object, object )
+
+    @property
+    def id( self ):
+        return self.__id
+
+    @id.setter
+    def id( self, v):
+        old = self.id
+        self.__id = v
+        self.idChanged.emit(old, v)
 
     def __init__( self, guarantees_opaqueness = False, parent = None ):
         super(ImageSource, self).__init__( parent = parent )
         self._opaque = guarantees_opaqueness
+        self.__id = id(self)
 
     def request( self, rect ):
         raise NotImplementedError
@@ -78,10 +93,12 @@ class GrayscaleImageSource( ImageSource ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
         super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True )
         self._arraySource2D = arraySource2D
-        
+        self.id = arraySource2D.id
+
         self._layer = layer
         
         self._arraySource2D.isDirty.connect(self.setDirty)
+        self._arraySource2D.idChanged.connect(self._onIdChanged)
         self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
 
     def request( self, qrect ):
@@ -96,6 +113,10 @@ class GrayscaleImageSource( ImageSource ):
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s)
         return GrayscaleImageRequest( req, self._layer.normalize[0] )
+
+    def _onIdChanged( self, oldId, newId ):
+        self.id = newId
+        
 assert issubclass(GrayscaleImageSource, SourceABC)
 
 class GrayscaleImageRequest( object ):
@@ -104,7 +125,6 @@ class GrayscaleImageRequest( object ):
         self._canceled = False
         self._arrayreq = arrayrequest
         self._normalize = normalize
-
 
     def wait(self):
         self._arrayreq.wait()
@@ -152,7 +172,10 @@ class AlphaModulatedImageSource( ImageSource ):
         super(AlphaModulatedImageSource, self).__init__()
         self._arraySource2D = arraySource2D
         self._layer = layer
+        self.id = arraySource2D.id
+
         self._arraySource2D.isDirty.connect(self.setDirty)
+        self._arraySource2D.idChanged.connect(self._onIdChanged)
 
     def request( self, qrect ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
@@ -166,6 +189,9 @@ class AlphaModulatedImageSource( ImageSource ):
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s)
         return AlphaModulatedImageRequest( req, self._layer.tintColor, self._layer.normalize[0] )
+
+    def _onIdChanged( self, oldId, newId ):
+        self.id = newId
 assert issubclass(AlphaModulatedImageSource, SourceABC)
 
 class AlphaModulatedImageRequest( object ):
@@ -226,7 +252,10 @@ class ColortableImageSource( ImageSource ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
         super(ColortableImageSource, self).__init__()
         self._arraySource2D = arraySource2D
+        self.id = arraySource2D.id
+        
         self._arraySource2D.isDirty.connect(self.setDirty)
+        self._arraySource2D.idChanged.connect(self._onIdChanged)        
         self._colorTable = colorTable
         
     def request( self, qrect ):
@@ -240,7 +269,10 @@ class ColortableImageSource( ImageSource ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s)
-        return ColortableImageRequest( req , self._colorTable)  
+        return ColortableImageRequest( req , self._colorTable)
+
+    def _onIdChanged( self, oldId, newId ):
+        self.id = newId
 assert issubclass(ColortableImageSource, SourceABC)
 
 class ColortableImageRequest( object ):
@@ -309,8 +341,11 @@ class RGBAImageSource( ImageSource ):
 
         super(RGBAImageSource, self).__init__( guarantees_opaqueness = guarantees_opaqueness )
         self._channels = channels
+        self.id = (red.id, green.id, blue.id, alpha.id)
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)
+        for arraySource in self._channels:
+            arraySource.idChanged.connect(self._onIdChanged)
 
     def request( self, qrect ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
@@ -332,6 +367,8 @@ class RGBAImageSource( ImageSource ):
                 shape.append(t)
         assert len(shape) == 2
         return RGBAImageRequest( r, g, b, a, shape, *self._layer._normalize )
+    def _onIdChanged( self, oldId, newId ):
+        self.id = (self._channels[0].id, self._channels[1].id, self._channels[2].id, self._channels[3].id) 
 assert issubclass(RGBAImageSource, SourceABC)
 
 class RGBAImageRequest( object ):

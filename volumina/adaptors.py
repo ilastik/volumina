@@ -88,6 +88,26 @@ if _has_lazyflow and _has_vigra:
             v = tmpres.view(vigra.VigraArray)
             v.axistags = inputTags
             result[sl] = v.withAxes(*list( self._axisorder ))
+        
+        def notifyDirty(self, inputSlot, key):
+            if inputSlot.name == 'input':
+                # Convert the key into an output key
+                inputTags = [tag.key for tag in self.input.meta.axistags]
+                taggedKey = {k:v for (k,v) in zip(inputTags, key) }
+
+                outKey = []
+                outputTags = [tag.key for tag in self.output.meta.axistags]
+                for tag in outputTags:
+                    if tag in taggedKey.keys():
+                        outKey += [taggedKey[tag]]
+                    else:
+                        outKey += [slice(None)]
+                
+                self.output.setDirty(outKey)                
+            elif inputSlot.name == 'order':
+                self.output.setDirty(slice(None))
+            else:
+                assert False, "Unknown input"
 
 class Array5d( object ):
     '''Embed a array with dim = 3 into the volumina coordinate system.'''

@@ -1,6 +1,5 @@
 import unittest as ut
-import sys, os
-sys.path.append("../.")
+import os
 
 from PyQt4.QtGui import QImage, QPainter, QApplication
 from PyQt4.QtCore import QRect
@@ -19,47 +18,50 @@ class ImageScene2DTest( ut.TestCase ):
     def setUp( self ):
         self.app = QApplication([], False)
 
-    @ut.skipIf(os.getenv('TRAVIS'), 'fails on TRAVIS CI due to unknown reasons')
-    def testToggleVisibilityOfOneLayer( self ):
-        layerstack = LayerStackModel()
-        sims = StackedImageSources( layerstack )
+        self.layerstack = LayerStackModel()
+        self.sims = StackedImageSources( self.layerstack )
 
-        GRAY = 201
-        ds = ConstantSource(GRAY)
-        layer = GrayscaleLayer( ds )
-        layerstack.append(layer)
-        ims = imsfac.createImageSource( layer, [ds] )
-        sims.register(layer, ims)
+        self.GRAY = 201
+        self.ds = ConstantSource(self.GRAY)
+        self.layer = GrayscaleLayer( self.ds )
+        self.layerstack.append(self.layer)
+        self.ims = imsfac.createImageSource( self.layer, [self.ds] )
+        self.sims.register(self.layer, self.ims)
         
-        scene = ImageScene2D(self.app) 
-        scene.stackedImageSources = sims
-        scene.sceneShape = (310,290)
+        self.scene = ImageScene2D(self.app) 
+        self.scene.stackedImageSources = self.sims
+        self.scene.sceneShape = (310,290)
 
-        def renderScene(s):
-            img = QImage(310,290,QImage.Format_ARGB32_Premultiplied)
-            p = QPainter(img)
-            s.render(p)
-            p.end()
-            return byte_view(img)
+    def renderScene( self, s):
+        img = QImage(310,290,QImage.Format_ARGB32_Premultiplied)
+        p = QPainter(img)
+        s.render(p)
+        s.joinRendering()
+        s.render(p)
+        p.end()
+        return byte_view(img)
 
-        aimg = renderScene(scene)
-        self.assertTrue(np.all(aimg[:,:,0:3] == GRAY))
+    def testBasicImageRenderingCapability( self ):
+        import time
+        aimg = self.renderScene(self.scene)
+        self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
 
-        layer.visible = False
-        aimg = renderScene(scene)
+    @ut.skipIf(os.getenv('TRAVIS'), 'fails on TRAVIS CI due to unknown reasons')
+    def testToggleVisibilityOfOneLayer( self ):
+        aimg = self.renderScene(self.scene)
+        self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
+        self.assertTrue(np.all(aimg[:,:,3] == 255))
+
+        self.layer.visible = False
+        aimg = self.renderScene(self.scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == 255)) # all white
         self.assertTrue(np.all(aimg[:,:,3] == 255))
 
-        layer.visible = True
-        aimg = renderScene(scene)
-        self.assertTrue(np.all(aimg[:,:,0:3] == GRAY))
+        self.layer.visible = True
+        aimg = self.renderScene(self.scene)
+        self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
-
-        scene._renderThread.stop()
-
-    def tearDown( self ):
-        self.app.quit()
 
 if __name__ == '__main__':
     ut.main()

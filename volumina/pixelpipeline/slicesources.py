@@ -49,15 +49,26 @@ assert issubclass(SliceRequest, RequestABC)
 #*******************************************************************************
 
 class SliceSource( QObject ):
-    isDirty = pyqtSignal( object )
+    areaDirty = pyqtSignal( object )
+    isDirty = pyqtSignal()
+    throughChanged = pyqtSignal( tuple, tuple ) # old, new
+    idChanged = pyqtSignal( object, object ) # old, new
+    
+    @property
+    def id( self ):
+        return (self,tuple(self._through))
 
     @property
     def through( self ):
         return self._through
     @through.setter
     def through( self, value ):
-        self._through = value
-        self.setDirty((slice(None), slice(None)))
+        if value != self._through:
+            old = self._through
+            old_id = self.id
+            self._through = value
+            self.throughChanged.emit(tuple(old), tuple(value))
+            self.idChanged.emit(old_id, self.id)
     
     def __init__(self, datasource, sliceProjection = projectionAlongTZC):
         assert isinstance(datasource, SourceABC) , 'wrong type: %s' % str(type(datasource)) 
@@ -70,7 +81,7 @@ class SliceSource( QObject ):
 
     def setThrough( self, index, value ):
         assert index < len(self.through)
-        through = self.through
+        through = list(self.through)
         through[index] = value
         self.through = through
 
@@ -88,7 +99,7 @@ class SliceSource( QObject ):
         assert isinstance(slicing, tuple)
         if not is_pure_slicing(slicing):
             raise Exception('dirty region: slicing is not pure')
-        self.isDirty.emit( slicing )
+        self.areaDirty.emit( slicing )
 
     def _onDatasourceDirty( self, ds_slicing ):
         # embedding of slice in datasource space
@@ -99,7 +110,8 @@ class SliceSource( QObject ):
             dirty_area = [None] * 2
             dirty_area[0] = inter[self.sliceProjection.abscissa]
             dirty_area[1] = inter[self.sliceProjection.ordinate]
-            self.setDirty(tuple(dirty_area))            
+            self.setDirty(tuple(dirty_area))
+        self.isDirty.emit()
 assert issubclass(SliceSource, SourceABC)
 
 
@@ -109,50 +121,52 @@ assert issubclass(SliceSource, SourceABC)
 #*******************************************************************************
 
 class SyncedSliceSources( QObject ):
-    isDirty = pyqtSignal( object )
+    throughChanged = pyqtSignal( tuple, tuple ) # old , new
+    idChanged = pyqtSignal( object, object )
+
+    @property
+    def id( self ):
+        return (self, tuple(self._through))
 
     @property
     def through( self ):
         return self._through
     @through.setter
     def through( self, value ):
-        self._through = value
-        for src in self._srcs:
-            src.through = value
-        self.setDirty((slice(None), slice(None)))
+        if value != self._through:
+            old = self._through
+            old_id = self.id
+            self._through = value
+            for src in self._srcs:
+                src.through = value
+            self.throughChanged.emit(tuple(old), tuple(value))
+            self.idChanged.emit(old, self.id)
 
     def __init__(self, through = None, slicesrcs = []):
         super(SyncedSliceSources, self).__init__()
         self._srcs = set(slicesrcs)
         self._through = through
-        
+
+    def __len__( self ):
+        return len(self._srcs)
+
     def __iter__( self ):
         return iter(self._srcs)
 
     def setThrough( self, index, value ):
         assert index < len(self.through)
-        through = self.through
+        through = list(self.through)
         through[index] = value
         self.through = through
-
-    def setDirty( self, slicing ):
-        if not is_pure_slicing(slicing):
-            raise Exception('dirty region: slicing is not pure')
-        self.isDirty.emit( slicing )
 
     def add( self, sliceSrc ):
         assert isinstance( sliceSrc, SliceSource ), 'wrong type: %s' % str(type(sliceSrc))
         sliceSrc.through = self.through
         self._srcs.add( sliceSrc )
-        self.setDirty( (slice(None), slice(None)) ) 
 
     def remove( self, sliceSrc ):
         assert isinstance( sliceSrc, SliceSource )
         self._srcs.remove( sliceSrc )
-        self.setDirty( slice(None) )         
-
-
-
 
 
 
