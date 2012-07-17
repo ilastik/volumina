@@ -1,3 +1,4 @@
+import os
 import unittest as ut
 import numpy as np
 from PyQt4.QtCore import QRectF
