@@ -392,6 +392,16 @@ class TileProvider( QObject ):
             stack_id = self._current_stack_id
             self._refreshTile( stack_id, tile_no )
 
+    def join( self ):
+        '''Wait until all refresh request are processed.
+
+        Blocks until no refresh request pending anymore and all rendering
+        finished.
+
+        '''
+        return self._dirtyLayerQueue.join()
+
+
     def notifyThreadsToStop( self ):
         '''Signals render threads to stop.
 
@@ -402,14 +412,36 @@ class TileProvider( QObject ):
         '''
         self._keepRendering = False
 
-    def join( self ):
-        '''Wait until all refresh request are processed.
+    def threadsAreNotifiedToStop( self ):
+        '''Check if NotifyThreadsToStop() was called at least once.'''
+        return not self._keepRendering
 
-        Blocks until no refresh request pending anymore and all rendering
-        finished.
+    def joinThreads( self, timeout=None ):
+        '''Wait until all threads terminated.
 
+        Without calling notifyThreadsToStop, threads will never
+        terminate. 
+
+        Arguments:
+        timeout -- timeout in seconds as a floating point number
+        
         '''
-        return self._dirtyLayerQueue.join()
+        for thread in self._dirtyLayerThreads:
+            thread.join( timeout )
+
+    def aliveThreads( self ):
+        '''Return a map of thread identifiers and their alive status.
+
+        All threads are alive until notifyThreadsToStop() is
+        called. After that, they start dying. Call joinThreads() to wait
+        for the last thread to die.
+        
+        '''
+        at = {}
+        for thread in self._dirtyLayerThreads:
+            if thread.ident:
+                at[thread.ident] = thread.isAlive()
+        return at
 
     def _dirtyLayersWorker( self ):
         while self._keepRendering:

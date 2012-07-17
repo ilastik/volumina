@@ -85,7 +85,8 @@ class TileProviderTest( ut.TestCase ):
 
         finally:
             tp.notifyThreadsToStop()
-        
+            tp.joinThreads()
+
 
 
 if __name__=='__main__':
