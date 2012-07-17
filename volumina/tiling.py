@@ -360,11 +360,18 @@ class TileProvider( QObject ):
         [ thread.start() for thread in self._dirtyLayerThreads ]
 
     def getTiles( self, rectF ):
-        tile_nos = self.tiling.intersectedF( rectF )
+        '''Get tiles in rect and request a refresh.
 
+        Returns tiles intersectinf with rectF immediatelly and requests a refresh
+        of these tiles. Next time you call this function the tiles may be already
+        (partially) updated. If you want to wait until the rendering is fully complete,
+        call join().
+
+        '''
+        self.requestRefresh( rectF )
+        tile_nos = self.tiling.intersectedF( rectF )
+        stack_id = self._current_stack_id
         for tile_no in tile_nos:
-            stack_id = self._current_stack_id
-            self._refreshTile( stack_id, tile_no )
             qimg, progress = self._cache.tile(stack_id, tile_no)
             t = TileProvider.Tile(tile_no,
                      qimg,
@@ -373,10 +380,35 @@ class TileProvider( QObject ):
                      self.tiling)
             yield t
 
+    def requestRefresh( self, rectF ):
+        '''Requests tiles to be refreshed.
+
+        Returns immediatelly. Call join() to wait for
+        the end of the rendering.
+
+        '''
+        tile_nos = self.tiling.intersectedF( rectF )
+        for tile_no in tile_nos:
+            stack_id = self._current_stack_id
+            self._refreshTile( stack_id, tile_no )
+
     def notifyThreadsToStop( self ):
+        '''Signals render threads to stop.
+
+        Call this method at the end of the lifetime of
+        a TileProvider instance. Otherwise the garbage collector will
+        not clean up the instance (even if you call del).
+
+        '''
         self._keepRendering = False
 
     def join( self ):
+        '''Wait until all refresh request are processed.
+
+        Blocks until no refresh request pending anymore and all rendering
+        finished.
+
+        '''
         return self._dirtyLayerQueue.join()
 
     def _dirtyLayersWorker( self ):
@@ -428,7 +460,7 @@ class TileProvider( QObject ):
             visible, layerOpacity, layerImageSource = v
             if not visible:
                 continue
-            
+
             patch = self._cache.layer(stack_id, layerImageSource, tile_nr )
             if patch is not None:
                 p.setOpacity(layerOpacity)
