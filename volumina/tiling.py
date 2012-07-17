@@ -8,7 +8,7 @@ from threading import Thread, Event, Lock
 
 import numpy
 from PyQt4.QtCore import QRect, QRectF, QMutex, QPointF, Qt, QSizeF, QObject, pyqtSignal, QThread, QEvent, QCoreApplication
-from PyQt4.QtGui import QImage, QPainter
+from PyQt4.QtGui import QImage, QPainter, QTransform
 
 from patchAccessor import PatchAccessor
 from imageSceneRendering import ImageSceneRenderThread
@@ -65,24 +65,25 @@ class ImageTile(object):
 
 
 class Tiling(object):
-    # base tile size: blockSize x blockSize
-    blockSize = 256
-    #
-    # overlap between tiles 
-    # positive number prevents rendering artifacts between tiles for certain zoom levels
-    overlap = 1
+    '''Tiling.__init__()
 
-    @property
-    def imageRects( self ):
-        return self._imageRect
+    Arguments:
+    sliceShape -- (width, height)
+    data2scene -- QTransform from data to image coordinates (default: identity transform)
+    blockSize  -- base tile size: blockSize x blockSize (default 256)
+    overlap    -- overlap between tiles positive number prevents rendering
+                  artifacts between tiles for certain zoom levels (default 1)
 
-    def __init__(self, sliceShape, data2scene):
+    '''
+    def __init__(self, sliceShape, data2scene=QTransform(), blockSize=256, overlap=1):
+        self.blockSize = blockSize
+        self.overlap = 1
         patchAccessor = PatchAccessor(sliceShape[0], sliceShape[1], blockSize=self.blockSize)
 
-        self._imageRectF = []
-        self.rectF = []
-        self._imageRect  = []
-        self.rect  = []
+        self.imageRectFs = []
+        self.tileRectFs = []
+        self.imageRects  = []
+        self.tileRects  = []
         self.sliceShape = sliceShape
 
         for patchNr in range(patchAccessor.patchCount):
@@ -106,40 +107,40 @@ class Tiling(object):
             imageRect   = QRect(round(imageRectF.x()),     round(imageRectF.y()), \
                                 round(imageRectF.width()), round(imageRectF.height()))
 
-            self._imageRectF.append(imageRectF)
-            self.rectF.append(patchRectF)
-            self._imageRect.append(imageRect)
-            self.rect.append(patchRect)
+            self.imageRectFs.append(imageRectF)
+            self.tileRectFs.append(patchRectF)
+            self.imageRects.append(imageRect)
+            self.tileRects.append(patchRect)
   
     def boundingRectF(self):
-        p = self.rectF[-1]
+        p = self.tileRectFs[-1]
         return QRectF(0,0, p.x()+p.width(), p.y()+p.height())
 
     def containsF(self, point):
-        for i, p in enumerate(self.rectF):
+        for i, p in enumerate(self.tileRectFs):
             if p.contains(point):
                 return i
 
     def intersectedF(self, rectF):
         if not rectF.isValid():
-            return range(len(self._imageRectF))
+            return range(len(self.imageRectFs))
         i = []
-        for patchNr, patchRectF in enumerate(self.rectF):
+        for patchNr, patchRectF in enumerate(self.tileRectFs):
             if rectF.intersects(patchRectF):
                 i.append(patchNr)
         return i
 
     def intersected(self, rect):
         if not rect.isValid():
-            return range(len(self._imageRect))
+            return range(len(self.imageRects))
         i = []
-        for patchNr, patchRect in enumerate(self.rect):
+        for patchNr, patchRect in enumerate(self.tileRects):
             if rect.intersects(patchRect):
                 i.append(patchNr)
         return i
 
     def __len__(self):
-        return len(self._imageRectF)
+        return len(self.imageRectFs)
             
 #*******************************************************************************
 # T i l e d I m a g e L a y e r                                                * 
@@ -149,7 +150,7 @@ class TiledImageLayer(object):
     def __init__(self, tiling):
         self._imageTiles = []
         for patchNr in range(len(tiling)):
-            self._imageTiles.append( ImageTile(tiling._imageRect[patchNr]) )
+            self._imageTiles.append( ImageTile(tiling.imageRects[patchNr]) )
     def __getitem__(self, i):
         return self._imageTiles[i]
     def __iter__(self):

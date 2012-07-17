@@ -42,7 +42,7 @@ class DirtyIndicator(QGraphicsItem):
         painter.setBrush(QBrush(dirtyColor, Qt.SolidPattern))
         painter.setPen(dirtyColor)
 
-        for i,p in enumerate(self._tiling.rectF):
+        for i,p in enumerate(self._tiling.tileRectFs):
             if self._indicate[i] == 1.0:
                 continue
             w,h = p.width(), p.height()
@@ -165,12 +165,12 @@ class ImageScene2D(QGraphicsScene):
         painter = QPainter(p.image)
         painter.setPen(pen)
         
-        tL = self._tiling._imageRectF[tileId].topLeft()
+        tL = self._tiling.imageRectFs[tileId].topLeft()
         painter.drawLine(fromPoint-tL, toPoint-tL)
         painter.end()
         p.dataVer += 1
         p.unlock()
-        self.scheduleRedraw(self._tiling._imageRectF[tileId])
+        self.scheduleRedraw(self._tiling.imageRectFs[tileId])
 
     def _onSizeChanged(self):
         self._brushingLayer  = TiledImageLayer(self._tiling)
