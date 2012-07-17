@@ -22,12 +22,7 @@ class StackedImageSources( QObject ):
     Layers from the underlying layerstack have to be registered
     explicitly to become active in the StackedImageSources. If
     registered layers are removed in the underlying layerstack they
-    become inactive, but are still registered internally. You have to
-    call 'deregister' explicitly to remove them from the internal
-    datastructures. The reason for this design is as follows. If
-    layers are moved around in the layerstack, they are removed and
-    readded internally. We can't distinguish between such a remove and
-    a permanent remove.
+    are automatically deregistered.
 
     """    
     layerDirty = pyqtSignal(object)
@@ -59,7 +54,7 @@ class StackedImageSources( QObject ):
         def __iter__( self ):
             return ( layer.visible
                      for layer in self.sims._layerStackModel
-                     if self.sims.isActive(layer)  )
+                     if self.sims.isRegistered(layer)  )
 
         def __getitem__( self, row ):
             return self.sims._getLayer(row).visible
@@ -68,7 +63,7 @@ class StackedImageSources( QObject ):
         def __iter__( self ):
             return ( self.sims._imsOccluded[self.sims._layerToIms[layer]]
                      for layer in self.sims._layerStackModel
-                     if self.sims.isActive(layer) )
+                     if self.sims.isRegistered(layer) )
 
         def __getitem__( self, row ):
             return self.sims._imsOccluded[self.sims._layerToIms[self.sims._getLayer(row)]]
@@ -77,7 +72,7 @@ class StackedImageSources( QObject ):
         def __iter__( self ):
             return ( layer.opacity
                      for layer in self.sims._layerStackModel
-                     if self.sims.isActive(layer) )
+                     if self.sims.isRegistered(layer) )
 
         def __getitem__( self, row ):
             return self.sims._getLayer(row).opacity
@@ -86,7 +81,7 @@ class StackedImageSources( QObject ):
         def __iter__( self ):
             return ( self.sims._layerToIms[layer]
                      for layer in self.sims._layerStackModel
-                     if self.sims.isActive(layer) )
+                     if self.sims.isRegistered(layer) )
 
         def __getitem__( self, row ):
             return self.sims._layerToIms[self.sims._getLayer(row)]
@@ -109,6 +104,7 @@ class StackedImageSources( QObject ):
         self._firstOpaqueIdx = None
 
         layerStackModel.orderChanged.connect( self._onOrderChanged )
+        layerStackModel.layerRemoved.connect( self._onLayerRemoved )
 
         self._stackId = 0
 
@@ -128,7 +124,7 @@ class StackedImageSources( QObject ):
     def __reversed__( self ):
         return ( (layer.visible, layer.opacity, self._layerToIms[layer])
                  for layer in reversed(self._layerStackModel)
-                 if self.isActive(layer) )
+                 if self.isRegistered(layer) )
 
     def getVisible( self, row ):
         return self._getLayer(row).visible
@@ -189,14 +185,6 @@ class StackedImageSources( QObject ):
     def isRegistered( self, layer ):
         return layer in self._layerToIms
 
-    def isActive( self, layer ):
-        if not self.isRegistered( layer ):
-            return False
-        elif layer not in self._layerStackModel:
-            return False
-        else:
-            return True
-
     def firstFullyOpaque(self):
         '''Return index of the first fully opaque imagesource.
 
@@ -220,7 +208,7 @@ class StackedImageSources( QObject ):
         return self._imsOccluded[ims]
 
     def isVisible( self, ims ):
-        if self.isActive(self._imsToLayer[ims]):
+        if self.isRegistered(self._imsToLayer[ims]):
             return self._imsToLayer[ims].visible
         else:
             raise KeyError()
@@ -243,9 +231,14 @@ class StackedImageSources( QObject ):
         self._updateOcclusionInfo()
         self.orderChanged.emit()
 
+    def _onLayerRemoved( self, layer, row ):
+        if self.isRegistered( layer ):
+            self.deregister( layer )
+            assert(not self.isRegistered( layer ))
+
     def _getLayer( self, ims_row ):
         return [layer for layer in self._layerStackModel
-                       if self.isActive(layer)][ims_row]
+                       if self.isRegistered(layer)][ims_row]
 
     def _removeLayer( self, layer ):
         if layer not in self._layerToIms:
@@ -355,7 +348,6 @@ class ImagePump( object ):
         self._stackedImageSources.register(layer, imageSource)
 
     def _removeLayer( self, layer ):
-        self._stackedImageSources.deregister(layer)
         for ss in self._layerToSliceSrcs[layer]:
             self._syncedSliceSources.remove(ss)
         del self._layerToSliceSrcs[layer]

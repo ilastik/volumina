@@ -1,5 +1,6 @@
 import unittest as ut
 from PyQt4.QtCore import QRect, QObject
+from PyQt4.QtGui import QItemSelectionModel
 
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
@@ -94,8 +95,6 @@ class StackedImageSourcesTest( ut.TestCase ):
         sims.register(self.layer2, self.ims2)
         self.assertEqual(sims.isRegistered(self.layer1), True)
         self.assertEqual(sims.isRegistered(self.layer2), True)
-        self.assertEqual(sims.isActive(self.layer1), True)
-        self.assertEqual(sims.isActive(self.layer2), True)
         self.assertEqual(len(lsm), 2)
         self.assertEqual(len(sims), 2)
         self.assertEqual(len(ims_view), 2)
@@ -108,36 +107,33 @@ class StackedImageSourcesTest( ut.TestCase ):
         self.assertEqual(len(ims_view), 2)
         self.assertEqual(ims_view[0], self.ims2)
         self.assertEqual(ims_view[1], self.ims1)
+        self.assertEqual(sims.isRegistered(self.layer1), True)
+        self.assertEqual(sims.isRegistered(self.layer2), True)
 
-        lsm.removeRow(1)
+        lsm.selectRow(1) # layer2
+        lsm.deleteSelected()
         self.assertEqual(len(lsm), 2)
         self.assertEqual(len(sims), 1)
         self.assertEqual(len(ims_view), 1)
         self.assertEqual(ims_view[0], self.ims1)
         self.assertEqual(sims.isRegistered(self.layer1), True)
-        self.assertEqual(sims.isRegistered(self.layer2), True)
-        self.assertEqual(sims.isActive(self.layer1), True)
-        self.assertEqual(sims.isActive(self.layer2), False)
+        self.assertEqual(sims.isRegistered(self.layer2), False)
 
-        lsm.removeRow(0)
+        lsm.selectRow(0) # layer3
+        lsm.deleteSelected()
         self.assertEqual(len(lsm), 1)
         self.assertEqual(len(sims), 1)
         self.assertEqual(len(ims_view), 1)
         self.assertEqual(ims_view[0], self.ims1)
         self.assertEqual(sims.isRegistered(self.layer1), True)
-        self.assertEqual(sims.isRegistered(self.layer2), True)
-        self.assertEqual(sims.isActive(self.layer1), True)
-        self.assertEqual(sims.isActive(self.layer2), False)
+        self.assertEqual(sims.isRegistered(self.layer2), False)
 
         sims.deregister(self.layer1)
-        sims.deregister(self.layer2)
         self.assertEqual(len(lsm), 1)
         self.assertEqual(len(sims), 0)
         self.assertEqual(len(ims_view), 0)
         self.assertEqual(sims.isRegistered(self.layer1), False)
         self.assertEqual(sims.isRegistered(self.layer2), False)
-        self.assertEqual(sims.isActive(self.layer1), False)
-        self.assertEqual(sims.isActive(self.layer2), False)
 
     def testFirstFullyOpaque( self ):
         lsm = LayerStackModel()
@@ -213,7 +209,7 @@ class ImagePumpTest( ut.TestCase ):
         self.assertEqual( len(ip.syncedSliceSources), 3 )
         self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 3 )
         for layer in lsm:
-            self.assertTrue( ip.stackedImageSources.isActive(layer) )
+            self.assertTrue( ip.stackedImageSources.isRegistered(layer) )
 
         lsm.deleteSelected()
         self.assertEqual( len(lsm), 2 )
@@ -221,7 +217,7 @@ class ImagePumpTest( ut.TestCase ):
         self.assertEqual( len(ip.syncedSliceSources), 2 )
         self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 2 )
         for layer in lsm:
-            self.assertTrue( ip.stackedImageSources.isActive(layer) )
+            self.assertTrue( ip.stackedImageSources.isRegistered(layer) )
 
         lsm.clear()
         self.assertEqual( len(lsm), 0 )

@@ -69,6 +69,9 @@ class LayerStackModel(QAbstractListModel):
         self.layerAdded.emit( data, self._layerStack.index(data))
         self.updateGUI()
 
+    def selectRow( self, row ):
+        self.selectionModel.setCurrentIndex( self.index(row), QItemSelectionModel.SelectCurrent)
+
     @pyqtSignature("deleteSelected()")
     def deleteSelected(self):
         assert len(self.selectionModel.selectedRows()) == 1
