@@ -25,7 +25,7 @@ class StackedImageSources( QObject ):
     are automatically deregistered.
 
     """    
-    layerDirty = pyqtSignal(object, object)
+    layerDirty = pyqtSignal(object)
     visibleChanged = pyqtSignal(object, bool)
     opacityChanged = pyqtSignal(object, float)
     sizeChanged  = pyqtSignal()
@@ -213,8 +213,8 @@ class StackedImageSources( QObject ):
         else:
             raise KeyError()
 
-    def _onImageSourceDirty( self, imageSource, rect ):
-        self.layerDirty.emit( imageSource, rect )
+    def _onImageSourceDirty( self, imageSource ):
+        self.layerDirty.emit( imageSource )
 
     def _onImageSourceIdChanged( self, imageSource, oldId, newId ):
         self.layerIdChanged.emit( imageSource, oldId, newId )
