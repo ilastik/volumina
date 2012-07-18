@@ -50,7 +50,7 @@ assert issubclass(SliceRequest, RequestABC)
 
 class SliceSource( QObject ):
     areaDirty = pyqtSignal( object )
-    isDirty = pyqtSignal()
+    isDirty = pyqtSignal( object )
     throughChanged = pyqtSignal( tuple, tuple ) # old, new
     idChanged = pyqtSignal( object, object ) # old, new
     
@@ -111,7 +111,13 @@ class SliceSource( QObject ):
             dirty_area[0] = inter[self.sliceProjection.abscissa]
             dirty_area[1] = inter[self.sliceProjection.ordinate]
             self.setDirty(tuple(dirty_area))
-        self.isDirty.emit()
+
+        # Even if no intersection with the current slice projection, mark this area
+        #  dirty in all parallel slices that may not be visible at the moment.
+        dirty_area = [None] * 2
+        dirty_area[0] = ds_slicing[self.sliceProjection.abscissa]
+        dirty_area[1] = ds_slicing[self.sliceProjection.ordinate]
+        self.isDirty.emit( tuple(dirty_area) )
 assert issubclass(SliceSource, SourceABC)
 
 
