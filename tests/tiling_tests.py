@@ -8,10 +8,11 @@ from qimage2ndarray import byte_view
 from volumina.tiling import TileProvider, Tiling
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
-from volumina.pixelpipeline.datasources import ConstantSource
+from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.pixelpipeline.imagesources import GrayscaleImageSource
-from volumina.pixelpipeline.imagepump import StackedImageSources
-
+from volumina.pixelpipeline.imagepump import StackedImageSources, ImagePump
+from volumina.pixelpipeline.slicesources import SliceSource
+from volumina.slicingtools import SliceProjection
 
 
 class TileProviderTest( ut.TestCase ):
@@ -89,7 +90,116 @@ class TileProviderTest( ut.TestCase ):
             tp.notifyThreadsToStop()
             tp.joinThreads()
 
+class DirtyPropagationTest( ut.TestCase ):
+    
+    def setUp( self ):
+        dataShape = (1, 1000, 1000, 10, 1) # t,x,y,z,c
+        data = np.indices(dataShape)[3] # Data is labeled according to z-index
+        self.ds1 = ArraySource( data )
 
+        self.layer1 = GrayscaleLayer( self.ds1 )
+        self.layer1.visible = True
+        self.layer1.opacity = 1.0
+
+        self.lsm = LayerStackModel()
+        self.pump = ImagePump( self.lsm, SliceProjection() )
+        self.lsm.append(self.layer1)
+
+    # Do we have to skip this test on travis, too?
+    #@ut.skipIf(os.getenv('TRAVIS'), 'fails on TRAVIS CI due to unknown reasons')
+    def testOutOfViewDirtyPropagation(self):
+        tiling = Tiling((900,400), blockSize=100)
+        tp = TileProvider(tiling, self.pump.stackedImageSources)
+        try:
+            # Navigate down to the second z-slice
+            self.pump.syncedSliceSources.through = [0,1,0]
+            tp.requestRefresh(QRectF(100,100,200,200))
+            tp.join()
+
+            # Sanity check: Do we see the right data on the second slice? (should be all 1s)
+            tiles = tp.getTiles(QRectF(100,100,200,200))
+            for tile in tiles:
+                aimg = byte_view(tile.qimg)
+                self.assertTrue(np.all(aimg[:,:,0:3] == 1))
+                self.assertTrue(np.all(aimg[:,:,3] == 255))
+
+            # Navigate down to the third z-slice
+            self.pump.syncedSliceSources.through = [0,2,0]
+            tp.requestRefresh(QRectF(100,100,200,200))
+            tp.join()
+
+            # Sanity check: Do we see the right data on the third slice?(should be all 2s)
+            tiles = tp.getTiles(QRectF(100,100,200,200))
+            for tile in tiles:
+                aimg = byte_view(tile.qimg)
+                self.assertTrue(np.all(aimg[:,:,0:3] == 2))
+                self.assertTrue(np.all(aimg[:,:,3] == 255))
+
+            # Navigate back up to the second z-slice
+            self.pump.syncedSliceSources.through = [0,1,0]
+            tp.requestRefresh(QRectF(100,100,200,200))
+            tp.join()
+
+            # Change some of the data in the (out-of-view) third z-slice
+            slicing = (slice(None), slice(100,300), slice(100,300), slice(2,3), slice(None))
+            slicing = tuple(slicing)
+            self.ds1._array[slicing] = 99
+            self.ds1.setDirty( slicing )
+            
+            # Navigate back down to the third z-slice
+            self.pump.syncedSliceSources.through = [0,2,0]
+            tp.requestRefresh(QRectF(100,100,200,200))
+            tp.join()
+
+            # Even though the data was out-of-view when it was changed, it should still have new values.
+            # If dirtiness wasn't propagated correctly, the cache's old values will be used.
+            # (For example, this fails if you comment out the call to setDirty, above.)
+            tiles = tp.getTiles(QRectF(100,100,200,200))
+            for tile in tiles:
+                aimg = byte_view(tile.qimg)
+                # Use any() because the tile borders may not be perfectly aligned with the data we changed.
+                self.assertTrue(np.any(aimg[:,:,0:3] == 99))
+
+        finally:
+            tp.notifyThreadsToStop()
+            tp.joinThreads()
 
 if __name__=='__main__':
     ut.main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
