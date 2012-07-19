@@ -93,7 +93,7 @@ class TileProviderTest( ut.TestCase ):
 class DirtyPropagationTest( ut.TestCase ):
     
     def setUp( self ):
-        dataShape = (1, 1000, 1000, 10, 1) # t,x,y,z,c
+        dataShape = (1, 900, 400, 10, 1) # t,x,y,z,c
         data = np.indices(dataShape)[3] # Data is labeled according to z-index
         self.ds1 = ArraySource( data )
 
@@ -105,8 +105,6 @@ class DirtyPropagationTest( ut.TestCase ):
         self.pump = ImagePump( self.lsm, SliceProjection() )
         self.lsm.append(self.layer1)
 
-    # Do we have to skip this test on travis, too?
-    #@ut.skipIf(os.getenv('TRAVIS'), 'fails on TRAVIS CI due to unknown reasons')
     def testOutOfViewDirtyPropagation(self):
         tiling = Tiling((900,400), blockSize=100)
         tp = TileProvider(tiling, self.pump.stackedImageSources)
@@ -139,6 +137,10 @@ class DirtyPropagationTest( ut.TestCase ):
             self.pump.syncedSliceSources.through = [0,1,0]
             tp.requestRefresh(QRectF(100,100,200,200))
             tp.join()
+            for tile in tiles:
+                aimg = byte_view(tile.qimg)
+                self.assertTrue(np.all(aimg[:,:,0:3] == 1))
+                self.assertTrue(np.all(aimg[:,:,3] == 255))
 
             # Change some of the data in the (out-of-view) third z-slice
             slicing = (slice(None), slice(100,300), slice(100,300), slice(2,3), slice(None))
@@ -166,40 +168,3 @@ class DirtyPropagationTest( ut.TestCase ):
 
 if __name__=='__main__':
     ut.main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
