@@ -52,7 +52,6 @@ class GenericArraySourceTest:
         del self.signal_emitted
         del self.slicing
 
-
 class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
     def setUp( self ):
         import numpy as np
