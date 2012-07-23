@@ -7,11 +7,12 @@ import os.path
 
 from PyQt4.QtCore import QRect, pyqtSignal
 from PyQt4.QtGui import QImage
+from PyQt4.QtGui import QColor
 
 import volumina._testing
-from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageSource
+from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageSource, ColortableImageSource
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
-from volumina.layer import GrayscaleLayer, RGBALayer
+from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer
 
 
 
@@ -23,19 +24,76 @@ class _ArraySource2d( ArraySource ):
         self.id = id(self)
 
 
+#*******************************************************************************
+# G r a y s c a l e I m a g e S o u r c e T e s t 
+#*******************************************************************************
         
 class GrayscaleImageSourceTest( ut.TestCase ):
     def setUp( self ):
         self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
         self.ars = _ArraySource2d(self.raw)
         self.ims = GrayscaleImageSource( self.ars, GrayscaleLayer( self.ars ))
-        
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
         def check(result, codon):
             self.assertEqual(codon, "unique")
             self.assertTrue(type(result) == QImage)
+        imr.notify(check, codon="unique")
+
+    def testSetDirty( self ):
+        def checkAllDirty( rect ):
+            self.assertTrue( rect.isEmpty() )
+
+        def checkDirtyRect( rect ):
+            self.assertEqual( rect.x(), 12 )
+            self.assertEqual( rect.y(), 34 )
+            self.assertEqual( rect.width(), 22 )
+            self.assertEqual( rect.height(), 3  )
+
+        # should mark everything dirty
+        self.ims.isDirty.connect( checkAllDirty )
+        self.ims.setDirty((slice(34,None), slice(12,34)))
+        self.ims.isDirty.disconnect( checkAllDirty )
+
+        # dirty subrect
+        self.ims.isDirty.connect( checkDirtyRect )
+        self.ims.setDirty((slice(34,37), slice(12,34)))
+        self.ims.isDirty.disconnect( checkDirtyRect )
+
+
+#*******************************************************************************
+# C o l o r t a b l e I m a g e S o u r c e T e s t 
+#*******************************************************************************
+        
+class ColortableImageSourceTest( ut.TestCase ):
+    def setUp( self ):
+        self.seg = numpy.zeros((6,7), dtype=numpy.uint32) 
+        self.seg[0:2,:] = 0
+        self.seg[2:4,:] = 1
+        self.seg[4:6,:] = 2
+        self.ars = _ArraySource2d(self.seg)
+        self.ctable = [QColor(255,0,0).rgba(), QColor(0,255,0).rgba(), QColor(0,0,255).rgba()]
+        self.ims = ColortableImageSource( self.ars, self.ctable )
+
+    def testRequest( self ):
+        imr = self.ims.request(QRect(0,0,512,512))
+        def check(result, codon):
+            self.assertEqual(codon, "unique")
+            self.assertTrue(type(result) == QImage)
+            img = QImage(7,6, QImage.Format_ARGB32_Premultiplied)
+            for i in range(7):
+                img.setPixel(i, 0, QColor(255,0,0).rgba())
+                img.setPixel(i, 1, QColor(255,0,0).rgba())
+
+                img.setPixel(i, 2, QColor(0,255,0).rgba())
+                img.setPixel(i, 3, QColor(0,255,0).rgba())
+
+                img.setPixel(i, 4, QColor(0,0,255).rgba())
+                img.setPixel(i, 5, QColor(0,0,255).rgba())
+            assert img.size() == result.size()
+            assert img == result
+
         imr.notify(check, codon="unique")
 
     def testSetDirty( self ):
