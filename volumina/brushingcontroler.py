@@ -78,7 +78,6 @@ class BrushingInterpreter( QObject ):
                 # navigation interpreter also has to be in 
                 # default mode to avoid inconsistencies
                 if self._navIntr.state == self._navIntr.DEFAULT_MODE:
-                    print "default->draw"
                     self._current_state = self.DRAW_MODE
                     self.onEntry_draw( watched, event )
                     return True
@@ -92,7 +91,6 @@ class BrushingInterpreter( QObject ):
         elif self._current_state == self.DRAW_MODE:
             ### draw mode -> default mode
             if etype == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
-                print "draw->default"
                 self.onExit_draw( watched, event )
                 self._current_state = self.DEFAULT_MODE
                 self.onEntry_default( watched, event )
