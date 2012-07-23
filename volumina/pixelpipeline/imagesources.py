@@ -50,9 +50,6 @@ class ImageSource( QObject ):
     def request( self, rect ):
         raise NotImplementedError
 
-    def cancel( self ):
-        raise NotImplementedError
-
     def setDirty( self, slicing ):
         '''Mark a region of the image as dirty.
 
@@ -80,7 +77,6 @@ class ImageSource( QObject ):
 
         '''
         return self._opaque
-
         
 assert issubclass(ImageSource, SourceABC)
 
@@ -122,7 +118,6 @@ assert issubclass(GrayscaleImageSource, SourceABC)
 class GrayscaleImageRequest( object ):
     def __init__( self, arrayrequest, normalize=None ):
         self._mutex = QMutex()
-        self._canceled = False
         self._arrayreq = arrayrequest
         self._normalize = normalize
 
@@ -139,23 +134,7 @@ class GrayscaleImageRequest( object ):
     def notify( self, callback, **kwargs ):
         self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
     
-    def cancelLock(self):
-        self._mutex.lock()
-    def cancelUnlock(self):
-        self._mutex.unlock()
-    def canceled(self):
-        return self._canceled
-    
-    def cancel( self ):
-        self.cancelLock()
-        self._arrayreq.cancel()
-        #self._arrayreq.adjustPriority(-50)        
-        self._canceled = True
-        self.cancelUnlock()
-    
     def _onNotify( self, result, package ):
-        if self._canceled:
-            return
         img = self.toImage()
         callback = package[0]
         kwargs = package[1]
@@ -197,7 +176,6 @@ assert issubclass(AlphaModulatedImageSource, SourceABC)
 class AlphaModulatedImageRequest( object ):
     def __init__( self, arrayrequest, tintColor, normalize=(0,255)):
         self._mutex = QMutex()
-        self._canceled = False
         self._arrayreq = arrayrequest
         self._normalize = normalize
         self._tintColor = tintColor
@@ -220,23 +198,7 @@ class AlphaModulatedImageRequest( object ):
     def notify( self, callback, **kwargs ):
         self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
     
-    def cancelLock(self):
-        self._mutex.lock()
-    def cancelUnlock(self):
-        self._mutex.unlock()
-    def canceled(self):
-        return self._canceled
-    
-    def cancel( self ):
-        self.cancelLock()
-        self._arrayreq.cancel()
-        #self._arrayreq.adjustPriority(-50)   
-        self._canceled = True
-        self.cancelUnlock()
-    
     def _onNotify( self, result, package ):
-        if self._canceled:
-            return        
         img = self.toImage()
         callback = package[0]
         kwargs = package[1]
@@ -286,7 +248,6 @@ assert issubclass(ColortableImageSource, SourceABC)
 class ColortableImageRequest( object ):
     def __init__( self, arrayrequest, colorTable):
         self._mutex = QMutex()
-        self._canceled = False
         self._arrayreq = arrayrequest
         self._colorTable = colorTable
 
@@ -309,23 +270,7 @@ class ColortableImageRequest( object ):
     def notify( self, callback, **kwargs ):
         self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
     
-    def cancelLock(self):
-        self._mutex.lock()
-    def cancelUnlock(self):
-        self._mutex.unlock()
-    def canceled(self):
-        return self._canceled
-    
-    def cancel( self ):
-        self.cancelLock()
-        self._arrayreq.cancel()
-        #self._arrayreq.adjustPriority(-50)   
-        self._canceled = True
-        self.cancelUnlock()
-    
     def _onNotify( self, result, package ):
-        if self._canceled:
-            return        
         img = self.toImage()
         callback = package[0]
         kwargs = package[1]
@@ -387,7 +332,6 @@ class RGBAImageRequest( object ):
     def __init__( self, r, g, b, a, shape,
                   normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None ):
         self._mutex = QMutex()
-        self._canceled = False
         self._requests = r, g, b, a
         self._normalize = [normalizeR, normalizeG, normalizeB, normalizeA]
         shape.append(4)
@@ -416,24 +360,7 @@ class RGBAImageRequest( object ):
         for i in xrange(4):
             self._requests[i].notify(self._onNotify, package = (i, callback, kwargs))
 
-    def cancelLock(self):
-        self._mutex.lock()
-    def cancelUnlock(self):
-        self._mutex.unlock()
-    def canceled(self):
-        return self._canceled
-
-    def cancel( self ):
-        self.cancelLock()
-        for r in self._requests:
-            r.cancel()
-            #r.adjustPriority(-50)   
-        self._canceled = True
-        self.cancelUnlock()
-
     def _onNotify( self, result, package ):
-        if self._canceled:
-            return        
         channel = package[0]
         self._requestsFinished[channel] = True
         if all(self._requestsFinished):
@@ -470,6 +397,4 @@ class RandomImageRequest( object ):
         img = self.wait()
         callback( img, **kwargs )
 
-    def cancel( self ):
-        raise NotImplementedError
 assert issubclass(RandomImageRequest, RequestABC)
