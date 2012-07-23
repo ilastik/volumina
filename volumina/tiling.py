@@ -469,7 +469,7 @@ class TileProvider( QObject ):
 
                 # refresh dirty layer tiles 
                 for ims in self._sims.viewImageSources():
-                    if self._cache.layerDirty(stack_id, ims, tile_no) and not self._sims.isOccluded(ims):
+                    if self._cache.layerDirty(stack_id, ims, tile_no) and not self._sims.isOccluded(ims) and self._sims.isVisible(ims):
                         req = (ims,
                                tile_no,
                                stack_id,
@@ -500,13 +500,17 @@ class TileProvider( QObject ):
         p.end()
         return qimg
 
-    def _onLayerDirty(self, ims ):
-        for tile_no in xrange(len(self.tiling)):
-            for ims in self._sims.viewImageSources():
-                self._cache.setLayerDirtyAll(ims, tile_no, True)
-            self._cache.setTileDirtyAll(tile_no, True)
-        if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):
-            self.changed.emit(QRectF(rect))
+    def _onLayerDirty(self, dirtyImgSrc, rect ):
+        if dirtyImgSrc in self._sims.viewImageSources():
+            visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) and not self._sims.isOccluded( dirtyImgSrc )
+            for tile_no in xrange(len(self.tiling)):
+                if self.tiling.tileRects[tile_no].intersected( rect ):
+                    for ims in self._sims.viewImageSources():
+                        self._cache.setLayerDirtyAll(ims, tile_no, True)
+                    if visibleAndNotOccluded:
+                        self._cache.setTileDirtyAll(tile_no, True)
+            if visibleAndNotOccluded:
+                self.changed.emit( QRectF(rect) )
 
     def _onStackIdChanged( self, oldId, newId ):
         if newId in self._cache:
