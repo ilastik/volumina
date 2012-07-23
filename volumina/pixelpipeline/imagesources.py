@@ -97,7 +97,7 @@ class GrayscaleImageSource( ImageSource ):
 
         self._layer = layer
         
-        self._arraySource2D.isDirty.connect(self.setDirty)
+        self._arraySource2D.areaDirty.connect(self.setDirty)
         self._arraySource2D.idChanged.connect(self._onIdChanged)
         self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
 
@@ -174,7 +174,7 @@ class AlphaModulatedImageSource( ImageSource ):
         self._layer = layer
         self.id = arraySource2D.id
 
-        self._arraySource2D.isDirty.connect(self.setDirty)
+        self._arraySource2D.areaDirty.connect(self.setDirty)
         self._arraySource2D.idChanged.connect(self._onIdChanged)
 
     def request( self, qrect ):
@@ -254,7 +254,7 @@ class ColortableImageSource( ImageSource ):
         self._arraySource2D = arraySource2D
         self.id = arraySource2D.id
         
-        self._arraySource2D.isDirty.connect(self.setDirty)
+        self._arraySource2D.areaDirty.connect(self.setDirty)
         self._arraySource2D.idChanged.connect(self._onIdChanged)        
         self._colorTable = colorTable
         
@@ -343,7 +343,7 @@ class RGBAImageSource( ImageSource ):
         self._channels = channels
         self.id = (red.id, green.id, blue.id, alpha.id)
         for arraySource in self._channels:
-            arraySource.isDirty.connect(self.setDirty)
+            arraySource.areaDirty.connect(self.setDirty)
         for arraySource in self._channels:
             arraySource.idChanged.connect(self._onIdChanged)
 
