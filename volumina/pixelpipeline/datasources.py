@@ -89,21 +89,17 @@ class ArraySinkSource( ArraySource ):
 # R e l a b e l i n g A r r a y S o u r c e                                    * 
 #*******************************************************************************
 
-class RelabelingArraySource( QObject ):
+class RelabelingArraySource( ArraySource ):
     """Applies a relabeling to each request before passing it on
        Currently, it casts everything to uint8, so be careful."""
     isDirty = pyqtSignal( object )
     def __init__( self, array ):
-        super(RelabelingArraySource, self).__init__()
-        self._array = array
+        super(RelabelingArraySource, self).__init__(array)
         self._relabeling = None
         
     def setRelabeling( self, relabeling ):
         self._relabeling = relabeling
         self.setDirty(5*(slice(None),))
-
-    def submit( self ):
-        pass
 
     def request( self, slicing ):
         if not is_pure_slicing(slicing):
@@ -113,13 +109,8 @@ class RelabelingArraySource( QObject ):
         a = self._array[slicing]
         if self._relabeling is not None:
             a = self._relabeling[a]
-        return ArrayRequest(a)
+        return ArrayRequest(a, slicing)
         
-    def setDirty( self, slicing):
-        if not is_pure_slicing(slicing):
-            raise Exception('dirty region: slicing is not pure')
-        self.isDirty.emit( slicing )
-
 #*******************************************************************************
 # L a z y f l o w R e q u e s t                                                *
 #*******************************************************************************
@@ -165,7 +156,6 @@ class LazyflowSource( QObject ):
         self._priority = priority
         self._outslot.notifyDirty(self._setDirtyLF)
         
-
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
@@ -176,7 +166,7 @@ class LazyflowSource( QObject ):
         if self._outslot.meta.shape is not None:
             reqobj = self._outslot[slicing].allocate(priority = self._priority)        
         else:
-            reqobj = ArrayRequest( np.zeros(slicing2shape(slicing), dtype=np.uint8 ) )
+            reqobj = ArrayRequest( np.zeros(slicing2shape(slicing), dtype=np.uint8 ), slicing )
         return LazyflowRequest( reqobj )
 
     def _setDirtyLF(self, slot, roi):
@@ -329,6 +319,49 @@ class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         self.raw = np.zeros((1,512,512,1,1))
         self.raw[0,:,:,0,0] = self.lena
         self.source = ArraySource( self.raw )
+
+class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
+    def setUp( self ):
+        a = np.zeros((5,1,1,1,1), dtype=np.uint32)
+        #the data contained in a ranges from [1,5]
+        a[:,0,0,0,0] = np.arange(0,5)
+        self.source = RelabelingArraySource(a)
+
+        #we apply the relabeling i -> i+1
+        relabeling = np.arange(1,a.max()+2, dtype=np.uint32)
+        self.source.setRelabeling(relabeling)
+
+    def testRequestWait( self ):
+        slicing = (slice(0,5),slice(None), slice(None), slice(None), slice(None))
+        requested = self.source.request(slicing).wait()
+        assert requested.ndim == 5
+        self.assertTrue(np.all(requested.flatten() == np.arange(1,6, dtype=np.uint32)))
+
+    def testRequestNotify( self ):
+        slicing = (slice(0,5),slice(None), slice(None), slice(None), slice(None))
+        request = self.source.request(slicing)
+        
+        def check(result, codon):
+            self.assertTrue(np.all(result.flatten() == np.arange(1,6, dtype=np.uint32)))
+            self.assertEqual(codon, "unique")
+        request.notify(check, codon="unique")
+
+    def testSetDirty( self ):
+        self.signal_emitted = False
+        self.slicing = (slice(0,5),slice(None), slice(None), slice(None), slice(None))
+
+        def slot( sl ):
+            self.signal_emitted = True
+            self.assertTrue( sl == self.slicing )
+
+        self.source.isDirty.connect(slot)
+        self.source.setDirty( self.slicing )
+        self.source.isDirty.disconnect(slot)
+
+        self.assertTrue( self.signal_emitted )
+
+        del self.signal_emitted
+        del self.slicing
 
 try:
     import lazyflow
