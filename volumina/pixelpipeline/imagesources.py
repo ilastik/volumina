@@ -6,7 +6,7 @@ except:
 
 
 from PyQt4.QtCore import QObject, QRect, pyqtSignal, QMutex
-from PyQt4.QtGui import QImage
+from PyQt4.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view
 from asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
@@ -249,6 +249,8 @@ assert issubclass(AlphaModulatedImageRequest, RequestABC)
 
 class ColortableImageSource( ImageSource ):
     def __init__( self, arraySource2D, colorTable ):
+        """ colorTable: a list of QRgba values """
+
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
         super(ColortableImageSource, self).__init__()
         self._arraySource2D = arraySource2D
@@ -257,7 +259,12 @@ class ColortableImageSource( ImageSource ):
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._arraySource2D.idChanged.connect(self._onIdChanged)        
 
-        self._colorTable = colorTable
+        self._colorTable = np.zeros((len(colorTable), 4), dtype=np.uint8)
+        for i, c in enumerate(colorTable):
+            self._colorTable[i,0] = QColor(c).red()
+            self._colorTable[i,1] = QColor(c).green()
+            self._colorTable[i,2] = QColor(c).blue()
+            self._colorTable[i,3] = QColor(c).alpha()
         
     def request( self, qrect ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
@@ -290,12 +297,12 @@ class ColortableImageRequest( object ):
     def toImage( self ):
         a = self._arrayreq.getResult()
         assert a.ndim == 2
-        assert a.max() < 256, \
-        "A ColortableImageRequest returned an array with an entry of %d, which is >256." % a.max()
 
-        img = gray2qimage(a)
-        img.setColorTable(self._colorTable)
-        img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+        #make sure that a has values in range [0, colortable_length)
+        a = np.remainder(a, len(self._colorTable))
+        #apply colortable
+        img = self._colorTable[a]
+        img = array2qimage(img)
 
         return img 
             
