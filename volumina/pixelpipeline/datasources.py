@@ -2,7 +2,7 @@ import threading
 from PyQt4.QtCore import QObject, pyqtSignal
 from asyncabcs import RequestABC, SourceABC
 import volumina
-from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, index2slice
+from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, index2slice, sl
 from volumina.config import cfg
 import numpy as np
 
@@ -243,6 +243,15 @@ assert issubclass(ConstantRequest, RequestABC)
 class ConstantSource( QObject ):
     isDirty = pyqtSignal( object )
     idChanged = pyqtSignal( object, object ) # old, new
+
+    @property
+    def constant( self ):
+        return self._constant
+
+    @constant.setter
+    def constant( self, value ):
+        self._constant = value
+        self.setDirty(sl[:,:,:,:,:])
 
     def __init__( self, constant = 0, dtype = np.uint8, parent=None ):
         super(ConstantSource, self).__init__(parent=parent)
