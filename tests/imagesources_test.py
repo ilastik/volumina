@@ -92,7 +92,7 @@ class ColortableImageSourceTest( ut.TestCase ):
                 img.setPixel(i, 4, QColor(0,0,255).rgba())
                 img.setPixel(i, 5, QColor(0,0,255).rgba())
             assert img.size() == result.size()
-            assert img == result
+            assert img == result.convertToFormat(QImage.Format_ARGB32_Premultiplied)
 
         imr.notify(check, codon="unique")
 

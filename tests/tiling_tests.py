@@ -96,16 +96,47 @@ class DirtyPropagationTest( ut.TestCase ):
         dataShape = (1, 900, 400, 10, 1) # t,x,y,z,c
         data = np.indices(dataShape)[3] # Data is labeled according to z-index
         self.ds1 = ArraySource( data )
+        self.CONSTANT = 13
+        self.ds2 = ConstantSource( self.CONSTANT )
 
         self.layer1 = GrayscaleLayer( self.ds1 )
         self.layer1.visible = True
         self.layer1.opacity = 1.0
 
+        self.layer2 = GrayscaleLayer( self.ds2 )
+
         self.lsm = LayerStackModel()
         self.pump = ImagePump( self.lsm, SliceProjection() )
-        self.lsm.append(self.layer1)
 
-    def testOutOfViewDirtyPropagation(self):
+    def testEverythingDirtyPropagation( self ):
+        self.lsm.append(self.layer2)        
+        tiling = Tiling((900,400), blockSize=100)
+        tp = TileProvider(tiling, self.pump.stackedImageSources)
+        try:
+            tp.requestRefresh(QRectF(100,100,200,200))
+            tp.join()
+            tiles = tp.getTiles(QRectF(100,100,200,200))
+            for tile in tiles:
+                aimg = byte_view(tile.qimg)
+                self.assertTrue(np.all(aimg[:,:,0:3] == self.CONSTANT))
+                self.assertTrue(np.all(aimg[:,:,3] == 255))
+
+            NEW_CONSTANT = self.CONSTANT+1
+            self.ds2.constant = NEW_CONSTANT
+            tp.requestRefresh(QRectF(100,100,200,200))
+            tp.join()
+            tiles = tp.getTiles(QRectF(100,100,200,200))
+            for tile in tiles:
+                aimg = byte_view(tile.qimg)
+                self.assertTrue(np.all(aimg[:,:,0:3] == NEW_CONSTANT))
+                self.assertTrue(np.all(aimg[:,:,3] == 255))
+            
+        finally:
+            tp.notifyThreadsToStop()
+            tp.joinThreads()
+
+    def testOutOfViewDirtyPropagation( self ):
+        self.lsm.append(self.layer1)
         tiling = Tiling((900,400), blockSize=100)
         tp = TileProvider(tiling, self.pump.stackedImageSources)
         try:

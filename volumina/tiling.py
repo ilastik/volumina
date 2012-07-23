@@ -447,7 +447,11 @@ class TileProvider( QObject ):
         while self._keepRendering:
             try:
                 ims, tile_nr, stack_id, image_req, timestamp, cache = self._dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
-            except Empty:
+            except (Empty, TypeError):
+                #the TypeError occurs when the self._dirtyLayerQueue
+                #is already None when the thread is being shut down
+                #on program exit.
+                #This avoids a lot of warnings.
                 continue
             try:
                 if timestamp > cache.layerTimestamp( stack_id, ims, tile_nr ):
@@ -504,7 +508,8 @@ class TileProvider( QObject ):
         if dirtyImgSrc in self._sims.viewImageSources():
             visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) and not self._sims.isOccluded( dirtyImgSrc )
             for tile_no in xrange(len(self.tiling)):
-                if self.tiling.tileRects[tile_no].intersected( rect ):
+                #and invalid rect means everything is dirty
+                if not rect.isValid() or self.tiling.tileRects[tile_no].intersected( rect ):
                     for ims in self._sims.viewImageSources():
                         self._cache.setLayerDirtyAll(ims, tile_no, True)
                     if visibleAndNotOccluded:

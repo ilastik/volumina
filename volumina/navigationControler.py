@@ -105,20 +105,20 @@ class NavigationInterpreter(QObject):
 
         if event.delta() > 0:
             if k_alt:
-                navCtrl.changeSliceRelative(10, navCtrl._views.index(imageview))
+                navCtrl.changeSliceRelative(-10, navCtrl._views.index(imageview))
             elif k_ctrl:
                 scaleFactor = 1.1
                 imageview.doScale(scaleFactor)
             else:
-                navCtrl.changeSliceRelative(1, navCtrl._views.index(imageview))
+                navCtrl.changeSliceRelative(-1, navCtrl._views.index(imageview))
         else:
             if k_alt:
-                navCtrl.changeSliceRelative(-10, navCtrl._views.index(imageview))
+                navCtrl.changeSliceRelative(10, navCtrl._views.index(imageview))
             elif k_ctrl:
                 scaleFactor = 0.9
                 imageview.doScale(scaleFactor)
             else:
-                navCtrl.changeSliceRelative(-1, navCtrl._views.index(imageview))
+                navCtrl.changeSliceRelative(1, navCtrl._views.index(imageview))
         if k_ctrl:
             mousePosAfterScale = imageview.mapToScene(event.pos())
             offset = sceneMousePos - mousePosAfterScale
