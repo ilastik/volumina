@@ -81,7 +81,7 @@ class ColortableImageSourceTest( ut.TestCase ):
         def check(result, codon):
             self.assertEqual(codon, "unique")
             self.assertTrue(type(result) == QImage)
-            img = QImage(7,6, QImage.Format_ARGB32_Premultiplied)
+            img = QImage(7,6, QImage.Format_ARGB32)
             for i in range(7):
                 img.setPixel(i, 0, QColor(255,0,0).rgba())
                 img.setPixel(i, 1, QColor(255,0,0).rgba())
@@ -92,7 +92,7 @@ class ColortableImageSourceTest( ut.TestCase ):
                 img.setPixel(i, 4, QColor(0,0,255).rgba())
                 img.setPixel(i, 5, QColor(0,0,255).rgba())
             assert img.size() == result.size()
-            assert img == result.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+            assert img == result
 
         imr.notify(check, codon="unique")
 
