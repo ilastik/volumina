@@ -13,7 +13,7 @@ from numpy2vtk import toVtkImageData
 class MeshExtractor(QThread):
     done = pyqtSignal()
     progress = pyqtSignal(float)
-    newStep  = pyqtSignal(QString)
+    newStep  = pyqtSignal(str)
 
     def __init__(self, parent=None):
         QThread.__init__(self, parent)
@@ -69,7 +69,7 @@ class MeshExtractor(QThread):
         #4) Smooth the models
         #5) Output each model into a separate file
 
-        self.newStep.emit(QString("Histogram"))
+        self.newStep.emit("Histogram")
         qDebug("*** Histogram ***")
         histogram.SetInput(self.inputImage)
         histogram.AddObserver(vtkCommand.ProgressEvent, self.progressCallback)
@@ -78,14 +78,14 @@ class MeshExtractor(QThread):
         histogram.SetComponentSpacing(1, 1, 1)
         histogram.Update()
 
-        self.newStep.emit(QString("Marching Cubes"))
+        self.newStep.emit("Marching Cubes")
         qDebug("*** Marching Cubes ***")
         discreteCubes.SetInput(self.inputImage)
         discreteCubes.AddObserver(vtkCommand.ProgressEvent, self.progressCallback)
         discreteCubes.GenerateValues(endLabel - startLabel + 1, startLabel, endLabel)
 
         if self.smooth:
-            self.newStep.emit(QString("Smoothing"))
+            self.newStep.emit("Smoothing")
             qDebug("*** Smoothing ***")
             smoother.SetInput(discreteCubes.GetOutput())
             smoother.AddObserver(vtkCommand.ProgressEvent, self.progressCallback)
@@ -98,7 +98,7 @@ class MeshExtractor(QThread):
             smoother.NormalizeCoordinatesOn()
             smoother.Update()
 
-        self.newStep.emit(QString("Preparing meshes"))
+        self.newStep.emit("Preparing meshes")
         qDebug("*** Preparing meshes ***")
         if self.smooth:
             selector.SetInput(smoother.GetOutput())
@@ -117,7 +117,7 @@ class MeshExtractor(QThread):
 
         geometry.SetInput(scalarsOff.GetOutput())
         
-        self.newStep.emit(QString("Writing meshes"))
+        self.newStep.emit("Writing meshes")
         qDebug("*** Writing meshes ***")
         for i in range(startLabel, endLabel+1):
             self.progress.emit((i-startLabel+1)/float(endLabel-startLabel+1))

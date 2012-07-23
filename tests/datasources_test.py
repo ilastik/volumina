@@ -54,7 +54,6 @@ class GenericArraySourceTest:
         del self.signal_emitted
         del self.slicing
 
-
 class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
     def setUp( self ):
         self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
