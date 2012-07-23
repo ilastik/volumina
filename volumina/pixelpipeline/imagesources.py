@@ -256,6 +256,7 @@ class ColortableImageSource( ImageSource ):
         
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._arraySource2D.idChanged.connect(self._onIdChanged)        
+
         self._colorTable = colorTable
         
     def request( self, qrect ):
@@ -289,9 +290,13 @@ class ColortableImageRequest( object ):
     def toImage( self ):
         a = self._arrayreq.getResult()
         assert a.ndim == 2
+        assert a.max() < 256, \
+        "A ColortableImageRequest returned an array with an entry of %d, which is >256." % a.max()
+
         img = gray2qimage(a)
-        img.setColorTable(self._colorTable)# = img.convertToFormat(QImage.Format_ARGB32_Premultiplied, self._colorTable)
+        img.setColorTable(self._colorTable)
         img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+
         return img 
             
     def notify( self, callback, **kwargs ):

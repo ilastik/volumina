@@ -57,7 +57,8 @@ class ArraySource( QObject ):
         if not is_pure_slicing(slicing):
             raise Exception('ArraySource: slicing is not pure')
         assert(len(slicing) == len(self._array.shape)), \
-            "slicing into an array of shape=%r requested, but the slicing object is %r" % (slicing, self._array.shape)  
+            "slicing into an array of shape=%r requested, but slicing is %r" \
+            % (slicing, self._array.shape)  
         return ArrayRequest(self._array, slicing)
 
     def setDirty( self, slicing):
@@ -98,6 +99,7 @@ class RelabelingArraySource( ArraySource ):
         self._relabeling = None
         
     def setRelabeling( self, relabeling ):
+        assert relabeling.dtype == self._array.dtype
         self._relabeling = relabeling
         self.setDirty(5*(slice(None),))
 
@@ -105,11 +107,14 @@ class RelabelingArraySource( ArraySource ):
         if not is_pure_slicing(slicing):
             raise Exception('ArraySource: slicing is not pure')
         assert(len(slicing) == len(self._array.shape)), \
-            "slicing into an array of shape=%r requested, but the slicing object is %r" % (self._array.shape, slicing)
+            "slicing into an array of shape=%r requested, but slicing is %r" \
+            % (self._array.shape, slicing)
         a = self._array[slicing]
+        oldDtype = a.dtype
         if self._relabeling is not None:
             a = self._relabeling[a]
-        return ArrayRequest(a, slicing)
+        assert a.dtype == oldDtype 
+        return ArrayRequest(a, 5*(slice(None),))
         
 #*******************************************************************************
 # L a z y f l o w R e q u e s t                                                *
