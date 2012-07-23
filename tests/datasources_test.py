@@ -1,5 +1,7 @@
 import unittest as ut
+import os
 from abc import ABCMeta, abstractmethod
+import volumina._testing
 from volumina.pixelpipeline.datasources import ArraySource, RelabelingArraySource
 import numpy as np
 
@@ -55,10 +57,7 @@ class GenericArraySourceTest:
 
 class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
     def setUp( self ):
-        import numpy as np
-        from scipy.misc import lena
-        self.lena = lena()
-
+        self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
         self.raw = np.zeros((1,512,512,1,1))
         self.raw[0,:,:,0,0] = self.lena
         self.source = ArraySource( self.raw )
@@ -107,18 +106,16 @@ class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         del self.slicing
 
 
-    class LazyflowSourceTest( ut.TestCase, GenericArraySourceTest ):
-        def setUp( self ):
-            import numpy as np
-            self.np = np
-            from scipy.misc import lena
-            self.lena = lena()
-            self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
-            self.raw[0,:,:,0,0] = self.lena
+    if has_lazyflow:
+        class LazyflowSourceTest( ut.TestCase, GenericArraySourceTest ):
+            def setUp( self ):
+                self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
+                self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
+                self.raw[0,:,:,0,0] = self.lena
 
-            g = Graph()
-            op = OpDataProvider(g, self.raw)
-            self.source = LazyflowSource(op.Data, "Data")
+                g = Graph()
+                op = OpDataProvider(g, self.raw)
+                self.source = LazyflowSource(op.Data, "Data")
 
 if __name__ == '__main__':
     ut.main()
