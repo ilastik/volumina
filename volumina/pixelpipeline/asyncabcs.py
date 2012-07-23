@@ -23,14 +23,10 @@ class RequestABC:
     def notify( self, callback, **kwargs ):
         pass
 
-    @abstractmethod
-    def cancel( self ):
-        pass
-
     @classmethod
     def __subclasshook__(cls, C):
         if cls is RequestABC:
-            return True if _has_attributes(C, ['wait', 'notify', 'cancel']) else False
+            return True if _has_attributes(C, ['wait', 'notify']) else False
         return NotImplemented
 
 

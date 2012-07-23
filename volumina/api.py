@@ -75,8 +75,6 @@ class Viewer(QMainWindow):
             s = [int(0.66*s[0]), s[0]-int(0.66*s[0])]
             self.splitter.setSizes(s)
         QTimer.singleShot(0, adjustSplitter)
-        if not _has_lazyflow:
-            self.setEnabled(False)
 
     def initLayerstackModel(self):
         self.layerstack = LayerStackModel()
