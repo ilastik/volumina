@@ -223,10 +223,11 @@ class ColortableImageSource( ImageSource ):
 
         self._colorTable = np.zeros((len(colorTable), 4), dtype=np.uint8)
         for i, c in enumerate(colorTable):
-            self._colorTable[i,0] = QColor(c).red()
-            self._colorTable[i,1] = QColor(c).green()
-            self._colorTable[i,2] = QColor(c).blue()
-            self._colorTable[i,3] = QColor(c).alpha()
+            color = QColor.fromRgba(c)
+            self._colorTable[i,0] = color.red()
+            self._colorTable[i,1] = color.green()
+            self._colorTable[i,2] = color.blue()
+            self._colorTable[i,3] = color.alpha() 
         
     def request( self, qrect ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
