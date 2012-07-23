@@ -21,8 +21,7 @@ useVTK = True
 try:
     from view3d.view3d import OverviewScene
 except ImportError:
-    import traceback
-    traceback.print_exc()
+    print "warning: could not import optional dependency VTK"
     useVTK = False
 
 #*******************************************************************************
