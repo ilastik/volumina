@@ -504,7 +504,8 @@ class TileProvider( QObject ):
         if dirtyImgSrc in self._sims.viewImageSources():
             visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) and not self._sims.isOccluded( dirtyImgSrc )
             for tile_no in xrange(len(self.tiling)):
-                if self.tiling.tileRects[tile_no].intersected( rect ):
+                #and invalid rect means everything is dirty
+                if not rect.isValid() or self.tiling.tileRects[tile_no].intersected( rect ):
                     for ims in self._sims.viewImageSources():
                         self._cache.setLayerDirtyAll(ims, tile_no, True)
                     if visibleAndNotOccluded:
