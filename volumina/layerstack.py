@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QAbstractListModel, pyqtSignal, QModelIndex, Qt, \
-                         QTimer, pyqtSignature, QString
+                         QTimer, pyqtSignature
 from PyQt4.QtGui import QItemSelectionModel
 
 from volumina.layer import Layer
@@ -223,9 +223,9 @@ class LayerStackModel(QAbstractListModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            return QString("Column %1").arg(section)
+            return "Column %r" % section
         else:
-            return QString("Row %1").arg(section)
+            return "Row %r" % section
         
     def wantsUpdate(self):
         self.layoutChanged.emit()
