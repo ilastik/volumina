@@ -152,7 +152,7 @@ class AlphaModulatedLayer( NormalizableLayer ):
     def tintColor(self, c):
         if self._tintColor != c:
             self._tintColor = c
-            self.tintColorChanged.emit(c)
+            self.tintColorChanged.emit()
     
     def __init__( self, datasource, tintColor = QColor(255,0,0), range = (0,255), normalize = (0,255) ):
         super(AlphaModulatedLayer, self).__init__()
