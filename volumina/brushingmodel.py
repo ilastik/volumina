@@ -131,7 +131,7 @@ class BrushingModel(QObject):
         ## in that case the lineitem will be so tiny, that it won't be rendered
         ## into a single pixel by the code above
         if not has_moved and self.brushSize <= 1 and numpy.count_nonzero(labels) == 0:
-            labels[labels.shape[0]//2, labels.shape[1]//2] = 1
+            labels[labels.shape[0]//2, labels.shape[1]//2] = self.drawnNumber
 
         self.brushStrokeAvailable.emit(QPointF(self.bb.x(), self.bb.y()), labels)
 

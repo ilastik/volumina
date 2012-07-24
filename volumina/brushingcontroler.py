@@ -138,10 +138,10 @@ class BrushingInterpreter( QObject ):
         self._brushingCtrl._brushingModel.moveTo(imageview.mousePos)
 
     def clearLines(self):
-      lines = self._lineItems
-      self._lineItems = []
-      for l in lines:
-        l.hide()
+        lines = self._lineItems
+        self._lineItems = []
+        for l in lines:
+            l.hide()
         
 #*******************************************************************************
 # B r u s h i n g C o n t r o l e r                                            *
