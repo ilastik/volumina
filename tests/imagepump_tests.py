@@ -225,6 +225,35 @@ class ImagePumpTest( ut.TestCase ):
         self.assertEqual( len(ip.syncedSliceSources), 0 )
         self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 0 )
 
+    def testNoneEmptyLayerStackModel( self ):
+        lsm = LayerStackModel()
+        
+        lsm.append(self.layer1)
+        lsm.append(self.layer2)
+        lsm.append(self.layer3)
+        
+        ip = ImagePump( lsm, SliceProjection() )
+        self.assertEqual( len(lsm), 3 )
+        self.assertEqual( len(ip.stackedImageSources), 3 )
+        self.assertEqual( len(ip.syncedSliceSources), 3 )
+        
+        self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 3 )
+        for layer in lsm:
+            self.assertTrue( ip.stackedImageSources.isRegistered(layer) )
+
+        lsm.deleteSelected()
+        self.assertEqual( len(lsm), 2 )
+        self.assertEqual( len(ip.stackedImageSources), 2 )
+        self.assertEqual( len(ip.syncedSliceSources), 2 )
+        self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 2 )
+        for layer in lsm:
+            self.assertTrue( ip.stackedImageSources.isRegistered(layer) )
+
+        lsm.clear()
+        self.assertEqual( len(lsm), 0 )
+        self.assertEqual( len(ip.stackedImageSources), 0 )
+        self.assertEqual( len(ip.syncedSliceSources), 0 )
+        self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 0 )
 
 
 if __name__=='__main__':
