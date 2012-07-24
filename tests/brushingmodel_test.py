@@ -4,7 +4,7 @@ from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import QPointF
 from volumina.brushingmodel import BrushingModel
 
-app = QApplication([])
+app = QApplication([], False)
 def _onBrushStroke( point, labels  ):
     print point.x(), point.y()
     print labels.shape
