@@ -239,25 +239,4 @@ class VolumeEditorWidget(QWidget):
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
 #*******************************************************************************
-if __name__ == "__main__":
-    
-    import sys
-    from layerstack import LayerStackModel
-    from volumina.layer import GrayscaleLayer
-    from volumina.pixelpipeline.datasources import ArraySource
-    
-    array = numpy.random.rand(1,100,100,100,1)
-    array *= 255
-    array = array.astype('uint8')
-    
-    layer = GrayscaleLayer(ArraySource(array))
-    app = QApplication(sys.argv)
-    layerStackModel = LayerStackModel()
-    layerStackModel.insert(0,layer)
-    volumeEditor = VolumeEditor(layerStackModel)
-    volumeEditor.dataShape = array.shape
-    print volumeEditor.dataShape
-    volumeEditorWidget = VolumeEditorWidget(editor=volumeEditor)
-    volumeEditorWidget.show()
-    app.exec_()
-    
+
