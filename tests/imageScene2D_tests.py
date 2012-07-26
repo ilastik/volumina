@@ -14,10 +14,14 @@ from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 import volumina.pixelpipeline.imagesourcefactories as imsfac
 
+qapp = None
+if QApplication.instance():
+    qapp = QApplication.instance()
+else:
+    qapp = QApplication([], False)
+
 class ImageScene2DTest( ut.TestCase ):
     def setUp( self ):
-        self.app = QApplication([], False)
-
         self.layerstack = LayerStackModel()
         self.sims = StackedImageSources( self.layerstack )
 
@@ -28,9 +32,14 @@ class ImageScene2DTest( ut.TestCase ):
         self.ims = imsfac.createImageSource( self.layer, [self.ds] )
         self.sims.register(self.layer, self.ims)
         
-        self.scene = ImageScene2D(self.app) 
+        self.scene = ImageScene2D() 
         self.scene.stackedImageSources = self.sims
         self.scene.sceneShape = (310,290)
+
+    def tearDown( self ):
+        if self.scene._tileProvider:
+            self.scene._tileProvider.notifyThreadsToStop()
+            self.scene._tileProvider.joinThreads()
 
     def renderScene( self, s):
         img = QImage(310,290,QImage.Format_ARGB32_Premultiplied)

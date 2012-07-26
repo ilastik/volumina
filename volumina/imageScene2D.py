@@ -154,6 +154,10 @@ class ImageScene2D(QGraphicsScene):
         self._slicingPositionSettled = True
 
         self._redrawIndicator = False
+
+    def __del__( self ):
+        if self._tileProvider:
+            self._tileProvider.notifyThreadsToStop()
     
     def drawLine(self, fromPoint, toPoint, pen):
         tileId = self._tiling.containsF(toPoint)
