@@ -3,6 +3,8 @@
 
 [![Build Status](https://secure.travis-ci.org/Ilastik/volumina.png)](http://travis-ci.org/Ilastik/volumina)
 
+[Code coverage](http://ilastik.github.com/volumina/cover/index.html)
+
 Installing
 ==========
 First, test volumina
