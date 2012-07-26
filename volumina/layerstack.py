@@ -1,3 +1,4 @@
+import functools
 from PyQt4.QtCore import QAbstractListModel, pyqtSignal, QModelIndex, Qt, \
                          QTimer, pyqtSignature
 from PyQt4.QtGui import QItemSelectionModel
@@ -60,12 +61,7 @@ class LayerStackModel(QAbstractListModel):
             self.selectionModel.select(self.index(self.selectedRow()), QItemSelectionModel.Deselect)
         self.selectionModel.select(self.index(index), QItemSelectionModel.Select)
         
-        def onChanged():
-            #assumes that data is unique!
-            idx = self.index(self._layerStack.index(data))
-            self.dataChanged.emit(idx, idx)
-            self.updateGUI()
-        data.changed.connect(onChanged)
+        data.changed.connect(functools.partial(self._onLayerChanged, self.index(index)))
         self.layerAdded.emit( data, self._layerStack.index(data))
         self.updateGUI()
 
@@ -229,3 +225,8 @@ class LayerStackModel(QAbstractListModel):
         
     def wantsUpdate(self):
         self.layoutChanged.emit()
+
+    def _onLayerChanged( self, idx ):
+        self.dataChanged.emit(idx, idx)
+        self.updateGUI()
+        
