@@ -30,6 +30,14 @@ class TilingTest ( ut.TestCase ):
         self.assertEqual( t.intersected( QRect(0,0,1,1) ), [])
         self.assertEqual( len(t), 0 )
 
+    def testLen( self ):
+        for i in xrange(5):
+            t = Tiling((100*i, 100), blockSize = 50 )
+            self.assertEqual(len(t), (100*i*2)/50)
+
+
+
+
 class TileProviderTest( ut.TestCase ):
     def setUp( self ):
         self.GRAY1 = 60

@@ -77,7 +77,7 @@ class Tiling(object):
     '''
     def __init__(self, sliceShape, data2scene=QTransform(), blockSize=256, overlap=1):
         self.blockSize = blockSize
-        self.overlap = 1
+        self.overlap = overlap
         patchAccessor = PatchAccessor(sliceShape[0], sliceShape[1], blockSize=self.blockSize)
 
         self.imageRectFs = []
