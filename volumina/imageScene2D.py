@@ -150,8 +150,6 @@ class ImageScene2D(QGraphicsScene):
     
         self.data2scene = QTransform(0,1,1,0,0,0) 
         self.scene2data = self.data2scene.transposed()
-        
-        self._slicingPositionSettled = True
 
     def __del__( self ):
         if self._tileProvider:
@@ -196,7 +194,6 @@ class ImageScene2D(QGraphicsScene):
     
     def indicateSlicingPositionSettled(self, settled):
         self._dirtyIndicator.setVisible(settled)
-        self._slicingPositionSettled = settled
    
     def drawBackground(self, painter, rectF):
         if self._tileProvider is None:
