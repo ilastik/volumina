@@ -20,7 +20,31 @@ if QApplication.instance():
 else:
     qapp = QApplication([], False)
 
+
+
 class ImageScene2DTest( ut.TestCase ):
+    def testSceneShapeProperty( self ):
+        scene = ImageScene2D()
+        self.assertEqual(scene.sceneShape, (0,0))
+        SHAPE1 = (24,77)
+        scene.sceneShape = SHAPE1
+        self.assertEqual(scene.sceneShape, SHAPE1)
+        SHAPE2 = (101.3,324.5)
+        scene.sceneShape = SHAPE2
+        self.assertEqual(scene.sceneShape, SHAPE2)
+        SHAPE3 = (0,0)
+        scene.sceneShape = SHAPE3
+        self.assertEqual(scene.sceneShape, SHAPE3)
+
+    def testStackedImageSourcesProperty( self ):
+        s = ImageScene2D()
+        self.assertEqual(len(s.stackedImageSources), 0)
+
+        sims = StackedImageSources( LayerStackModel() )
+        s.stackedImageSources = sims
+        self.assertEqual(id(s.stackedImageSources), id(sims))
+
+class ImageScene2D_RenderTest( ut.TestCase ):
     def setUp( self ):
         self.layerstack = LayerStackModel()
         self.sims = StackedImageSources( self.layerstack )
