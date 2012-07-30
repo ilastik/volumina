@@ -113,8 +113,12 @@ class Tiling(object):
             self.tileRects.append(patchRect)
   
     def boundingRectF(self):
-        p = self.tileRectFs[-1]
-        return QRectF(0,0, p.x()+p.width(), p.y()+p.height())
+        if self.tileRectFs:
+            p = self.tileRectFs[-1]
+            br = QRectF(0,0, p.x()+p.width(), p.y()+p.height()) 
+        else:
+            br = QRectF(0,0,0,0)
+        return br
 
     def containsF(self, point):
         for i, p in enumerate(self.tileRectFs):
