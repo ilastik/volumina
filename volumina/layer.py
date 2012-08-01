@@ -2,7 +2,10 @@ from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.QtGui import QColor
 from widgets.layerDialog import GrayscaleLayerDialog
 from widgets.layerDialog import RGBALayerDialog
-
+from volumina.pixelpipeline.datasourcefactories import createDataSource
+import numpy
+from vigra import VigraArray
+import lazyflow
 
 #*******************************************************************************
 # L a y e r                                                                    *
@@ -134,7 +137,10 @@ class NormalizableLayer( Layer ):
 class GrayscaleLayer( NormalizableLayer ):
     def __init__( self, datasource, range = (0,255), normalize = (0,255) ):
         super(GrayscaleLayer, self).__init__()
-        self._datasources = [datasource]
+        if isinstance(datasource,(numpy.ndarray,lazyflow.graph.OutputSlot,VigraArray)):
+            self.datasources = [createDataSource(datasource)]
+        else:
+            self._datasources = [datasource]
         self._normalize = [normalize]
         self._range = [range] 
 
@@ -206,3 +212,9 @@ class RGBALayer( NormalizableLayer ):
         self._color_missing_value = color_missing_value
         self._alpha_missing_value = alpha_missing_value
         self._range = range
+
+    @classmethod
+    def createFromMultichannel(cls, data):
+        # disect data
+        l = RGBALayer()
+        return l
