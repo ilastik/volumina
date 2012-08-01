@@ -77,7 +77,7 @@ class Tiling(object):
     '''
     def __init__(self, sliceShape, data2scene=QTransform(), blockSize=256, overlap=1):
         self.blockSize = blockSize
-        self.overlap = 1
+        self.overlap = overlap
         patchAccessor = PatchAccessor(sliceShape[0], sliceShape[1], blockSize=self.blockSize)
 
         self.imageRectFs = []
@@ -113,8 +113,12 @@ class Tiling(object):
             self.tileRects.append(patchRect)
   
     def boundingRectF(self):
-        p = self.tileRectFs[-1]
-        return QRectF(0,0, p.x()+p.width(), p.y()+p.height())
+        if self.tileRectFs:
+            p = self.tileRectFs[-1]
+            br = QRectF(0,0, p.x()+p.width(), p.y()+p.height()) 
+        else:
+            br = QRectF(0,0,0,0)
+        return br
 
     def containsF(self, point):
         for i, p in enumerate(self.tileRectFs):

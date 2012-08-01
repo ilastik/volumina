@@ -1,7 +1,7 @@
 import os
 import unittest as ut
 import numpy as np
-from PyQt4.QtCore import QRectF
+from PyQt4.QtCore import QRectF, QPoint, QRect
 from PyQt4.QtGui import QTransform, qApp
 from qimage2ndarray import byte_view
 
@@ -13,6 +13,29 @@ from volumina.pixelpipeline.imagesources import GrayscaleImageSource
 from volumina.pixelpipeline.imagepump import StackedImageSources, ImagePump
 from volumina.pixelpipeline.slicesources import SliceSource
 from volumina.slicingtools import SliceProjection
+
+
+
+class TilingTest ( ut.TestCase ):
+    def testNoneShape( self ):
+        t = Tiling((0,0))
+        self.assertEqual( t.imageRectFs, [] )
+        self.assertEqual( t.tileRectFs, [] )
+        self.assertEqual( t.imageRects, [] )
+        self.assertEqual( t.tileRects, [] )
+        self.assertEqual( t.sliceShape, (0,0) )
+        self.assertEqual( t.boundingRectF(), QRectF(0,0,0,0) )
+        self.assertEqual( t.containsF(QPoint(0,0)), None )
+        self.assertEqual( t.intersectedF( QRectF(0,0,1,1) ), [])
+        self.assertEqual( t.intersected( QRect(0,0,1,1) ), [])
+        self.assertEqual( len(t), 0 )
+
+    def testLen( self ):
+        for i in xrange(5):
+            t = Tiling((100*i, 100), blockSize = 50 )
+            self.assertEqual(len(t), (100*i*2)/50)
+
+
 
 
 class TileProviderTest( ut.TestCase ):

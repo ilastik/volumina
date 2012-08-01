@@ -59,7 +59,6 @@ class VolumeEditorWidget(QWidget):
         self.toggleSelectedHUD.toggled.connect(self._toggleSelectedHud)
 
 
-
     def _setupVolumeExtent( self ):
         '''Setup min/max values of position/coordinate control elements.
 
@@ -256,8 +255,6 @@ if __name__ == "__main__":
     layerStackModel.insert(0,layer)
     volumeEditor = VolumeEditor(layerStackModel)
     volumeEditor.dataShape = array.shape
-    print volumeEditor.dataShape
     volumeEditorWidget = VolumeEditorWidget(editor=volumeEditor)
     volumeEditorWidget.show()
-    app.exec_()
-    
+    app.exec_()   

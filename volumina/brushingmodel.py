@@ -25,8 +25,8 @@ class BrushingModel(QObject):
     erasingColor       = Qt.black
     erasingNumber      = 100
     
-    def __init__(self):
-        QObject.__init__(self)
+    def __init__(self, parent=None):
+        QObject.__init__(self, parent=parent)
         self.sliceRect = None
         self.bb    = QRect() #bounding box enclosing the drawing
         self.brushSize = self.defaultBrushSize
@@ -37,6 +37,7 @@ class BrushingModel(QObject):
 
         self.pos = None
         self.erasing = False
+        self._hasMoved = False
         
         self.drawOnto = None
         
@@ -93,15 +94,23 @@ class BrushingModel(QObject):
         self.brushColorChanged.emit(self.drawColor)
     
     def beginDrawing(self, pos, sliceRect):
+        '''
+
+        pos -- QPointF-like
+        '''
         self.sliceRect = sliceRect
         self.scene.clear()
         self.bb = QRect()
-        self.pos = QPointF(pos.x()+0.0001, pos.y()+0.0001)
-        line = self.moveTo(pos)
-        return line
+        self.pos = QPointF(pos.x(), pos.y())
+        self._hasMoved = False
 
     def endDrawing(self, pos):
-        self.moveTo(pos)
+        has_moved = self._hasMoved # _hasMoved will change after calling moveTo
+        if has_moved:
+            self.moveTo(pos)
+        else:
+            assert(self.pos == pos)
+            self.moveTo(QPointF(pos.x()+0.0001, pos.y()+0.0001)) # move a little
 
         tempi = QImage(QSize(self.bb.width(), self.bb.height()), QImage.Format_ARGB32_Premultiplied) #TODO: format
         tempi.fill(0)
@@ -114,6 +123,15 @@ class BrushingModel(QObject):
         labels = labels.swapaxes(0,1)
         assert labels.shape[0] == self.bb.width()
         assert labels.shape[1] == self.bb.height()
+
+        ##
+        ## ensure that at least one pixel is label when the brush size is 1
+        ##
+        ## this happens when the user just clicked without moving
+        ## in that case the lineitem will be so tiny, that it won't be rendered
+        ## into a single pixel by the code above
+        if not has_moved and self.brushSize <= 1 and numpy.count_nonzero(labels) == 0:
+            labels[labels.shape[0]//2, labels.shape[1]//2] = self.drawnNumber
 
         self.brushStrokeAvailable.emit(QPointF(self.bb.x(), self.bb.y()), labels)
 
@@ -130,6 +148,7 @@ class BrushingModel(QObject):
         line = QGraphicsLineItem(oldX, oldY, x, y)
         line.setPen(QPen( QBrush(Qt.white), self.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         self.scene.addItem(line)
+        self._hasMoved = True
 
         #update bounding Box 
         if not self.bb.isValid():

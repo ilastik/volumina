@@ -11,6 +11,8 @@ from PyQt4.QtGui import QGraphicsScene, QImage, QTransform, QPen, QColor, QBrush
 from imageSceneRendering import ImageSceneRenderThread
 
 from volumina.tiling import Tiling, TileProvider, TiledImageLayer
+from volumina.layerstack import LayerStackModel
+from volumina.pixelpipeline.imagepump import StackedImageSources
 import math
 
 import threading
@@ -138,22 +140,20 @@ class ImageScene2D(QGraphicsScene):
     def __init__( self, parent=None ):
         QGraphicsScene.__init__( self, parent=parent )
 
-        # tiled rendering of patches
-        self._tiling         = None
-        self._brushingLayer  = None
-        # indicates the dirtyness of each tile
-        self._dirtyIndicator = None
-
-        self._tileProvider = None
-        self._stackedImageSources = None
-        self._showTileOutlines = False
-    
         self.data2scene = QTransform(0,1,1,0,0,0) 
         self.scene2data = self.data2scene.transposed()
-        
-        self._slicingPositionSettled = True
 
-        self._redrawIndicator = False
+        self._tiling = Tiling((0,0), self.data2scene)
+        self._brushingLayer  = TiledImageLayer(self._tiling)
+        self._dirtyIndicator = DirtyIndicator(self._tiling)
+        self.addItem(self._dirtyIndicator)
+        self._stackedImageSources = StackedImageSources( LayerStackModel() )
+        self._tileProvider = TileProvider( self._tiling, self._stackedImageSources)
+        self._showTileOutlines = False
+
+    def __del__( self ):
+        if self._tileProvider:
+            self._tileProvider.notifyThreadsToStop()
     
     def drawLine(self, fromPoint, toPoint, pen):
         tileId = self._tiling.containsF(toPoint)
@@ -194,7 +194,6 @@ class ImageScene2D(QGraphicsScene):
     
     def indicateSlicingPositionSettled(self, settled):
         self._dirtyIndicator.setVisible(settled)
-        self._slicingPositionSettled = settled
    
     def drawBackground(self, painter, rectF):
         if self._tileProvider is None:

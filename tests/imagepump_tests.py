@@ -225,7 +225,7 @@ class ImagePumpTest( ut.TestCase ):
         self.assertEqual( len(ip.syncedSliceSources), 0 )
         self.assertEqual( len(ip.stackedImageSources.getRegisteredLayers()), 0 )
 
-    def testNoneEmptyLayerStackModel( self ):
+    def testNonEmptyLayerStackModel( self ):
         lsm = LayerStackModel()
         
         lsm.append(self.layer1)
