@@ -238,8 +238,6 @@ class QuadView(QWidget):
     def setMouseCoordsToQuadStatusBar(self, x, y, z):
         self.quadViewStatusBar.setMouseCoords(x, y, z) 
         
-<<<<<<< HEAD
-=======
     def switchMinMax(self,axis):
         """Switch an AxisViewWidget between from minimized to maximized and vice
         versa.
@@ -278,7 +276,6 @@ class QuadView(QWidget):
         self.switchMinMax('z')
             
     
->>>>>>> 170ede7... added __getitem__ to lazyflow source
     def on_dock(self, dockWidget):
         if dockWidget._isDocked:
             dockWidget.undockView()
