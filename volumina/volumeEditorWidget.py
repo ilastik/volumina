@@ -192,24 +192,12 @@ class VolumeEditorWidget(QWidget):
 
     def _initShortcuts(self):
         self.shortcuts = []
-        #self.shortcuts.append(self._shortcutHelper("Ctrl+Z", "Labeling", "History undo", self, self.editor.historyUndo, Qt.ApplicationShortcut, True))
-        #self.shortcuts.append(self._shortcutHelper("Ctrl+Shift+Z", "Labeling", "History redo", self, self.editor.historyRedo, Qt.ApplicationShortcut, True))
-        #self.shortcuts.append(self._shortcutHelper("Ctrl+Y", "Labeling", "History redo", self, self.editor.historyRedo, Qt.ApplicationShortcut, True))
+        self.shortcuts.append(self._shortcutHelper("x", "Navigation", "Minimize/Maximize x-Window", self, self.quadview.switchXMinMax, Qt.ApplicationShortcut, True))
+        self.shortcuts.append(self._shortcutHelper("y", "Navigation", "Minimize/Maximize y-Window", self, self.quadview.switchYMinMax, Qt.ApplicationShortcut, True))
+        self.shortcuts.append(self._shortcutHelper("z", "Navigation", "Minimize/Maximize z-Window", self, self.quadview.switchZMinMax, Qt.ApplicationShortcut, True))
         
-        def fullscreenView(axis):
-            m = not self.quadview.maximized
-            print "maximize axis=%d = %r" % (axis, m)
-            self.quadview.setMaximized(m, axis)
         
-        maximizeShortcuts = ['x', 'y', 'z']
-        maximizeViews     = [1,   2,     0]
         for i, v in enumerate(self.editor.imageViews):
-            self.shortcuts.append(self._shortcutHelper(maximizeShortcuts[i], "Navigation", \
-                                  "Enlarge slice view %s to full size" % maximizeShortcuts[i], \
-                                  self, partial(fullscreenView, maximizeViews[i]), Qt.WidgetShortcut))
-            
-            #self.shortcuts.append(self._shortcutHelper("n", "Labeling", "Increase brush size", v,self.editor._drawManager.brushSmaller, Qt.WidgetShortcut))
-            #self.shortcuts.append(self._shortcutHelper("m", "Labeling", "Decrease brush size", v, self.editor._drawManager.brushBigger, Qt.WidgetShortcut))
             self.shortcuts.append(self._shortcutHelper("+", "Navigation", "Zoom in", v,  v.zoomIn, Qt.WidgetShortcut))
             self.shortcuts.append(self._shortcutHelper("-", "Navigation", "Zoom out", v, v.zoomOut, Qt.WidgetShortcut))
             

@@ -4,22 +4,27 @@ from imagesources import GrayscaleImageSource, ColortableImageSource, \
                          RGBAImageSource, AlphaModulatedImageSource
 from datasources import ConstantSource,ArraySource,LazyflowSource
 import numpy
-from vigra import VigraArray
-import lazyflow
 
-@multimethod(lazyflow.graph.OutputSlot,bool)
-def createDataSource(source,withShape = False):
-    #has to handle Lazyflow source
-    src = LazyflowSource(source)
-    shape = src._outslot.shape
-    if withShape:
-        return src,shape
-    else:
-        return src
+hasLazyflow = True
+try:
+    import lazyflow
+except:
+    hasLazyflow = False
 
-@multimethod(lazyflow.graph.OutputSlot)
-def createDataSource(source):
-    return createDataSource(source,False)
+if hasLazyflow:
+    @multimethod(lazyflow.graph.OutputSlot,bool)
+    def createDataSource(source,withShape = False):
+        #has to handle Lazyflow source
+        src = LazyflowSource(source)
+        shape = src._outslot.shape
+        if withShape:
+            return src,shape
+        else:
+            return src
+    
+    @multimethod(lazyflow.graph.OutputSlot)
+    def createDataSource(source):
+        return createDataSource(source,False)
 
 @multimethod(numpy.ndarray,bool)
 def createDataSource(source,withShape = False):
@@ -48,19 +53,5 @@ def createDataSource(source,withShape = False):
         return src
 
 @multimethod(numpy.ndarray)
-def createDataSource(source):
-    return createDataSource(source,False)
-
-@multimethod(VigraArray,bool)
-def createDataSource(source,withShape):
-    #has to handle VigraArray
-    source = source.withAxes('t','x','y','z','c')
-    src = ArraySource(source)
-    if withShape:
-        return src,source.shape
-    else:
-        return src
-    
-@multimethod(VigraArray)
 def createDataSource(source):
     return createDataSource(source,False)

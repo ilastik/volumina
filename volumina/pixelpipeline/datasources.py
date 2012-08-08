@@ -161,6 +161,12 @@ class LazyflowSource( QObject ):
         self._priority = priority
         self._outslot.notifyDirty(self._setDirtyLF)
         
+    def __getitem__(self,i):
+        opSelector = volumina.adaptors.OpChannelSelector(self._outslot.graph)
+        opSelector.inputs["Input"].connect(self._outslot)
+        opSelector.inputs["Channel"].setValue(i)
+        return LazyflowSource(opSelector.outputs["Output"])
+        
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()

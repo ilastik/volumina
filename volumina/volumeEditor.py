@@ -44,7 +44,16 @@ class VolumeEditor( QObject ):
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
-
+        
+    @property
+    def navigationInterpreterType(self):
+        return type(self.navInterpret)
+    
+    @navigationInterpreterType.setter
+    def navigationInterpreterType(self,navInt):
+        self.navInterpret = navInt(self.navCtrl)
+        self.eventSwitch.interpreter = self.navInterpret
+        
     @property
     def dataShape(self):
         return self.posModel.shape5D
