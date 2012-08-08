@@ -32,6 +32,13 @@ default16 = [QColor(0, 0, 255).rgba(),
             QColor(240, 230, 140).rgba(), #khaki
             QColor(69, 69, 69).rgba()]    # dark grey
 
+def create_default_8bit():
+    '''Create a colortable suitable for 16bit data.
+
+    Repeatedly applies the default16 colortable to the whole 8bit range.
+    
+    '''
+    return [color for color in itertools.islice(itertools.cycle(default16), 0, 2**8)]
 
 def create_default_16bit():
     '''Create a colortable suitable for 16bit data.
