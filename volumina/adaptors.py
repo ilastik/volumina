@@ -108,32 +108,6 @@ if _has_lazyflow and _has_vigra:
                 self.output.setDirty(slice(None))
             else:
                 assert False, "Unknown input"
-    
-    class OpChannelSelector(Operator):
-        name = 'OpChannelSelector'
-        inputSlots = [InputSlot("Input"), InputSlot("Channel")]
-        outputSlots = [OutputSlot("Output")]
-        
-        def __init__(self, *args, **kwargs):
-            super(OpChannelSelector, self).__init__(*args, **kwargs)
-            
-                    
-        def setupOutputs(self):
-            inputSlot = self.inputs["Input"]
-            outputSlot = self.outputs["Output"]
-            outputSlot.meta.assignFrom(inputSlot.meta)
-            outputSlot.meta.shape = tuple([1 if inputSlot.meta.axistags.channelIndex == i else \
-                                          inputSlot.meta.shape[i] for i in range(len(inputSlot.meta.shape))])
-            
-        def execute(self,slot,roi,result):
-            c = self.inputs["Channel"].value
-            inputSlot = self.inputs["Input"]
-            roi.start = [c if i==inputSlot.meta.axistags.channelIndex else roi.start[i] \
-                         for i in range(len(roi.start))]
-            roi.stop = [c+1 if i==inputSlot.meta.axistags.channelIndex else roi.stop[i] \
-                         for i in range(len(roi.stop))]
-            result[:] = self.inputs["Input"](roi.start,roi.stop).wait()
-            
 
 class Array5d( object ):
     '''Embed a array with dim = 3 into the volumina coordinate system.'''
@@ -155,15 +129,4 @@ class Array5d( object ):
         return Array5d( self.a, dtype )
 
 if __name__ == "__main__":
-    
-    import vigra
-    from lazyflow.graph import Graph
-    
-    g = Graph()
-    op = OpChannelSelector(g)
-    v = vigra.VigraArray((10,10,10))
-    
-    op.inputs["Input"].setValue(v)
-    op.inputs["Channel"].setValue(3)
-    
-    print op.outputs["Output"]().wait().shape
+    pass
