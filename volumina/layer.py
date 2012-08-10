@@ -171,9 +171,16 @@ class AlphaModulatedLayer( NormalizableLayer ):
 #*******************************************************************************
 
 class ColortableLayer( Layer ):
+    colorTableChanged = pyqtSignal()
+
     @property
     def colorTable( self ):
         return self._colorTable
+
+    @colorTable.setter
+    def colorTable( self, colorTable ):
+        self._colorTable = colorTable
+        self.colorTableChanged.emit()
 
     def __init__( self, datasource , colorTable):
         super(ColortableLayer, self).__init__()

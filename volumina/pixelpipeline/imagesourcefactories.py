@@ -26,7 +26,7 @@ def createImageSource( layer, datasources2d ):
 @multimethod(ColortableLayer, list)
 def createImageSource( layer, datasources2d ):
     assert len(datasources2d) == 1
-    src = ColortableImageSource( datasources2d[0], layer.colorTable )
+    src = ColortableImageSource( datasources2d[0], layer )
     src.setObjectName(layer.name)
     layer.nameChanged.connect(lambda x: src.setObjectName(str(x)))
     return src

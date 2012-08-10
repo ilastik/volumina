@@ -210,19 +210,25 @@ assert issubclass(AlphaModulatedImageRequest, RequestABC)
 #*******************************************************************************
 
 class ColortableImageSource( ImageSource ):
-    def __init__( self, arraySource2D, colorTable ):
+    def __init__( self, arraySource2D, layer ):
         """ colorTable: a list of QRgba values """
 
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
         super(ColortableImageSource, self).__init__()
         self._arraySource2D = arraySource2D
         self.id = arraySource2D.id
-        
+
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._arraySource2D.idChanged.connect(self._onIdChanged)        
 
-        self._colorTable = np.zeros((len(colorTable), 4), dtype=np.uint8)
-        for i, c in enumerate(colorTable):
+        self._layer = layer        
+        self.updateColorTable()
+        self._layer.colorTableChanged.connect(self.updateColorTable)
+
+    def updateColorTable(self):
+        layerColorTable = self._layer.colorTable
+        self._colorTable = np.zeros((len(layerColorTable), 4), dtype=np.uint8)
+        for i, c in enumerate(layerColorTable):
             color = QColor.fromRgba(c)
             self._colorTable[i,0] = color.red()
             self._colorTable[i,1] = color.green()
