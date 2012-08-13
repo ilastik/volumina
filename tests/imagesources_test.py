@@ -74,7 +74,8 @@ class ColortableImageSourceTest( ut.TestCase ):
         self.seg[4:6,:] = 2
         self.ars = _ArraySource2d(self.seg)
         self.ctable = [QColor(255,0,0).rgba(), QColor(0,255,0).rgba(), QColor(0,0,255).rgba()]
-        self.ims = ColortableImageSource( self.ars, self.ctable )
+        self.layer = ColortableLayer(self.ars, self.ctable)
+        self.ims = ColortableImageSource( self.ars, self.layer )
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
