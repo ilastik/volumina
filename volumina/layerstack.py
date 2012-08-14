@@ -46,6 +46,13 @@ class LayerStackModel(QAbstractListModel):
         #from Qt side
         return self._layerStack.index(layer)
 
+    def findMatchingIndex(self, func):
+        """Call the given function with each layer and return the index of the first layer for which f is True."""
+        for index, layer in enumerate(self._layerStack):
+            if func(layer):
+                return index
+        raise ValueError("No matching layer in stack.")
+
     def append(self, data):
         self.insert(0, data)
    
@@ -62,7 +69,9 @@ class LayerStackModel(QAbstractListModel):
         self.selectionModel.select(self.index(index), QItemSelectionModel.Select)
         
         data.changed.connect(functools.partial(self._onLayerChanged, self.index(index)))
-        self.layerAdded.emit( data, self._layerStack.index(data))
+        index = self._layerStack.index(data)
+        self.layerAdded.emit(data, index)
+
         self.updateGUI()
 
     def selectRow( self, row ):
