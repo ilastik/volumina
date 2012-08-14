@@ -2,7 +2,6 @@ import unittest as ut
 import os
 
 from PyQt4.QtGui import QImage, QPainter, QApplication
-from PyQt4.QtCore import QRect
 
 from qimage2ndarray import byte_view
 import numpy as np
@@ -14,15 +13,20 @@ from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 import volumina.pixelpipeline.imagesourcefactories as imsfac
 
-qapp = None
-if QApplication.instance():
-    qapp = QApplication.instance()
-else:
-    qapp = QApplication([], False)
-
-
-
 class ImageScene2DTest( ut.TestCase ):
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.app = None
+        if QApplication.instance():
+            cls.app = QApplication.instance()
+        else:
+            cls.app = QApplication([], False)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.app
+
     def testSceneShapeProperty( self ):
         scene = ImageScene2D()
         self.assertEqual(scene.sceneShape, (0,0))
@@ -45,6 +49,19 @@ class ImageScene2DTest( ut.TestCase ):
         self.assertEqual(id(s.stackedImageSources), id(sims))
 
 class ImageScene2D_RenderTest( ut.TestCase ):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = None
+        if QApplication.instance():
+            cls.app = QApplication.instance()
+        else:
+            cls.app = QApplication([], False)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.app
+
     def setUp( self ):
         self.layerstack = LayerStackModel()
         self.sims = StackedImageSources( self.layerstack )
@@ -75,7 +92,6 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         return byte_view(img)
 
     def testBasicImageRenderingCapability( self ):
-        import time
         aimg = self.renderScene(self.scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
