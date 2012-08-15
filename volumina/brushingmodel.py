@@ -72,7 +72,6 @@ class BrushingModel(QObject):
         self.brushSizeChanged.emit(self.brushSize)
     
     def setDrawnNumber(self, num):
-        print "Setting Drawnnumer", num
         self.drawnNumber = num
         self.drawnNumberChanged.emit(num)
         
