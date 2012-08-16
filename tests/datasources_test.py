@@ -104,17 +104,16 @@ class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         del self.signal_emitted
         del self.slicing
 
+if has_lazyflow:
+    class LazyflowSourceTest( ut.TestCase, GenericArraySourceTest ):
+        def setUp( self ):
+            self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
+            self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
+            self.raw[0,:,:,0,0] = self.lena
 
-    if has_lazyflow:
-        class LazyflowSourceTest( ut.TestCase, GenericArraySourceTest ):
-            def setUp( self ):
-                self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
-                self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
-                self.raw[0,:,:,0,0] = self.lena
-
-                g = Graph()
-                op = OpDataProvider(g, self.raw)
-                self.source = LazyflowSource(op.Data, "Data")
+            g = Graph()
+            op = OpDataProvider(g, self.raw)
+            self.source = LazyflowSource(op.Data, "Data")
 
 if __name__ == '__main__':
     ut.main()
