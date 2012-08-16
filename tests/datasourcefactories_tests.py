@@ -41,7 +41,7 @@ class Test_DatasourceFactories(TestCase):
                 self.op.inputs["Input"].setValue(array)
                 source = createDataSource(self.op.outputs["Output"])
                 self.assertEqual(type(source), LazyflowSource, 'Resulting datatype is not as expected')
-                self.assertEqual(squeeze(ndarray(source._outslot.shape)).shape, array.shape, 'Inputdatashape does not match outputdatashape')
+                self.assertEqual(squeeze(ndarray(source._op5.output.meta.shape)).shape, array.shape, 'Inputdatashape does not match outputdatashape')
         else:
             pass
         

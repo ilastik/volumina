@@ -153,20 +153,21 @@ class LazyflowSource( QObject ):
     def __init__( self, outslot, priority = 0 ):
         super(LazyflowSource, self).__init__()
 
-        # Attach an Op5ifyer to ensure the data will display correctly
-        op5 = volumina.adaptors.Op5ifyer( outslot.graph )
-        op5.input.connect( outslot )
+        self._orig_outslot = outslot
 
-        self._outslot = op5.output
+        # Attach an Op5ifyer to ensure the data will display correctly
+        self._op5 = volumina.adaptors.Op5ifyer( outslot.graph )
+        self._op5.input.connect( outslot )
+
         self._priority = priority
-        self._outslot.notifyDirty(self._setDirtyLF)
-        
+        self._op5.output.notifyDirty(self._setDirtyLF)
+    
     def __getitem__(self,i):
-        opSelector = volumina.adaptors.OpChannelSelector(self._outslot.graph)
-        opSelector.inputs["Input"].connect(self._outslot)
+        opSelector = volumina.adaptors.OpChannelSelector(self._orig_outslot.graph)
+        opSelector.inputs["Input"].connect(self._op5.output)
         opSelector.inputs["Channel"].setValue(i)
         return LazyflowSource(opSelector.outputs["Output"])
-        
+
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
@@ -174,8 +175,9 @@ class LazyflowSource( QObject ):
             volumina.printLock.release()
         if not is_pure_slicing(slicing):
             raise Exception('LazyflowSource: slicing is not pure')
-        if self._outslot.meta.shape is not None:
-            reqobj = self._outslot[slicing].allocate(priority = self._priority)        
+
+        if self._op5.output.meta.shape is not None:
+            reqobj = self._op5.output[slicing].allocate(priority = self._priority)
         else:
             reqobj = ArrayRequest( np.zeros(slicing2shape(slicing), dtype=np.uint8 ), slicing )
         return LazyflowRequest( reqobj )
@@ -203,17 +205,17 @@ class LazyflowSinkSource( LazyflowSource ):
             volumina.printLock.release()
         if not is_pure_slicing(slicing):
             raise Exception('LazyflowSinkSource: slicing is not pure')
-        reqobj = self._outslot[slicing].allocate(priority = self._priority)
+        reqobj = self._op5.output[slicing].allocate(priority = self._priority)
         return LazyflowRequest( reqobj )
 
     def put( self, slicing, array ):
         # Convert the data from volumina ordering to whatever axistags the input slot uses
         transposeOrder = ['txyzc'.index(k) for k in [tag.key for tag in self._inputSlot.axistags]]
-        transposedArray = np.transpose(array, transposeOrder)        
+        transposedArray = np.transpose(array, transposeOrder)
         transposedSlicing = [slicing[i] for i in transposeOrder]
 
         self._inputSlot[transposedSlicing] = transposedArray
-        
+
 #*******************************************************************************
 # C o n s t a n t R e q u e s t                                                *
 #*******************************************************************************
