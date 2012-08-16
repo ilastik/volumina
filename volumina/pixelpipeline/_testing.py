@@ -8,6 +8,7 @@ if has_lazyflow:
     from lazyflow.graph import Operator, InputSlot, OutputSlot
     from lazyflow import operators
     import time
+    import vigra
 
 #*******************************************************************************
 # O p D e l a y                                                                *
@@ -35,15 +36,16 @@ if has_lazyflow:
         name = "Data Provider"
         category = "Input"
 
-        inputSlots = [InputSlot("Changedata")]
+        inputSlots = [InputSlot("Changedata", optional=True)]
         outputSlots = [OutputSlot("Data")]
 
         def __init__(self, g, data):
             Operator.__init__(self,g)
             self._data = data
             oslot = self.outputs["Data"]
-            oslot._shape = self._data.shape
-            oslot._dtype = self._data.dtype
+            oslot.meta.shape = self._data.shape
+            oslot.meta.dtype = self._data.dtype
+            oslot.meta.axistags = vigra.defaultAxistags('txyzc')
 
         def execute(self, slot, roi, result):
             key = roi.toSlice()
