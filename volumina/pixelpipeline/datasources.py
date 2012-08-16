@@ -66,6 +66,13 @@ class ArraySource( QObject ):
             raise Exception('dirty region: slicing is not pure')
         self.isDirty.emit( slicing )
 
+    def __eq__( self, other ):
+        # Use id for efficiency
+        return self._array is other._array
+    
+    def __ne__( self, other ):
+        return not ( self == other )
+
 assert issubclass(ArraySource, SourceABC)
 
 #*******************************************************************************
@@ -184,6 +191,12 @@ class LazyflowSource( QObject ):
             raise Exception('dirty region: slicing is not pure')
         self.isDirty.emit( slicing )
 
+    def __eq__( self, other ):
+        return self._orig_outslot is other._orig_outslot
+    
+    def __ne__( self, other ):
+        return not ( self == other )
+
 assert issubclass(LazyflowSource, SourceABC)
 
 class LazyflowSinkSource( LazyflowSource ):
@@ -210,6 +223,14 @@ class LazyflowSinkSource( LazyflowSource ):
 
         self._inputSlot[transposedSlicing] = transposedArray
 
+    def __eq__( self, other ):
+        result = super(LazyflowSinkSource, self).__eq__(other)
+        result &= self._inputSlot == other._inputSlot
+        return result
+    
+    def __ne__( self, other ):
+        return not ( self == other )
+        
 #*******************************************************************************
 # C o n s t a n t R e q u e s t                                                *
 #*******************************************************************************
@@ -275,6 +296,12 @@ class ConstantSource( QObject ):
         if not is_pure_slicing(slicing):
             raise Exception('dirty region: slicing is not pure')
         self.isDirty.emit( slicing )
+
+    def __eq__( self, other ):
+        return self._constant == other._constant
+    
+    def __ne__( self, other ):
+        return not ( self == other )
 
 assert issubclass(ConstantSource, SourceABC)
 

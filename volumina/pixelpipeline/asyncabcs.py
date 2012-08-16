@@ -51,3 +51,12 @@ class SourceABC:
         if cls is SourceABC:
             return True if _has_attributes(C, ['request', 'setDirty']) else False
         return NotImplemented
+
+    @abstractmethod
+    def __eq__( self, other ):
+        raise NotImplementedError
+
+    @abstractmethod
+    def __ne__( self, other ):
+        raise NotImplementedError
+    
