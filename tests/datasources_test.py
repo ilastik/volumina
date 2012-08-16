@@ -53,6 +53,10 @@ class GenericArraySourceTest:
 
         del self.signal_emitted
         del self.slicing
+    
+    def testComparison(self):
+        assert self.samesource == self.source
+        assert self.othersource != self.source
 
 class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
     def setUp( self ):
@@ -60,6 +64,9 @@ class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         self.raw = np.zeros((1,512,512,1,1))
         self.raw[0,:,:,0,0] = self.lena
         self.source = ArraySource( self.raw )
+        
+        self.samesource = ArraySource( self.raw )
+        self.othersource = ArraySource( np.array(self.raw) )
 
 class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
     def setUp( self ):
@@ -71,6 +78,9 @@ class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         #we apply the relabeling i -> i+1
         relabeling = np.arange(1,a.max()+2, dtype=np.uint32)
         self.source.setRelabeling(relabeling)
+
+        self.samesource = RelabelingArraySource(a)
+        self.othersource = RelabelingArraySource( np.array(a) )
 
     def testRequestWait( self ):
         slicing = (slice(0,5),slice(None), slice(None), slice(None), slice(None))
@@ -104,6 +114,7 @@ class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         del self.signal_emitted
         del self.slicing
 
+
 if has_lazyflow:
     class LazyflowSourceTest( ut.TestCase, GenericArraySourceTest ):
         def setUp( self ):
@@ -114,6 +125,10 @@ if has_lazyflow:
             g = Graph()
             op = OpDataProvider(g, self.raw)
             self.source = LazyflowSource(op.Data, "Data")
+
+            self.samesource = LazyflowSource(op.Data, "Data")
+            opOtherData = OpDataProvider(g, self.raw)
+            self.othersource = LazyflowSource(opOtherData.Data, "Data")
 
 if __name__ == '__main__':
     ut.main()
