@@ -25,6 +25,9 @@ if hasLazyflow:
             
             result[:] = self.outputs["Output"](roi).wait()
             return result
+
+        def propagateDirty(self, inputSlot, roi):
+            self.Output.setDirty(roi)
         
 class Test_DatasourceFactories(TestCase):
     
