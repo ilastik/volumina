@@ -8,6 +8,12 @@ import numpy as np
 
 import volumina.adaptors
 
+_has_vigra = True
+try:
+    import vigra
+except ImportError:
+    _has_vigra = False
+    
 #*******************************************************************************
 # A r r a y R e q u e s t                                                      *
 #*******************************************************************************
@@ -216,11 +222,20 @@ class LazyflowSinkSource( LazyflowSource ):
         return LazyflowRequest( reqobj )
 
     def put( self, slicing, array ):
-        # Convert the data from volumina ordering to whatever axistags the input slot uses
-        transposeOrder = ['txyzc'.index(k) for k in [tag.key for tag in self._inputSlot.axistags]]
-        transposedArray = np.transpose(array, transposeOrder)
-        transposedSlicing = [slicing[i] for i in transposeOrder]
+        assert _has_vigra, "Lazyflow SinkSource requires lazyflow and vigra."
 
+        taggedArray = array.view(vigra.VigraArray)
+        taggedArray.axistags = vigra.defaultAxistags('txyzc')
+
+        inputTags = self._inputSlot.axistags
+        inputKeys = [tag.key for tag in inputTags]
+        transposedArray = taggedArray.withAxes(*inputKeys)
+
+        taggedSlicing = dict(zip('txyzc', slicing))
+        transposedSlicing = ()
+        for k in inputKeys:
+            if k in 'txyzc':
+                transposedSlicing += (taggedSlicing[k],)
         self._inputSlot[transposedSlicing] = transposedArray
 
     def __eq__( self, other ):
