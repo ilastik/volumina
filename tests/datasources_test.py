@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 import volumina._testing
 from volumina.pixelpipeline.datasources import ArraySource, RelabelingArraySource
 import numpy as np
-
+from volumina.slicingtools import sl, slicing2shape
 try:
     import lazyflow
     has_lazyflow = True
@@ -14,7 +14,7 @@ except ImportError:
 if has_lazyflow:
     from lazyflow.graph import Graph
     from volumina.pixelpipeline._testing import OpDataProvider
-    from volumina.pixelpipeline.datasources import LazyflowSource
+    from volumina.pixelpipeline.datasources import LazyflowSource, LazyflowSinkSource
 
 class GenericArraySourceTest:
     __metaclass__ = ABCMeta
@@ -124,11 +124,46 @@ if has_lazyflow:
 
             g = Graph()
             op = OpDataProvider(g, self.raw)
-            self.source = LazyflowSource(op.Data, "Data")
+            self.source = LazyflowSource( op.Data )
 
-            self.samesource = LazyflowSource(op.Data, "Data")
+            self.samesource = LazyflowSource( op.Data )
             opOtherData = OpDataProvider(g, self.raw)
-            self.othersource = LazyflowSource(opOtherData.Data, "Data")
+            self.othersource = LazyflowSource( opOtherData.Data )
+        
+    class LazyflowSinkSourceTest( ut.TestCase, GenericArraySourceTest ):
+        def setUp( self ):
+            self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
+            self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
+            self.raw[0,:,:,0,0] = self.lena
+
+            g = Graph()
+            self.op = OpDataProvider(g, self.raw)
+            self.source = LazyflowSinkSource(self.op.Data, self.op.Changedata)
+
+            self.samesource = LazyflowSinkSource(self.op.Data, self.op.Changedata)
+            opOtherData = OpDataProvider(g, self.raw)
+            self.othersource = LazyflowSinkSource(opOtherData.Data, self.op.Changedata)
+        
+        def testPut(self):
+            slicing = sl[0:1, 0:100, 0:100, 0:1, 0:1]
+            inData = (255*np.random.random( slicing2shape(slicing) )).astype(np.uint8)
+
+            # Put some data into the source and get it back out again
+            self.source.put(slicing, inData)
+            req = self.source.request(slicing)
+            assert (req.wait() == inData).all()
+            
 
 if __name__ == '__main__':
     ut.main()
+
+
+
+
+
+
+
+
+
+
+

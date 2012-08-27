@@ -39,13 +39,19 @@ if has_lazyflow:
         inputSlots = [InputSlot("Changedata", optional=True)]
         outputSlots = [OutputSlot("Data")]
 
-        def __init__(self, g, data):
+        def __init__(self, g, voluminaData):
+            """
+            voluminaData - An array in txyzc order.
+            """
             Operator.__init__(self,g)
-            self._data = data
+            # We store the data in a custom order
+            self._data = voluminaData.transpose([0,3,2,1,4])
             oslot = self.outputs["Data"]
             oslot.meta.shape = self._data.shape
             oslot.meta.dtype = self._data.dtype
-            oslot.meta.axistags = vigra.defaultAxistags('txyzc')
+
+            oslot.meta.axistags = vigra.defaultAxistags('tzyxc') # Non-volumina ordering: datasource will re-order
+            self.inputs["Changedata"].meta.axistags = oslot.meta.axistags
 
         def execute(self, slot, roi, result):
             key = roi.toSlice()
@@ -54,4 +60,4 @@ if has_lazyflow:
 
         def setInSlot(self, slot, key, value):
             self._data[key] = value
-            self.outputs["Output"].setDirty(key)
+            self.outputs["Data"].setDirty(key)
