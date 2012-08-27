@@ -206,7 +206,7 @@ class LazyflowSource( QObject ):
 assert issubclass(LazyflowSource, SourceABC)
 
 class LazyflowSinkSource( LazyflowSource ):
-    def __init__( self, operator, outslot, inslot, priority = 0 ):
+    def __init__( self, outslot, inslot, priority = 0 ):
         LazyflowSource.__init__(self, outslot)
         self._inputSlot = inslot
         self._priority = priority
@@ -236,7 +236,7 @@ class LazyflowSinkSource( LazyflowSource ):
         for k in inputKeys:
             if k in 'txyzc':
                 transposedSlicing += (taggedSlicing[k],)
-        self._inputSlot[transposedSlicing] = transposedArray
+        self._inputSlot[transposedSlicing] = transposedArray.view(np.ndarray)
 
     def __eq__( self, other ):
         result = super(LazyflowSinkSource, self).__eq__(other)
