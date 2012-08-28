@@ -325,11 +325,9 @@ class RGBAImageSource( ImageSource ):
         g = self._channels[1].request(s)
         b = self._channels[2].request(s)
         a = self._channels[3].request(s)
-        shape = []
-        for t in slicing2shape(s):
-            if t > 1:
-                shape.append(t)
+        shape = list( slicing2shape(s) )
         assert len(shape) == 2
+        assert all([x > 0 for x in shape])
         return RGBAImageRequest( r, g, b, a, shape, *self._layer._normalize )
     def _onIdChanged( self, oldId, newId ):
         self.id = (self._channels[0].id, self._channels[1].id, self._channels[2].id, self._channels[3].id) 
