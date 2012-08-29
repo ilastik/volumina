@@ -187,7 +187,7 @@ class AlphaModulatedImageRequest( object ):
     def toImage( self ):
         a = self._arrayreq.getResult()
         shape = a.shape + (4,)
-        d = np.empty(shape, dtype=np.uint8)
+        d = np.empty(shape, dtype=np.float32)
         d[:,:,0] = a[:,:]*self._tintColor.redF()
         d[:,:,1] = a[:,:]*self._tintColor.greenF()
         d[:,:,2] = a[:,:]*self._tintColor.blueF()
