@@ -163,6 +163,10 @@ assert issubclass(LazyflowRequest, RequestABC)
 class LazyflowSource( QObject ):
     isDirty = pyqtSignal( object )
 
+    @property
+    def dataSlot(self):
+        return self._orig_outslot
+
     def __init__( self, outslot, priority = 0 ):
         super(LazyflowSource, self).__init__()
 
