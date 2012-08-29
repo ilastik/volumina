@@ -53,7 +53,11 @@ class VolumeEditor( QObject ):
     def navigationInterpreterType(self,navInt):
         self.navInterpret = navInt(self.navCtrl)
         self.eventSwitch.interpreter = self.navInterpret
-        
+    
+    def setNavigationInterpreter(self, navInterpret):
+        self.navInterpret = navInterpret
+        self.eventSwitch.interpreter = self.navInterpret
+    
     @property
     def dataShape(self):
         return self.posModel.shape5D
