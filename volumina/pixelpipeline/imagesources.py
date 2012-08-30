@@ -128,7 +128,12 @@ class GrayscaleImageRequest( object ):
     def toImage( self ):
         a = self._arrayreq.getResult()
         assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
-        img = gray2qimage(a, self._normalize)
+        
+        normalize = self._normalize 
+        if normalize == 'auto':
+            p1, p99 = np.percentile(a, [1,99])
+            normalize = (p1, p99)
+        img = gray2qimage(a, normalize)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
     def notify( self, callback, **kwargs ):
@@ -192,7 +197,12 @@ class AlphaModulatedImageRequest( object ):
         d[:,:,1] = a[:,:]*self._tintColor.greenF()
         d[:,:,2] = a[:,:]*self._tintColor.blueF()
         d[:,:,3] = a[:,:]
-        img = array2qimage(d, self._normalize)
+
+        normalize = self._normalize
+        if normalize == 'auto':
+            p1, p99 = np.percentile(a, [1,99])
+            normalize = (p1, p99)
+        img = array2qimage(d, normalize)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
             
     def notify( self, callback, **kwargs ):
@@ -352,8 +362,13 @@ class RGBAImageRequest( object ):
         for i, req in enumerate(self._requests):
             a = self._requests[i].getResult()
             if self._normalize[i] is not None:
+
+                normalize = self._normalize[i]
+                if normalize == 'auto':
+                    p1, p99 = np.percentile(a, [1,99])
+                    normalize = (p1, p99)
                 a = a.astype(np.float32)
-                a = (a - self._normalize[i][0])*255.0 / (self._normalize[i][1]-self._normalize[i][0])
+                a = (a - normalize[0])*255.0 / (normalize[1]-normalize[0])
                 a[a > 255] = 255
                 a[a < 0]   = 0
                 a = a.astype(np.uint8)
