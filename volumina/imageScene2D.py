@@ -32,6 +32,7 @@ class DirtyIndicator(QGraphicsItem):
         QGraphicsItem.__init__(self, parent=None)
         self._tiling = tiling
         self._indicate = numpy.zeros(len(tiling))
+        self._indicateDelayCounter = numpy.zeros(len(tiling))
 
     def boundingRect(self):
         return self._tiling.boundingRectF()
@@ -47,6 +48,8 @@ class DirtyIndicator(QGraphicsItem):
         for i,p in enumerate(self._tiling.tileRectFs):
             if self._indicate[i] == 1.0:
                 continue
+            if self._indicate[i] == 0.0 and self._indicateDelayCounter[i] < 2:
+                continue
             w,h = p.width(), p.height()
             r = min(w,h)
             rectangle = QRectF(p.center()-QPointF(r/4,r/4), QSizeF(r/2, r/2));
@@ -58,6 +61,10 @@ class DirtyIndicator(QGraphicsItem):
 
     def setTileProgress(self, tileId, progress):
         self._indicate[tileId] = progress
+        if progress == 0.0:
+            self._indicateDelayCounter[tileId] += 1
+        else:
+            self._indicateDelayCounter[tileId] = 0
         self.update()
 
 #*******************************************************************************
