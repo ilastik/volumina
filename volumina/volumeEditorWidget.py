@@ -88,7 +88,7 @@ class VolumeEditorWidget(QWidget):
         axisLabels = ["X", "Y", "Z"]
         axisColors = [QColor("#dc143c"), QColor("green"), QColor("blue")]
         for i, v in enumerate(self.editor.imageViews):
-            v.hud = ImageView2DHud()
+            v.hud = ImageView2DHud(v)
             #connect interpreter
             v.hud.createImageView2DHud(axisLabels[i], 0, axisColors[i], QColor("white"))
             v.hud.sliceSelector.valueChanged.connect(partial(self.editor.navCtrl.changeSliceAbsolute, axis=i))

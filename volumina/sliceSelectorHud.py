@@ -38,8 +38,10 @@ import numpy, qimage2ndarray
 
 class LabelButtons(QLabel):
     clicked = pyqtSignal()
-    def __init__(self, backgroundColor, foregroundColor, width, height):
+    def __init__(self, parentView, backgroundColor, foregroundColor, width, height):
         QLabel.__init__(self)
+        
+        parentView.installEventFilter(self)
         
         self.setColors(backgroundColor, foregroundColor)
         self.setPixmapSize(width, height)
@@ -189,20 +191,26 @@ class LabelButtons(QLabel):
         if self.underMouse():
             self.clicked.emit()
             
+    def eventFilter(self, watched, event):
+        # Block the parent view from seeing events while we've got the mouse.
+        if self.underMouse():
+            return True
+        return False
+    
 class SpinBoxImageView(QHBoxLayout):
     valueChanged = pyqtSignal(int)
-    def __init__(self, backgroundColor, foregroundColor, value, height, fontSize):
+    def __init__(self, parentView, backgroundColor, foregroundColor, value, height, fontSize):
         QHBoxLayout.__init__(self)
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
         
         self.labelLayout = QVBoxLayout()
-        self.upLabel = LabelButtons(backgroundColor, foregroundColor, height/2, height/2)
+        self.upLabel = LabelButtons(parentView, backgroundColor, foregroundColor, height/2, height/2)
         self.labelLayout.addWidget(self.upLabel)
         self.upLabel.setSpinBoxUpIcon()
         self.upLabel.clicked.connect(self.on_upLabel)
         
-        self.downLabel = LabelButtons(backgroundColor, foregroundColor, height/2, height/2)
+        self.downLabel = LabelButtons(parentView, backgroundColor, foregroundColor, height/2, height/2)
         self.labelLayout.addWidget(self.downLabel)
         self.downLabel.setSpinBoxDownIcon()
         self.downLabel.clicked.connect(self.on_downLabel)
@@ -252,7 +260,7 @@ class SpinBoxImageView(QHBoxLayout):
 class ImageView2DHud(QWidget):
     dockButtonClicked = pyqtSignal()
     maximizeButtonClicked = pyqtSignal()
-    def __init__(self, parent=None ):
+    def __init__(self, parent ):
         QWidget.__init__(self, parent)
         
         self.layout = QHBoxLayout()
@@ -270,7 +278,7 @@ class ImageView2DHud(QWidget):
         self.layout.addSpacing(4)
 
         self.axisLabel = self.createAxisLabel()
-        self.sliceSelector = SpinBoxImageView(backgroundColor, foregroundColor, value, self.labelsheight, 12)
+        self.sliceSelector = SpinBoxImageView(self.parent(), backgroundColor, foregroundColor, value, self.labelsheight, 12)
 
         # Add left-hand items into a sub-layout so we can draw a frame around them
         leftHudLayout = QHBoxLayout()
@@ -293,14 +301,14 @@ class ImageView2DHud(QWidget):
         self.layout.addWidget( leftHudFrame )
         self.layout.addStretch()
         
-        self.dockButton = LabelButtons(backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.dockButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
         self.dockButton.clicked.connect(self.on_dockButton)
         self.dockButton.setUndockIcon()
         setupFrameStyle( self.dockButton )
         self.layout.addWidget(self.dockButton)
         self.layout.addSpacing(4)
         
-        self.maxButton = LabelButtons(backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.maxButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
         self.maxButton.clicked.connect(self.on_maxButton)
         self.maxButton.setMaximizeIcon()
         setupFrameStyle( self.maxButton )
