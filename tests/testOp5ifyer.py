@@ -16,7 +16,7 @@ else:
     
     # Use logging instead of print statements ...
     import logging
-    logger = logging.getLogger(__file__)
+    logger = logging.getLogger(__name__)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     
     class TestOp5ifyer(unittest.TestCase):
