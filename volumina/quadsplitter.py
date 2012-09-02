@@ -28,13 +28,13 @@
 #    or implied, of their employers.
 
 from PyQt4.QtCore import Qt, pyqtSignal, QEvent, QTimer
-from PyQt4.QtGui import QSizePolicy, QWidget, QVBoxLayout, QSplitter
-            
+from PyQt4.QtGui import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
+
 class ImageView2DFloatingWindow(QWidget):
     onCloseClick = pyqtSignal()
     def __init__(self):
         QWidget.__init__(self)
-        
+    
     def closeEvent(self, event):
         self.onCloseClick.emit()
         event.ignore()
@@ -43,9 +43,10 @@ class ImageView2DDockWidget(QWidget):
     onDockButtonClicked = pyqtSignal()
     onMaxButtonClicked = pyqtSignal()
     onMinButtonClicked = pyqtSignal()
+
     def __init__(self, graphicsView):
         QWidget.__init__(self)
-        
+
         self.graphicsView = graphicsView
         self._isDocked = True
         self._isMaximized = False
@@ -69,7 +70,7 @@ class ImageView2DDockWidget(QWidget):
         if hasattr(self.graphicsView, '_hud'):
             self.graphicsView._hud.dockButtonClicked.connect(self.onDockButton)
             self.graphicsView._hud.maximizeButtonClicked.connect(self.onMaxButton)
-        
+
     def onMaxButton(self):
         if self._isMaximized:
             self.onMinButtonClicked.emit()
@@ -114,8 +115,6 @@ class ImageView2DDockWidget(QWidget):
         self._isMaximized = False
         self.graphicsView._hud.maxButton.setMaximizeIcon()
 
-
-
 class QuadView(QWidget):
     def __init__(self, parent, view1, view2, view3, view4 = None):
         QWidget.__init__(self, parent)
@@ -153,16 +152,16 @@ class QuadView(QWidget):
         self.dock1_ofSplitHorizontal1.onDockButtonClicked.connect(lambda arg=self.dock1_ofSplitHorizontal1 : self.on_dock(arg))
         self.dock1_ofSplitHorizontal1.onMaxButtonClicked.connect(lambda arg=self.dock1_ofSplitHorizontal1 : self.on_max(arg))
         self.dock1_ofSplitHorizontal1.onMinButtonClicked.connect(lambda arg=self.dock1_ofSplitHorizontal1 : self.on_min(arg))
-
         self.splitHorizontal1.addWidget(self.dock1_ofSplitHorizontal1)
+
         self.dock2_ofSplitHorizontal1 = ImageView2DDockWidget(self.imageView2D_2)
         self.dock2_ofSplitHorizontal1.onDockButtonClicked.connect(lambda arg=self.dock2_ofSplitHorizontal1 : self.on_dock(arg))
         self.dock2_ofSplitHorizontal1.onMaxButtonClicked.connect(lambda arg=self.dock2_ofSplitHorizontal1 : self.on_max(arg))
         self.dock2_ofSplitHorizontal1.onMinButtonClicked.connect(lambda arg=self.dock2_ofSplitHorizontal1 : self.on_min(arg))
         self.dock2_ofSplitHorizontal1.connectHud()
         self.dockableContainer.append(self.dock2_ofSplitHorizontal1)
-
         self.splitHorizontal1.addWidget(self.dock2_ofSplitHorizontal1)
+
         self.dock1_ofSplitHorizontal2 = ImageView2DDockWidget(self.imageView2D_3)
         self.dock1_ofSplitHorizontal2.onDockButtonClicked.connect(lambda arg=self.dock1_ofSplitHorizontal2 : self.on_dock(arg))
         self.dock1_ofSplitHorizontal2.onMaxButtonClicked.connect(lambda arg=self.dock1_ofSplitHorizontal2 : self.on_max(arg))
@@ -170,15 +169,17 @@ class QuadView(QWidget):
         self.dock1_ofSplitHorizontal2.connectHud()
         self.dockableContainer.append(self.dock1_ofSplitHorizontal2)
         self.splitHorizontal2.addWidget(self.dock1_ofSplitHorizontal2)
+
         self.dock2_ofSplitHorizontal2 = ImageView2DDockWidget(self.testView4)
         self.dockableContainer.append(self.dock2_ofSplitHorizontal2)
-
         self.splitHorizontal2.addWidget(self.dock2_ofSplitHorizontal2)  
         
         #this is a hack: with 0 ms it does not work...
         QTimer.singleShot(250, self._resizeEqual)
-    
+
     def _resizeEqual(self):
+        if not all( [dock.isVisible() for dock in self.dockableContainer] ):
+            return
         w, h = self.size().width()-self.splitHorizontal1.handleWidth(), self.size().height()-self.splitVertical.handleWidth()
         docks = [self.imageView2D_1, self.imageView2D_2, self.imageView2D_3, self.testView4]
         
@@ -196,19 +197,19 @@ class QuadView(QWidget):
         self.splitHorizontal1.setSizes([wLeft, wRight])
         self.splitHorizontal2.setSizes([wLeft, wRight])
         self.splitVertical.setSizes([h/2, h/2])
-            
+        
     def eventFilter(self, obj, event):
         if(event.type()==QEvent.WindowActivate):
             self._synchronizeSplitter()
         return False
-                
+
     def _synchronizeSplitter(self):
         sizes1 = self.splitHorizontal1.sizes()
         sizes2 = self.splitHorizontal2.sizes()        
-        if sizes1[0] > sizes2[0]:
+        if sizes2[0] > 0:
             self.splitHorizontal1.setSizes(sizes2)
-        else:
-            self.splitHorizontal2.setSizes(sizes1) 
+        elif sizes1[0] > 0:
+            self.splitHorizontal2.setSizes(sizes1)
     
     def resizeEvent(self, event):
         QWidget.resizeEvent(self, event)
@@ -227,7 +228,7 @@ class QuadView(QWidget):
         
         self.splitHorizontal1.setSizes(sizes)
         self.splitHorizontal2.setSizes(sizes) 
-        
+
     def addStatusBar(self, bar):
         self.statusBar = bar
         self.layout.addLayout(self.statusBar)
@@ -237,7 +238,7 @@ class QuadView(QWidget):
         
     def setMouseCoordsToQuadStatusBar(self, x, y, z):
         self.quadViewStatusBar.setMouseCoords(x, y, z) 
-        
+
     def switchMinMax(self,axis):
         """Switch an AxisViewWidget between from minimized to maximized and vice
         versa.
@@ -274,8 +275,7 @@ class QuadView(QWidget):
         
     def switchZMinMax(self):
         self.switchMinMax('z')
-            
-    
+
     def on_dock(self, dockWidget):
         if dockWidget._isDocked:
             dockWidget.undockView()
@@ -283,14 +283,36 @@ class QuadView(QWidget):
             dockWidget.minimizeView()
         else:
             dockWidget.dockView()
-   
+
     def on_max(self, dockWidget):
+        dockWidget.setVisible(True)
         for dock in self.dockableContainer:
             if not dockWidget == dock:
                 dock.setVisible(False)
-                
+
+        # Force sizes to be updated now
+        QApplication.processEvents()
+        
+        # On linux, the vertical splitter doesn't seem to refresh unless we do so manually
+        # Presumably, this is a QT bug.
+        self.splitVertical()
+
+        # Viewport doesn't update automatically...
+        view = dockWidget.graphicsView        
+        view.viewport().setGeometry( view.rect() )
+
     def on_min(self, dockWidget):
+
         for dock in self.dockableContainer:
-            if not dockWidget == dock:
-                dock.setVisible(True)
-    
+            dock.setVisible(True)
+
+        # Force sizes to be updated now
+        QApplication.processEvents()
+        self._resizeEqual()
+
+        # Viewports don't update automatically...
+        for dock in self.dockableContainer:
+            view = dock.graphicsView
+            if hasattr(view, 'viewport'):
+                view.viewport().setGeometry( view.rect() )
+   
