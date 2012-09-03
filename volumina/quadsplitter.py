@@ -295,7 +295,7 @@ class QuadView(QWidget):
         
         # On linux, the vertical splitter doesn't seem to refresh unless we do so manually
         # Presumably, this is a QT bug.
-        self.splitVertical()
+        self.splitVertical.refresh()
 
         # Viewport doesn't update automatically...
         view = dockWidget.graphicsView        
