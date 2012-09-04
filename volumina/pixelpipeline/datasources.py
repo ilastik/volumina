@@ -231,7 +231,7 @@ class LazyflowSinkSource( LazyflowSource ):
         taggedArray = array.view(vigra.VigraArray)
         taggedArray.axistags = vigra.defaultAxistags('txyzc')
 
-        inputTags = self._inputSlot.axistags
+        inputTags = self._inputSlot.meta.axistags
         inputKeys = [tag.key for tag in inputTags]
         transposedArray = taggedArray.withAxes(*inputKeys)
 

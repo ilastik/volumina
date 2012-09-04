@@ -41,9 +41,9 @@ if _has_lazyflow and _has_vigra:
             self._axisorder = 'txyzc'
                     
         def setupOutputs(self):
-            inputAxistags = self.inputs["input"]._axistags
-            inputShape = list(self.inputs["input"]._shape)
-            self.resSl = [slice(0,stop,None) for stop in list(self.inputs["input"]._shape)]
+            inputAxistags = self.inputs["input"].meta.axistags
+            inputShape = list(self.inputs["input"].meta.shape)
+            self.resSl = [slice(0,stop,None) for stop in list(self.inputs["input"].meta.shape)]
             
             if self.order.ready():
                 self._axisorder = self.order.value
@@ -62,9 +62,9 @@ if _has_lazyflow and _has_vigra:
                 else:
                     outputShape += [1]                
             
-            self.outputs["output"]._dtype = self.inputs["input"]._dtype
-            self.outputs["output"]._shape = tuple(outputShape)
-            self.outputs["output"]._axistags = outputTags
+            self.outputs["output"].meta.dtype = self.inputs["input"].meta.dtype
+            self.outputs["output"].meta.shape = tuple(outputShape)
+            self.outputs["output"].meta.axistags = outputTags
             
         def execute(self,slot,roi,result):
             

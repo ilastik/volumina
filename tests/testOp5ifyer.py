@@ -53,9 +53,9 @@ else:
                 logger.debug( "type(input) == " + str(type(self.operator.input.value)) )
                 logger.debug( "input.shape == " + str(self.operator.input.meta.shape) )
                 logger.debug( "Input Tags:")
-                logger.debug( str( self.operator.inputs['input'].axistags ) )
+                logger.debug( str( self.operator.inputs['input'].meta.axistags ) )
                 logger.debug( "Output Tags:" )
-                logger.debug( str(self.operator.output.axistags) )
+                logger.debug( str(self.operator.output.meta.axistags) )
                 logger.debug( "type(result) == " + str(type(result)) )
                 logger.debug( "result.shape == " + str(result.shape) )
                 logger.debug( '------------------------------------------------------' )
@@ -75,7 +75,7 @@ else:
         def test_Roi_default_order(self):
             for i in range(self.tests):
                 self.prepareVolnOp()
-                shape = self.operator.outputs["output"].shape
+                shape = self.operator.outputs["output"].meta.shape
                 roi = [None,None]
                 roi[1]=[numpy.random.randint(2,s) if s != 1 else 1 for s in shape]
                 roi[0]=[numpy.random.randint(0,roi[1][i]) if s != 1 else 0 for i,s in enumerate(shape)]
@@ -87,9 +87,9 @@ else:
                 logger.debug( "type(input) == " + str(type(self.operator.input.value)) )
                 logger.debug( "input.shape == " + str(self.operator.input.meta.shape) )
                 logger.debug( "Input Tags:")
-                logger.debug( str( self.operator.inputs['input'].axistags ) )
+                logger.debug( str( self.operator.inputs['input'].meta.axistags ) )
                 logger.debug( "Output Tags:" )
-                logger.debug( str(self.operator.output.axistags) )
+                logger.debug( str(self.operator.output.meta.axistags) )
                 logger.debug( "roi= " + str(roi) )
                 logger.debug( "type(result) == " + str(type(result)) )
                 logger.debug( "result.shape == " + str(result.shape) )
@@ -113,7 +113,7 @@ else:
                 
                 # Specify a strange order for the output axis tags
                 self.operator.order.setValue('ctyzx')
-                shape = self.operator.outputs["output"].shape
+                shape = self.operator.outputs["output"].meta.shape
                 
                 roi = [None,None]
                 roi[1]=[numpy.random.randint(2,s) if s != 1 else 1 for s in shape]
@@ -126,9 +126,9 @@ else:
                 logger.debug( "type(input) == " + str(type(self.operator.input.value)) )
                 logger.debug( "input.shape == " + str(self.operator.input.meta.shape) )
                 logger.debug( "Input Tags:")
-                logger.debug( str( self.operator.inputs['input'].axistags ) )
+                logger.debug( str( self.operator.inputs['input'].meta.axistags ) )
                 logger.debug( "Output Tags:" )
-                logger.debug( str(self.operator.output.axistags) )
+                logger.debug( str(self.operator.output.meta.axistags) )
                 logger.debug( "roi= " + str(roi) )
                 logger.debug( "type(result) == " + str(type(result)) )
                 logger.debug( "result.shape == " + str(result.shape) )

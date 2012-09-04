@@ -19,12 +19,12 @@ class Op5ifyer(Operator):
     outputSlots = [OutputSlot("Output", stype="ndarray")]
 
     def setupOutputs(self):
-        shape = self.inputs["Input"].shape
+        shape = self.inputs["Input"].meta.shape
         assert len(shape) == 3
         outShape = (1,) + shape[0:2] + (1,) + (shape[2],)
-        self.outputs["Output"]._shape = outShape
-        self.outputs["Output"]._dtype = self.inputs["Input"].dtype
-        self.outputs["Output"]._axistags = self.inputs["Input"].axistags
+        self.outputs["Output"].meta.shape = outShape
+        self.outputs["Output"].meta.dtype = self.inputs["Input"].meta.dtype
+        self.outputs["Output"].meta.axistags = self.inputs["Input"].meta.axistags
         
 
     def execute(self, slot, roi, resultArea):
@@ -60,8 +60,8 @@ class OpDataProvider5D(Operator):
         Operator.__init__(self,g)
         self._data = np.load(fn)
         oslot = self.outputs["Data5D"]
-        oslot._shape = self._data.shape
-        oslot._dtype = self._data.dtype
+        oslot.meta.shape = self._data.shape
+        oslot.meta.dtype = self._data.dtype
     
     def execute(self, slot, roi, result):
         key = roi.toSlice()
