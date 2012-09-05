@@ -244,6 +244,7 @@ class ColortableImageSource( ImageSource ):
             self._colorTable[i,1] = color.green()
             self._colorTable[i,2] = color.blue()
             self._colorTable[i,3] = color.alpha() 
+        self.isDirty.emit(QRect()) # empty rect == everything is dirty
         
     def request( self, qrect ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
