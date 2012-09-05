@@ -7,3 +7,4 @@ from volumina.volumeEditor import VolumeEditor
 from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.widgets.layerwidget import LayerWidget
 
+from volumina.viewer import Viewer
