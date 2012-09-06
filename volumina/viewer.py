@@ -51,7 +51,8 @@ class Viewer(QMainWindow):
             uiDirectory = '.'
         loadUi(uiDirectory + '/viewer.ui', self)
 
-        self.dataShape = None
+        self._dataShape = None
+        self._viewerInitialized = False
         self.editor = None
         self.viewingWidget = None
         self.actionQuit.triggered.connect(qApp.quit)
@@ -67,6 +68,8 @@ class Viewer(QMainWindow):
         f = self.actionCurrentView.font()
         f.setBold(True)
         self.actionCurrentView.setFont(f)
+
+        self.editor = VolumeEditor(self.layerstack)
 
         #make sure the layer stack widget, which is the right widget
         #managed by the splitter self.splitter shows up correctly
@@ -87,32 +90,43 @@ class Viewer(QMainWindow):
         model.canMoveSelectedDown.connect(self.DownButton.setEnabled)
         self.DeleteButton.clicked.connect(model.deleteSelected)
         model.canDeleteSelected.connect(self.DeleteButton.setEnabled)
+    
+    @property
+    def dataShape(self):
+        return self._dataShape
+    @dataShape.setter
+    def dataShape(self, s):
+        self._dataShape = s
+        if s is not None:
+            self.editor.dataShape = s
+        if not self._viewerInitialized:
+            self._viewerInitialized = True
+            self.viewer.init(self.editor)
+
+            #if its 2D, maximize the corresponding window
+            if len([i for i in list(self.dataShape)[1:4] if i == 1]) == 1:
+                viewAxis = [i for i in range(1,4) if self.dataShape[i] != 1][0] - 1
+                self.viewer.quadview.switchMinMax(viewAxis)    
         
-        
-    def initViewing(self):
-        self.editor = VolumeEditor(self.layerstack)
-        self.editor.dataShape = self.dataShape
-        self.viewer.init(self.editor)
-        
-        #if its 2D, maximize the corresponding window
-        if len([i for i in list(self.dataShape)[1:4] if i == 1]) == 1:
-            viewAxis = [i for i in range(1,4) if self.dataShape[i] != 1][0] - 1
-            self.viewer.quadview.switchMinMax(viewAxis)    
-        
-            
-    def addGrayscaleLayer(self,a):
+    def addGrayscaleLayer(self,a, name=None):
         source,self.dataShape = createDataSource(a,True)
         layer = GrayscaleLayer(source)
+        if name:
+            layer.name = name
         self.layerstack.append(layer)
         
-    def addAlphaModulatedLayer(self,a):
+    def addAlphaModulatedLayer(self,a, name=None):
         source,self.dataShape = createDataSource(a,True)
         layer = AlphaModulatedLayer(source)
+        if name:
+            layer.name = name
         self.layerstack.append(layer)
     
-    def addRGBALayer(self,a):
+    def addRGBALayer(self,a, name=None):
         source,self.dataShape = createDataSource(a,True)
         layer = RGBALayer(source[0],source[1],source[2])
+        if name:
+            layer.name = name
         self.layerstack.append(layer)
 
         
