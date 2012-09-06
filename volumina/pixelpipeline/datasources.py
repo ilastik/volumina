@@ -134,26 +134,44 @@ class RelabelingArraySource( ArraySource ):
 #*******************************************************************************
 
 class LazyflowRequest( object ):
-    def __init__(self, lazyflow_request ):
-        self._lazyflow_request = lazyflow_request
+    ## Lazyflow requests are starting to do work at the time of their
+    ## creation whereas Volumina requests are idling as long as no
+    ## method like wait() or notify() is called. Therefore we have to
+    ## delay the creation of the lazyflow request until one of these
+    ## Volumina request methods is actually called
+    class _req_on_demand(dict):
+        def __init__( self, op, slicing, prio):
+            self.p = (op, slicing, prio)
+    
+        def __missing__(self, key):
+            if self.p[0].output.meta.shape is not None:
+                reqobj = self.p[0].output[self.p[1]].allocate(priority = self.p[2])
+            else:
+                reqobj = ArrayRequest( np.zeros(slicing2shape(self.p[1]), dtype=np.uint8 ), self.p[1] )
+
+            self[0] = reqobj
+            return reqobj
+
+    def __init__(self, op, slicing, prio ):
+        self._req = LazyflowRequest._req_on_demand(op, slicing, prio) 
 
     def wait( self ):
-        return self._lazyflow_request.wait()
+        return self._req[0].wait()
         
     def getResult(self):
-        return self._lazyflow_request.getResult()
+        return self._req[0].getResult()
 
     def adjustPriority(self,delta):
-        self._lazyflow_request.adjustPriority(delta)
+        self._req[0].adjustPriority(delta)
         
     def cancel( self ):
-        self._lazyflow_request.cancel()
+        self._req[0].cancel()
 
     def submit( self ):
-        self._lazyflow_request.submit()
+        self._req[0].submit()
 
     def notify( self, callback, **kwargs ):
-        self._lazyflow_request.notify( callback, **kwargs)
+        self._req[0].notify( callback, **kwargs)
 assert issubclass(LazyflowRequest, RequestABC)
 
 #*******************************************************************************
@@ -186,12 +204,7 @@ class LazyflowSource( QObject ):
             volumina.printLock.release()
         if not is_pure_slicing(slicing):
             raise Exception('LazyflowSource: slicing is not pure')
-
-        if self._op5.output.meta.shape is not None:
-            reqobj = self._op5.output[slicing].allocate(priority = self._priority)
-        else:
-            reqobj = ArrayRequest( np.zeros(slicing2shape(slicing), dtype=np.uint8 ), slicing )
-        return LazyflowRequest( reqobj )
+        return LazyflowRequest( self._op5, slicing, self._priority )
 
     def _setDirtyLF(self, slot, roi):
         self.setDirty(roi.toSlice())
