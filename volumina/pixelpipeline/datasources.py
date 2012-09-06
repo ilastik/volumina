@@ -215,16 +215,6 @@ class LazyflowSinkSource( LazyflowSource ):
         self._inputSlot = inslot
         self._priority = priority
 
-    def request( self, slicing ):
-        if cfg.getboolean('pixelpipeline', 'verbose'):
-            volumina.printLock.acquire()
-            print "  LazyflowSinkSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing))
-            volumina.printLock.release()
-        if not is_pure_slicing(slicing):
-            raise Exception('LazyflowSinkSource: slicing is not pure')
-        reqobj = self._op5.output[slicing].allocate(priority = self._priority)
-        return LazyflowRequest( reqobj )
-
     def put( self, slicing, array ):
         assert _has_vigra, "Lazyflow SinkSource requires lazyflow and vigra."
 
