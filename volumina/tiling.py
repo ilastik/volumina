@@ -449,10 +449,13 @@ class TileProvider( QObject ):
 
     def _dirtyLayersWorker( self ):
         while self._keepRendering:
+            # Save reference to the queue in case self._dirtyLayerQueue reassigned during this pass.
+            # See onSizeChanged()
+            dirtyLayerQueue = self._dirtyLayerQueue
             try:
-                ims, tile_nr, stack_id, image_req, timestamp, cache = self._dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
+                ims, tile_nr, stack_id, image_req, timestamp, cache = dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
             except (Empty, TypeError):
-                #the TypeError occurs when the self._dirtyLayerQueue
+                #the TypeError occurs when the dirtyLayerQueue
                 #is already None when the thread is being shut down
                 #on program exit.
                 #This avoids a lot of warnings.
@@ -466,7 +469,7 @@ class TileProvider( QObject ):
             except KeyError:
                 pass
             finally:
-                self._dirtyLayerQueue.task_done()
+                dirtyLayerQueue.task_done()
 
     def _refreshTile( self, stack_id, tile_no ):
         try:
