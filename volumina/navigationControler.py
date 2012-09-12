@@ -53,7 +53,8 @@ class NavigationInterpreter(QObject):
         ### the following implements a simple state machine
         if self._current_state == self.DEFAULT_MODE:
             ### default mode -> drag mode
-            if etype == QEvent.MouseButtonPress and event.button() == Qt.MidButton:
+            if    (etype == QEvent.MouseButtonPress and event.button() == Qt.MidButton) \
+               or (etype == QEvent.MouseButtonPress and event.modifiers() == Qt.ShiftModifier):
                 # self.onExit_default(): call it here, if needed
                 self._current_state = self.DRAG_MODE
                 self.onEntry_drag( watched, event )
@@ -74,7 +75,7 @@ class NavigationInterpreter(QObject):
                 return True
         elif self._current_state == self.DRAG_MODE:
             ### drag mode -> default mode
-            if etype == QEvent.MouseButtonRelease and event.button() == Qt.MidButton:
+            if etype == QEvent.MouseButtonRelease:
                 self.onExit_drag( watched, event)
                 self._current_state = self.DEFAULT_MODE
                 self.onEntry_default( watched, event )
