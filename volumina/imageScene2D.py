@@ -138,6 +138,11 @@ class ImageScene2D(QGraphicsScene):
         self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.changed.connect(self.invalidateViewports)
 
+    def setCacheSize(self, cache_size):
+        if cache_size != self._tileProvider._cache_size:
+            self._tileProvider = TileProvider(self._tiling, self._stackedImageSources, cache_size=cache_size)
+            self._tileProvider.changed.connect(self.invalidateViewports)
+
     def invalidateViewports( self, rectF ):
         '''Call invalidate on the intersection of all observing viewport-rects and rectF.'''
         rectF = rectF if rectF.isValid() else self.sceneRect()
