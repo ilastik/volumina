@@ -38,7 +38,7 @@ class VolumeEditor( QObject ):
     @showDebugPatches.setter
     def showDebugPatches(self, show):
         for s in self.imageScenes:
-            s.showDebugPatches = show
+            s.showTileOutlines = show
         self._showDebugPatches = show
         
     def lastImageViewFocus(self, axis):
