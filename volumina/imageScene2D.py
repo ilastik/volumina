@@ -197,6 +197,19 @@ class ImageScene2D(QGraphicsScene):
 
             ## draw tile outlines
             if self._showTileOutlines:
+                # Dashed black line
+                pen = QPen()
+                pen.setDashPattern([5,5])
+                painter.setPen( pen )
+                painter.drawRect(self._tiling.imageRects[tileId])
+
+                # Dashed white line 
+                # (offset to occupy the spaces in the dashed black line)
+                pen = QPen()
+                pen.setDashPattern([5,5])
+                pen.setDashOffset(5)
+                pen.setColor( QColor(Qt.white) )
+                painter.setPen( pen )
                 painter.drawRect(self._tiling.imageRects[tileId])
     
     def indicateSlicingPositionSettled(self, settled):
