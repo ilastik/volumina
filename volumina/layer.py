@@ -3,6 +3,7 @@ from PyQt4.QtGui import QColor
 from widgets.layerDialog import GrayscaleLayerDialog
 from widgets.layerDialog import RGBALayerDialog
 from volumina.pixelpipeline.datasourcefactories import createDataSource
+from volumina.pixelpipeline.asyncabcs import SourceABC
 import numpy
 
 
@@ -135,6 +136,7 @@ class NormalizableLayer( Layer ):
 
 class GrayscaleLayer( NormalizableLayer ):
     def __init__( self, datasource, range = (0,255), normalize = (0,255) ):
+        assert isinstance(datasource, SourceABC)
         super(GrayscaleLayer, self).__init__()
         self._datasources = [datasource]
         self._normalize = [normalize]
@@ -157,6 +159,7 @@ class AlphaModulatedLayer( NormalizableLayer ):
             self.tintColorChanged.emit()
     
     def __init__( self, datasource, tintColor = QColor(255,0,0), range = (0,255), normalize = (0,255) ):
+        assert isinstance(datasource, SourceABC)
         super(AlphaModulatedLayer, self).__init__()
         self._datasources = [datasource]
         self._normalize = [normalize]
@@ -183,6 +186,7 @@ class ColortableLayer( Layer ):
         self.colorTableChanged.emit()
 
     def __init__( self, datasource , colorTable):
+        assert isinstance(datasource, SourceABC)
         super(ColortableLayer, self).__init__()
         self._datasources = [datasource]
         self._colorTable = colorTable
@@ -209,6 +213,10 @@ class RGBALayer( NormalizableLayer ):
                   color_missing_value = 0, alpha_missing_value = 255,
                   range = 4*[(0,255)],
                   normalizeR=(0,255), normalizeG=(0,255), normalizeB=(0,255), normalizeA=(0,255)):
+        assert red is None or isinstance(red, SourceABC)
+        assert green is None or isinstance(green, SourceABC)
+        assert blue is None or isinstance(blue, SourceABC)
+        assert alpha is None or isinstance(alpha, SourceABC)
         super(RGBALayer, self).__init__()
         self._datasources = [red,green,blue,alpha]
         self._normalize   = [normalizeR, normalizeG, normalizeB, normalizeA]

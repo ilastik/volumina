@@ -122,11 +122,13 @@ class RelabelingArraySource( ArraySource ):
         assert(len(slicing) == len(self._array.shape)), \
             "slicing into an array of shape=%r requested, but slicing is %r" \
             % (self._array.shape, slicing)
-        a = self._array[slicing]
-        oldDtype = a.dtype
+        a = ArrayRequest(self._array, slicing)
+        a = a.wait()
+        
+        #oldDtype = a.dtype
         if self._relabeling is not None:
             a = self._relabeling[a]
-        assert a.dtype == oldDtype 
+        #assert a.dtype == oldDtype 
         return ArrayRequest(a, 5*(slice(None),))
         
 #*******************************************************************************
