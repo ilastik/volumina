@@ -328,7 +328,7 @@ class TileProvider( QObject ):
     '''
     def __init__( self, tiling,
                   stackedImageSources,
-                  cache_size = 10,
+                  cache_size = 100,
                   request_queue_size = 100000,
                   n_threads = 2,
                   layerIdChange_means_dirty=False,
