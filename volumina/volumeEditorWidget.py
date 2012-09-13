@@ -109,7 +109,7 @@ class VolumeEditorWidget(QWidget):
             self.quadview.statusBar.channelSpinBox.setValue(newC)
         self.editor.posModel.channelChanged.connect(getChannel)
         def setTime(t):
-            print "set channel = %d, posModel has time = %d" % (t, self.editor.posModel.time)
+            print "set time = %d, posModel has time = %d" % (t, self.editor.posModel.time)
             if t == self.editor.posModel.time:
                 return
             self.editor.posModel.time = t

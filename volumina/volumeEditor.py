@@ -38,9 +38,19 @@ class VolumeEditor( QObject ):
     @showDebugPatches.setter
     def showDebugPatches(self, show):
         for s in self.imageScenes:
-            s.showDebugPatches = show
+            s.showTileOutlines = show
         self._showDebugPatches = show
-        
+
+    @property
+    def cacheSize(self):
+        return self._cacheSize
+    
+    @cacheSize.setter
+    def cacheSize(self, cache_size):
+        self._cacheSize = cache_size
+        for s in self.imageScenes:
+            s.setCacheSize(cache_size)
+    
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
@@ -100,6 +110,8 @@ class VolumeEditor( QObject ):
         for scene, name, pump in zip(self.imageScenes, names, self.imagepumps):
             scene.setObjectName(name)
             scene.stackedImageSources = pump.stackedImageSources
+
+        self.cacheSize = 10
 
         ##
         ## interaction
