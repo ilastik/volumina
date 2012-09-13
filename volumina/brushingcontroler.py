@@ -74,7 +74,7 @@ class BrushingInterpreter( QObject ):
         ### the following implements a simple state machine
         if self._current_state == self.DEFAULT_MODE:
             ### default mode -> draw mode
-            if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton and event.modifiers == Qt.NoModifier:
+            if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton and event.modifiers() == Qt.NoModifier:
                 # navigation interpreter also has to be in 
                 # default mode to avoid inconsistencies
                 if self._navIntr.state == self._navIntr.DEFAULT_MODE:
