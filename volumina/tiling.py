@@ -75,7 +75,7 @@ class Tiling(object):
                   artifacts between tiles for certain zoom levels (default 1)
 
     '''
-    def __init__(self, sliceShape, data2scene=QTransform(), blockSize=256, overlap=1):
+    def __init__(self, sliceShape, data2scene=QTransform(), blockSize=256, overlap=0, overlap_draw = 1e-3):
         self.blockSize = blockSize
         self.overlap = overlap
         patchAccessor = PatchAccessor(sliceShape[0], sliceShape[1], blockSize=self.blockSize)
@@ -96,8 +96,13 @@ class Tiling(object):
             #the image rectangle includes an overlap margin
             imageRectF = data2scene.mapRect(patchAccessor.patchRectF(patchNr, self.overlap))
             
-            #the patch rectangle has no overlap
+            #the patch rectangle has per default no overlap
             patchRectF = data2scene.mapRect(patchAccessor.patchRectF(patchNr, 0))
+
+            # add a little overlap when the overlap_draw setting is activated
+            if overlap_draw != 0:
+                patchRectF  = QRectF(patchRectF.x()-overlap_draw,     patchRectF.y()-overlap_draw, \
+                                   patchRectF.width()+2*overlap_draw, patchRectF.height()+2*overlap_draw)
 
             patchRect  = QRect(round(patchRectF.x()),     round(patchRectF.y()), \
                                round(patchRectF.width()), round(patchRectF.height()))
@@ -328,7 +333,7 @@ class TileProvider( QObject ):
     '''
     def __init__( self, tiling,
                   stackedImageSources,
-                  cache_size = 10,
+                  cache_size = 100,
                   request_queue_size = 100000,
                   n_threads = 2,
                   layerIdChange_means_dirty=False,

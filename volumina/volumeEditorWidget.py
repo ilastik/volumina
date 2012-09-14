@@ -65,8 +65,13 @@ class VolumeEditorWidget(QWidget):
         Position/coordinate information is read from the volumeEditor's positionModel.
 
         '''
-        self.quadview.statusBar.channelSpinBox.setRange(0,self.editor.posModel.shape5D[-1] - 1)
-        self.quadview.statusBar.timeSpinBox.setRange(0,self.editor.posModel.shape5D[0] - 1)
+        maxChannel = self.editor.posModel.shape5D[-1] - 1
+        self.quadview.statusBar.channelSpinBox.setRange(0,maxChannel)
+        self.quadview.statusBar.channelSpinBox.setSuffix("/{}".format( maxChannel ) )
+
+        maxTime = self.editor.posModel.shape5D[0] - 1
+        self.quadview.statusBar.timeSpinBox.setRange(0,maxTime)
+        self.quadview.statusBar.timeSpinBox.setSuffix("/{}".format( maxTime ) )
         
         for i in range(3):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
@@ -109,7 +114,7 @@ class VolumeEditorWidget(QWidget):
             self.quadview.statusBar.channelSpinBox.setValue(newC)
         self.editor.posModel.channelChanged.connect(getChannel)
         def setTime(t):
-            print "set channel = %d, posModel has time = %d" % (t, self.editor.posModel.time)
+            print "set time = %d, posModel has time = %d" % (t, self.editor.posModel.time)
             if t == self.editor.posModel.time:
                 return
             self.editor.posModel.time = t

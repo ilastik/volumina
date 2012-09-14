@@ -219,7 +219,7 @@ class LayerEditor(QWidget):
         self._layer = layer
         self._layer.changed.connect(self.repaint)
         self._layerPainter.layer = layer
-    
+        
     def minimumSize(self):
         return self.sizeHint()
     
@@ -279,6 +279,23 @@ class LayerWidget(QListView):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.onContext)
         QTimer.singleShot(0, self.selectFirstEntry)
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Up or event.key() == Qt.Key_Down:
+            return super(LayerWidget, self).keyPressEvent(event)
+
+        if event.key() == Qt.Key_Right or event.key() == Qt.Key_Left:
+            row = self.model().selectedRow()
+            if row < 0:
+                return
+            layer = self.model()[row]
+        
+            if event.key() == Qt.Key_Right:
+                if layer.opacity < 1.0:
+                    layer.opacity = min(1.0, layer.opacity + 0.01)
+            elif event.key() == Qt.Key_Left:
+                if layer.opacity > 0.0:
+                    layer.opacity = max(0.0, layer.opacity - 0.01)
     
     def resizeEvent(self, e):
         self.updateGUI()

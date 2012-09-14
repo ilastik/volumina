@@ -53,7 +53,8 @@ class NavigationInterpreter(QObject):
         ### the following implements a simple state machine
         if self._current_state == self.DEFAULT_MODE:
             ### default mode -> drag mode
-            if etype == QEvent.MouseButtonPress and event.button() == Qt.MidButton:
+            if    (etype == QEvent.MouseButtonPress and event.button() == Qt.MidButton) \
+               or (etype == QEvent.MouseButtonPress and event.modifiers() == Qt.ShiftModifier):
                 # self.onExit_default(): call it here, if needed
                 self._current_state = self.DRAG_MODE
                 self.onEntry_drag( watched, event )
@@ -74,7 +75,7 @@ class NavigationInterpreter(QObject):
                 return True
         elif self._current_state == self.DRAG_MODE:
             ### drag mode -> default mode
-            if etype == QEvent.MouseButtonRelease and event.button() == Qt.MidButton:
+            if etype == QEvent.MouseButtonRelease:
                 self.onExit_drag( watched, event)
                 self._current_state = self.DEFAULT_MODE
                 self.onEntry_default( watched, event )
@@ -97,6 +98,8 @@ class NavigationInterpreter(QObject):
         navCtrl = self._navCtrl
         k_alt = (event.modifiers() == Qt.AltModifier)
         k_ctrl = (event.modifiers() == Qt.ControlModifier)
+        k_shift = (event.modifiers() == Qt.ShiftModifier)
+        k_shift_alt = (event.modifiers() == (Qt.ShiftModifier | Qt.AltModifier))
 
         imageview.mousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
 
@@ -104,19 +107,27 @@ class NavigationInterpreter(QObject):
         grviewCenter = imageview.mapToScene(imageview.viewport().rect().center())
 
         if event.delta() > 0:
-            if k_alt:
+            if k_shift_alt:
+                navCtrl.changeTimeRelative(-10)                
+            elif k_alt:
                 navCtrl.changeSliceRelative(-10, navCtrl._views.index(imageview))
             elif k_ctrl:
                 scaleFactor = 1.1
                 imageview.doScale(scaleFactor)
+            elif k_shift:
+                navCtrl.changeTimeRelative(-1)
             else:
                 navCtrl.changeSliceRelative(-1, navCtrl._views.index(imageview))
         else:
-            if k_alt:
+            if k_shift_alt:
+                navCtrl.changeTimeRelative(10)                
+            elif k_alt:
                 navCtrl.changeSliceRelative(10, navCtrl._views.index(imageview))
             elif k_ctrl:
                 scaleFactor = 0.9
                 imageview.doScale(scaleFactor)
+            elif k_shift:
+                navCtrl.changeTimeRelative(1)
             else:
                 navCtrl.changeSliceRelative(1, navCtrl._views.index(imageview))
         if k_ctrl:
@@ -277,6 +288,17 @@ class NavigationControler(QObject):
     def changeTime(self, newTime):
         for i in range(3):
             self._sliceSources[i].setThrough(0, newTime)
+
+    def changeTimeRelative( self, delta ):
+        if self._model.shape5D is None or delta == 0:
+            return
+        cur_t = self._sliceSources[0].through[0]
+        new_t = cur_t + delta
+
+        #sanitize
+        new_t = 0 if new_t < 0 else new_t
+        new_t = self._model.shape5D[0] - 1 if new_t >= self._model.shape5D[0] else new_t
+        self._model.time = new_t
     
     def changeChannel(self, newChannel):
         if self._model.shape is None:
