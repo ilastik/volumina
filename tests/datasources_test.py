@@ -2,7 +2,7 @@ import unittest as ut
 import os
 from abc import ABCMeta, abstractmethod
 import volumina._testing
-from volumina.pixelpipeline.datasources import ArraySource, RelabelingArraySource
+from volumina.pixelpipeline.datasources import ArraySource, RelabelingArraySource, NormalizingSource
 import numpy as np
 from volumina.slicingtools import sl, slicing2shape
 try:
@@ -21,25 +21,26 @@ class GenericArraySourceTest:
 
     @abstractmethod
     def setUp( self ):
+        self.slicing = (slice(0,1),slice(10,20), slice(20,25), slice(0,1), slice(0,1))
         self.source = None
 
     def testRequestWait( self ):
-        slicing = (slice(0,1),slice(10,20), slice(20,25), slice(0,1), slice(0,1))
+        slicing = self.slicing
         requested = self.source.request(slicing).wait()
-        self.assertTrue(np.all(requested == self.raw[0:1,10:20,20:25,0:1,0:1]))
+        self.assertTrue(np.all(requested == self.raw[slicing]))
 
     def testRequestNotify( self ):
-        slicing = (slice(0,1),slice(10,20), slice(20,25), slice(0,1), slice(0,1))
+        slicing = self.slicing
         request = self.source.request(slicing)
         
         def check(result, codon):
-            self.assertTrue(np.all(result == self.raw[0:1,10:20,20:25,0:1,0:1]))
+            self.assertTrue(np.all(result == self.raw[slicing]))
             self.assertEqual(codon, "unique")
         request.notify(check, codon="unique")
 
     def testSetDirty( self ):
         self.signal_emitted = False
-        self.slicing = (slice(0,1),slice(10,20), slice(20,25), slice(0,1), slice(0,1))
+        slicing = self.slicing
 
         def slot( sl ):
             self.signal_emitted = True
@@ -60,6 +61,7 @@ class GenericArraySourceTest:
 
 class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
     def setUp( self ):
+        GenericArraySourceTest.setUp(self)
         self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
         self.raw = np.zeros((1,512,512,1,1))
         self.raw[0,:,:,0,0] = self.lena
@@ -70,6 +72,7 @@ class ArraySourceTest( ut.TestCase, GenericArraySourceTest ):
 
 class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
     def setUp( self ):
+        GenericArraySourceTest.setUp(self)
         a = np.zeros((5,1,1,1,1), dtype=np.uint32)
         #the data contained in a ranges from [1,5]
         a[:,0,0,0,0] = np.arange(0,5)
@@ -114,10 +117,78 @@ class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         del self.signal_emitted
         del self.slicing
 
+class TestNormalizingSource( ut.TestCase, GenericArraySourceTest ):
+    def setUp( self ):
+        GenericArraySourceTest.setUp(self)
+        self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
+        self.unNormalized = np.zeros((1,512,512,1,1))
+        self.unNormalized[0,:,:,0,0] = self.lena
+        arraySource = ArraySource( self.unNormalized )
+
+        self.source = NormalizingSource( arraySource, (0,100) )
+
+        # Normalize the data for the checks against self.raw (in base class)
+        raw = self.unNormalized[...]
+        amin, amax = (0,100)
+        raw = raw.astype(np.float32)
+        raw = 255. * (raw - amin) / (amax-amin)
+        raw[raw > 255] = 255
+        raw[raw < 0] = 0        
+        self.raw = raw
+        
+        self.samesource = NormalizingSource( arraySource, (0,100) )
+        self.othersource = NormalizingSource( arraySource, (0,10) ) # Different bounds
+
+class TestAutoNormalizingSource_MinMax( ut.TestCase, GenericArraySourceTest ):
+    def setUp( self ):
+        GenericArraySourceTest.setUp(self)
+        self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
+        self.unNormalized = np.zeros((1,512,512,1,1))
+        self.unNormalized[0,:,:,0,0] = self.lena
+        arraySource = ArraySource( self.unNormalized )
+
+        self.source = NormalizingSource( arraySource, 'autoMinMax' )
+
+        # Normalize the data for the checks against self.raw (in base class)
+        raw = self.unNormalized[...]
+        slicedData = raw[self.slicing]
+        amin, amax = slicedData.min(), slicedData.max()
+        raw = raw.astype(np.float32)
+        raw = 255. * (raw - amin) / (amax-amin)
+        raw[raw > 255] = 255
+        raw[raw < 0] = 0        
+        self.raw = raw
+        
+        self.samesource = NormalizingSource( arraySource, 'autoMinMax' )
+        self.othersource = NormalizingSource( arraySource, (0,10) ) # Different bounds
+
+class TestAutoNormalizingSource_Percentiles( ut.TestCase, GenericArraySourceTest ):
+    def setUp( self ):
+        GenericArraySourceTest.setUp(self)
+        self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
+        self.unNormalized = np.zeros((1,512,512,1,1))
+        self.unNormalized[0,:,:,0,0] = self.lena
+        arraySource = ArraySource( self.unNormalized )
+
+        self.source = NormalizingSource( arraySource, 'autoPercentiles' )
+
+        # Normalize the data for the checks against self.raw (in base class)
+        raw = self.unNormalized[...]
+        slicedData = raw[self.slicing]
+        amin, amax = np.percentile(slicedData, [1,99])
+        raw = raw.astype(np.float32)
+        raw = 255. * (raw - amin) / (amax-amin)
+        raw[raw > 255] = 255
+        raw[raw < 0] = 0        
+        self.raw = raw
+        
+        self.samesource = NormalizingSource( arraySource, 'autoPercentiles' )
+        self.othersource = NormalizingSource( arraySource, (0,10) ) # Different bounds
 
 if has_lazyflow:
     class LazyflowSourceTest( ut.TestCase, GenericArraySourceTest ):
         def setUp( self ):
+            GenericArraySourceTest.setUp(self)
             self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
             self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
             self.raw[0,:,:,0,0] = self.lena
@@ -132,6 +203,7 @@ if has_lazyflow:
         
     class LazyflowSinkSourceTest( ut.TestCase, GenericArraySourceTest ):
         def setUp( self ):
+            GenericArraySourceTest.setUp(self)
             self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
             self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
             self.raw[0,:,:,0,0] = self.lena

@@ -130,9 +130,6 @@ class GrayscaleImageRequest( object ):
         assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
         
         normalize = self._normalize 
-        if normalize == 'auto':
-            p1, p99 = np.percentile(a, [1,99])
-            normalize = (p1, p99)
         img = gray2qimage(a, normalize)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
@@ -199,9 +196,6 @@ class AlphaModulatedImageRequest( object ):
         d[:,:,3] = a[:,:]
 
         normalize = self._normalize
-        if normalize == 'auto':
-            p1, p99 = np.percentile(a, [1,99])
-            normalize = (p1, p99)
         img = array2qimage(d, normalize)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
             
@@ -365,9 +359,6 @@ class RGBAImageRequest( object ):
             if self._normalize[i] is not None:
 
                 normalize = self._normalize[i]
-                if normalize == 'auto':
-                    p1, p99 = np.percentile(a, [1,99])
-                    normalize = (p1, p99)
                 a = a.astype(np.float32)
                 a = (a - normalize[0])*255.0 / (normalize[1]-normalize[0])
                 a[a > 255] = 255

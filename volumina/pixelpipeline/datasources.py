@@ -1,4 +1,5 @@
 import threading
+from functools import partial
 from PyQt4.QtCore import QObject, pyqtSignal
 from asyncabcs import RequestABC, SourceABC
 import volumina
@@ -328,4 +329,134 @@ class ConstantSource( QObject ):
         return not ( self == other )
 
 assert issubclass(ConstantSource, SourceABC)
+
+#*******************************************************************************
+# N o r m a l i z i n g R e q u e s t                                          *
+#*******************************************************************************
+class NormalizingRequest( object ):
+    def __init__( self, rawRequest, normFunc ):
+        self._rawRequest = rawRequest
+        self._normFunc = normFunc
+
+    def wait( self ):
+        rawData = self._rawRequest.wait()
+        self._result = self._normFunc(rawData)
+        return self._result
+    
+    # callback( result = result, **kwargs )
+    def notify( self, callback, **kwargs ):
+        def handleResult(rawResult):
+            self._result = self._normFunc(rawResult)
+            callback( self._result, **kwargs )
+        self._rawRequest.notify( handleResult )
+
+    def getResult(self):
+        return self._result
+
+assert issubclass(NormalizingRequest, RequestABC)
+
+
+#*******************************************************************************
+# N o r m a l i z i n g S o u r c e                                            *
+#*******************************************************************************
+class NormalizingSource( QObject ):
+    """
+    A datasource that serves as a normalizing decorator for other datasources.
+    All data from the original (raw) data source is normalized to the range (0,255) before it is provided to the caller.
+    """
+    isDirty = pyqtSignal( object )
+    
+    def __init__( self, rawSource, bounds=(0,255), parent=None ):
+        """
+        rawSource: The original datasource whose data will be normalized
+        
+        bounds: The range of the original source's data, given as a tuple of (min,max)
+                Alternatively, thee following strings can be provided instead of a bounds tuple:
+                    'autoMinMax' - Track the min and max values observed from all requests and normalize to that range
+                    'autoPercentiles' - Track the 1 and 99 percentiles and normalize all data to that range
+                Note: When an incoming request causes the lower or uppoer bound to change, the entire source is marked dirty.
+        """
+        super(NormalizingSource, self).__init__(parent)
+        self._rawSource = rawSource
+        self._rawSource.isDirty.connect( self.isDirty )
+        if isinstance(bounds, tuple):
+            self._method = 'hardcoded'
+            self._bounds = ( float(bounds[0]), float(bounds[1]) )
+        else:
+            self._method = bounds
+            self._bounds = (None, None)
+    
+    def request( self, slicing ):
+        rawRequest = self._rawSource.request(slicing)
+        if self._method == 'autoMinMax':
+            return NormalizingRequest( rawRequest, self._autoNormalizeMinMax )
+        elif self._method == 'autoPercentiles':
+            return NormalizingRequest( rawRequest, self._autoNormalizePercentiles )
+        elif isinstance(self._bounds, tuple):
+            return NormalizingRequest( rawRequest, partial(NormalizingSource._normalizeFromBounds, self._bounds) )
+        else:
+            assert False, "Unknown normalization setting."
+
+    def setDirty( self, slicing ):
+        self._rawSource.setDirty( slicing )
+
+    def __eq__( self, other ):
+        equal = True
+        equal &= isinstance( other, NormalizingSource )
+        equal &= ( self._rawSource == other._rawSource )
+        equal &= ( self._method == other._method )
+        equal &= ( self._method != 'hardcoded' or self._bounds == other._bounds )
+        return equal
+
+    def __ne__( self, other ):
+        return not ( self == other )
+
+    @staticmethod
+    def _normalizeFromBounds(bounds, array):
+        lower, upper = bounds
+        if bounds != (0,255):
+            # Scale
+            array = array.astype(np.float32)
+            array = (array - lower)*255. / (upper-lower)
+            # Clip
+            array[array > 255] = 255
+            array[array < 0] = 0
+        return array
+
+    def _autoNormalizeFromNewBounds(self, newBounds, array):
+        # Cast to float to avoid a 'gotcha' with uint8 subtraction (e.g. 100 - 105 = 251)
+        nmin = float(newBounds[0])
+        nmax = float(newBounds[1])
+
+        # Adjust running bounds if necessary
+        # Note: We would protect self._bounds with a lock here if we really 
+        #       wanted perfect bounds, but the performance hit isn't worth it.
+        dirty = False
+        bounds = list(self._bounds)
+        if bounds[0] is not None:
+            # Everything becomes dirty when the bounds change, so we avoid changing the
+            # bounds unless the new min or max is significantly different from the old value
+            tolerance = float(bounds[1] - bounds[0])*0.01
+        if bounds[0] is None or (bounds[0] - nmin) > tolerance: 
+            bounds[0] = nmin
+            dirty = True
+        if bounds[1] is None or (nmax - bounds[1]) > tolerance:
+            bounds[1] = nmax
+            dirty = True
+        
+        # If the min or max value changed, set the entire source dirty
+        if dirty:
+            self._bounds = tuple(bounds)
+            self.setDirty( sl[:,:,:,:,:] )
+        
+        return NormalizingSource._normalizeFromBounds(self._bounds, array)
+
+    def _autoNormalizeMinMax(self, array):
+        return self._autoNormalizeFromNewBounds( (array.min(), array.max() ), array )
+
+    def _autoNormalizePercentiles(self, array):
+        p1, p99 = np.percentile(array, [1,99])
+        return self._autoNormalizeFromNewBounds( (p1, p99), array )
+
+assert issubclass(NormalizingSource, SourceABC)
 
