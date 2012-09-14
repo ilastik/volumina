@@ -20,7 +20,7 @@ from pixelpipeline.slicesources import SyncedSliceSources
 useVTK = True
 try:
     from view3d.view3d import OverviewScene
-except ImportError:
+except:
     print "Warning: could not import optional dependency VTK"
     useVTK = False
 
