@@ -1,8 +1,8 @@
-from PyQt4.QtCore import QObject, pyqtSignal, QEvent, Qt
+from PyQt4.QtCore import QObject, pyqtSignal, QEvent, Qt, QPoint
 
 class ClickReportingInterpreter(QObject):
-    rightClickReceived = pyqtSignal(object) # list of indexes
-    leftClickReceived = pyqtSignal(object)  # ditto
+    rightClickReceived = pyqtSignal(object, QPoint) # list of indexes, global window coordinate of click
+    leftClickReceived = pyqtSignal(object, QPoint)  # ditto
     
     def __init__(self, navigationInterpreter, positionModel):
         QObject.__init__(self)
@@ -22,9 +22,11 @@ class ClickReportingInterpreter(QObject):
             pos = [0,] + pos + [0,]
 
             if event.button() == Qt.LeftButton:
-                self.leftClickReceived.emit( pos )
+                gPos = watched.mapToGlobal( event.pos() )
+                self.leftClickReceived.emit( pos, gPos )
             if event.button() == Qt.RightButton:
-                self.rightClickReceived.emit( pos )                
+                gPos = watched.mapToGlobal( event.pos() )
+                self.rightClickReceived.emit( pos, gPos )                
 
         # Event is always forwarded to the navigation interpreter.
         return self.baseInterpret.eventFilter(watched, event)
