@@ -89,7 +89,8 @@ if _has_lazyflow and _has_vigra:
             v.axistags = inputTags
             result[sl] = v.withAxes(*list( self._axisorder ))
         
-        def notifyDirty(self, inputSlot, key):
+        def propagateDirty(self, inputSlot, roi):
+            key = roi.toSlice()
             if inputSlot.name == 'input':
                 # Convert the key into an output key
                 inputTags = [tag.key for tag in self.input.meta.axistags]
