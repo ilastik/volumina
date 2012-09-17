@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from PyQt4.QtCore import Qt, QTimer, QRectF
+from PyQt4.QtCore import Qt, QTimer, QRectF, QEvent
 from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, \
                         QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, \
                         QColor, QSizePolicy, QAction, QIcon
@@ -99,6 +99,7 @@ class VolumeEditorWidget(QWidget):
             v.hud.sliceSelector.valueChanged.connect(partial(self.editor.navCtrl.changeSliceAbsolute, axis=i))
 
         self.quadview = QuadView(self, self.editor.imageViews[2], self.editor.imageViews[0], self.editor.imageViews[1], self.editor.view3d)
+        self.quadview.installEventFilter(self)
         self.quadViewStatusBar = QuadStatusBar()
         self.quadViewStatusBar.createQuadViewStatusBar(QColor("#dc143c"), QColor("white"), QColor("green"), QColor("white"), QColor("blue"), QColor("white"), QColor("gray"), QColor("white"))
         self.quadview.addStatusBar(self.quadViewStatusBar)
@@ -227,7 +228,19 @@ class VolumeEditorWidget(QWidget):
 
     def _updateInfoLabels(self, pos):
         self.quadViewStatusBar.setMouseCoords(*pos)
-             
+
+    def eventFilter(self, watched, event):
+        # If the user performs a ctrl+scroll on the splitter itself,
+        # scroll all views.
+        if event.type() == QEvent.Wheel and (event.modifiers() == Qt.ControlModifier):
+            for view in self.editor.imageViews:
+                if event.delta() > 0:
+                    view.zoomIn()
+                else:
+                    view.zoomOut()
+            return True
+        return False
+                     
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
 #*******************************************************************************
