@@ -210,12 +210,14 @@ class DirtyPropagationTest( ut.TestCase ):
             # Even though the data was out-of-view when it was changed, it should still have new values.
             # If dirtiness wasn't propagated correctly, the cache's old values will be used.
             # (For example, this fails if you comment out the call to setDirty, above.)
-            tiles = tp.getTiles(QRectF(100,100,200,200))
+            
+            tiles = tp.getTiles(QRectF(101,101,198,198)) # Shrink accessed rect by 1 pixel on each side 
+                                                         # (Otherwise, tiling overlap_draw causes getTiles() to return 
+                                                         #  surrounding tiles that we haven't actually touched in this test)
             for tile in tiles:
                 aimg = byte_view(tile.qimg)
                 # Use any() because the tile borders may not be perfectly aligned with the data we changed.
                 self.assertTrue(np.any(aimg[:,:,0:3] == 99))
-
         finally:
             tp.notifyThreadsToStop()
             tp.joinThreads()
