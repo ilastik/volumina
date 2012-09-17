@@ -113,6 +113,7 @@ class Viewer(QMainWindow):
         if name:
             layer.name = name
         self.layerstack.append(layer)
+        return layer
         
     def addAlphaModulatedLayer(self,a, name=None):
         source,self.dataShape = createDataSource(a,True)
@@ -120,6 +121,7 @@ class Viewer(QMainWindow):
         if name:
             layer.name = name
         self.layerstack.append(layer)
+        return layer
     
     def addRGBALayer(self,a, name=None):
         source,self.dataShape = createDataSource(a,True)
@@ -127,6 +129,7 @@ class Viewer(QMainWindow):
         if name:
             layer.name = name
         self.layerstack.append(layer)
+        return layer
 
         
 if __name__ == "__main__":
