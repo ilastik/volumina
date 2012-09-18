@@ -66,7 +66,7 @@ if _has_lazyflow and _has_vigra:
             self.outputs["output"].meta.shape = tuple(outputShape)
             self.outputs["output"].meta.axistags = outputTags
             
-        def execute(self,slot,roi,result):
+        def execute(self, slot, subindex, roi, result):
             
             sl = [slice(0,roi.stop[i]-roi.start[i],None) if sl != 0\
                   else slice(0,1) for i,sl in enumerate(self.resSl)]
@@ -89,7 +89,7 @@ if _has_lazyflow and _has_vigra:
             v.axistags = inputTags
             result[sl] = v.withAxes(*list( self._axisorder ))
         
-        def propagateDirty(self, inputSlot, roi):
+        def propagateDirty(self, inputSlot, subindex, roi):
             key = roi.toSlice()
             if inputSlot.name == 'input':
                 # Convert the key into an output key
