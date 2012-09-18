@@ -19,14 +19,14 @@ if has_lazyflow:
             super(OpDelay, self).__init__(g)
             self._delay_factor = delay_factor
 
-        def execute(self, slot, roi, resultArea):
+        def execute(self, slot, subindex, roi, result):
             key = roi.toSlice()
-            req = self.inputs["Input"][key].writeInto(resultArea)
+            req = self.inputs["Input"][key].writeInto(result)
             req.wait()
-            t = self._delay_factor*resultArea.nbytes
+            t = self._delay_factor*result.nbytes
             print "Delay: " + str(t) + " secs."
             time.sleep(t)
-            return resultArea
+            return result
 
 #*******************************************************************************
 # O p D a t a P r o v i d e r                                                  *
@@ -53,11 +53,12 @@ if has_lazyflow:
             oslot.meta.axistags = vigra.defaultAxistags('tzyxc') # Non-volumina ordering: datasource will re-order
             self.inputs["Changedata"].meta.axistags = oslot.meta.axistags
 
-        def execute(self, slot, roi, result):
+        def execute(self, slot, subindex, roi, result):
             key = roi.toSlice()
             result[:] = self._data[key]
             return result
 
-        def setInSlot(self, slot, key, value):
+        def setInSlot(self, slot, subindex, roi, value):
+            key = roi.toSlice()
             self._data[key] = value
             self.outputs["Data"].setDirty(key)

@@ -21,12 +21,12 @@ if hasLazyflow:
             self.outputs["Output"].meta.assignFrom(self.inputs["Input"].meta)
             self.outputs["Output"].connect(self.inputs["Input"])
             
-        def execute(self,slot,roi,result):
+        def execute(self, slot, subindex, roi, result):
             
             result[:] = self.outputs["Output"](roi).wait()
             return result
 
-        def propagateDirty(self, inputSlot, roi):
+        def propagateDirty(self, inputSlot, subindex, roi):
             self.Output.setDirty(roi)
         
 class Test_DatasourceFactories(TestCase):
