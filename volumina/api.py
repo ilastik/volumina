@@ -8,3 +8,11 @@ from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.widgets.layerwidget import LayerWidget
 
 from volumina.viewer import Viewer
+
+from PyQt4.QtGui import QApplication
+import sys
+
+def viewerApp():
+    app = QApplication(sys.argv)
+    v = Viewer()
+    return (v, app)
