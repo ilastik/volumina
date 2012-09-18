@@ -12,6 +12,7 @@ packages=['volumina',
 
 package_data={'volumina.resources.icons': ['*.png', 'LICENSES'],
               'volumina.widgets.ui': ['*.ui'],
+              'volumina': ['*.ui'],
               'volumina._testing': ['*.tif',
                                     '*.png', 
                                     'lena.npy', 
