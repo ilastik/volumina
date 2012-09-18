@@ -107,7 +107,7 @@ class Viewer(QMainWindow):
                 viewAxis = [i for i in range(1,4) if self.dataShape[i] != 1][0] - 1
                 self.viewer.quadview.switchMinMax(viewAxis)    
         
-    def addGrayscaleLayer(self,a, name=None):
+    def addGrayscaleLayer(self, a, name=None):
         source,self.dataShape = createDataSource(a,True)
         layer = GrayscaleLayer(source)
         if name:
@@ -115,7 +115,7 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return layer
         
-    def addAlphaModulatedLayer(self,a, name=None):
+    def addAlphaModulatedLayer(self, a, name=None):
         source,self.dataShape = createDataSource(a,True)
         layer = AlphaModulatedLayer(source)
         if name:
@@ -123,7 +123,7 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return layer
     
-    def addRGBALayer(self,a, name=None):
+    def addRGBALayer(self, a, name=None):
         source,self.dataShape = createDataSource(a,True)
         layer = RGBALayer(source[0],source[1],source[2])
         if name:
@@ -131,6 +131,32 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return layer
 
+    def addRandomColorsLayer(self, a, name=None):
+        return self.addColorTableLayer(a, name, colortable=None)
+    
+    def addColorTableLayer(self, a, name=None, colortable=None):
+        if colortable is None:
+            colortable = self._randomColors()
+        source,self.dataShape = createDataSource(a,True)
+        layer = ColortableLayer(source, colortable)
+        if name:
+            layer.name = name
+        self.layerstack.append(layer)
+        return layer
+
+    def _randomColors(self, M=256):
+        """Generates a pleasing color table with M entries."""
+
+        colors = []
+        for i in range(M):
+            if i == 0:
+                colors.append(QColor(0, 0, 0, 0).rgba())
+            else:
+                h, s, v = random.random(), random.random(), 1.0
+                color = numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255
+                qColor = QColor(*color)
+                colors.append(qColor.rgba())
+        return colors
         
 if __name__ == "__main__":
     
