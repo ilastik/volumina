@@ -97,6 +97,7 @@ class Viewer(QMainWindow):
     def dataShape(self, s):
         if s is None:
             return
+        assert len(s) == 5
         
         self._dataShape = s
         self.editor.dataShape = s
