@@ -31,13 +31,13 @@ def createDataSource(source,withShape = False):
     #has to handle NumpyArray
     #check if the array is 5d, if not so embed it in a canonical way
     if len(source.shape) == 2:
-        source.shape = (1,) + source.shape + (1,1)
+        source.reshape( (1,) + source.shape + (1,1) )
     elif len(source.shape) == 3 and source.shape[2] <= 4:
-        source.shape = (1,) + source.shape[0:2] + (1,) + source.shape[2]
+        source.reshape( (1,) + source.shape[0:2] + (1,) + source.shape[2] )
     elif len(source.shape) == 3:
-        source.shape = (1,) + source.shape + (1,)
+        source.reshape( (1,) + source.shape + (1,) )
     elif len(source.shape) == 4:
-        source.shape = (1,) + source.shape
+        source.reshape( (1,) + source.shape )
     src = ArraySource(source)
     if withShape:
         return src,source.shape
