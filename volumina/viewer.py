@@ -95,12 +95,17 @@ class Viewer(QMainWindow):
         return self._dataShape
     @dataShape.setter
     def dataShape(self, s):
+        if s is None:
+            return
+        
         self._dataShape = s
-        if s is not None:
-            self.editor.dataShape = s
+        self.editor.dataShape = s
         if not self._viewerInitialized:
             self._viewerInitialized = True
             self.viewer.init(self.editor)
+            #make sure the data shape is correctly set
+            #(some signal/slot connections may be set up in the above init)
+            self.editor.dataShape = s
 
             #if its 2D, maximize the corresponding window
             if len([i for i in list(self.dataShape)[1:4] if i == 1]) == 1:
