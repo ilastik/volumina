@@ -1,22 +1,14 @@
 import numpy
 
-import volumina
-from volumina.colorama import Fore, Back, Style
-
-from functools import partial
-from PyQt4.QtCore import QRect, QRectF, QMutex, QPointF, Qt, QSizeF
-from PyQt4.QtGui import QGraphicsScene, QImage, QTransform, QPen, QColor, QBrush, \
-                        QFont, QPainter, QGraphicsItem
-
-from imageSceneRendering import ImageSceneRenderThread
+from PyQt4.QtCore import QRect, QRectF, QPointF, Qt, QSizeF
+from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, \
+                        QPainter, QGraphicsItem
 
 from volumina.tiling import Tiling, TileProvider, TiledImageLayer
 from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.imagepump import StackedImageSources
-import math
 
-import threading
-import collections
+import datetime
 
 #*******************************************************************************
 # I m a g e S c e n e 2 D                                                      *
@@ -32,14 +24,13 @@ class DirtyIndicator(QGraphicsItem):
         QGraphicsItem.__init__(self, parent=None)
         self._tiling = tiling
         self._indicate = numpy.zeros(len(tiling))
-        self._indicateDelayCounter = numpy.zeros(len(tiling))
+        self._zeroProgressTimestamp = [None] * len(tiling)
 
     def boundingRect(self):
         return self._tiling.boundingRectF()
     
     def paint(self, painter, option, widget):
         dirtyColor = QColor(255,0,0)
-        doneColor  = QColor(0,255 ,0)
         painter.setOpacity(0.5)
         painter.save()
         painter.setBrush(QBrush(dirtyColor, Qt.SolidPattern))
@@ -48,8 +39,12 @@ class DirtyIndicator(QGraphicsItem):
         for i,p in enumerate(self._tiling.tileRectFs):
             if self._indicate[i] == 1.0:
                 continue
-            if self._indicate[i] == 0.0 and self._indicateDelayCounter[i] < 2:
+
+            # Don't show unless 300 millisecs have passed since the tile progress was reset.
+            startTime = self._zeroProgressTimestamp[i]
+            if startTime is not None and datetime.datetime.now() - startTime < datetime.timedelta(milliseconds=300):
                 continue
+
             w,h = p.width(), p.height()
             r = min(w,h)
             rectangle = QRectF(p.center()-QPointF(r/4,r/4), QSizeF(r/2, r/2));
@@ -61,10 +56,10 @@ class DirtyIndicator(QGraphicsItem):
 
     def setTileProgress(self, tileId, progress):
         self._indicate[tileId] = progress
-        if progress == 0.0:
-            self._indicateDelayCounter[tileId] += 1
-        else:
-            self._indicateDelayCounter[tileId] = 0
+        if progress > 0.0:
+            self._zeroProgressTimestamp[tileId] = None
+        elif self._zeroProgressTimestamp[tileId] is None:
+            self._zeroProgressTimestamp[tileId] = datetime.datetime.now()
         self.update()
 
 #*******************************************************************************

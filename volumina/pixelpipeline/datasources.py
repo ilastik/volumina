@@ -113,9 +113,21 @@ class RelabelingArraySource( ArraySource ):
         self._relabeling = None
         
     def setRelabeling( self, relabeling ):
+        """Sets new relabeling vector. It should have a len(relabling) == max(your data)+1
+           and give, for each possible data value x, the relabling as relabeling[x]."""   
         assert relabeling.dtype == self._array.dtype
         self._relabeling = relabeling
         self.setDirty(5*(slice(None),))
+
+    def setRelabelingEntry( self, index, value, setDirty=True ):
+        """Sets the entry for data value index to value, such that afterwards
+           relabeling[index] =  value.
+           
+           If setDirty is true, the source will signal dirtyness. If you plan to issue many calls to this function
+           in a loop, setDirty to true only on the last call."""
+        self._relabeling[index] = value
+        if setDirty:
+            self.setDirty(5*(slice(None),))
 
     def request( self, slicing ):
         if not is_pure_slicing(slicing):
