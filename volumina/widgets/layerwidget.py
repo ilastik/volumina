@@ -93,6 +93,12 @@ class LayerPainter( object ):
             painter.drawImage(QRect(self.iconXOffset,0,self.iconSize,self.iconSize), \
                               QImage(path.join(_icondir, "stock-eye-20-gray.png")))
 
+        if self.layer.direct:
+            painter.save()
+            painter.setBrush(palette.text())
+            painter.drawEllipse(self.iconXOffset+self.iconSize/2-2, self.iconSize+3, 4,4 ) 
+            painter.restore()
+        
         #layer name text
         if mode != 'ReadOnly':
             painter.setBrush(palette.highlightedText())
@@ -104,6 +110,7 @@ class LayerPainter( object ):
         #opacity
         text = u"\u03B1=%0.1f%%" % (100.0*(self.layer.opacity))
         painter.drawText(QPoint(textOffsetX+self._progressWidth-self.alphaTextWidth, textOffsetY), text)
+        
         
         if mode != 'ReadOnly':  
             #frame around percentage indicator
