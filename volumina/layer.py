@@ -72,6 +72,12 @@ class Layer( QObject ):
     def layerId( self, lid ):
         self._layerId = lid
 
+    def timePerTile( self, timeSec, tileRect ):
+        """Update the average time per tile with new data: the tile of size tileRect took timeSec seonds"""
+        #compute cumulative moving average
+        self._numTiles += 1
+        self.averageTimePerTile = (timeSec + (self._numTiles-1)*self.averageTimePerTile) / self._numTiles
+
     def __init__( self, direct=False ):
         super(Layer, self).__init__()
         self._name = "Unnamed Layer"
@@ -80,6 +86,12 @@ class Layer( QObject ):
         self._datasources = []
         self._layerId = None
         self.direct = direct
+        
+        if self.direct:
+            #in direct mode, we calculate the average time per tile for debug purposes
+            #this is useful to identify which of your layers cause slowness
+            self.averageTimePerTile = 0.0
+            self._numTiles = 0
 
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)

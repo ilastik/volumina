@@ -490,9 +490,14 @@ class TileProvider( QObject ):
                             #The ImageSource 'ims' is fast (it has the direct flag set to true)
                             #so we process the request synchronously here.
                             #This improves the responsiveness for layers that have the data readily available.
+                            start = time.time() 
                             rect = self.tiling.imageRects[tile_no]
                             r = ims.request(rect) 
                             img = r.wait()
+                            stop = time.time()
+                            
+                            ims._layer.timePerTile(stop-start, rect)
+                            
                             self._cache.updateTileIfNecessary( stack_id, ims, tile_no, time.time(), img )
                             img = self._renderTile( stack_id, tile_no )
                             self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible(), self._sims.viewOccluded() )
