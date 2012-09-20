@@ -113,9 +113,9 @@ class Viewer(QMainWindow):
                 viewAxis = [i for i in range(1,4) if self.dataShape[i] != 1][0] - 1
                 self.viewer.quadview.switchMinMax(viewAxis)    
         
-    def addGrayscaleLayer(self, a, name=None):
+    def addGrayscaleLayer(self, a, name=None, direct=False):
         source,self.dataShape = createDataSource(a,True)
-        layer = GrayscaleLayer(source)
+        layer = GrayscaleLayer(source, direct=direct)
         if name:
             layer.name = name
         self.layerstack.append(layer)
@@ -140,11 +140,11 @@ class Viewer(QMainWindow):
     def addRandomColorsLayer(self, a, name=None):
         return self.addColorTableLayer(a, name, colortable=None)
     
-    def addColorTableLayer(self, a, name=None, colortable=None):
+    def addColorTableLayer(self, a, name=None, colortable=None, direct=False):
         if colortable is None:
             colortable = self._randomColors()
         source,self.dataShape = createDataSource(a,True)
-        layer = ColortableLayer(source, colortable)
+        layer = ColortableLayer(source, colortable, direct=direct)
         if name:
             layer.name = name
         self.layerstack.append(layer)

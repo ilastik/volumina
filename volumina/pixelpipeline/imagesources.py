@@ -42,9 +42,14 @@ class ImageSource( QObject ):
         self.__id = v
         self.idChanged.emit(old, v)
 
-    def __init__( self, guarantees_opaqueness = False, parent = None ):
+    def __init__( self, guarantees_opaqueness = False, parent = None, direct=False ):
+        ''' direct: whether this request will be computed synchronously in the GUI thread (direct=True)
+                    or whether the request will be put on a worker queue to be computed in a worker thread
+                    (direct=False).
+                    Only use direct=True if the layer's data will be immediately available'''
         super(ImageSource, self).__init__( parent = parent )
         self._opaque = guarantees_opaqueness
+        self.direct = direct
         self.__id = id(self)
 
     def request( self, rect ):
@@ -87,7 +92,7 @@ assert issubclass(ImageSource, SourceABC)
 class GrayscaleImageSource( ImageSource ):
     def __init__( self, arraySource2D, layer ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True )
+        super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True, direct=layer.direct )
         self._arraySource2D = arraySource2D
         self.id = arraySource2D.id
 
@@ -108,7 +113,7 @@ class GrayscaleImageSource( ImageSource ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s)
-        return GrayscaleImageRequest( req, self._layer.normalize[0] )
+        return GrayscaleImageRequest( req, self._layer.normalize[0], direct=self.direct )
 
     def _onIdChanged( self, oldId, newId ):
         self.id = newId
@@ -116,10 +121,11 @@ class GrayscaleImageSource( ImageSource ):
 assert issubclass(GrayscaleImageSource, SourceABC)
 
 class GrayscaleImageRequest( object ):
-    def __init__( self, arrayrequest, normalize=None ):
+    def __init__( self, arrayrequest, normalize=None, direct=False ):
         self._mutex = QMutex()
         self._arrayreq = arrayrequest
         self._normalize = normalize
+        self.direct = direct
 
     def wait(self):
         self._arrayreq.wait()
@@ -218,7 +224,7 @@ class ColortableImageSource( ImageSource ):
         """ colorTable: a list of QRgba values """
 
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(ColortableImageSource, self).__init__()
+        super(ColortableImageSource, self).__init__(direct=layer.direct)
         self._arraySource2D = arraySource2D
         self.id = arraySource2D.id
 
@@ -251,17 +257,18 @@ class ColortableImageSource( ImageSource ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s)
-        return ColortableImageRequest( req , self._colorTable)
+        return ColortableImageRequest( req, self._colorTable, self.direct )
 
     def _onIdChanged( self, oldId, newId ):
         self.id = newId
 assert issubclass(ColortableImageSource, SourceABC)
 
 class ColortableImageRequest( object ):
-    def __init__( self, arrayrequest, colorTable):
+    def __init__( self, arrayrequest, colorTable, direct=False ):
         self._mutex = QMutex()
         self._arrayreq = arrayrequest
         self._colorTable = colorTable
+        self.direct = direct
 
     def wait(self):
         self._arrayreq.wait()
