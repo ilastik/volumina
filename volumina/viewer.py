@@ -137,8 +137,8 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return layer
 
-    def addRandomColorsLayer(self, a, name=None):
-        return self.addColorTableLayer(a, name, colortable=None)
+    def addRandomColorsLayer(self, a, name=None, direct=False):
+        return self.addColorTableLayer(a, name, colortable=None, direct=direct)
     
     def addColorTableLayer(self, a, name=None, colortable=None, direct=False):
         if colortable is None:
