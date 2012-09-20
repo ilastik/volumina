@@ -37,7 +37,7 @@ class Op5ifyer(Operator):
 
 class OpDelay(OpArrayPiper):
     def __init__( self, g, delay_factor = 0.000001 ):
-        super(OpDelay, self).__init__(g)
+        super(OpDelay, self).__init__(graph=g)
         self._delay_factor = delay_factor
 
     def execute(self, slot, subindex, roi, result):
@@ -81,8 +81,8 @@ if __name__ == "__main__":
     
     g = Graph()
     
-    op1 = OpDataProvider5D(g, fn)
-    op2 = OpDelay(g, 0.0000000)
+    op1 = OpDataProvider5D(graph=g, fn=fn)
+    op2 = OpDelay(graph=g, 0.0000000)
     
     op2.inputs["Input"].connect(op1.outputs["Data5D"])
     

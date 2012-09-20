@@ -94,7 +94,7 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
             inputArray = layer.datasources[0].request((slice(None),)).wait()
             expDlg = ExportDialog(parent = menu)
             g = Graph()
-            piper = OpArrayPiper(g)
+            piper = OpArrayPiper(graph=g)
             piper.inputs["Input"].setValue(inputArray)
             expDlg.setInput(piper.outputs["Output"],g)
         expDlg.show()
