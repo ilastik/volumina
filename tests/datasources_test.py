@@ -194,11 +194,11 @@ if has_lazyflow:
             self.raw[0,:,:,0,0] = self.lena
 
             g = Graph()
-            op = OpDataProvider(g, self.raw)
+            op = OpDataProvider(self.raw, graph=g)
             self.source = LazyflowSource( op.Data )
 
             self.samesource = LazyflowSource( op.Data )
-            opOtherData = OpDataProvider(g, self.raw)
+            opOtherData = OpDataProvider(self.raw, graph=g)
             self.othersource = LazyflowSource( opOtherData.Data )
         
     class LazyflowSinkSourceTest( ut.TestCase, GenericArraySourceTest ):
@@ -209,11 +209,11 @@ if has_lazyflow:
             self.raw[0,:,:,0,0] = self.lena
 
             g = Graph()
-            self.op = OpDataProvider(g, self.raw)
+            self.op = OpDataProvider(self.raw, graph=g)
             self.source = LazyflowSinkSource(self.op.Data, self.op.Changedata)
 
             self.samesource = LazyflowSinkSource(self.op.Data, self.op.Changedata)
-            opOtherData = OpDataProvider(g, self.raw)
+            opOtherData = OpDataProvider(self.raw, graph=g)
             self.othersource = LazyflowSinkSource(opOtherData.Data, self.op.Changedata)
         
         def testPut(self):
