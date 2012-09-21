@@ -16,7 +16,7 @@ if has_lazyflow:
 
     class OpDelay(operators.OpArrayPiper):
         def __init__( self, g, delay_factor = 0.000001 ):
-            super(OpDelay, self).__init__(g)
+            super(OpDelay, self).__init__(graph=g)
             self._delay_factor = delay_factor
 
         def execute(self, slot, subindex, roi, result):
@@ -39,11 +39,11 @@ if has_lazyflow:
         inputSlots = [InputSlot("Changedata", optional=True)]
         outputSlots = [OutputSlot("Data")]
 
-        def __init__(self, g, voluminaData):
+        def __init__(self, voluminaData, graph=None, parent=None):
             """
             voluminaData - An array in txyzc order.
             """
-            Operator.__init__(self,g)
+            Operator.__init__(self, graph=graph, parent=parent)
             # We store the data in a custom order
             self._data = voluminaData.transpose([0,3,2,1,4])
             oslot = self.outputs["Data"]

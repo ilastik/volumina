@@ -444,7 +444,7 @@ class OverviewScene(QWidget):
         
         self.polygonAppender = vtkAppendPolyData()
         for g in self.dlg.extractor.meshes.values():
-            self.polygonAppender.AddInput(g)
+            self.polygonAppender.AddInput(graph=g)
         
         self.cutter[0] = Outliner(self.polygonAppender.GetOutput())
         self.cutter[0].GetOutlineProperty().SetColor(1,0,0)
@@ -471,7 +471,7 @@ class OverviewScene(QWidget):
         for i, g in self.dlg.extractor.meshes.items():
             print " - showing object with label =", i
             mapper = vtkPolyDataMapper()
-            mapper.SetInput(g)
+            mapper.SetInput(graph=g)
             actor = vtkActor()
             actor.SetMapper(mapper)
             self.qvtk.registerObject(actor)

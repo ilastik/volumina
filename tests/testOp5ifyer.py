@@ -26,7 +26,7 @@ else:
             self.axis = list('txyzc')
             self.tests = 20
             graph = Graph()
-            self.operator = Op5ifyer(graph)
+            self.operator = Op5ifyer(graph=graph)
     
         def prepareVolnOp(self):
             tags = random.sample(self.axis,random.randint(2,len(self.axis)))

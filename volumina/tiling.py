@@ -486,16 +486,32 @@ class TileProvider( QObject ):
                 # refresh dirty layer tiles 
                 for ims in self._sims.viewImageSources():
                     if self._cache.layerDirty(stack_id, ims, tile_no) and not self._sims.isOccluded(ims) and self._sims.isVisible(ims):
-                        req = (ims,
-                               tile_no,
-                               stack_id,
-                               ims.request(self.tiling.imageRects[tile_no]),
-                               time.time(),
-                               self._cache)
-                        try:
-                            self._dirtyLayerQueue.put_nowait( req )
-                        except Full:
-                            warnings.warn("Request queue full. Dropping tile refresh request. Increase queue size!")
+                        if ims.direct:
+                            #The ImageSource 'ims' is fast (it has the direct flag set to true)
+                            #so we process the request synchronously here.
+                            #This improves the responsiveness for layers that have the data readily available.
+                            start = time.time() 
+                            rect = self.tiling.imageRects[tile_no]
+                            r = ims.request(rect) 
+                            img = r.wait()
+                            stop = time.time()
+                            
+                            ims._layer.timePerTile(stop-start, rect)
+                            
+                            self._cache.updateTileIfNecessary( stack_id, ims, tile_no, time.time(), img )
+                            img = self._renderTile( stack_id, tile_no )
+                            self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible(), self._sims.viewOccluded() )
+                        else:
+                            req = (ims,
+                                   tile_no,
+                                   stack_id,
+                                   ims.request(self.tiling.imageRects[tile_no]),
+                                   time.time(),
+                                   self._cache)
+                            try:
+                                self._dirtyLayerQueue.put_nowait( req )
+                            except Full:
+                                warnings.warn("Request queue full. Dropping tile refresh request. Increase queue size!")
         except KeyError:
             pass
 

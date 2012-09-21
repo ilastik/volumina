@@ -72,13 +72,26 @@ class Layer( QObject ):
     def layerId( self, lid ):
         self._layerId = lid
 
-    def __init__( self ):
+    def timePerTile( self, timeSec, tileRect ):
+        """Update the average time per tile with new data: the tile of size tileRect took timeSec seonds"""
+        #compute cumulative moving average
+        self._numTiles += 1
+        self.averageTimePerTile = (timeSec + (self._numTiles-1)*self.averageTimePerTile) / self._numTiles
+
+    def __init__( self, direct=False ):
         super(Layer, self).__init__()
         self._name = "Unnamed Layer"
         self._visible = True
         self._opacity = 1.0
         self._datasources = []
         self._layerId = None
+        self.direct = direct
+        
+        if self.direct:
+            #in direct mode, we calculate the average time per tile for debug purposes
+            #this is useful to identify which of your layers cause slowness
+            self.averageTimePerTile = 0.0
+            self._numTiles = 0
 
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
@@ -122,8 +135,8 @@ class NormalizableLayer( Layer ):
         self._normalize[datasourceIdx] = value 
         self.normalizeChanged.emit(datasourceIdx, value[0], value[1])
 
-    def __init__( self ):
-        super(NormalizableLayer, self).__init__()
+    def __init__( self, direct=False ):
+        super(NormalizableLayer, self).__init__(direct=direct)
         self._normalize = []
         self._range = []
 
@@ -135,9 +148,9 @@ class NormalizableLayer( Layer ):
 #*******************************************************************************
 
 class GrayscaleLayer( NormalizableLayer ):
-    def __init__( self, datasource, range = (0,255), normalize = (0,255) ):
+    def __init__( self, datasource, range = (0,255), normalize = (0,255), direct=False ):
         assert isinstance(datasource, SourceABC)
-        super(GrayscaleLayer, self).__init__()
+        super(GrayscaleLayer, self).__init__(direct=direct)
         self._datasources = [datasource]
         self._normalize = [normalize]
         self._range = [range] 
@@ -185,9 +198,9 @@ class ColortableLayer( Layer ):
         self._colorTable = colorTable
         self.colorTableChanged.emit()
 
-    def __init__( self, datasource , colorTable):
+    def __init__( self, datasource , colorTable, direct=False):
         assert isinstance(datasource, SourceABC)
-        super(ColortableLayer, self).__init__()
+        super(ColortableLayer, self).__init__(direct=direct)
         self._datasources = [datasource]
         self._colorTable = colorTable
 

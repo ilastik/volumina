@@ -206,7 +206,7 @@ class LazyflowSource( QObject ):
         self._orig_outslot = outslot
 
         # Attach an Op5ifyer to ensure the data will display correctly
-        self._op5 = volumina.adaptors.Op5ifyer( outslot.graph )
+        self._op5 = volumina.adaptors.Op5ifyer( graph=outslot.graph )
         self._op5.input.connect( outslot )
 
         self._priority = priority

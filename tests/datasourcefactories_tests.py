@@ -35,7 +35,7 @@ class Test_DatasourceFactories(TestCase):
         self.dim = (10,)*5
         if hasLazyflow:
             self.g = Graph()
-            self.op = OpPiper(self.g)
+            self.op = OpPiper(graph=self.g)
         
     def test_lazyflowSource(self):
         if hasLazyflow:

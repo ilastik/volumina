@@ -222,7 +222,7 @@ class ExportDialog(QDialog):
             if self.radioButtonStack.isChecked():
                 key = self.createKeyForOutputShape()
                 if _has_lazyflow:
-                    writer = OpStackWriter(self.graph)
+                    writer = OpStackWriter(graph=self.graph)
                     writer.inputs["input"].connect(self.input)
                     writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
                     writer.inputs["dummy"].setValue(["zt"])
@@ -231,7 +231,7 @@ class ExportDialog(QDialog):
             if self.radioButtonH5.isChecked():
                 h5Key = self.createRoiForOutputShape()
                 if _has_lazyflow:
-                    writerH5 = OpH5Writer(self.graph)
+                    writerH5 = OpH5Writer(graph=self.graph)
                     writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
                     writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
                     writerH5.inputs["input"].connect(self.input)
