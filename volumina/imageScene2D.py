@@ -88,6 +88,14 @@ class ImageScene2D(QGraphicsScene):
     def showTileOutlines(self, show):
         self._showTileOutlines = show
         self.invalidate()
+        
+    @property
+    def showTileProgress(self):
+        return self._showTileProgress
+    @showTileOutlines.setter
+    def showTileProgress(self, show):
+        self._showTileProgress = show
+        self._dirtyIndicator.setVisible(show)
 
     @property
     def sceneShape(self):
@@ -157,6 +165,7 @@ class ImageScene2D(QGraphicsScene):
         self._stackedImageSources = StackedImageSources( LayerStackModel() )
         self._tileProvider = TileProvider( self._tiling, self._stackedImageSources)
         self._showTileOutlines = False
+        self._showTileProgress = True
 
     def __del__( self ):
         if self._tileProvider:
@@ -213,7 +222,8 @@ class ImageScene2D(QGraphicsScene):
                 painter.drawRect(self._tiling.imageRects[tileId])
     
     def indicateSlicingPositionSettled(self, settled):
-        self._dirtyIndicator.setVisible(settled)
+        if self._showTileProgress:
+            self._dirtyIndicator.setVisible(settled)
    
     def drawBackground(self, painter, rectF):
         if self._tileProvider is None:
@@ -224,7 +234,8 @@ class ImageScene2D(QGraphicsScene):
             # prevent flickering
             if not tile.progress < 1.0:
                 painter.drawImage(tile.rectF, tile.qimg)
-            self._dirtyIndicator.setTileProgress(tile.id, tile.progress) 
+            if self._showTileProgress:
+                self._dirtyIndicator.setTileProgress(tile.id, tile.progress) 
 
     def joinRendering( self ):
         return self._tileProvider.join()

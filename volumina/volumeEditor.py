@@ -40,6 +40,15 @@ class VolumeEditor( QObject ):
         for s in self.imageScenes:
             s.showTileOutlines = show
         self._showDebugPatches = show
+        
+    @property
+    def showTileProgress(self):
+        return self._showTileProgress
+    @showDebugPatches.setter
+    def showTileProgress(self, show):
+        for s in self.imageScenes:
+            s.showTileProgress = show
+        self._showTileProgress = show
 
     @property
     def cacheSize(self):
@@ -87,6 +96,7 @@ class VolumeEditor( QObject ):
         ## properties
         ##
         self._showDebugPatches = False
+        self._showTileProgress = True
         self._lastImageViewFocus = None
 
         ##
