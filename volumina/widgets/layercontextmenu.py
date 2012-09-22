@@ -1,6 +1,6 @@
 from functools import partial
-from PyQt4.QtCore import QPoint,pyqtSignal
-from PyQt4.QtGui import QMenu, QAction
+from PyQt4.QtCore import QPoint, pyqtSignal, Qt
+from PyQt4.QtGui import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem, QColor
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer
 from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
 from volumina.events import Event
@@ -72,14 +72,46 @@ def _add_actions_rgbalayer( layer, menu ):
     adjThresholdAction = QAction("Adjust thresholds", menu)
     adjThresholdAction.triggered.connect(adjust_thresholds_callback)
     menu.addAction(adjThresholdAction)
+ 
+class LayerColortableDialog(QDialog):
+    def __init__(self, layer, parent=None):
+        super(LayerColortableDialog, self).__init__(parent=parent)
+        
+        h = QHBoxLayout(self)
+        t = QTableWidget(self)
+        t.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)       
+        t.setRowCount(len(layer._colorTable))
+        t.setColumnCount(1)
+        t.setVerticalHeaderLabels(["%d" %i for i in range(len(layer._colorTable))])
+        
+        for i in range(len(layer._colorTable)): 
+            item = QTableWidgetItem(" ")
+            t.setItem(i,0, item);
+            item.setBackgroundColor(QColor.fromRgba(layer._colorTable[i]))
+            item.setFlags(Qt.ItemIsSelectable)
+        
+        h.addWidget(t)
+    
+def _add_actions_colortablelayer( layer, menu ): 
+    def adjust_colortable_callback():
+        dlg = LayerColortableDialog(layer, menu.parent())
+        dlg.exec_()
+        
+    adjColortableAction = QAction("Change colortable", menu)
+    adjColortableAction.triggered.connect(adjust_colortable_callback)
+    menu.addAction(adjColortableAction)
+    if layer.colortableIsRandom:
+        randomizeColors = QAction("Randomize colors", menu)
+        randomizeColors.triggered.connect(layer.randomizeColors)
+        menu.addAction(randomizeColors)
 
 def _add_actions( layer, menu ):
     if isinstance(layer, GrayscaleLayer):
         _add_actions_grayscalelayer( layer, menu )
     elif isinstance( layer, RGBALayer ):
         _add_actions_rgbalayer( layer, menu )
-    Event.trigger("layerContextMenuRequested", layer = layer, menu = menu)
-
+    elif isinstance( layer, ColortableLayer ):
+        _add_actions_colortablelayer( layer, menu )
 
 def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
     '''Show a context menu to manipulate properties of layer.

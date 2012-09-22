@@ -283,8 +283,6 @@ class LayerWidget(QListView):
         self.installEventFilter(self)
         #self.setDragDropOverwriteMode(False)
         self.model().selectionModel.selectionChanged.connect(self.onSelectionChanged)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.onContext)
         QTimer.singleShot(0, self.selectFirstEntry)
     
     def keyPressEvent(self, event):
@@ -308,12 +306,12 @@ class LayerWidget(QListView):
         self.updateGUI()
         QListView.resizeEvent(self, e)
     
-    def onContext(self, pos):        
-        idx = self.indexAt(pos)
+    def contextMenuEvent(self, event):        
+        idx = self.indexAt(event.pos())
         layer = self.model()[idx.row()]
         print "Context menu for layer '%s'" % layer.name
         
-        layercontextmenu( layer, self.mapToGlobal(pos), self )
+        layercontextmenu( layer, self.mapToGlobal(event.pos()), self )
             
     def selectFirstEntry(self):
         #self.setEditTriggers(QAbstractItemView.DoubleClicked)

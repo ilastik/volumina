@@ -4,6 +4,7 @@ from widgets.layerDialog import GrayscaleLayerDialog
 from widgets.layerDialog import RGBALayerDialog
 from volumina.pixelpipeline.datasourcefactories import createDataSource
 from volumina.pixelpipeline.asyncabcs import SourceABC
+import random, colorsys
 import numpy
 
 
@@ -198,13 +199,44 @@ class ColortableLayer( Layer ):
         self._colorTable = colorTable
         self.colorTableChanged.emit()
 
-    def __init__( self, datasource , colorTable, direct=False):
+    def _generateRandomColors(self, M=256, colormodel="hsv", clamp=None, zeroIsTransparent=False):
+        """Generate a colortable with M entries.
+           colormodel: currently only 'hsv' is supported
+           clamp:      A dictionary stating which parameters of the color in the colormodel are clamped to a certain
+                       value. For example: clamp = {'v': 1.0} will ensure that the value of any generated
+                       HSV color is 1.0. All other parameters (h,s in the example) are selected randomly
+                       to lie uniformly in the allowed range. """
+        r = numpy.random.random((M, 3))
+        if clamp is not None:
+            for k,v in clamp.iteritems():
+                idx = colormodel.index(k)
+                r[:,idx] = v
+    
+        colors = []
+        if colormodel == "hsv":
+            for i in range(M):
+                if zeroIsTransparent and i == 0:
+                    colors.append(QColor(0, 0, 0, 0).rgba())
+                else:
+                    h, s, v = r[i,:] 
+                    color = numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255
+                    qColor = QColor(*color)
+                    colors.append(qColor.rgba())
+            return colors
+        else:
+            raise RuntimeError("unknown color model '%s'" % colormodel)
+
+    def randomizeColors(self):
+        self.colorTable = self._generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
+
+    def __init__( self, datasource , colorTable, direct=False ):
         assert isinstance(datasource, SourceABC)
         super(ColortableLayer, self).__init__(direct=direct)
         self._datasources = [datasource]
         self._colorTable = colorTable
-
-
+        
+        self.colortableIsRandom = False
+        self.zeroIsTransparent  = False
 
 #*******************************************************************************
 # R G B A L a y e r                                                            *

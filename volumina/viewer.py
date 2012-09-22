@@ -138,7 +138,10 @@ class Viewer(QMainWindow):
         return layer
 
     def addRandomColorsLayer(self, a, name=None, direct=False):
-        return self.addColorTableLayer(a, name, colortable=None, direct=direct)
+        layer = self.addColorTableLayer(a, name, colortable=None, direct=direct)
+        layer.colortableIsRandom = True
+        layer.zeroIsTransparent = True
+        return layer
     
     def addColorTableLayer(self, a, name=None, colortable=None, direct=False):
         if colortable is None:
@@ -149,6 +152,23 @@ class Viewer(QMainWindow):
             layer.name = name
         self.layerstack.append(layer)
         return layer
+    
+    def addRelabelingColorTableLayer(self, a, name=None, relabeling=None, colortable=None, direct=False):
+        if colortable is None:
+            colortable = self._randomColors()
+        source = RelabelingArraySource(a)
+        if relabeling is None:
+            source.setRelabeling(numpy.zeros(numpy.max(a)+1, dtype=a.dtype))
+        else:
+            source.setRelabeling(relabeling)
+        if colortable is None:
+            colortable = [QColor(0,0,0,0).rgba(), QColor(255,0,0).rgba()]
+        layer = ColortableLayer(source, colortable, direct=direct)
+        layer.name = name 
+        layer.visible = True
+        layer.opacity = 0.3
+        self.layerstack.append(layer)
+        return (layer, source)
 
     def _randomColors(self, M=256):
         """Generates a pleasing color table with M entries."""
