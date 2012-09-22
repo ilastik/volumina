@@ -1,7 +1,7 @@
 import copy
 from volumina.multimethods import multimethod
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer, \
-                               AlphaModulatedLayer
+                               AlphaModulatedLayer, ClickableColortableLayer
 from imagesources import GrayscaleImageSource, ColortableImageSource, \
                          RGBAImageSource, AlphaModulatedImageSource
 from datasources import ConstantSource
@@ -24,6 +24,14 @@ def createImageSource( layer, datasources2d ):
     return src
 
 @multimethod(ColortableLayer, list)
+def createImageSource( layer, datasources2d ):
+    assert len(datasources2d) == 1
+    src = ColortableImageSource( datasources2d[0], layer )
+    src.setObjectName(layer.name)
+    layer.nameChanged.connect(lambda x: src.setObjectName(str(x)))
+    return src
+
+@multimethod(ClickableColortableLayer, list)
 def createImageSource( layer, datasources2d ):
     assert len(datasources2d) == 1
     src = ColortableImageSource( datasources2d[0], layer )

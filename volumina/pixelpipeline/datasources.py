@@ -110,8 +110,9 @@ class RelabelingArraySource( ArraySource ):
     isDirty = pyqtSignal( object )
     def __init__( self, array ):
         super(RelabelingArraySource, self).__init__(array)
+        self.originalData = array
         self._relabeling = None
-        
+    
     def setRelabeling( self, relabeling ):
         """Sets new relabeling vector. It should have a len(relabling) == max(your data)+1
            and give, for each possible data value x, the relabling as relabeling[x]."""   

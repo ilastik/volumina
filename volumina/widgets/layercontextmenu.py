@@ -1,7 +1,7 @@
 from functools import partial
 from PyQt4.QtCore import QPoint, pyqtSignal, Qt
 from PyQt4.QtGui import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem, QColor
-from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer
+from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
 from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
 from volumina.events import Event
 from exportDlg import ExportDialog
@@ -110,7 +110,7 @@ def _add_actions( layer, menu ):
         _add_actions_grayscalelayer( layer, menu )
     elif isinstance( layer, RGBALayer ):
         _add_actions_rgbalayer( layer, menu )
-    elif isinstance( layer, ColortableLayer ):
+    elif isinstance( layer, ColortableLayer ) or isinstance( layer, ClickableColortableLayer ):
         _add_actions_colortablelayer( layer, menu )
 
 def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):

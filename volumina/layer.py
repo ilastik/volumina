@@ -1,12 +1,13 @@
-from PyQt4.QtCore import QObject, pyqtSignal
+import random, colorsys
+import numpy
+
+from PyQt4.QtCore import QObject, pyqtSignal, QEvent, Qt
 from PyQt4.QtGui import QColor
+
 from widgets.layerDialog import GrayscaleLayerDialog
 from widgets.layerDialog import RGBALayerDialog
 from volumina.pixelpipeline.datasourcefactories import createDataSource
 from volumina.pixelpipeline.asyncabcs import SourceABC
-import random, colorsys
-import numpy
-
 
 #*******************************************************************************
 # L a y e r                                                                    *
@@ -73,6 +74,14 @@ class Layer( QObject ):
     def layerId( self, lid ):
         self._layerId = lid
 
+    def setActive( self, active ):
+        """This function is called whenever the layer is selected (active = True) or deselected (active = False)
+           by the user.
+           As an example, this can be used to enable a specific event interpreter when the layer is active
+           and to disable it when it is not active.
+           See ClickableColortableLayer for an example."""
+        pass
+
     def timePerTile( self, timeSec, tileRect ):
         """Update the average time per tile with new data: the tile of size tileRect took timeSec seonds"""
         #compute cumulative moving average
@@ -97,8 +106,69 @@ class Layer( QObject ):
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
         self.nameChanged.connect(self.changed)
+        
+#*******************************************************************************
+# C l i c k a b l e L a y e r                                                  *
+#*******************************************************************************
 
+class ClickInterpreter(QObject):
+    """Intercepts RIGHT CLICK and double click events on a layer and calls a given functor with the clicked
+       position."""
+       
+    def __init__(self, editor, layer, onClickFunctor, parent=None):
+        """ editor:         VolumeEditor object
+            layer:          Layer instance on which was clicked
+            onClickFunctor: a function f(layer, position5D, windowPosition
+        """
+        QObject.__init__(self, parent)
+        self.baseInterpret = editor.navInterpret
+        self.posModel      = editor.posModel
+        self._onClick = onClickFunctor
+        self._layer = layer
 
+    def start( self ):
+        self.baseInterpret.start()
+
+    def stop( self ):
+        self.baseInterpret.stop()
+
+    def eventFilter( self, watched, event ):
+        ctrl = False
+        etype = event.type()
+        if etype == QEvent.MouseButtonPress or etype == QEvent.MouseButtonDblClick:
+            ctrl = (event.modifiers() == Qt.ControlModifier)
+            rightButton = (event.button() == Qt.RightButton)
+            leftButton  = (event.button() == Qt.LeftButton)
+
+            if not rightButton:
+                return self.baseInterpret.eventFilter(watched, event)
+            
+            pos = self.posModel.cursorPos
+            pos = [int(i) for i in pos]
+            pos = [self.posModel.time] + pos + [self.posModel.channel]
+            self._onClick(self._layer, tuple(pos), event.pos())
+            return True
+        
+        return self.baseInterpret.eventFilter(watched, event)
+
+class ClickableLayer( Layer ):
+    """A layer that, when being activated/selected, switches to an interpreter than can intercept
+       right click events"""
+    def __init__( self, editor, clickFunctor, direct=False ):
+        super(ClickableLayer, self).__init__(direct=direct)
+        self._editor = editor
+        self._clickInterpreter = ClickInterpreter(editor, self, clickFunctor)
+        self._inactiveInterpreter = self._editor.eventSwitch.interpreter
+    
+    def setActive(self, active):
+        if active:
+            self._editor.eventSwitch.interpreter = self._clickInterpreter
+        else:
+            self._editor.eventSwitch.interpreter = self._inactiveInterpreter
+
+#*******************************************************************************
+# N o r m a l i z a b l e L a y e r                                            *
+#*******************************************************************************
 
 class NormalizableLayer( Layer ):
     '''
@@ -181,11 +251,36 @@ class AlphaModulatedLayer( NormalizableLayer ):
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
         
-
-
 #*******************************************************************************
 # C o l o r t a b l e L a y e r                                                *
 #*******************************************************************************
+
+def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=False):
+    """Generate a colortable with M entries.
+       colormodel: currently only 'hsv' is supported
+       clamp:      A dictionary stating which parameters of the color in the colormodel are clamped to a certain
+                   value. For example: clamp = {'v': 1.0} will ensure that the value of any generated
+                   HSV color is 1.0. All other parameters (h,s in the example) are selected randomly
+                   to lie uniformly in the allowed range. """
+    r = numpy.random.random((M, 3))
+    if clamp is not None:
+        for k,v in clamp.iteritems():
+            idx = colormodel.index(k)
+            r[:,idx] = v
+
+    colors = []
+    if colormodel == "hsv":
+        for i in range(M):
+            if zeroIsTransparent and i == 0:
+                colors.append(QColor(0, 0, 0, 0).rgba())
+            else:
+                h, s, v = r[i,:] 
+                color = numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255
+                qColor = QColor(*color)
+                colors.append(qColor.rgba())
+        return colors
+    else:
+        raise RuntimeError("unknown color model '%s'" % colormodel)
 
 class ColortableLayer( Layer ):
     colorTableChanged = pyqtSignal()
@@ -199,44 +294,43 @@ class ColortableLayer( Layer ):
         self._colorTable = colorTable
         self.colorTableChanged.emit()
 
-    def _generateRandomColors(self, M=256, colormodel="hsv", clamp=None, zeroIsTransparent=False):
-        """Generate a colortable with M entries.
-           colormodel: currently only 'hsv' is supported
-           clamp:      A dictionary stating which parameters of the color in the colormodel are clamped to a certain
-                       value. For example: clamp = {'v': 1.0} will ensure that the value of any generated
-                       HSV color is 1.0. All other parameters (h,s in the example) are selected randomly
-                       to lie uniformly in the allowed range. """
-        r = numpy.random.random((M, 3))
-        if clamp is not None:
-            for k,v in clamp.iteritems():
-                idx = colormodel.index(k)
-                r[:,idx] = v
-    
-        colors = []
-        if colormodel == "hsv":
-            for i in range(M):
-                if zeroIsTransparent and i == 0:
-                    colors.append(QColor(0, 0, 0, 0).rgba())
-                else:
-                    h, s, v = r[i,:] 
-                    color = numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255
-                    qColor = QColor(*color)
-                    colors.append(qColor.rgba())
-            return colors
-        else:
-            raise RuntimeError("unknown color model '%s'" % colormodel)
-
     def randomizeColors(self):
-        self.colorTable = self._generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
+        self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
 
     def __init__( self, datasource , colorTable, direct=False ):
         assert isinstance(datasource, SourceABC)
         super(ColortableLayer, self).__init__(direct=direct)
         self._datasources = [datasource]
+        self.data = datasource
         self._colorTable = colorTable
         
         self.colortableIsRandom = False
         self.zeroIsTransparent  = False
+        
+class ClickableColortableLayer(ClickableLayer):
+    colorTableChanged = pyqtSignal()
+    
+    def __init__( self, editor, clickFunctor, datasource , colorTable, direct=False ):
+        assert isinstance(datasource, SourceABC)
+        super(ClickableColortableLayer, self).__init__(editor, clickFunctor, direct=direct)
+        self._datasources = [datasource]
+        self._colorTable = colorTable
+        self.data = datasource
+        
+        self.colortableIsRandom = False
+        self.zeroIsTransparent  = False
+
+    @property
+    def colorTable( self ):
+        return self._colorTable
+
+    @colorTable.setter
+    def colorTable( self, colorTable ):
+        self._colorTable = colorTable
+        self.colorTableChanged.emit()
+
+    def randomizeColors(self):
+        self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
 
 #*******************************************************************************
 # R G B A L a y e r                                                            *

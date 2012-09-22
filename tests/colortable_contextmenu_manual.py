@@ -35,11 +35,18 @@ raw.shape = (1,)+raw.shape+(1,)
 
 l1 = v.addGrayscaleLayer(raw, name="raw", direct=True)
 l1.visible = direct
-colortable = [QColor(0,0,0,0).rgba(), QColor(255,0,0).rgba()]
-l2 = v.addColorTableLayer((raw>128).astype(numpy.uint8), name="thresh", colortable=colortable, direct=direct)
+colortable = [QColor(0,0,0,0).rgba(), QColor(255,0,0).rgba(), QColor(0,255,0).rgba(), QColor(0,0,255).rgba()]
+
+s = ((raw/64)).astype(numpy.uint8)
+def onClick(layer, pos5D, pos):
+    print "here i am: ", pos5D, s[pos5D]
+    
+l2 = v.addColorTableLayer(s, clickFunctor=onClick, name="thresh", colortable=colortable, direct=direct)
 l2.colortableIsRandom = True
 l2.zeroIsTransparent = True
-l2.visible = direct
+l2.visible = False
+
+v.addClickableSegmentationLayer(s, "click it", direct=True)
 
 v.show()
 app.exec_()

@@ -22,6 +22,7 @@ class LayerStackModel(QAbstractListModel):
         self._layerStack = []
         self.selectionModel = QItemSelectionModel(self)
         self.selectionModel.selectionChanged.connect(self.updateGUI)
+        self.selectionModel.selectionChanged.connect(self._onSelectionChanged)
         self._movingRows = False
         QTimer.singleShot(0, self.updateGUI)
 
@@ -239,3 +240,8 @@ class LayerStackModel(QAbstractListModel):
         self.dataChanged.emit(idx, idx)
         self.updateGUI()
         
+    def _onSelectionChanged(self, selected, deselected):
+        for idx in deselected.indexes():
+            self[idx.row()].setActive(False) 
+        for idx in selected.indexes():
+            self[idx.row()].setActive(True) 

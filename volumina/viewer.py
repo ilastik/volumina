@@ -143,17 +143,20 @@ class Viewer(QMainWindow):
         layer.zeroIsTransparent = True
         return layer
     
-    def addColorTableLayer(self, a, name=None, colortable=None, direct=False):
+    def addColorTableLayer(self, a, name=None, colortable=None, direct=False, clickFunctor=None):
         if colortable is None:
             colortable = self._randomColors()
         source,self.dataShape = createDataSource(a,True)
-        layer = ColortableLayer(source, colortable, direct=direct)
+        if clickFunctor is None:
+            layer = ColortableLayer(source, colortable, direct=direct)
+        else:
+            layer = ClickableColortableLayer(self.editor, clickFunctor, source, colortable, direct=direct)
         if name:
             layer.name = name
         self.layerstack.append(layer)
         return layer
     
-    def addRelabelingColorTableLayer(self, a, name=None, relabeling=None, colortable=None, direct=False):
+    def addRelabelingColorTableLayer(self, a, name=None, relabeling=None, colortable=None, direct=False, clickFunctor=None):
         if colortable is None:
             colortable = self._randomColors()
         source = RelabelingArraySource(a)
@@ -163,12 +166,50 @@ class Viewer(QMainWindow):
             source.setRelabeling(relabeling)
         if colortable is None:
             colortable = [QColor(0,0,0,0).rgba(), QColor(255,0,0).rgba()]
-        layer = ColortableLayer(source, colortable, direct=direct)
-        layer.name = name 
-        layer.visible = True
-        layer.opacity = 0.3
+        if clickFunctor is None:
+            layer = ColortableLayer(source, colortable, direct=direct)
+        else:
+            layer = ClickableColortableLayer(self.editor, clickFunctor, source, colortable, direct=direct)
+        if name:
+            layer.name = name 
         self.layerstack.append(layer)
         return (layer, source)
+    
+    def addClickableSegmentationLayer(self, a, name=None, direct=False):
+        M = a.max()
+        clickedObjects = dict() #maps from object to the label that is used for it
+        usedLabels = set()
+        def onClick(layer, pos5D, pos):
+            obj = layer.data.originalData[pos5D]
+            if obj in clickedObjects:
+                layer._datasources[0].setRelabelingEntry(obj, 0)
+                usedLabels.remove( clickedObjects[obj] )
+                del clickedObjects[obj]
+            else:
+                labels = sorted(list(usedLabels))
+                
+                #find first free entry
+                if labels:
+                    for l in range(1, labels[-1]+2):
+                        if l not in labels:
+                            break
+                    assert l not in usedLabels
+                else:
+                    l = 1
+               
+                usedLabels.add(l) 
+                clickedObjects[obj] = l
+                layer._datasources[0].setRelabelingEntry(obj, l)
+        
+        colortable = volumina.layer.generateRandomColors(1000, "hsv", {"v": 1.0}, zeroIsTransparent=True)
+             
+        layer, source = self.addRelabelingColorTableLayer(a, clickFunctor=onClick, name=None,
+            relabeling=numpy.zeros(M+1, dtype=a.dtype), colortable=colortable, direct=direct)
+        if name is not None:
+            layer.name = name
+        layer.zeroIsTransparent = True
+        layer.colortableIsRandom = True
+        return layer 
 
     def _randomColors(self, M=256):
         """Generates a pleasing color table with M entries."""
