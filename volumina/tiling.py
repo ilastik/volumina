@@ -157,15 +157,17 @@ class Tiling(object):
 
 class TiledImageLayer(object):
     def __init__(self, tiling):
-        self._imageTiles = []
-        for patchNr in range(len(tiling)):
-            self._imageTiles.append( ImageTile(tiling.imageRects[patchNr]) )
+        self._imageTiles = {}
+        self._tiling = tiling
+
     def __getitem__(self, i):
+        if i not in self._imageTiles.keys():
+            self._imageTiles[i] = ImageTile(self._tiling.imageRects[i])
         return self._imageTiles[i]
+
     def __iter__(self):
-        return self._imageTiles.__iter__()
-
-
+        for i in range(len(self._tiling)):
+            yield self[i]
 
 class _MultiCache( object ):
     def __init__( self, first_uid, default_factory=lambda:None, maxcaches=None ):
