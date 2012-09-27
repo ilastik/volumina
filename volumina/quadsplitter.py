@@ -148,7 +148,7 @@ class QuadView(QWidget):
         
         #this is a hack: with 0 ms it does not work...
         QTimer.singleShot(250, self._resizeEqual)
-
+        
     def _resizeEqual(self):
         if not all( [dock.isVisible() for dock in self.dockableContainer] ):
             return
@@ -215,9 +215,9 @@ class QuadView(QWidget):
         """
         Maximize the view for the given axis if it isn't already maximized.
         """
-        axisDict = { 0 : self.dock1_ofSplitHorizontal1,
-                     1 : self.dock1_ofSplitHorizontal2,
-                     2 : self.dock2_ofSplitHorizontal1 }
+        axisDict = { 0 : self.dock2_ofSplitHorizontal1,  # x
+                     1 : self.dock1_ofSplitHorizontal2,  # y
+                     2 : self.dock1_ofSplitHorizontal1 } # z
         
         if not axisDict[axis]._isMaximized:
             self.switchMinMax(axis)
