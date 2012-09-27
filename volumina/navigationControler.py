@@ -158,7 +158,7 @@ class NavigationInterpreter(QObject):
         
     def onMouseDoubleClick_default( self, imageview, event ):
         dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
-        self._navCtrl.positionSlice(dataMousePos.x(), dataMousePos.y(), self._navCtrl._views.index(imageview))
+        self._navCtrl.navigateToPoint(dataMousePos.x(), dataMousePos.y(), self._navCtrl._views.index(imageview))
 
     ###
     ### Drag Mode
@@ -257,7 +257,7 @@ class NavigationControler(QObject):
     def moveCrosshair(self, newPos, oldPos):
         self._updateCrossHairCursor()
 
-    def positionSlice(self, x, y, axis):
+    def navigateToPoint(self, x, y, axis):
         newPos = copy.copy(self._model.slicingPos)
         i,j = posView2D([0,1,2], axis)
         newPos[i] = x
@@ -268,6 +268,14 @@ class NavigationControler(QObject):
             return
         
         self._model.slicingPos = newPos
+        
+        # Center the other two views on the new point
+        for otherAxis, view in enumerate(self._views):
+            if otherAxis != axis:
+                pos2d = posView2D(newPos, otherAxis)
+                dataPoint = QPointF( *pos2d )
+                scenePoint = view.scene().data2scene.map(dataPoint)
+                view.centerOn( scenePoint )
     
     def moveSlicingPosition(self, newPos, oldPos):
         for i in range(3):
