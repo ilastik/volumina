@@ -10,6 +10,9 @@ install:
    - ln -s /usr/lib/python2.7/dist-packages/sipconfig_nd.py $VIRTUAL_ENV/lib/python2.7/site-packages/
    - pip install -r requirements/development-stage1.txt --use-mirrors
    - pip install -r requirements/development-stage2.txt --use-mirrors
+   - mkdir ~/.lazyflow
+   - echo "[verbosity]" > ~/.lazyflow/config
+   - echo "deprecation_warnings = false" >> ~/.lazyflow/config
 before_script:
    - "export DISPLAY=:99.0"
    - "sh -e /etc/init.d/xvfb start"

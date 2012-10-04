@@ -148,7 +148,7 @@ class QuadView(QWidget):
         
         #this is a hack: with 0 ms it does not work...
         QTimer.singleShot(250, self._resizeEqual)
-
+        
     def _resizeEqual(self):
         if not all( [dock.isVisible() for dock in self.dockableContainer] ):
             return
@@ -211,6 +211,17 @@ class QuadView(QWidget):
     def setMouseCoordsToQuadStatusBar(self, x, y, z):
         self.quadViewStatusBar.setMouseCoords(x, y, z) 
 
+    def ensureMaximized(self, axis):
+        """
+        Maximize the view for the given axis if it isn't already maximized.
+        """
+        axisDict = { 0 : self.dock2_ofSplitHorizontal1,  # x
+                     1 : self.dock1_ofSplitHorizontal2,  # y
+                     2 : self.dock1_ofSplitHorizontal1 } # z
+        
+        if not axisDict[axis]._isMaximized:
+            self.switchMinMax(axis)
+
     def switchMinMax(self,axis):
         """Switch an AxisViewWidget between from minimized to maximized and vice
         versa.
@@ -225,13 +236,15 @@ class QuadView(QWidget):
         
         #TODO: get the mapping information from where it is set! if this is not
         #done properly - do it properly
-        
+
         if type(axis) == str:
-            axisDict = dict([('z',self.dock1_ofSplitHorizontal1),('x',self.dock2_ofSplitHorizontal1), \
-                    ('y',self.dock1_ofSplitHorizontal2)])
+            axisDict = { 'x' : self.dock2_ofSplitHorizontal1,  # x
+                         'y' : self.dock1_ofSplitHorizontal2,  # y
+                         'z' : self.dock1_ofSplitHorizontal1 } # z
         elif type(axis) == int:
-            axisDict = dict([(0,self.dock1_ofSplitHorizontal1),(2,self.dock2_ofSplitHorizontal1), \
-                    (1,self.dock1_ofSplitHorizontal2)])
+            axisDict = { 0 : self.dock2_ofSplitHorizontal1,  # x
+                         1 : self.dock1_ofSplitHorizontal2,  # y
+                         2 : self.dock1_ofSplitHorizontal1 } # z
 
         dockWidget = axisDict.pop(axis)
         for dWidget in axisDict.values():
