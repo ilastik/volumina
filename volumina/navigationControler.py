@@ -106,7 +106,7 @@ class NavigationInterpreter(QObject):
         sceneMousePos = imageview.mapToScene(event.pos())
         grviewCenter = imageview.mapToScene(imageview.viewport().rect().center())
 
-        if event.delta() > 0:
+        if event.delta() < 0:
             if k_shift_alt:
                 navCtrl.changeTimeRelative(-10)                
             elif k_alt:
