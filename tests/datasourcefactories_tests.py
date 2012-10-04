@@ -39,8 +39,10 @@ class Test_DatasourceFactories(TestCase):
         
     def test_lazyflowSource(self):
         if hasLazyflow:
+            import vigra
             for i in range(2,6):
-                array = rand(*self.dim[:i])
+                array = rand(*self.dim[:i]).view(vigra.VigraArray)
+                array.axistags = vigra.defaultAxistags('txyzc'[:i])
                 self.op.inputs["Input"].setValue(array)
                 source = createDataSource(self.op.outputs["Output"])
                 self.assertEqual(type(source), LazyflowSource, 'Resulting datatype is not as expected')
@@ -58,3 +60,7 @@ class Test_DatasourceFactories(TestCase):
     #yet to implement    
 #    def test_folderSource(self):
 #        pass
+
+if __name__=="__main__":
+    import unittest
+    unittest.main()
