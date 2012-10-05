@@ -40,6 +40,11 @@ class Layer( QObject ):
             self._visible = value
             self.visibleChanged.emit( value )
 
+    def toggleVisible(self):
+        """Convenience function."""
+        print "TOGGLING VISIBILITY"
+        self.visible = not self._visible
+
     @property
     def opacity( self ):
         return self._opacity
@@ -88,6 +93,12 @@ class Layer( QObject ):
         self._numTiles += 1
         self.averageTimePerTile = (timeSec + (self._numTiles-1)*self.averageTimePerTile) / self._numTiles
 
+    def toolTip(self):
+        return self._toolTip
+
+    def setToolTip(self, tip):
+        self._toolTip = tip
+
     def __init__( self, direct=False ):
         super(Layer, self).__init__()
         self._name = "Unnamed Layer"
@@ -96,6 +107,7 @@ class Layer( QObject ):
         self._datasources = []
         self._layerId = None
         self.direct = direct
+        self._toolTip = ""
         
         if self.direct:
             #in direct mode, we calculate the average time per tile for debug purposes
