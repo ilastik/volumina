@@ -96,14 +96,9 @@ class LayerStackModel(QAbstractListModel):
         if row.row() != 0:
             oldRow = row.row()
             newRow = oldRow - 1
-            d = self._layerStack[oldRow]
-            self.removeRow(oldRow)
-            self.insertRow(newRow)
-            self.setData(self.index(newRow), d)
-            self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
-            self.orderChanged.emit()
-            self.updateGUI()
+            self._moveToRow(oldRow, newRow)
     
+
     @pyqtSignature("moveSelectedDown()")
     def moveSelectedDown(self):
         assert len(self.selectionModel.selectedRows()) == 1
@@ -111,14 +106,34 @@ class LayerStackModel(QAbstractListModel):
         if row.row() != self.rowCount() - 1:
             oldRow = row.row()
             newRow = oldRow + 1
-            d = self._layerStack[oldRow]
-            self.removeRow(oldRow)
-            self.insertRow(newRow)
-            self.setData(self.index(newRow), d)
-            self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
-            self.orderChanged.emit()
-            self.updateGUI()
-       
+            self._moveToRow(oldRow, newRow)
+            
+    @pyqtSignature("moveSelectedToTop()")
+    def moveSelectedToTop(self):
+        assert len(self.selectionModel.selectedRows()) == 1
+        row = self.selectionModel.selectedRows()[0]
+        if row.row() != 0:
+            oldRow = row.row()
+            newRow = 0
+            self._moveToRow(oldRow, newRow)
+    
+    @pyqtSignature("moveSelectedToBottom()")
+    def moveSelectedToBottom(self):
+        assert len(self.selectionModel.selectedRows()) == 1
+        row = self.selectionModel.selectedRows()[0]
+        if row.row() != self.rowCount() - 1:
+            oldRow = row.row()
+            newRow = self.rowCount() - 1
+            self._moveToRow(oldRow, newRow)
+
+    def _moveToRow(self, oldRow, newRow):
+        d = self._layerStack[oldRow]
+        self.removeRow(oldRow)
+        self.insertRow(newRow)
+        self.setData(self.index(newRow), d)
+        self.selectionModel.select(self.index(newRow), QItemSelectionModel.Select)
+        self.orderChanged.emit()
+        self.updateGUI()
     ####
     ## Low level API. To add, remove etc. layers use the high level API from above.
     ####
@@ -199,7 +214,7 @@ class LayerStackModel(QAbstractListModel):
     
     def supportedDropActions(self):
         return Qt.MoveAction
-    
+
     def data(self, index, role = Qt.DisplayRole):
         if not index.isValid():
             return None
@@ -208,8 +223,10 @@ class LayerStackModel(QAbstractListModel):
         
         if role == Qt.DisplayRole or role == Qt.EditRole:
             return self._layerStack[index.row()]
-        
-        return None
+        elif role == Qt.ToolTipRole:
+            return self._layerStack[index.row()].toolTip()
+        else:
+            return None
     
     def setData(self, index, value, role = Qt.EditRole):
         '''Replace one layer with another. 
@@ -218,12 +235,18 @@ class LayerStackModel(QAbstractListModel):
         Use deleteSelected() followed by insert() or append().
         
         '''
-        layer = value
-        if not isinstance(value, Layer):
-            layer = value.toPyObject()
-        self._layerStack[index.row()] = layer
-        self.dataChanged.emit(index, index)
-        return True
+        if role == Qt.EditRole:
+            layer = value
+            if not isinstance(value, Layer):
+                layer = value.toPyObject()
+            self._layerStack[index.row()] = layer
+            self.dataChanged.emit(index, index)
+            return True
+        elif role == Qt.ToolTipRole:
+            self._layerStack[index.row()].setToolTip()
+            return True
+        return False
+            
     
     def headerData(self, section, orientation, role = Qt.DisplayRole):
         if role != Qt.DisplayRole:
