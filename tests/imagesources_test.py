@@ -23,6 +23,9 @@ class _ArraySource2d( ArraySource ):
         super(_ArraySource2d, self).__init__( array )
         self.id = id(self)
 
+    def request( self, slicing, through=None):
+        return super(_ArraySource2d, self).request( slicing )
+
 
 #*******************************************************************************
 # G r a y s c a l e I m a g e S o u r c e T e s t 

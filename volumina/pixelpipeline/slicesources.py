@@ -85,9 +85,10 @@ class SliceSource( QObject ):
         through[index] = value
         self.through = through
 
-    def request( self, slicing2D ):
+    def request( self, slicing2D, through=None ):
         assert len(slicing2D) == 2
-        slicing = self.sliceProjection.domain(self.through, slicing2D[0], slicing2D[1])
+        through = through if through else self.through 
+        slicing = self.sliceProjection.domain(through, slicing2D[0], slicing2D[1])
         
         if volumina.verboseRequests:
             volumina.printLock.acquire()
