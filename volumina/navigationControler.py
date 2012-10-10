@@ -112,7 +112,7 @@ class NavigationInterpreter(QObject):
             elif k_alt:
                 navCtrl.changeSliceRelative(-10, navCtrl._views.index(imageview))
             elif k_ctrl:
-                scaleFactor = 1.1
+                scaleFactor = 0.9
                 imageview.doScale(scaleFactor)
             elif k_shift:
                 navCtrl.changeTimeRelative(-1)
@@ -124,7 +124,7 @@ class NavigationInterpreter(QObject):
             elif k_alt:
                 navCtrl.changeSliceRelative(10, navCtrl._views.index(imageview))
             elif k_ctrl:
-                scaleFactor = 0.9
+                scaleFactor = 1.1
                 imageview.doScale(scaleFactor)
             elif k_shift:
                 navCtrl.changeTimeRelative(1)
