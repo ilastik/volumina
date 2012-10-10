@@ -42,7 +42,6 @@ class Layer( QObject ):
 
     def toggleVisible(self):
         """Convenience function."""
-        print "TOGGLING VISIBILITY"
         self.visible = not self._visible
 
     @property
