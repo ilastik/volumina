@@ -1,7 +1,7 @@
 from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
                         QAbstractItemView, QPainter, QItemSelectionModel, \
                         QColor, QMenu, QAction, QFontMetrics, QFont, QImage, \
-                        QBrush, QPalette
+                        QBrush, QPalette, QMouseEvent
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, \
                          QPoint 
                          
@@ -18,7 +18,7 @@ _icondir = path.dirname(volumina.resources.icons.__file__)
 #*******************************************************************************
 
 class LayerPainter( object ):
-    def __init__(self ):
+    def __init__(self):
         self.layer = None
         
         self.rect = QRect()
@@ -48,12 +48,16 @@ class LayerPainter( object ):
         #the layer
         return QPoint(x,y) in QRect(self.iconXOffset,0,self.iconSize,100)
 
-    def percentForPosition(self, x, y, checkBoundaries=True):
+    def percentForPosition(self, x, y, parentWidth, checkBoundaries=True):
+        """
+        For some strange reason, self.rect.width() is sometimes 0 when this is called.
+        For that reason, we can't use self._progressWidth and we must pass in the parentWidth as an argument.
+        """
         if checkBoundaries and (y < self.progressYOffset or y > self.progressYOffset + self.progressHeight) \
                            or  (x < self.progressXOffset):
             return -1
         
-        percent = (x-self.progressXOffset)/float(self._progressWidth)
+        percent = (x-self.progressXOffset)/float(parentWidth-self.progressXOffset-10)
         if percent < 0:
             return 0.0
         if percent > 1:
@@ -138,7 +142,8 @@ class LayerDelegate(QStyledItemDelegate):
         self.currentIndex = -1
         self._view = layersView
         self._layerPainter = LayerPainter()
-
+        self._editors = {}
+        
         #whether to draw all layers expanded
         self.expandAll = True
     
@@ -178,7 +183,9 @@ class LayerDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            return LayerEditor(parent)
+            editor = LayerEditor(parent)
+            self._editors[layer] = editor
+            return editor
         else:
             QStyledItemDelegate.createEditor(self, parent, option, index)
         
@@ -239,7 +246,7 @@ class LayerEditor(QWidget):
         
     def mouseMoveEvent(self, event):
         if self.lmbDown:
-            opacity = self._layerPainter.percentForPosition(event.x(), event.y(), checkBoundaries=False)
+            opacity = self._layerPainter.percentForPosition(event.x(), event.y(), self.rect().width(), checkBoundaries=False)
             if opacity >= 0:
                 self.layer.opacity = opacity
                 self.update()
@@ -254,7 +261,7 @@ class LayerEditor(QWidget):
             self._layer.visible = not self._layer.visible
             self.update()
         
-        opacity = self._layerPainter.percentForPosition(event.x(), event.y())
+        opacity = self._layerPainter.percentForPosition(event.x(), event.y(), self.rect().width())
         if opacity >= 0:
             self._layer.opacity = opacity
             self.update()
@@ -274,10 +281,11 @@ class LayerWidget(QListView):
         if model is None:
             model = LayerStackModel()
         self.init(model)
-
+        
     def init(self, listModel):
         self.setModel(listModel)
-        self.setItemDelegate(LayerDelegate( self ))
+        self._itemDelegate = LayerDelegate( self )
+        self.setItemDelegate(self._itemDelegate)
         self.setSelectionModel(listModel.selectionModel)
         #self.setDragDropMode(self.InternalMove)
         self.installEventFilter(self)
@@ -315,7 +323,6 @@ class LayerWidget(QListView):
             
     def selectFirstEntry(self):
         #self.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.setEditTriggers(QAbstractItemView.CurrentChanged)
         self.model().selectionModel.setCurrentIndex(self.model().index(0), QItemSelectionModel.SelectCurrent)
         self.updateGUI()
     
@@ -337,6 +344,23 @@ class LayerWidget(QListView):
     def onOrderChanged(self):
         self.updateGUI()
 
+    def mousePressEvent(self, event):
+        print event.type()
+        prevIndex = self.model().selectedIndex()
+        newIndex = self.indexAt( event.pos() )
+        super(LayerWidget, self).mousePressEvent(event)
+        
+        # HACK: The first click merely gives focus to the list item without actually passing the event to it.
+        # We'll simulate a mouse click on the item by calling mousePressEvent() and mouseReleaseEvent on the appropriate editor
+        if prevIndex != newIndex:
+            layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
+            assert isinstance(layer, Layer)
+            editor = self._itemDelegate._editors[layer]
+            editorPos = event.pos() - editor.geometry().topLeft()
+            editorPress = QMouseEvent( QMouseEvent.MouseButtonPress, editorPos, event.button(), event.buttons(), event.modifiers() )
+            editor.mousePressEvent(editorPress)
+            editorRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, editorPos, event.button(), event.buttons(), event.modifiers() )
+            editor.mouseReleaseEvent(editorRelease)
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
