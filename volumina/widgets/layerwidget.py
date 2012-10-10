@@ -317,7 +317,7 @@ class LayerWidget(QListView):
     def contextMenuEvent(self, event):        
         idx = self.indexAt(event.pos())
         layer = self.model()[idx.row()]
-        print "Context menu for layer '%s'" % layer.name
+        #print "Context menu for layer '%s'" % layer.name
         
         layercontextmenu( layer, self.mapToGlobal(event.pos()), self )
             
@@ -345,7 +345,6 @@ class LayerWidget(QListView):
         self.updateGUI()
 
     def mousePressEvent(self, event):
-        print event.type()
         prevIndex = self.model().selectedIndex()
         newIndex = self.indexAt( event.pos() )
         super(LayerWidget, self).mousePressEvent(event)
