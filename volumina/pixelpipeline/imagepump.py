@@ -31,7 +31,6 @@ class StackedImageSources( QObject ):
     sizeChanged  = pyqtSignal()
     orderChanged = pyqtSignal()
     stackIdChanged = pyqtSignal( object, object ) # old id, new id
-    layerIdChanged = pyqtSignal( object, object, object ) # ims, old id, new id
 
     @property
     def stackId( self ):
@@ -158,12 +157,10 @@ class StackedImageSources( QObject ):
         self._curryRegistry['I'][imageSource] = partial(self._onImageSourceDirty, imageSource)
         self._curryRegistry['O'][layer] = partial(self._onOpacityChanged, layer)
         self._curryRegistry['V'][layer] = partial(self._onVisibleChanged, layer)
-        self._curryRegistry['Id'][imageSource] = partial(self._onImageSourceIdChanged, imageSource)
 
         imageSource.isDirty.connect( self._curryRegistry['I'][imageSource] ) 
         layer.opacityChanged.connect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.connect( self._curryRegistry['V'][layer] )
-        imageSource.idChanged.connect( self._curryRegistry['Id'][imageSource] )
 
         self._updateOcclusionInfo()
         self.sizeChanged.emit()
@@ -216,9 +213,6 @@ class StackedImageSources( QObject ):
     def _onImageSourceDirty( self, imageSource, rect ):
         self.layerDirty.emit( imageSource, rect )
 
-    def _onImageSourceIdChanged( self, imageSource, oldId, newId ):
-        self.layerIdChanged.emit( imageSource, oldId, newId )
-
     def _onOpacityChanged( self, layer, opacity ):
         self._updateOcclusionInfo()
         self.opacityChanged.emit(self._layerToIms[layer], opacity)
@@ -248,12 +242,10 @@ class StackedImageSources( QObject ):
         ims.isDirty.disconnect( self._curryRegistry['I'][ims] )
         layer.opacityChanged.disconnect( self._curryRegistry['O'][layer] )
         layer.visibleChanged.disconnect( self._curryRegistry['V'][layer] )
-        ims.idChanged.disconnect( self._curryRegistry['Id'][ims] )
         
         del self._curryRegistry['I'][ims]
         del self._curryRegistry['O'][layer]
         del self._curryRegistry['V'][layer]
-        del self._curryRegistry['Id'][ims]
 
         del self._imsToLayer[ims]
         del self._layerToIms[layer]

@@ -17,12 +17,6 @@ from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer
 
 
 class _ArraySource2d( ArraySource ):
-    idChanged = pyqtSignal( object, object )
-
-    def __init__( self, array ):
-        super(_ArraySource2d, self).__init__( array )
-        self.id = id(self)
-
     def request( self, slicing, through=None):
         return super(_ArraySource2d, self).request( slicing )
 
