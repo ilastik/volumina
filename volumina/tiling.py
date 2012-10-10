@@ -11,7 +11,6 @@ from PyQt4.QtCore import QRect, QRectF, QMutex, QPointF, Qt, QSizeF, QObject, py
 from PyQt4.QtGui import QImage, QPainter, QTransform
 
 from patchAccessor import PatchAccessor
-from imageSceneRendering import ImageSceneRenderThread
 
 
 
