@@ -105,7 +105,7 @@ class StackedImageSources( QObject ):
         layerStackModel.orderChanged.connect( self._onOrderChanged )
         layerStackModel.layerRemoved.connect( self._onLayerRemoved )
 
-        self._stackId = 0
+        self._stackId = (None, (0,0,0))
 
     def __len__( self ):
         return len([ _ for _ in self])

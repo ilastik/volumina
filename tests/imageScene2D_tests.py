@@ -7,6 +7,7 @@ from qimage2ndarray import byte_view
 import numpy as np
 
 from volumina.imageScene2D import ImageScene2D
+from volumina.positionModel import PositionModel
 from volumina.pixelpipeline.datasources import ConstantSource
 from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.layerstack import LayerStackModel
@@ -28,7 +29,7 @@ class ImageScene2DTest( ut.TestCase ):
         del cls.app
 
     def testSceneShapeProperty( self ):
-        scene = ImageScene2D()
+        scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
         self.assertEqual(scene.sceneShape, (0,0))
         SHAPE1 = (24,77)
         scene.sceneShape = SHAPE1
@@ -41,7 +42,7 @@ class ImageScene2DTest( ut.TestCase ):
         self.assertEqual(scene.sceneShape, SHAPE3)
 
     def testStackedImageSourcesProperty( self ):
-        s = ImageScene2D()
+        s = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
         self.assertEqual(len(s.stackedImageSources), 0)
 
         sims = StackedImageSources( LayerStackModel() )
@@ -73,7 +74,7 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         self.ims = imsfac.createImageSource( self.layer, [self.ds] )
         self.sims.register(self.layer, self.ims)
         
-        self.scene = ImageScene2D() 
+        self.scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0) 
         self.scene.stackedImageSources = self.sims
         self.scene.sceneShape = (310,290)
 
