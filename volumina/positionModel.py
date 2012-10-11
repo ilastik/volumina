@@ -45,6 +45,14 @@ class PositionModel(QObject):
         self.time        = self._time
         self.channel     = self._channel
 
+    @property
+    def slicingPos5D(self):
+        return [self._time,
+                self._slicingPos[0],
+                self._slicingPos[1],
+                self._slicingPos[2],
+                self._channel]
+
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
         
