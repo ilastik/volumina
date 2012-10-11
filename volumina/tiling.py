@@ -532,7 +532,7 @@ class TileProvider( QObject ):
                             img = ims_req.wait()
                             stop = time.time()
                             
-                            ims._layer.timePerTile(stop-start, rect)
+                            ims._layer.timePerTile(stop-start, self.tiling.imageRects[tile_no])
                             
                             self._cache.updateTileIfNecessary( stack_id, ims, tile_no, time.time(), img )
                             img = self._renderTile( stack_id, tile_no )
