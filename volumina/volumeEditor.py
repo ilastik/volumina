@@ -103,16 +103,18 @@ class VolumeEditor( QObject ):
         ## base components
         ##
         self.layerStack = layerStackModel
-        self.imageScenes = [ImageScene2D(), ImageScene2D(), ImageScene2D()]
+        self.posModel = PositionModel()
+        self.brushingModel = BrushingModel()
+
+        self.imageScenes = [ImageScene2D(self.posModel, (0,1,4)),
+                            ImageScene2D(self.posModel, (0,2,4)),
+                            ImageScene2D(self.posModel, (0,3,4))]
         self.imageViews = [ImageView2D(self.imageScenes[i]) for i in [0,1,2]]
         self.imageViews[0].focusChanged.connect(lambda arg=0 : self.lastImageViewFocus(arg))
         self.imageViews[1].focusChanged.connect(lambda arg=1 : self.lastImageViewFocus(arg))
         self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg)) 
         
         self.imagepumps = self._initImagePumps()
-
-        self.posModel = PositionModel()
-        self.brushingModel = BrushingModel()
 
         self.view3d = self._initView3d() if useVTK else QWidget()
 
@@ -121,7 +123,7 @@ class VolumeEditor( QObject ):
             scene.setObjectName(name)
             scene.stackedImageSources = pump.stackedImageSources
 
-        self.cacheSize = 10
+        self.cacheSize = 50
 
         ##
         ## interaction

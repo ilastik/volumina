@@ -145,18 +145,35 @@ class ImageScene2D(QGraphicsScene):
         if cache_size != self._tileProvider._cache_size:
             self._tileProvider = TileProvider(self._tiling, self._stackedImageSources, cache_size=cache_size)
             self._tileProvider.changed.connect(self.invalidateViewports)
+    def cacheSize( self ):
+        return self._tileProvider._cache_size
 
+    def setPreemptiveFetchNumber( self, n ):
+        if n > self.cacheSize() - 1:
+            self._n_preemptive = self.cacheSize() - 1
+        else:
+            self._n_preemptive = n
+    def preemptiveFetchNumber( self ):
+        return self._n_preemptive
+
+        
     def invalidateViewports( self, rectF ):
         '''Call invalidate on the intersection of all observing viewport-rects and rectF.'''
         rectF = rectF if rectF.isValid() else self.sceneRect()
         for view in self.views():
             QGraphicsScene.invalidate( self, rectF.intersected(view.viewportRect()) )        
 
-    def __init__( self, parent=None ):
+    def __init__( self, posModel, along, preemptive_fetch_number=5, parent=None ):
+        '''
+        preemtive_fetch_number -- number of prefetched slices; 0 turns the feature off
+        '''
         QGraphicsScene.__init__( self, parent=parent )
 
         self.data2scene = QTransform(0,1,1,0,0,0) 
         self.scene2data = self.data2scene.transposed()
+
+        self._along = along
+        self._posModel = posModel
 
         self._tiling = Tiling((0,0), self.data2scene)
         self._brushingLayer  = TiledImageLayer(self._tiling)
@@ -166,6 +183,15 @@ class ImageScene2D(QGraphicsScene):
         self._tileProvider = TileProvider( self._tiling, self._stackedImageSources)
         self._showTileOutlines = False
         self._showTileProgress = True
+
+        # BowWave preemtive caching
+        self.setPreemptiveFetchNumber( preemptive_fetch_number )
+        self._course = (1,1) # (along, pos or neg direction)
+        self._time = self._posModel.time
+        self._channel = self._posModel.channel
+        self._posModel.timeChanged.connect( self._onTimeChanged )
+        self._posModel.channelChanged.connect( self._onChannelChanged )
+        self._posModel.slicingPositionChanged.connect( self._onSlicingPositionChanged )
 
     def __del__( self ):
         if self._tileProvider:
@@ -237,5 +263,47 @@ class ImageScene2D(QGraphicsScene):
             if self._showTileProgress:
                 self._dirtyIndicator.setTileProgress(tile.id, tile.progress) 
 
+        # preemtive fetching
+        for through in self._bowWave( self._n_preemptive ):
+            self._tileProvider.prefetch(rectF, through)
+
     def joinRendering( self ):
         return self._tileProvider.join()
+
+    def _bowWave( self, n ):
+        shape5d = self._posModel.shape5D
+        sl5d = self._posModel.slicingPos5D
+        through = [sl5d[self._along[i]] for i in xrange(3)]
+        t_max = [shape5d[self._along[i]] for i in xrange(3)]
+
+        BowWave = []
+
+        a = self._course[0]
+        for d in xrange(1,n+1):
+            m = through[a] + d * self._course[1]
+            if m < t_max[a] and m >= 0:
+                t = list(through)
+                t[a] = m
+                BowWave.append( tuple(t) )
+        return BowWave
+
+    def _onSlicingPositionChanged( self, new, old ):
+        if (new[self._along[1] - 1] - old[self._along[1] - 1]) < 0:
+            self._course = (1, -1)
+        else:
+            self._course = (1, 1)
+
+    def _onChannelChanged( self, new ):
+        if (new - self._channel) < 0:
+            self._course = (2, -1)
+        else:
+            self._course = (2, 1)
+        self._channel = new
+
+    def _onTimeChanged( self, new ):
+        if (new - self._time) < 0:
+            self._course = (0, -1)
+        else:
+            self._course = (0, 1)
+        self._time = new
+
