@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from PyQt4.QtCore import Qt, QTimer, QRectF, QEvent
+from PyQt4.QtCore import Qt, QTimer, QRectF, QEvent, QObject, QTimerEvent
 from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, \
                         QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, \
-                        QColor, QSizePolicy, QAction, QIcon
+                        QColor, QSizePolicy, QAction, QIcon, QSpinBox
 
 import numpy, copy
 from functools import partial
@@ -15,10 +15,15 @@ from pixelpipeline.datasources import ArraySource, LazyflowSinkSource
 from volumeEditor import VolumeEditor
 import volumina.icons_rc
 
-#*******************************************************************************
-# V o l u m e E d i t o r W i d g e t                                          *
-#*******************************************************************************
 
+
+class __TimerEventEater( QObject ):
+    def eventFilter( self, obj, ev ):
+        if isinstance(obj, QSpinBox) and isinstance(ev, QTimerEvent):
+            return True
+        return False
+_timerEater = __TimerEventEater()
+        
 class VolumeEditorWidget(QWidget):
     def __init__( self, parent=None, editor=None ):
         super(VolumeEditorWidget, self).__init__(parent=parent)
@@ -105,8 +110,27 @@ class VolumeEditorWidget(QWidget):
         self.quadview.addStatusBar(self.quadViewStatusBar)
         self.layout.addWidget(self.quadview)
 
+        ## Why do we have to prevent TimerEvents reaching the SpinBoxes?
+        #
+        # Sometimes clicking a SpinBox once caused the value to increase by
+        # two. This is why:
+        #
+        # When a MouseClicked event is received by the SpinBox it fires a timerevent to control
+        # the repeated increase of the value as long as the mouse button is pressed. The timer
+        # is killed when it receives a MouseRelease event. If a slot connected to the valueChanged
+        # signal of the SpinBox takes to long to process the signal the mouse release
+        # and timer events get queued up and sometimes the timer event reaches the widget before
+        # the mouse release event. That's why it increases the value by another step. To prevent
+        # this we are blocking the timer events at the cost of no autorepeat anymore.
+        #
+        # See also:
+        # http://lists.trolltech.com/qt-interest/2002-04/thread00137-0.html
+        # http://www.qtcentre.org/threads/43078-QSpinBox-Timer-Issue
+        # http://qt.gitorious.org/qt/qt/blobs/4.8/src/gui/widgets/qabstractspinbox.cpp#line1195
+        self.quadview.statusBar.channelSpinBox.installEventFilter( _timerEater )
+        self.quadview.statusBar.timeSpinBox.installEventFilter( _timerEater )
+
         def setChannel(c):
-            print "set channel = %d, posModel has channel = %d" % (c, self.editor.posModel.channel)
             if c == self.editor.posModel.channel:
                 return
             self.editor.posModel.channel = c
@@ -115,7 +139,6 @@ class VolumeEditorWidget(QWidget):
             self.quadview.statusBar.channelSpinBox.setValue(newC)
         self.editor.posModel.channelChanged.connect(getChannel)
         def setTime(t):
-            print "set time = %d, posModel has time = %d" % (t, self.editor.posModel.time)
             if t == self.editor.posModel.time:
                 return
             self.editor.posModel.time = t
