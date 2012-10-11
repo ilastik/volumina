@@ -165,7 +165,7 @@ class ImageScene2D(QGraphicsScene):
 
     def __init__( self, posModel, along, preemptive_fetch_number=5, parent=None ):
         '''
-        preemtive_fetch_number -- number of prefetched slices; 0 turns the feature off
+        preemptive_fetch_number -- number of prefetched slices; 0 turns the feature off
         '''
         QGraphicsScene.__init__( self, parent=parent )
 
@@ -184,7 +184,7 @@ class ImageScene2D(QGraphicsScene):
         self._showTileOutlines = False
         self._showTileProgress = True
 
-        # BowWave preemtive caching
+        # BowWave preemptive caching
         self.setPreemptiveFetchNumber( preemptive_fetch_number )
         self._course = (1,1) # (along, pos or neg direction)
         self._time = self._posModel.time
@@ -263,7 +263,7 @@ class ImageScene2D(QGraphicsScene):
             if self._showTileProgress:
                 self._dirtyIndicator.setTileProgress(tile.id, tile.progress) 
 
-        # preemtive fetching
+        # preemptive fetching
         for through in self._bowWave( self._n_preemptive ):
             self._tileProvider.prefetch(rectF, through)
 
