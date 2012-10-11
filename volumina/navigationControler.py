@@ -268,15 +268,20 @@ class NavigationControler(QObject):
             return
         
         self._model.slicingPos = newPos
+        self.panSlicingViews( newPos, filter( lambda a: a != axis, [0,1,2] ) ) 
         
-        # Center the other two views on the new point
-        for otherAxis, view in enumerate(self._views):
-            if otherAxis != axis:
-                pos2d = posView2D(newPos, otherAxis)
+    def panSlicingViews(self, point3d, axes):
+        """
+        For each of the given axes, pan the slicing view to the ordinate-abscissa point in point3d,
+        but DON'T change the slicing plane.
+        """
+        for axis, view in enumerate(self._views):
+            if axis in axes:
+                pos2d = posView2D(point3d, axis)
                 dataPoint = QPointF( *pos2d )
                 scenePoint = view.scene().data2scene.map(dataPoint)
                 view.centerOn( scenePoint )
-    
+
     def moveSlicingPosition(self, newPos, oldPos):
         for i in range(3):
             if newPos[i] != oldPos[i]:
