@@ -153,22 +153,29 @@ class QuadView(QWidget):
         if not all( [dock.isVisible() for dock in self.dockableContainer] ):
             return
         w, h = self.size().width()-self.splitHorizontal1.handleWidth(), self.size().height()-self.splitVertical.handleWidth()
-        docks = [self.imageView2D_1, self.imageView2D_2, self.imageView2D_3, self.testView4]
-        
-        w1  = [docks[i].minimumSize().width() for i in [0,2] ]
-        w2  = [docks[i].minimumSize().width() for i in [1,3] ]
-        wLeft  = max(w1)
-        wRight = max(w2)
-        if wLeft > wRight and wLeft > w/2:
-            wRight = w - wLeft
-        elif wRight >= wLeft and wRight > w/2:
-            wLeft = w - wRight
-        else:
-            wLeft = w/2
-            wRight = w/2
-        self.splitHorizontal1.setSizes([wLeft, wRight])
-        self.splitHorizontal2.setSizes([wLeft, wRight])
+
         self.splitVertical.setSizes([h/2, h/2])
+
+        if self.splitHorizontal1.count() == 2 and self.splitHorizontal2.count() == 2:
+            #docks = [self.imageView2D_1, self.imageView2D_2, self.imageView2D_3, self.testView4]
+            docks = []        
+            for splitter in [self.splitHorizontal1, self.splitHorizontal2]:
+                for i in range( splitter.count() ):
+                    docks.append( splitter.widget(i).graphicsView )
+            
+            w1  = [docks[i].minimumSize().width() for i in [0,2] ]
+            w2  = [docks[i].minimumSize().width() for i in [1,3] ]
+            wLeft  = max(w1)
+            wRight = max(w2)
+            if wLeft > wRight and wLeft > w/2:
+                wRight = w - wLeft
+            elif wRight >= wLeft and wRight > w/2:
+                wLeft = w - wRight
+            else:
+                wLeft = w/2
+                wRight = w/2
+            self.splitHorizontal1.setSizes([wLeft, wRight])
+            self.splitHorizontal2.setSizes([wLeft, wRight])
         
     def eventFilter(self, obj, event):
         if(event.type()==QEvent.WindowActivate):
@@ -188,6 +195,8 @@ class QuadView(QWidget):
         self._synchronizeSplitter()
     
     def horizontalSplitterMoved(self, x, y):
+        if self.splitHorizontal1.count() != 2 or self.splitHorizontal2.count() != 2:
+            return 
         sizes = self.splitHorizontal1.sizes()
         #What. Nr2
         if self.splitHorizontal2.closestLegalPosition(x, y) < self.splitHorizontal2.closestLegalPosition(x, y):
