@@ -184,10 +184,10 @@ class QuadView(QWidget):
 
     def _synchronizeSplitter(self):
         sizes1 = self.splitHorizontal1.sizes()
-        sizes2 = self.splitHorizontal2.sizes()        
-        if sizes1[0] > 0:
+        sizes2 = self.splitHorizontal2.sizes()
+        if len(sizes1) > 0 and sizes1[0] > 0:
             self.splitHorizontal2.setSizes(sizes1)
-        elif sizes2[0] > 0:
+        elif len(sizes2) > 0 and sizes2[0] > 0:
             self.splitHorizontal1.setSizes(sizes2)
     
     def resizeEvent(self, event):
