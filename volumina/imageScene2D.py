@@ -337,8 +337,8 @@ class ImageScene2D(QGraphicsScene):
         self._posModel = posModel
 
         self._dataShape = None
-        self._offsetX = 0
-        self._offsetY = 0
+        self._offsetX = 30
+        self._offsetY = 30
         self._axesSwapped = False
         self.name = name
 
