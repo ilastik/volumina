@@ -28,6 +28,7 @@ class ImageScene2DTest( ut.TestCase ):
     def tearDownClass(cls):
         del cls.app
 
+    '''
     def testSceneShapeProperty( self ):
         scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
         self.assertEqual(scene.sceneShape, (0,0))
@@ -40,6 +41,7 @@ class ImageScene2DTest( ut.TestCase ):
         SHAPE3 = (0,0)
         scene.sceneShape = SHAPE3
         self.assertEqual(scene.sceneShape, SHAPE3)
+    '''
 
     def testStackedImageSourcesProperty( self ):
         s = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
@@ -75,6 +77,11 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         self.sims.register(self.layer, self.ims)
         
         self.scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0) 
+        self.scene._arrowX.setVisible(False)
+        self.scene._arrowY.setVisible(False)
+        self.scene._rotateLeft.setVisible(False)
+        self.scene._rotateRight.setVisible(False)
+        
         self.scene.stackedImageSources = self.sims
         self.scene.sceneShape = (310,290)
 

@@ -4,7 +4,7 @@ from PyQt4.QtCore import pyqtSignal, QObject, Qt, QSize, QPointF, QRectF, \
 from PyQt4.QtGui  import QPen, QGraphicsScene, QColor, \
                          QImage, QPainter, QGraphicsLineItem, QBrush
 
-import numpy
+import numpy, math
 import qimage2ndarray
 
 #*******************************************************************************
@@ -104,6 +104,7 @@ class BrushingModel(QObject):
         self._hasMoved = False
 
     def endDrawing(self, pos):
+        print "end drawing at pos = ", pos
         has_moved = self._hasMoved # _hasMoved will change after calling moveTo
         if has_moved:
             self.moveTo(pos)
@@ -140,10 +141,11 @@ class BrushingModel(QObject):
         return res
 
     def moveTo(self, pos):
+        #data coordinates
         oldX, oldY = self.pos.x(), self.pos.y()
         x,y = pos.x(), pos.y()
         
-        #print "BrushingModel.moveTo(pos=%r)" % (pos) 
+        print "in data coordinates, we move from", oldX, oldY, " to ", x,y, " brushsize ", self.brushSize 
         line = QGraphicsLineItem(oldX, oldY, x, y)
         line.setPen(QPen( QBrush(Qt.white), self.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         self.scene.addItem(line)

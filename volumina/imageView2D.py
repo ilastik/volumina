@@ -1,4 +1,4 @@
-from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt
+from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRect
 from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication
 
 import numpy
@@ -28,7 +28,12 @@ class ImageView2D(QGraphicsView):
     @sliceShape.setter
     def sliceShape(self, s):
         self._sliceShape = s
-        sceneShape = (s[1], s[0])
+
+        r = self.scene().data2scene.mapRect(QRect(0,0,s[0], s[1]))
+        sceneShape = (r.width(), r.height())
+        assert sceneShape[0] > 0
+        assert sceneShape[0] > 1
+
         self.scene().sceneShape                  = sceneShape
         self._crossHairCursor.sceneShape         = sceneShape
         self._sliceIntersectionMarker.sceneShape = sceneShape
@@ -101,9 +106,8 @@ class ImageView2D(QGraphicsView):
         self._crossHairCursor = CrossHairCursor(self.scene())
         self._crossHairCursor.setZValue(99)
         
-        self._sliceIntersectionMarker = SliceIntersectionMarker()
+        self._sliceIntersectionMarker = SliceIntersectionMarker(self.scene())
         self._sliceIntersectionMarker.setZValue(100)
-        self.scene().addItem(self._sliceIntersectionMarker)
 
         self._sliceIntersectionMarker.setVisibility(True)
  
@@ -144,23 +148,16 @@ class ImageView2D(QGraphicsView):
         Return a QRectF giving the part of the scene currently displayed in this
         widget's viewport in the scene's coordinates
         """
-        return self.mapToScene(self.viewport().geometry()).boundingRect()
+        r =  self.mapToScene(self.viewport().geometry()).boundingRect()
+        #print "viewportRect = ", r
+        return r
    
     def mapScene2Data(self, pos):
         return self.scene().scene2data.map(pos)
-   
-    # We have to overload some QGraphicsView event handlers with a nop to make the event switch work.
-    # Otherwise, the events are not catched by our eventFilter.
-    # There is no real reason for this behaviour: seems to be just a quirky qt implementation detail.
-    def mouseMoveEvent(self, event):
-        event.ignore()
-    def mouseReleaseEvent(self, event):
-        event.ignore()
-    def mouseDoubleClickEvent( self, event):
-        event.ignore()
-    def wheelEvent(self, event):
-        event.ignore()
 
+    def mapMouseCoordinates2Data(self, pos):
+        return self.mapScene2Data(self.mapToScene(pos))
+   
     def _panning(self):
         hBar = self.horizontalScrollBar()
         vBar = self.verticalScrollBar()
@@ -276,7 +273,7 @@ if __name__ == '__main__':
         cb = numpy.zeros(shape)
         for i in range(shape[0]/squareSize):
             for j in range(shape[1]/squareSize):
-                a = i*squareSize
+                a = i*squareSiz#e
                 b = min((i+1)*squareSize, shape[0])
                 c = j*squareSize
                 d = min((j+1)*squareSize, shape[1])
