@@ -1,4 +1,5 @@
-from PyQt4.QtCore import QObject
+from PyQt4.QtCore import QObject, Qt, QEvent
+from PyQt4.QtGui import QAbstractScrollArea
 from abc import ABCMeta, abstractmethod
 
 from pixelpipeline.asyncabcs import _has_attributes
@@ -25,9 +26,6 @@ class InterpreterABC:
                 return True
             return False
         return NotImplemented
-
-
-
 
 class EventSwitch( QObject ):
     @property
@@ -60,9 +58,19 @@ class EventSwitch( QObject ):
         # because repeatedly installing/uninstalling the interpreter changes its priority
         # in the view's list of event filters.
         # Instead, we install ourselves as an event filter, and forward events to the currently selected interpreter.
+        self._viewports = []
         for view in self._imageViews:
+            #http://stackoverflow.com/questions/2445997/qgraphicsview-and-eventfilter
             view.installEventFilter( self )
+            view.viewport().installEventFilter( self )
+            self._viewports.append( view.viewport() )
     
     def eventFilter(self, watched, event):
         # Forward filtered events to the interpreter.
-        return self._interpreter.eventFilter(watched, event)
+        if watched in self._viewports:
+            #watched is a viewport. Forward the event to its parent,
+            #which will be the QGraphicsView itself
+            return self._interpreter.eventFilter(watched.parent(), event)
+        else:
+            return self._interpreter.eventFilter(watched, event)
+

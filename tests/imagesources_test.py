@@ -14,12 +14,13 @@ from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageS
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer
 
-
+import numpy as np
+import os.path
+from volumina import _testing
 
 class _ArraySource2d( ArraySource ):
     def request( self, slicing, through=None):
         return super(_ArraySource2d, self).request( slicing )
-
 
 #*******************************************************************************
 # G r a y s c a l e I m a g e S o u r c e T e s t 
@@ -120,9 +121,6 @@ class ColortableImageSourceTest( ut.TestCase ):
 
 class RGBAImageSourceTest( ut.TestCase ):
     def setUp( self ):
-        import numpy as np
-        import os.path
-        from volumina import _testing
         basedir = os.path.dirname(_testing.__file__)
         self.data = np.load(os.path.join(basedir, 'rgba129x104.npy'))
         self.red = _ArraySource2d(self.data[:,:,0])

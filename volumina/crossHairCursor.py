@@ -45,9 +45,9 @@ class CrossHairCursor(QGraphicsItem) :
     modeXYPosition = 2
     
     def boundingRect(self):
-        return QRectF(0,0, self._width, self._height)
+        return self.scene().data2scene.mapRect(QRectF(0,0, self._width, self._height))
     
-    def __init__(self, scene=None):
+    def __init__(self, scene):
         QGraphicsItem.__init__(self, scene=scene)
         
         self._width = 0
@@ -102,8 +102,12 @@ class CrossHairCursor(QGraphicsItem) :
         self.setPos(x,y)
     
     def paint(self, painter, option, widget=None):
+
+        painter.save()
+        painter.setTransform(self.scene().data2scene  * painter.transform() )
+
         painter.setPen(self.penDotted)
-        
+
         if self.mode == self.modeXPosition:
             painter.drawLine(QPointF(self.x +0.5, 0), QPointF(self.x +0.5, self._height))
         elif self.mode == self.modeYPosition:
@@ -117,6 +121,8 @@ class CrossHairCursor(QGraphicsItem) :
 
             painter.setPen(self.penSolid)
             painter.drawEllipse(QPointF(self.x, self.y), 0.5*self.brushSize, 0.5*self.brushSize)
+
+        painter.restore()
         
     def setPos(self, x, y):
         self.x = x

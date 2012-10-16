@@ -40,10 +40,10 @@ class SliceIntersectionMarker(QGraphicsItem) :
     """
     
     def boundingRect(self):
-        return QRectF(0,0, self._width, self._height);
+        return self.scene().data2scene.mapRect(QRectF(0,0, self._width, self._height));
     
-    def __init__(self):
-        QGraphicsItem.__init__(self)
+    def __init__(self, scene):
+        QGraphicsItem.__init__(self, scene=scene)
         
         self._width = 0
         self._height = 0
@@ -96,8 +96,12 @@ class SliceIntersectionMarker(QGraphicsItem) :
     
     def paint(self, painter, option, widget=None):
         if self.isVisible:
+            painter.save()
+            t = painter.transform()
+            painter.setTransform(self.scene().data2scene  * t )
             painter.setPen(self.penY)
             painter.drawLine(QPointF(0.0,self.y), QPointF(self._width, self.y))
             
             painter.setPen(self.penX)
             painter.drawLine(QPointF(self.x, 0), QPointF(self.x, self._height))
+            painter.restore()

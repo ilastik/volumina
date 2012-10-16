@@ -78,7 +78,7 @@ def slicing2rect( slicing, width_axis=1, height_axis = 0 ):
     return QRect(x, y, width, height)
 
 def rect2slicing( qrect, seq=tuple ):
-    return seq((slice(qrect.y(), qrect.y()+qrect.height()), slice(qrect.x(), qrect.x()+qrect.width())))
+    return seq((slice(qrect.x(), qrect.x()+qrect.width()), slice(qrect.y(), qrect.y()+qrect.height())))
 
 def slicing2shape( slicing ):
     assert is_bounded( slicing )

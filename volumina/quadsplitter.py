@@ -92,6 +92,7 @@ class QuadView(QWidget):
         QWidget.__init__(self, parent)
         
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         self.installEventFilter(self)
         
         self.dockableContainer = []
@@ -180,6 +181,7 @@ class QuadView(QWidget):
     def eventFilter(self, obj, event):
         if(event.type()==QEvent.WindowActivate):
             self._synchronizeSplitter()
+            return True
         return False
 
     def _synchronizeSplitter(self):

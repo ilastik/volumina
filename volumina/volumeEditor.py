@@ -157,9 +157,11 @@ class VolumeEditor( QObject ):
         ##
         ## Other
         ##
-        self.imageViews[0].setTransform(QTransform(1,0,0,0,1,0,0,0,1))
-        self.imageViews[1].setTransform(QTransform(0,1,1,0,0,0))
-        self.imageViews[2].setTransform(QTransform(0,1,1,0,0,0))
+        
+        #self.imageViews[0].setTransform(QTransform(1,0,0,0,1,0,0,0,1))
+        #self.imageViews[1].setTransform(QTransform(0,1,1,0,0,0))
+        #self.imageViews[2].setTransform(QTransform(0,1,1,0,0,0))
+
 
         #make sure that exactly one of the three slice views has focus
         #when the program starts up
