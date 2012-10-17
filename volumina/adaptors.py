@@ -50,10 +50,12 @@ if _has_lazyflow and _has_vigra:
 
             outputTags = vigra.defaultAxistags( self._axisorder )
             
-            for tag in [tag for tag in outputTags if tag not in inputAxistags]:
-                #inputAxistags.insert(outputTags.index(tag.key),tag)
-                #inputShape.insert(outputTags.index(tag.key),1)
-                self.resSl.insert(outputTags.index(tag.key),0)
+            inputKeys = set(tag.key for tag in inputAxistags)
+            for outputTag in outputTags:
+                if outputTag.key not in inputKeys:
+                    #inputAxistags.insert(outputTags.index(tag.key),tag)
+                    #inputShape.insert(outputTags.index(tag.key),1)
+                    self.resSl.insert(outputTags.index(outputTag.key),0)
             
             outputShape = []
             for tag in outputTags:
@@ -67,7 +69,6 @@ if _has_lazyflow and _has_vigra:
             self.outputs["output"].meta.axistags = outputTags
             
         def execute(self, slot, subindex, roi, result):
-            
             sl = [slice(0,roi.stop[i]-roi.start[i],None) if sl != 0\
                   else slice(0,1) for i,sl in enumerate(self.resSl)]
             
