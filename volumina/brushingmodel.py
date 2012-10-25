@@ -16,7 +16,7 @@ class BrushingModel(QObject):
     brushColorChanged    = pyqtSignal(QColor)
     brushStrokeAvailable = pyqtSignal(QPointF, object)
     drawnNumberChanged   = pyqtSignal(int)
-    
+
     minBrushSize       = 1
     maxBrushSize       = 61
     defaultBrushSize   = 3
@@ -24,7 +24,7 @@ class BrushingModel(QObject):
     defaultColor       = Qt.white
     erasingColor       = Qt.black
     erasingNumber      = 100
-    
+
     def __init__(self, parent=None):
         QObject.__init__(self, parent=parent)
         self.sliceRect = None
@@ -38,9 +38,9 @@ class BrushingModel(QObject):
         self.pos = None
         self.erasing = False
         self._hasMoved = False
-        
+
         self.drawOnto = None
-        
+
         #an empty scene, where we add all drawn line segments
         #a QGraphicsLineItem, and which we can use to then
         #render to an image
@@ -60,7 +60,7 @@ class BrushingModel(QObject):
         self.setBrushColor(self.erasingColor)
         self.brushColorChanged.emit(self.erasingColor)
         self.setDrawnNumber(self.erasingNumber)
-    
+
     def disableErasing(self):
         self.erasing = False
         self.setBrushColor(self._temp_color)
@@ -70,28 +70,28 @@ class BrushingModel(QObject):
     def setBrushSize(self, size):
         self.brushSize = size
         self.brushSizeChanged.emit(self.brushSize)
-    
+
     def setDrawnNumber(self, num):
         self.drawnNumber = num
         self.drawnNumberChanged.emit(num)
-        
+
     def getBrushSize(self):
         return self.brushSize
-    
+
     def brushSmaller(self):
         b = self.brushSize
         if b > self.minBrushSize:
             self.setBrushSize(b-1)
-        
+
     def brushBigger(self):
         b = self.brushSize
         if self.brushSize < self.maxBrushSize:
             self.setBrushSize(b+1)
-        
+
     def setBrushColor(self, color):
         self.drawColor = color
         self.brushColorChanged.emit(self.drawColor)
-    
+
     def beginDrawing(self, pos, sliceRect):
         '''
 
@@ -116,7 +116,7 @@ class BrushingModel(QObject):
         painter = QPainter(tempi)
         self.scene.render(painter, target=QRectF(), source=QRectF(QPointF(self.bb.x(), self.bb.y()), QSizeF(self.bb.width(), self.bb.height())))
         painter.end()
-        
+
         ndarr = qimage2ndarray.rgb_view(tempi)[:,:,0]
         labels = numpy.where(ndarr>0,numpy.uint8(self.drawnNumber),numpy.uint8(0))
         labels = labels.swapaxes(0,1)
@@ -149,7 +149,7 @@ class BrushingModel(QObject):
         self.scene.addItem(line)
         self._hasMoved = True
 
-        #update bounding Box 
+        #update bounding Box
         if not self.bb.isValid():
             self.bb = QRect(QPoint(x,y), QSize(1,1))
         #grow bounding box
@@ -157,6 +157,6 @@ class BrushingModel(QObject):
         self.bb.setRight( max(self.bb.right(),  min(self.sliceRect[0]-1, x+self.brushSize/2+1) ) )
         self.bb.setTop(   min(self.bb.top(),    max(0,                   y-self.brushSize/2-1) ) )
         self.bb.setBottom(max(self.bb.bottom(), min(self.sliceRect[1]-1, y+self.brushSize/2+1) ) )
-        
+
         #update/move position
         self.pos = pos

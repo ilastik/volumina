@@ -16,7 +16,7 @@ import datetime
 #*******************************************************************************
 class QGraphicsArrowItem(QGraphicsItemGroup):
     """A clickable and hoverable arrow item"""
-    
+
     def __init__(self):
         self._qobject = QObject()
         super(QGraphicsArrowItem, self).__init__()
@@ -54,17 +54,15 @@ class QGraphicsArrowItem(QGraphicsItemGroup):
         self._text.setPlainText(name)
 
         d = toPoint - fromPoint
-        d /= math.sqrt(d.x()**2 + d.y()**2) 
+        d /= math.sqrt(d.x()**2 + d.y()**2)
         e = QPointF(-d.y(), d.x())
-        d *=10 
+        d *=10
         e *= 5
 
         p = QPolygonF([toPoint+e, toPoint+d, toPoint-e, toPoint+e])
         self._arrowHead.setPolygon(p)
 
         self._boundingRect = QRectF(fromPoint-e-d, toPoint+d+d+e+e)
-        
-        #self.addToGroup(QGraphicsRectItem(self._boundingRect))
 
         self.setAcceptHoverEvents(True)
         self.update()
@@ -101,7 +99,7 @@ class DirtyIndicator(QGraphicsItem):
 
     def boundingRect(self):
         return self._tiling.boundingRectF()
-    
+
     def paint(self, painter, option, widget):
         dirtyColor = QColor(255,0,0)
         painter.setOpacity(0.5)
@@ -148,7 +146,7 @@ class ImageScene2D(QGraphicsScene):
     @property
     def stackedImageSources(self):
         return self._stackedImageSources
-    
+
     @stackedImageSources.setter
     def stackedImageSources(self, s):
         self._stackedImageSources = s
@@ -161,7 +159,7 @@ class ImageScene2D(QGraphicsScene):
     def showTileOutlines(self, show):
         self._showTileOutlines = show
         self.invalidate()
-        
+
     @property
     def showTileProgress(self):
         return self._showTileProgress
@@ -189,7 +187,7 @@ class ImageScene2D(QGraphicsScene):
         offsetA = transform.map( QPointF(0,0) )
         offsetB = transform.map( QPointF(self._dataShape[0], self._dataShape[1]) )
 
-        #first move origin of data to scene origin 
+        #first move origin of data to scene origin
         t = QTransform.fromTranslate(-offsetA.x(), -offsetA.y())
 
         #look at how the point (1,1) transforms. Depending on the sign of the resulting x and y location,
@@ -201,17 +199,17 @@ class ImageScene2D(QGraphicsScene):
         dx = 0
         dy = 0
         if p.x() > 0 and p.y() > 0:
-            flip = 1.0 
-            dx, dy = offsetA.y(), offsetA.x() 
+            flip = 1.0
+            dx, dy = offsetA.y(), offsetA.x()
         elif p.x() < 0 and p.y() > 0:
-            flip = -1.0 
-            dx, dy = offsetB.y(), offsetB.x() 
+            flip = -1.0
+            dx, dy = offsetB.y(), offsetB.x()
         elif p.x() > 0 and p.y() < 0: # 1, -1
-            flip = -1.0  
-            dx, dy = offsetB.y(), offsetB.x() 
+            flip = -1.0
+            dx, dy = offsetB.y(), offsetB.x()
         elif p.x() < 0 and p.y() < 0: # -1, -1
-            flip = 1.0 
-            dx, dy = offsetA.y(), offsetA.x() 
+            flip = 1.0
+            dx, dy = offsetA.y(), offsetA.x()
 
         s = QTransform(0,flip,0,flip, 0, 0, dx, dy, 1) #swap axes
 
@@ -241,8 +239,8 @@ class ImageScene2D(QGraphicsScene):
         self._tiling.setData2scene( self.data2scene )
         self._setAxes()
         self._tileProvider._onSizeChanged()
-        QGraphicsScene.invalidate( self, self.sceneRect() )        
-        
+        QGraphicsScene.invalidate( self, self.sceneRect() )
+
     def _setAxes(self):
         fP = QPointF(0,-self._offsetY/2)
         tP = QPointF(self._dataShape[0], -self._offsetY/2)
@@ -273,7 +271,7 @@ class ImageScene2D(QGraphicsScene):
         sceneShape -- (widthX, widthY),
         where the origin of the coordinate system is in the upper left corner
         of the screen and 'x' points right and 'y' points down
-        """   
+        """
         assert len(sceneShape) == 2
 
         self._dataShape = sceneShape
@@ -283,7 +281,7 @@ class ImageScene2D(QGraphicsScene):
         self.setSceneRect(0,0, w,h)
 
         self._setAxes()
-        
+
         if self._dirtyIndicator:
             self.removeItem(self._dirtyIndicator)
         del self._dirtyIndicator
@@ -305,7 +303,7 @@ class ImageScene2D(QGraphicsScene):
         if cache_size != self._tileProvider._cache_size:
             self._tileProvider = TileProvider(self._tiling, self._stackedImageSources, cache_size=cache_size)
             self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
-            
+
     def cacheSize( self ):
         return self._tileProvider._cache_size
 
@@ -316,12 +314,12 @@ class ImageScene2D(QGraphicsScene):
             self._n_preemptive = n
     def preemptiveFetchNumber( self ):
         return self._n_preemptive
-        
+
     def invalidateViewports( self, sceneRectF ):
         '''Call invalidate on the intersection of all observing viewport-rects and rectF.'''
         sceneRectF = sceneRectF if sceneRectF.isValid() else self.sceneRect()
         for view in self.views():
-            QGraphicsScene.invalidate( self, sceneRectF.intersected(view.viewportRect()) )        
+            QGraphicsScene.invalidate( self, sceneRectF.intersected(view.viewportRect()) )
 
     def __init__( self, posModel, along, preemptive_fetch_number=5, parent=None, name="Unnamed Scene"):
         '''
@@ -352,7 +350,7 @@ class ImageScene2D(QGraphicsScene):
         self._arrowX._qobject.connect( self._arrowX._qobject, SIGNAL("clicked()"), self._onSwapAxes )
         self._arrowY._qobject.connect( self._arrowY._qobject, SIGNAL("clicked()"), self._onSwapAxes )
 
-        self.data2scene = QTransform(1,0,0,0,1,0,self._offsetX, self._offsetY, 1) 
+        self.data2scene = QTransform(1,0,0,0,1,0,self._offsetX, self._offsetY, 1)
         self.scene2data, isInvertible = self.data2scene.inverted()
         assert isInvertible
 
@@ -377,10 +375,10 @@ class ImageScene2D(QGraphicsScene):
     def __del__( self ):
         if self._tileProvider:
             self._tileProvider.notifyThreadsToStop()
-    
+
     def _onSizeChanged(self):
         self._brushingLayer  = TiledImageLayer(self._tiling)
-                
+
     def drawForeground(self, painter, rect):
         if self._tiling is None:
             return
@@ -402,7 +400,7 @@ class ImageScene2D(QGraphicsScene):
                 painter.setPen( pen )
                 painter.drawRect(self._tiling.imageRects[tileId])
 
-                # Dashed white line 
+                # Dashed white line
                 # (offset to occupy the spaces in the dashed black line)
                 pen = QPen()
                 pen.setDashPattern([5,5])
@@ -410,11 +408,11 @@ class ImageScene2D(QGraphicsScene):
                 pen.setColor( QColor(Qt.white) )
                 painter.setPen( pen )
                 painter.drawRect(self._tiling.imageRects[tileId])
-    
+
     def indicateSlicingPositionSettled(self, settled):
         if self._showTileProgress:
             self._dirtyIndicator.setVisible(settled)
-   
+
     def drawBackground(self, painter, sceneRectF):
         painter.setBrush(QBrush(QColor(220,220,220)))
         painter.drawRect(QRect(0,0,*self.sceneShape))
@@ -428,7 +426,7 @@ class ImageScene2D(QGraphicsScene):
             if not tile.progress < 1.0:
                 painter.drawImage(tile.rectF, tile.qimg)
             if self._showTileProgress:
-                self._dirtyIndicator.setTileProgress(tile.id, tile.progress) 
+                self._dirtyIndicator.setTileProgress(tile.id, tile.progress)
 
         # preemptive fetching
         for through in self._bowWave( self._n_preemptive ):
@@ -473,4 +471,3 @@ class ImageScene2D(QGraphicsScene):
         else:
             self._course = (0, 1)
         self._time = new
-
