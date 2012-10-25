@@ -83,13 +83,15 @@ class ImageScene2D_RenderTest( ut.TestCase ):
             self.scene._tileProvider.notifyThreadsToStop()
             self.scene._tileProvider.joinThreads()
 
-    def renderScene( self, s):
+    def renderScene( self, s, exportFilename=None):
         img = QImage(310,290,QImage.Format_ARGB32_Premultiplied)
         p = QPainter(img)
         s.render(p)
         s.joinRendering()
         s.render(p)
         p.end()
+        if exportFilename is not None:
+            img.save(exportFilename)
         return byte_view(img)
 
     def testBasicImageRenderingCapability( self ):
@@ -97,7 +99,6 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
         self.assertTrue(np.all(aimg[:,:,3] == 255))
 
-    @ut.skipIf(os.getenv('TRAVIS'), 'fails on TRAVIS CI due to unknown reasons')
     def testToggleVisibilityOfOneLayer( self ):
         aimg = self.renderScene(self.scene)
         self.assertTrue(np.all(aimg[:,:,0:3] == self.GRAY))
