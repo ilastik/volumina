@@ -80,9 +80,6 @@ class QGraphicsArrowItem(QGraphicsItemGroup):
         self._line.setPen(self._normalPen)
         self._arrowHead.setPen(self._normalPen)
 
-    def mousePressEvent(self, event):
-        print "mouse pressed on arrow", self._text.toPlainText()
-
     def mouseReleaseEvent(self, event):
         self._qobject.emit(SIGNAL("clicked()"))
 
@@ -227,7 +224,6 @@ class ImageScene2D(QGraphicsScene):
         return newTransform
 
     def _onRotateLeft(self):
-        print "rotate left" 
         self.data2scene = self.rot90(self.data2scene, self.sceneRect(), -1)
         self._finishViewMatrixChange()
 

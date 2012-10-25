@@ -149,7 +149,6 @@ class ImageView2D(QGraphicsView):
         widget's viewport in the scene's coordinates
         """
         r =  self.mapToScene(self.viewport().geometry()).boundingRect()
-        #print "viewportRect = ", r
         return r
    
     def mapScene2Data(self, pos):
