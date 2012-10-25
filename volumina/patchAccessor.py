@@ -74,15 +74,24 @@ class PatchAccessor():
         ex = int(numpy.ceil(1.0 * endx / self._blockSize))
         sy = int(numpy.floor(1.0 * starty / self._blockSize))
         ey = int(numpy.ceil(1.0 * endy / self._blockSize))
-        
-        if ey > self._cY:
-            ey = self._cY
 
-        if ex > self._cX :
-            ex = self._cX
+        # Clip to rect bounds
+        sx = max(sx, 0)
+        sy = max(sy, 0)
+        ex = min(ex, self._cX)
+        ey = min(ey, self._cY)
 
         nums = []
         for y in range(sy,ey):
-            nums += range(y*self._cX+sx,y*self._cX+ex)
+            nums += range(y*self._cX+sx, y*self._cX+ex)
         
         return nums
+
+if __name__ == "__main__":
+    pa = PatchAccessor(1000,1000, 100)
+    
+    assert pa.patchCount == 100
+    assert pa.patchRectF(0) == QRectF(0,0,100,100)
+    assert pa.patchRectF(1) == QRectF(100,0,100,100)
+    
+    assert pa.getPatchesForRect( 50, 50, 150, 150 ) == [0, 1, 10, 11]

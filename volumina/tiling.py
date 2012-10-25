@@ -84,6 +84,8 @@ class Tiling(object):
         self.imageRects  = []
         self.tileRects  = []
         self.sliceShape = sliceShape
+        self.patchAccessor = patchAccessor
+        self.data2scene = data2scene
 
         for patchNr in range(patchAccessor.patchCount):
             #the patch accessor uses the data coordinate system
@@ -129,23 +131,19 @@ class Tiling(object):
             if p.contains(point):
                 return i
 
-    def intersectedF(self, rectF):
-        if not rectF.isValid():
-            return range(len(self.imageRectFs))
-        i = []
-        for patchNr, patchRectF in enumerate(self.tileRectFs):
-            if rectF.intersects(patchRectF):
-                i.append(patchNr)
-        return i
+    def intersected(self, sceneRect):
+        if not sceneRect.isValid():
+            return range(len(self.tileRects))
 
-    def intersected(self, rect):
-        if not rect.isValid():
-            return range(len(self.imageRects))
-        i = []
-        for patchNr, patchRect in enumerate(self.tileRects):
-            if rect.intersects(patchRect):
-                i.append(patchNr)
-        return i
+        # Patch accessor uses data coordinates
+        rect = self.data2scene.inverted()[0].mapRect(sceneRect)
+        patchNumbers = self.patchAccessor.getPatchesForRect(
+                            rect.topLeft().x(), rect.topLeft().y(),
+                            rect.bottomRight().x(), rect.bottomRight().y() )
+        return patchNumbers
+
+    # intersected and intersectedF are no longer different functions.
+    intersectedF = intersected
 
     def __len__(self):
         return len(self.imageRectFs)
