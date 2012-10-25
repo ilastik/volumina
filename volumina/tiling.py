@@ -551,7 +551,9 @@ class TileProvider( QObject ):
 
     def _renderTile( self, stack_id, tile_nr ):
         qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
-        qimg.fill(Qt.white)
+        #qimg.fill(Qt.white)  # Apparently, some difference between Qt 4.7 and 4.8 causes 
+                              #   QImage.fill(Qt.white) to do the wrong thing here.  It might be a Qt bug.
+        qimg.fill(0xffffffff) # Use a hex constant instead.
 
         p = QPainter(qimg)
         for i, v in enumerate(reversed(self._sims)):
