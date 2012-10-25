@@ -37,7 +37,7 @@ class ImageView2D(QGraphicsView):
         self.scene().sceneShape                  = sceneShape
         self._crossHairCursor.sceneShape         = sceneShape
         self._sliceIntersectionMarker.sceneShape = sceneShape
-           
+
     @property
     def hud(self):
         return self._hud
@@ -45,45 +45,45 @@ class ImageView2D(QGraphicsView):
     def hud(self, hud):
         """
         Sets up a heads up display at the upper left corner of the view
-        
+
         hud -- a QWidget
         """
-        
+
         self._hud = hud
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(0,0,0,0)
         self.layout().addWidget(self._hud)
         self.layout().addStretch()
-    
+
     def __init__(self, imagescene2d):
         """
         Constructs a view upon a ImageScene2D
-        
+
         imagescene2d -- a ImgeScene2D instance
         """
-        
+
         QGraphicsView.__init__(self)
         self.setScene(imagescene2d)
-        
+
         self.mousePos = QPointF(0,0)
-        
+
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
+
         self._isRubberBandZoom = False
         self._cursorBackup = None
-        
+
         #these attributes are exposed as public properties above
         self._sliceShape  = None #2D shape of this view's shown image
         self._slices = None #number of slices that are stacked
         self._hud    = None
-        
+
         self._crossHairCursor         = None
         self._sliceIntersectionMarker = None
 
         self._ticker = QTimer(self)
         self._ticker.timeout.connect(self._tickerEvent)
-        
+
         #
         # Setup the Viewport for fast painting
         #
@@ -94,7 +94,7 @@ class ImageView2D(QGraphicsView):
         #self.viewport().setAttribute(Qt.WA_NoSystemBackground)
         #self.viewport().setAttribute(Qt.WA_PaintOnScreen)
         #self.viewport().setAutoFillBackground(False)
-        
+
         self.setViewportUpdateMode(QGraphicsView.MinimalViewportUpdate)
         #as rescaling images is slow if done in software,
         #we use Qt's built-in background caching mode so that the cached
@@ -105,23 +105,23 @@ class ImageView2D(QGraphicsView):
 
         self._crossHairCursor = CrossHairCursor(self.scene())
         self._crossHairCursor.setZValue(99)
-        
+
         self._sliceIntersectionMarker = SliceIntersectionMarker(self.scene())
         self._sliceIntersectionMarker.setZValue(100)
 
         self._sliceIntersectionMarker.setVisibility(True)
- 
+
         #FIXME: this should be private, but is currently used from
         #       within the image scene renderer
         self.tempImageItems = []
-        
+
         self._zoomFactor = 1.0
-        
+
         #for panning
         self._lastPanPoint = QPoint()
         self._dragMode = False
         self._deltaPan = QPointF(0,0)
-        
+
         #Unfortunately, setting the style like this make the scroll bars look
         #really crappy...
         #self.setStyleSheet("QWidget:!focus { border: 2px solid " + self._axisColor[self._axis].name() +"; border-radius: 4px; }\
@@ -134,9 +134,9 @@ class ImageView2D(QGraphicsView):
         # invisible cursor to enable custom cursor
         self._hiddenCursor = QCursor(Qt.BlankCursor)
         # For screen recording BlankCursor doesn't work
-        #self.hiddenCursor = QCursor(Qt.ArrowCursor)  
-        
-    def _cleanUp(self):        
+        #self.hiddenCursor = QCursor(Qt.ArrowCursor)
+
+    def _cleanUp(self):
         self._ticker.stop()
         del self._ticker
 
@@ -150,13 +150,13 @@ class ImageView2D(QGraphicsView):
         """
         r =  self.mapToScene(self.viewport().geometry()).boundingRect()
         return r
-   
+
     def mapScene2Data(self, pos):
         return self.scene().scene2data.map(pos)
 
     def mapMouseCoordinates2Data(self, pos):
         return self.mapScene2Data(self.mapToScene(pos))
-   
+
     def _panning(self):
         hBar = self.horizontalScrollBar()
         vBar = self.verticalScrollBar()
@@ -165,7 +165,7 @@ class ImageView2D(QGraphicsView):
             hBar.setValue(hBar.value() + self._deltaPan.x())
         else:
             hBar.setValue(hBar.value() - self._deltaPan.x())
-        
+
     def _deaccelerate(self, speed, a=1, maxVal=64):
         x = self._qBound(-maxVal, speed.x(), maxVal)
         y = self._qBound(-maxVal, speed.y(), maxVal)
@@ -184,7 +184,7 @@ class ImageView2D(QGraphicsView):
         """PyQt4 does not wrap the qBound function from Qt's global namespace
            This is equivalent."""
         return max(min(current, maxVal), minVal)
-    
+
     def _setdeaccelerateAxAy(self, x, y, a):
         x = abs(x)
         y = abs(y)
@@ -221,10 +221,10 @@ class ImageView2D(QGraphicsView):
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         width, height = self.size().width() / self.sceneRect().width(), self.height() / self.sceneRect().height()
         self._zoomFactor = min(width, height)
-                
+
     def centerImage(self):
-        self.centerOn(self.sceneRect().width()/2 + self.sceneRect().x(), self.sceneRect().height()/2 + self.sceneRect().y()) 
-    
+        self.centerOn(self.sceneRect().width()/2 + self.sceneRect().x(), self.sceneRect().height()/2 + self.sceneRect().y())
+
     def toggleHud(self):
         if self._hud is not None:
             self._hud.setVisible(not self._hud.isVisible())
@@ -232,16 +232,16 @@ class ImageView2D(QGraphicsView):
     def setHudVisible(self, visible):
         if self._hud is not None:
             self._hud.setVisible(visible)
-    
+
     def focusInEvent(self, event):
         if self._hud is not None:
             self._hud.changeOpacity(1)
         self.focusChanged.emit()
-        
+
     def focusOutEvent(self, event):
         if self._hud is not None:
             self._hud.changeOpacity(0.6)
-     
+
     def changeViewPort(self,qRectf):
         self.fitInView(qRectf,mode = Qt.KeepAspectRatio)
         width, height = self.size().width() / qRectf.width(), self.height() / qRectf.height()
@@ -250,12 +250,12 @@ class ImageView2D(QGraphicsView):
     def doScale(self, factor):
         self._zoomFactor = self._zoomFactor * factor
         self.scale(factor, factor)
-        
+
     def doScaleTo(self, zoom=1):
         factor = ( 1 / self._zoomFactor ) * zoom
         self._zoomFactor = zoom
         self.scale(factor, factor)
-        
+
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     from PyQt4.QtGui import QMainWindow
     from scipy.misc import lena
-    
+
     def checkerboard(shape, squareSize):
         cb = numpy.zeros(shape)
         for i in range(shape[0]/squareSize):
@@ -279,7 +279,7 @@ if __name__ == '__main__':
                 if i%2 == j%2:
                     cb[a:b,c:d] = 255
         return cb
-    
+
     def cross(shape, width):
         c = numpy.zeros(shape)
         w2 = shape[0]/2
@@ -287,12 +287,12 @@ if __name__ == '__main__':
         c[0:shape[0], h2-width/2:h2+width/2] = 255
         c[w2-width/2:w2+width/2, 0:shape[1]] = 255
         return c
-    
-    class ImageView2DTest(QMainWindow):    
+
+    class ImageView2DTest(QMainWindow):
         def __init__(self):
             assert False, "I'm broken. Please fixme."
             QMainWindow.__init__(self)
-            
+
             self.lena = lena().swapaxes(0,1)
             self.checkerboard = checkerboard(self.lena.shape, 20)
             self.cross = cross(self.lena.shape, 30)
@@ -306,9 +306,9 @@ if __name__ == '__main__':
             #imageSlice = OverlaySlice(self.lena, color = QColor("red"), alpha = 1.0, colorTable = None, min = None, max = None, autoAlphaChannel = False)
             #cbSlice    = OverlaySlice(self.checkerboard, color = QColor("green"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
             #crossSlice = OverlaySlice(self.cross, color = QColor("blue"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-            
+
             self.imageView2D.scene().setContent(self.imageView2D.viewportRect(), None, (imageSlice, cbSlice, crossSlice))
-         
+
     app = QApplication(sys.argv)
     i = ImageView2DTest()
     i.show()

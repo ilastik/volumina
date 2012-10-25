@@ -14,11 +14,11 @@ if len(args) != 1:
     parser.error("no hdf5 dataset supplied")
 
 x = args[0].find(".h5")
-fname = args[0][:x+3] 
+fname = args[0][:x+3]
 gname = args[0][x+4:]
 
 #load data
-f = h5py.File(fname, 'r')       
+f = h5py.File(fname, 'r')
 raw = f[gname].value.squeeze()[0:333,:,:]
 raw[30:40,40:50,10:20] = 255
 raw[60:80,40:50,10:20] = 128
@@ -43,8 +43,8 @@ def addLayers(v, direct):
     l2.visible = direct
     return (l1, l2)
 
-directLayers   = addLayers(v, True)    
-indirectLayers = addLayers(v, False)    
+directLayers   = addLayers(v, True)
+indirectLayers = addLayers(v, False)
 
 b = QPushButton("direct mode (Ctrl+d)")
 
@@ -55,11 +55,11 @@ def onDirectModeToggled(direct):
         l.visible = direct
     for l in indirectLayers:
         l.visible = not direct
-        
+
 b.toggled.connect(onDirectModeToggled)
 QShortcut(QKeySequence("Ctrl+d"), b, member=b.click, ambiguousMember=b.click)
 v.rightPaneLayout.addWidget(b)
- 
+
 lg = v.addGrayscaleLayer(raw, name="raw w/ graphics", direct=True)
 class ScalableGraphicsSource(object):
     pass

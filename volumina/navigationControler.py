@@ -34,7 +34,7 @@ class NavigationInterpreter(QObject):
     def __init__(self, navigationcontroler):
         QObject.__init__(self)
         self._navCtrl = navigationcontroler
-        self._current_state = self.FINAL 
+        self._current_state = self.FINAL
 
     def start( self ):
         if self._current_state == self.FINAL:
@@ -47,7 +47,7 @@ class NavigationInterpreter(QObject):
 
     def eventFilter( self, watched, event ):
         if not self._navCtrl.enableNavigation:
-            return False        
+            return False
 
         etype = event.type()
         ### the following implements a simple state machine
@@ -88,7 +88,7 @@ class NavigationInterpreter(QObject):
                 self.onEntry_default( watched, event )
                 event.accept()
                 return True
-            
+
             ### actions in drag mode
             elif etype == QEvent.MouseMove:
                 self.onMouseMove_drag( watched, event )
@@ -118,7 +118,7 @@ class NavigationInterpreter(QObject):
 
         if event.delta() < 0:
             if k_shift_alt:
-                navCtrl.changeTimeRelative(-10)                
+                navCtrl.changeTimeRelative(-10)
             elif k_alt:
                 navCtrl.changeSliceRelative(-10, navCtrl._views.index(imageview))
             elif k_ctrl:
@@ -130,7 +130,7 @@ class NavigationInterpreter(QObject):
                 navCtrl.changeSliceRelative(-1, navCtrl._views.index(imageview))
         else:
             if k_shift_alt:
-                navCtrl.changeTimeRelative(10)                
+                navCtrl.changeTimeRelative(10)
             elif k_alt:
                 navCtrl.changeSliceRelative(10, navCtrl._views.index(imageview))
             elif k_ctrl:
@@ -166,7 +166,7 @@ class NavigationInterpreter(QObject):
         self.onMouseMove_default( imageview, event )
         pos = event.pos()
         imageview.customContextMenuRequested.emit( pos )
-        
+
     def onMouseDoubleClick_default( self, imageview, event ):
         dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
         self._navCtrl.navigateToPoint(dataMousePos.x(), dataMousePos.y(), self._navCtrl._views.index(imageview))
@@ -194,7 +194,7 @@ class NavigationInterpreter(QObject):
         imageview._deltaPan = QPointF(event.pos() - imageview._lastPanPoint)
         imageview._panning()
         imageview._lastPanPoint = event.pos()
-assert issubclass(NavigationInterpreter, InterpreterABC)    
+assert issubclass(NavigationInterpreter, InterpreterABC)
 
 #*******************************************************************************
 # N a v i g a t i o n C o n t r o l e r                                        *
@@ -203,18 +203,18 @@ assert issubclass(NavigationInterpreter, InterpreterABC)
 class NavigationControler(QObject):
     """
     Controler for navigating through the volume.
-    
+
     The NavigationContrler object listens to changes
     in a given PositionModel and updates three slice
     views (representing the spatial X, Y and Z slicings)
     accordingly.
 
     properties:
-    
+
     indicateSliceIntersection -- whether to show red/green/blue lines
         indicating the position of the other two slice views on each slice
         view
-    
+
     enableNavigation -- whether the position is allowed to be changed
     """
 
@@ -232,7 +232,7 @@ class NavigationControler(QObject):
         for axis, v in enumerate(self._views):
             #FIXME: Bad dependency here on hud to be available!
             if v.hud: v.hud.bgColor = self.axisColors[axis]
-        
+
     @property
     def indicateSliceIntersection(self):
         return self._indicateSliceIntersection
@@ -241,7 +241,7 @@ class NavigationControler(QObject):
         self._indicateSliceIntersection = show
         for v in self._views:
             v._sliceIntersectionMarker.setVisibility(show)
-     
+
     @property
     def enableNavigation(self):
         return self._navigationEnabled
@@ -264,7 +264,7 @@ class NavigationControler(QObject):
         self._navigationEnabled = True
 
         self.axisColors = [QColor(255,0,0,255), QColor(0,255,0,255), QColor(0,0,255,255)]
-    
+
     def moveCrosshair(self, newPos, oldPos):
         self._updateCrossHairCursor()
 
@@ -277,10 +277,10 @@ class NavigationControler(QObject):
             return
         if not self._positionValid(newPos):
             return
-        
+
         self._model.slicingPos = newPos
-        self.panSlicingViews( newPos, filter( lambda a: a != axis, [0,1,2] ) ) 
-        
+        self.panSlicingViews( newPos, filter( lambda a: a != axis, [0,1,2] ) )
+
     def panSlicingViews(self, point3d, axes):
         """
         For each of the given axes, pan the slicing view to the ordinate-abscissa point in point3d,
@@ -298,7 +298,7 @@ class NavigationControler(QObject):
             if newPos[i] != oldPos[i]:
                 self._updateSlice(self._model.slicingPos[i], i)
         self._updateSliceIntersection()
-        
+
         #when scrolling fast through the stack, we don't want to update
         #the 3d view all the time
         if self._view3d is None:
@@ -308,7 +308,7 @@ class NavigationControler(QObject):
                 for i in range(3):
                     self._view3d.ChangeSlice(self._model.slicingPos[i], i)
         QTimer.singleShot(50, partial(maybeUpdateSlice, self._model.slicingPos))
-                    
+
     def changeTime(self, newTime):
         for i in range(3):
             self._sliceSources[i].setThrough(0, newTime)
@@ -323,7 +323,7 @@ class NavigationControler(QObject):
         new_t = 0 if new_t < 0 else new_t
         new_t = self._model.shape5D[0] - 1 if new_t >= self._model.shape5D[0] else new_t
         self._model.time = new_t
-    
+
     def changeChannel(self, newChannel):
         if self._model.shape is None:
             return
@@ -339,7 +339,7 @@ class NavigationControler(QObject):
         delta -- add delta to current slice position [positive or negative int]
         axis  -- along which axis [0,1,2]
         """
-        
+
         if delta == 0:
             return
         newSlice = self._model.slicingPos[axis] + delta
@@ -347,10 +347,10 @@ class NavigationControler(QObject):
             return
         newPos = copy.copy(self._model.slicingPos)
         newPos[axis] = newSlice
-        
+
         cursorPos = copy.copy(self._model.cursorPos)
         cursorPos[axis] = newSlice
-        self._model.cursorPos  = cursorPos  
+        self._model.cursorPos  = cursorPos
 
         self._model.slicingPos = newPos
 
@@ -361,20 +361,20 @@ class NavigationControler(QObject):
         value -- slice number
         axis  -- along which axis [0,1,2]
         """
-        
+
         if value < 0 or value > self._model.volumeExtent(axis):
             return
         newPos = copy.copy(self._model.slicingPos)
         newPos[axis] = value
         if not self._positionValid(newPos):
             return
-        
+
         cursorPos = copy.copy(self._model.cursorPos)
         cursorPos[axis] = value
-        self._model.cursorPos  = cursorPos  
-        
+        self._model.cursorPos  = cursorPos
+
         self._model.slicingPos = newPos
-    
+
     def settleSlicingPosition(self, settled):
         for v in self._views:
             v.indicateSlicingPositionSettled(settled)
@@ -387,12 +387,12 @@ class NavigationControler(QObject):
                       in data coordinate system
         axis -- perpendicular axis [0,1,2]
         """
-        
+
         #we get the 2D coordinates x,y from the view that
         #shows the projection perpendicular to axis
         #set this view as active
         self._model.activeView = axis
-       
+
         newPos = [dataCoord2D.x(), dataCoord2D.y()]
         newPos.insert(axis, self._model.slicingPos[axis])
 
@@ -412,12 +412,12 @@ class NavigationControler(QObject):
 
     #    axis -- perpendicular axis [0,1,2]
     #    """
-    #    
+    #
     #    #we get the 2D coordinates x,y from the view that
     #    #shows the projection perpendicular to axis
     #    #set this view as active
     #    self._model.activeView = axis
-    #   
+    #
     #    dataPoint = self._views[axis].scene().scene2data.map(scenePoint)
 
     #    newPos = [dataPoint.x(), dataPoint.y()]
@@ -429,16 +429,16 @@ class NavigationControler(QObject):
     #        return
 
     #    self._model.cursorPos = newPos
-    
+
     #private functions ########################################################
-    
+
     def _updateCrossHairCursor(self):
         dataX, dataY = posView2D(self._model.cursorPos, axis=self._model.activeView)
 
         self._views[self._model.activeView]._crossHairCursor.showXYPosition(dataX, dataY)
         for i, v in enumerate(self._views):
             v._crossHairCursor.setVisible( self._model.activeView == i )
-    
+
     def _updateSliceIntersection(self):
         for axis, v in enumerate(self._views):
             dataX, dataY = posView2D(self._model.slicingPos, axis)
