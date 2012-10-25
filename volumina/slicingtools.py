@@ -70,7 +70,7 @@ def is_pure_slicing( slicing ):
             return False
     return True
 
-def slicing2rect( slicing, width_axis=1, height_axis = 0 ):
+def slicing2rect( slicing, width_axis=0, height_axis = 1 ):
     x = slicing[width_axis].start
     y = slicing[height_axis].start
     width = slicing[width_axis].stop - slicing[width_axis].start
