@@ -606,10 +606,7 @@ class TileProvider( QObject ):
         return qimg
 
     def _onLayerDirty(self, dirtyImgSrc, dataRect ):
-        print "the layer is dirty in the dataRect =", dataRect
         sceneRect = self.tiling.data2scene.mapRect(dataRect)
-        print "the layer is dirty in the sceneRect =", sceneRect
-
         if dirtyImgSrc in self._sims.viewImageSources():
             visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) and not self._sims.isOccluded( dirtyImgSrc )
             for tile_no in xrange(len(self.tiling)):

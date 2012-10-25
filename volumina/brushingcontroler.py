@@ -118,11 +118,9 @@ class BrushingInterpreter( QObject ):
             self._brushingCtrl._brushingModel.setErasing()
             self._temp_erasing = True
         imageview.mousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
-        print "begin drawing at ", imageview.mousePos
         self._brushingCtrl.beginDrawing(imageview, imageview.mousePos)
     
     def onExit_draw( self, imageview, event ):
-        print "end drawing at ", imageview.mousePos
         self._brushingCtrl.endDrawing(imageview.mousePos)
         if self._temp_erasing:
             print "disabling erasing"
@@ -184,10 +182,6 @@ class BrushingControler(QObject):
                    slice(brushStrokeOffset.y(), brushStrokeOffset.y()+labels.shape[1])]
         slicing.insert(activeView, slice(slicingPos[activeView], slicingPos[activeView]+1))
         slicing = (slice(t,t+1),) + tuple(slicing) + (slice(c,c+1),)
-        
-        print "WRITE INTO SINK:", brushStrokeOffset, slicing
-        print "   --> ", brushStrokeOffset.x(), brushStrokeOffset.y()
-        print labels
         
         #make the labels 5d for correct graph compatibility
         newshape = list(labels.shape)

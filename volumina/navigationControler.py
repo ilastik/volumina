@@ -57,7 +57,6 @@ class NavigationInterpreter(QObject):
                or (etype == QEvent.MouseButtonPress and event.modifiers() == Qt.ShiftModifier):
                 # self.onExit_default(): call it here, if needed
                 self._current_state = self.DRAG_MODE
-                print "drag mode"
                 self.onEntry_drag( watched, event )
                 event.accept()
                 return True
@@ -82,10 +81,8 @@ class NavigationInterpreter(QObject):
                 return True
 
         elif self._current_state == self.DRAG_MODE:
-            print "event in drag mode"
             ### drag mode -> default mode
             if etype == QEvent.MouseButtonRelease:
-                print "drag mode: release"
                 self.onExit_drag( watched, event)
                 self._current_state = self.DEFAULT_MODE
                 self.onEntry_default( watched, event )
@@ -94,7 +91,6 @@ class NavigationInterpreter(QObject):
             
             ### actions in drag mode
             elif etype == QEvent.MouseMove:
-                print "mouse move in drag mode"
                 self.onMouseMove_drag( watched, event )
                 event.accept()
                 return True
@@ -156,11 +152,6 @@ class NavigationInterpreter(QObject):
             #the view is still scrolling
             #do nothing until it comes to a complete stop
             return False
-
-        #print "mouse = ", event.pos()
-        #print "scene = ", imageview.mapToScene(event.pos())
-        #print "data  = ", imageview.scene().scene2data.map( imageview.mapToScene(event.pos()) )
-        #print "data2 = ", imageview.mapMouseCoordinates2Data(event.pos())
 
         imageview.mousePos = mousePos = imageview.mapMouseCoordinates2Data(event.pos())
         imageview.oldX, imageview.oldY = imageview.x, imageview.y
@@ -390,7 +381,6 @@ class NavigationControler(QObject):
 
 
     def positionDataCursor(self, dataCoord2D, axis):
-        #print "NavigationControler.positionDataCursor(dataCoord2D=%r, axis=%d)" % (dataCoord2D, axis)
         """
         Change position of the crosshair cursor.
         dataCord2D -- 2D coordinate on the slicing plane perpendicular to axis
@@ -412,7 +402,6 @@ class NavigationControler(QObject):
         if newPos == self._model.cursorPos:
             return True
 
-        #print "  setting cursor pos to %r" % (newPos,)
         self._model.cursorPos = newPos
 
         return True
@@ -445,7 +434,6 @@ class NavigationControler(QObject):
     
     def _updateCrossHairCursor(self):
         dataX, dataY = posView2D(self._model.cursorPos, axis=self._model.activeView)
-        #print "NavigationControler._updateCrossHairCursor(): %d %d" % (dataX, dataY)
 
         self._views[self._model.activeView]._crossHairCursor.showXYPosition(dataX, dataY)
         for i, v in enumerate(self._views):
