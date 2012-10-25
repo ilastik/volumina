@@ -78,6 +78,9 @@ class QGraphicsArrowItem(QGraphicsItemGroup):
         self._line.setPen(self._normalPen)
         self._arrowHead.setPen(self._normalPen)
 
+    def mousePressEvent(self, event):
+        pass
+
     def mouseReleaseEvent(self, event):
         self._qobject.emit(SIGNAL("clicked()"))
 
