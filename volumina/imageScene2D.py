@@ -221,7 +221,7 @@ class ImageScene2D(QGraphicsScene):
         if self._tiling is None:
             return
 
-        tile_nos = self._tiling.intersectedF(rect)
+        tile_nos = self._tiling.intersected(rect)
 
         for tileId in tile_nos:
             p = self._brushingLayer[tileId]

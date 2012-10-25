@@ -26,7 +26,6 @@ class TilingTest ( ut.TestCase ):
         self.assertEqual( t.sliceShape, (0,0) )
         self.assertEqual( t.boundingRectF(), QRectF(0,0,0,0) )
         self.assertEqual( t.containsF(QPoint(0,0)), None )
-        self.assertEqual( t.intersectedF( QRectF(0,0,1,1) ), [])
         self.assertEqual( t.intersected( QRect(0,0,1,1) ), [])
         self.assertEqual( len(t), 0 )
 

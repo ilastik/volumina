@@ -142,9 +142,6 @@ class Tiling(object):
                             rect.bottomRight().x(), rect.bottomRight().y() )
         return patchNumbers
 
-    # intersected and intersectedF are no longer different functions.
-    intersectedF = intersected
-
     def __len__(self):
         return len(self.imageRectFs)
             
@@ -378,7 +375,7 @@ class TileProvider( QObject ):
 
         '''
         self.requestRefresh( rectF )
-        tile_nos = self.tiling.intersectedF( rectF )
+        tile_nos = self.tiling.intersected( rectF )
         stack_id = self._current_stack_id
         for tile_no in tile_nos:
             qimg, progress = self._cache.tile(stack_id, tile_no)
@@ -396,7 +393,7 @@ class TileProvider( QObject ):
         the end of the rendering.
 
         '''
-        tile_nos = self.tiling.intersectedF( rectF )
+        tile_nos = self.tiling.intersected( rectF )
         for tile_no in tile_nos:
             stack_id = self._current_stack_id
             self._refreshTile( stack_id, tile_no )
@@ -416,7 +413,7 @@ class TileProvider( QObject ):
             if stack_id not in self._cache:
                 self._cache.addStack(stack_id)
                 self._cache.touchStack( self._current_stack_id )
-            tile_nos = self.tiling.intersectedF( rectF )
+            tile_nos = self.tiling.intersected( rectF )
             for tile_no in tile_nos:
                 self._refreshTile( stack_id, tile_no, prefetch=True )
 
