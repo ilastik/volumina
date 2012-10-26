@@ -142,6 +142,9 @@ class VolumeEditor( QObject ):
         self.brushingControler = BrushingControler(self.brushingModel, self.posModel, labelsink)
         self.brushingInterpreter = BrushingInterpreter(self.navCtrl, self.brushingControler)
 
+        for v in self.imageViews:
+            self.brushingControler._brushingModel.brushSizeChanged.connect(v._sliceIntersectionMarker._set_diameter)
+
         # initial interaction mode
         self.eventSwitch.interpreter = self.navInterpret
 
