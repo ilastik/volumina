@@ -12,79 +12,6 @@ from volumina.pixelpipeline.imagepump import StackedImageSources
 import datetime
 
 #*******************************************************************************
-# Q G r a p h i c s A r r o w I t e m                                          *
-#*******************************************************************************
-class QGraphicsArrowItem(QGraphicsItemGroup):
-    """A clickable and hoverable arrow item"""
-
-    def __init__(self):
-        self._qobject = QObject()
-        super(QGraphicsArrowItem, self).__init__()
-
-        self._boundingRect = QRectF()
-        self._color = Qt.blue
-        self.setAcceptHoverEvents(True)
-
-        self.setHandlesChildEvents(True)
-        self._line = QGraphicsLineItem()
-        self._text = QGraphicsTextItem()
-        self._text.setDefaultTextColor(self._color)
-        self._arrowHead = QGraphicsPolygonItem()
-        self.addToGroup(self._line)
-        self.addToGroup(self._text)
-        self.addToGroup(self._arrowHead)
-        self.setZValue(999)
-
-        self._normalPen  = QPen(QBrush(self._color), 1)
-        self._hoveredPen = QPen(QBrush(self._color), 3)
-        self._line.setPen(self._normalPen)
-        self._arrowHead.setPen(self._normalPen)
-        self._arrowHead.setBrush(QBrush(self._color))
-
-    def setArrow(self, fromPoint, toPoint, name, color):
-        self._color = color
-        self._normalPen  = QPen(QBrush(self._color), 1)
-        self._hoveredPen = QPen(QBrush(self._color), 3)
-        self._line.setPen(self._normalPen)
-        self._arrowHead.setPen(self._normalPen)
-        self._arrowHead.setBrush(QBrush(self._color))
-
-        self._line.setLine(QLineF(fromPoint, toPoint))
-        self._text.setPos(toPoint)
-        self._text.setPlainText(name)
-
-        d = toPoint - fromPoint
-        d /= math.sqrt(d.x()**2 + d.y()**2)
-        e = QPointF(-d.y(), d.x())
-        d *=10
-        e *= 5
-
-        p = QPolygonF([toPoint+e, toPoint+d, toPoint-e, toPoint+e])
-        self._arrowHead.setPolygon(p)
-
-        self._boundingRect = QRectF(fromPoint-e-d, toPoint+d+d+e+e)
-
-        self.setAcceptHoverEvents(True)
-        self.update()
-
-    def boundingRect(self):
-        return self._boundingRect
-
-    def hoverEnterEvent(self, event):
-        self._line.setPen(self._hoveredPen)
-        self._arrowHead.setPen(self._hoveredPen)
-
-    def hoverLeaveEvent(self, event):
-        self._line.setPen(self._normalPen)
-        self._arrowHead.setPen(self._normalPen)
-
-    def mousePressEvent(self, event):
-        pass
-
-    def mouseReleaseEvent(self, event):
-        self._qobject.emit(SIGNAL("clicked()"))
-
-#*******************************************************************************
 # D i r t y I n d i c a t o r                                                  *
 #*******************************************************************************
 class DirtyIndicator(QGraphicsItem):
@@ -240,26 +167,8 @@ class ImageScene2D(QGraphicsScene):
         self.scene2data, isInvertible = self.data2scene.inverted()
         self.setSceneRect( QRectF(0,0,self.sceneRect().height(), self.sceneRect().width()) )
         self._tiling.setData2scene( self.data2scene )
-        self._setAxes()
         self._tileProvider._onSizeChanged()
         QGraphicsScene.invalidate( self, self.sceneRect() )
-
-    def _setAxes(self):
-        fP = QPointF(0,-self._offsetY/2)
-        tP = QPointF(self._dataShape[0], -self._offsetY/2)
-        self._arrowX.setArrow( self.data2scene.map(fP), self.data2scene.map(tP), "1", Qt.green)
-
-        fP = QPointF(-self._offsetX/2.0, 0)
-        tP = QPointF(-self._offsetX/2.0, self._dataShape[1])
-        self._arrowY.setArrow( self.data2scene.map(fP), self.data2scene.map(tP), "2", Qt.red)
-
-        fP = QPointF(-self._offsetX/2.0, -self._offsetY/2.0)
-        tP = QPointF(0, -self._offsetY/2.0)
-        self._rotateRight.setArrow( self.data2scene.map(fP), self.data2scene.map(tP), "r", Qt.blue)
-
-        fP = QPointF(-self._offsetX/2.0, -self._offsetY/2.0)
-        tP = QPointF(-self._offsetX/2.0, 0)
-        self._rotateLeft.setArrow( self.data2scene.map(fP), self.data2scene.map(tP), "l", Qt.yellow)
 
     @property
     def sceneShape(self):
@@ -282,8 +191,6 @@ class ImageScene2D(QGraphicsScene):
         w = sceneShape[0] + 2*self._offsetX
         h = sceneShape[1] + 2*self._offsetY
         self.setSceneRect(0,0, w,h)
-
-        self._setAxes()
 
         if self._dirtyIndicator:
             self.removeItem(self._dirtyIndicator)
@@ -338,20 +245,6 @@ class ImageScene2D(QGraphicsScene):
         self._offsetY = 30
         self._axesSwapped = False
         self.name = name
-
-        self._arrowX = QGraphicsArrowItem()
-        self._arrowY = QGraphicsArrowItem()
-        self._rotateLeft = QGraphicsArrowItem()
-        self._rotateRight = QGraphicsArrowItem()
-        self.addItem(self._arrowX)
-        self.addItem(self._arrowY)
-        self.addItem(self._rotateLeft)
-        self.addItem(self._rotateRight)
-
-        self._rotateLeft._qobject.connect( self._rotateLeft._qobject, SIGNAL("clicked()"), self._onRotateLeft )
-        self._rotateRight._qobject.connect( self._rotateRight._qobject, SIGNAL("clicked()"), self._onRotateRight )
-        self._arrowX._qobject.connect( self._arrowX._qobject, SIGNAL("clicked()"), self._onSwapAxes )
-        self._arrowY._qobject.connect( self._arrowY._qobject, SIGNAL("clicked()"), self._onSwapAxes )
 
         self.data2scene = QTransform(1,0,0,0,1,0,self._offsetX, self._offsetY, 1)
         self.scene2data, isInvertible = self.data2scene.inverted()
