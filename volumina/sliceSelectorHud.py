@@ -120,7 +120,7 @@ class LabelButtons(QLabel):
 
     def setMaximizeIcon(self, opacity=OPACITY):
         self.buttonStyle = "max"
-        self.setToolTip("maximize")
+        self.setToolTip("Maximize")
         shapes = [("rect", (50.0, 50.0, 150.0, 150.0))]
         pixmap = _draw_icon(shapes,
                             self.backgroundColor,
@@ -379,12 +379,12 @@ class ImageView2DHud(QWidget):
 
         self.layout.addStretch()
 
-        for name, handler in [('dock', self.on_dockButton),
+        for name, handler in [('undock', self.on_dockButton),
                               ('max', self.on_maxButton)]:
             self._add_button(name, handler)
 
         self.sliceSelector = self.buttons['slice']
-        self.dockButton = self.buttons['dock']
+        self.dockButton = self.buttons['undock']
         self.maxButton = self.buttons['max']
 
     def setMaximum(self, v):
