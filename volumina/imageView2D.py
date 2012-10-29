@@ -58,7 +58,7 @@ class ImageView2D(QGraphicsView):
         scene = self.scene()
         hud.rotLeftButtonClicked.connect(scene._onRotateLeft)
         hud.rotRightButtonClicked.connect(scene._onRotateRight)
-        hud.flipButtonClicked.connect(scene._onSwapAxes)
+        hud.swapAxesButtonClicked.connect(scene._onSwapAxes)
 
     def __init__(self, imagescene2d):
         """

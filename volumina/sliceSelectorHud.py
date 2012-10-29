@@ -2,9 +2,56 @@ from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
 
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QPolygonF, QSpinBox, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QPalette, QFrame
+                        QCheckBox, QWidget, QPalette, QFrame, QIcon, QTransform, QImage
 import sys, random
 import numpy, qimage2ndarray
+import icons
+
+
+def _load_icon(filename, backgroundColor, width, height):
+    # foreground = QImage()
+    # foreground.load(filename)
+    # image = QImage()
+    # image.fill(backgroundColor)
+    # painter = QPainter()
+    # painter.begin(image)
+    # painter.drawImage(foreground)
+    # painter.end()
+    # pixmap = QPixmap()
+    # pixmap.fromImage(image)
+    pixmap = QPixmap(filename)
+    pixmap = pixmap.scaled(QSize(width, height),
+                           Qt.KeepAspectRatio,
+                           Qt.SmoothTransformation)
+    return pixmap
+
+
+# TODO: replace with icon files
+def _draw_icon(shapes, backgroundColor, foregroundColor, opacity, width, height):
+    pixmap = QPixmap(250, 250)
+    pixmap.fill(backgroundColor)
+    painter = QPainter()
+    painter.begin(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setOpacity(opacity)
+    pen = QPen(foregroundColor)
+    pen.setWidth(30)
+    painter.setPen(pen)
+    for shape, args in shapes:
+        if shape == "line":
+            painter.drawLine(*args)
+        elif shape == "rect":
+            painter.drawRect(*args)
+        elif shape == "polygon":
+            points = QPolygonF()
+            for point in args:
+                points.append(QPointF(*point))
+            painter.drawPolygon(points)
+    painter.end()
+    pixmap = pixmap.scaled(QSize(width, height),
+                           Qt.KeepAspectRatio,
+                           Qt.SmoothTransformation)
+    return pixmap
 
 
 class LabelButtons(QLabel):
@@ -28,168 +75,112 @@ class LabelButtons(QLabel):
     def setUndockIcon(self, opacity=0.6):
         self.buttonStyle = "undock"
         self.setToolTip("Undock")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        pen = QPen(self.foregroundColor)
-        pen.setWidth(30)
-        painter.setPen(pen)
-        painter.drawLine(70.0, 170.0, 190.0, 60.0)
-        painter.drawLine(200.0, 140.0, 200.0, 50.0)
-        painter.drawLine(110.0, 50.0, 200.0, 50.0)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        shapes = [("line", (70.0, 170.0, 190.0, 60.0)),
+                  ("line", (200.0, 140.0, 200.0, 50.0)),
+                  ("line", (110.0, 50.0, 200.0, 50.0))]
+        pixmap = _draw_icon(shapes,
+                            self.backgroundColor,
+                            self.foregroundColor,
+                            opacity,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
 
     def setDockIcon(self, opacity=0.6):
         self.buttonStyle = "dock"
         self.setToolTip("Dock")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        pen = QPen(self.foregroundColor)
-        pen.setWidth(30)
-        painter.setPen(pen)
-        painter.drawLine(70.0, 170.0, 190.0, 60.0)
-        painter.drawLine(60.0, 90.0, 60.0, 180.0)
-        painter.drawLine(150.0, 180.0, 60.0, 180.0)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        shapes = [("line", (70.0, 170.0, 190.0, 60.0)),
+                  ("line", (60.0, 90.0, 60.0, 180.0)),
+                  ("line", (150.0, 180.0, 60.0, 180.0))]
+        pixmap = _draw_icon(shapes,
+                            self.backgroundColor,
+                            self.foregroundColor,
+                            opacity,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
 
     def setMaximizeIcon(self, opacity=0.6):
         self.buttonStyle = "max"
-        self.setToolTip("Maximize")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        pen = QPen(self.foregroundColor)
-        pen.setWidth(30)
-        painter.setPen(pen)
-        painter.drawRect(50.0, 50.0, 150.0, 150.0)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.setToolTip("maximize")
+        shapes = [("rect", (50.0, 50.0, 150.0, 150.0))]
+        pixmap = _draw_icon(shapes,
+                            self.backgroundColor,
+                            self.foregroundColor,
+                            opacity,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
 
     def setMinimizeIcon(self, opacity=0.6):
-        self.buttonStyle = "min"
-        self.setToolTip("Minimize")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        pen = QPen(self.foregroundColor)
-        pen.setWidth(30)
-        painter.setPen(pen)
-        painter.drawRect(50.0, 50.0, 150.0, 150.0)
-        painter.drawLine(50.0, 125.0, 200.0, 125.0)
-        painter.drawLine(125.0, 200.0, 125.0, 50.0)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        shapes = [("rect", (50.0, 50.0, 150.0, 150.0)),
+                  ("line", (50.0, 125.0, 200.0, 125.0)),
+                  ("line", (125.0, 200.0, 125.0, 50.0))]
+        pixmap = _draw_icon(shapes,
+                            self.backgroundColor,
+                            self.foregroundColor,
+                            opacity,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
 
     def setRotLeftIcon(self, opacity=0.6):
         self.buttonStyle = "rotleft"
-        self.setToolTip("Rotate Left")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        pen = QPen(self.foregroundColor)
-        pen.setWidth(30)
-        painter.setPen(pen)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.setToolTip("Rotate left")
+        pixmap = _load_icon(':icons/icons/rotate-right.png',
+                              self.backgroundColor,
+                              self.pixmapWidth,
+                              self.pixmapHeight)
+        pixmap = pixmap.transformed(QTransform().scale(-1, 1))
         self.setPixmap(pixmap)
 
     def setRotRightIcon(self, opacity=0.6):
         self.buttonStyle = "rotright"
-        self.setToolTip("Rotate Right")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        pen = QPen(self.foregroundColor)
-        pen.setWidth(30)
-        painter.setPen(pen)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.setToolTip("Rotate right")
+        pixmap = _load_icon(':icons/icons/rotate-right.png',
+                              self.backgroundColor,
+                              self.pixmapWidth,
+                              self.pixmapHeight)
         self.setPixmap(pixmap)
 
-    def setFlipIcon(self, opacity=0.6):
-        self.buttonStyle = "flip"
-        self.setToolTip("Flip slice")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        pen = QPen(self.foregroundColor)
-        pen.setWidth(30)
-        painter.setPen(pen)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    def setSwapAxesIcon(self, opacity=0.6):
+        self.buttonStyle = "swapaxes"
+        self.setToolTip("Swap axes")
+        pixmap = _load_icon(':icons/icons/swap-axes.png',
+                              self.backgroundColor,
+                              self.pixmapWidth,
+                              self.pixmapHeight)
         self.setPixmap(pixmap)
 
     def setSpinBoxUpIcon(self, opacity=0.6):
         self.buttonStyle = "spinUp"
         self.setToolTip("+ 1")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        brush = QBrush(self.foregroundColor)
-        painter.setBrush(brush)
-        pen = QPen(self.foregroundColor)
-        painter.setPen(pen)
-        points = QPolygonF()
-        points.append(QPointF(125.0, 50.0))
-        points.append(QPointF(200.0, 180.0))
-        points.append(QPointF(50.0, 180.0))
-        painter.drawPolygon(points)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        shapes = [("polygon", ((125.0, 50.0),
+                               (200.0, 180.0),
+                               (50.0, 180.0)))]
+        pixmap = _draw_icon(shapes,
+                            self.backgroundColor,
+                            self.foregroundColor,
+                            opacity,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
+
 
     def setSpinBoxDownIcon(self, opacity=0.6):
         self.buttonStyle = "spinDown"
         self.setToolTip("- 1")
-        pixmap = QPixmap(250, 250)
-        pixmap.fill(self.backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setOpacity(opacity)
-        brush = QBrush(self.foregroundColor)
-        painter.setBrush(brush)
-        pen = QPen(self.foregroundColor)
-        painter.setPen(pen)
-        points = QPolygonF()
-        points.append(QPointF(125.0, 200.0))
-        points.append(QPointF(200.0, 70.0))
-        points.append(QPointF(50.0, 70.0))
-        painter.drawPolygon(points)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(self.pixmapWidth, self.pixmapHeight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        shapes = [("polygon", ((125.0, 200.0),
+                               (200.0, 70.0),
+                               (50.0, 70.0)))]
+        pixmap = _draw_icon(shapes,
+                            self.backgroundColor,
+                            self.foregroundColor,
+                            opacity,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
+
 
     def changeOpacity(self, opacity):
         if self.buttonStyle == "undock":
@@ -204,8 +195,8 @@ class LabelButtons(QLabel):
             self.seRotLeftIcon(opacity)
         elif self.buttonStyle == "rotright":
             self.setRotRightIcon(opacity)
-        elif self.buttonStyle == "flip":
-            self.setFlipIcon(opacity)
+        elif self.buttonStyle == "swapaxes":
+            self.setSwapAxesIcon(opacity)
         elif self.buttonStyle == "spinUp":
             self.setSpinBoxUpIcon(opacity)
         elif self.buttonStyle == "spinDown":
@@ -286,7 +277,7 @@ class ImageView2DHud(QWidget):
     maximizeButtonClicked = pyqtSignal()
     rotLeftButtonClicked = pyqtSignal()
     rotRightButtonClicked = pyqtSignal()
-    flipButtonClicked = pyqtSignal()
+    swapAxesButtonClicked = pyqtSignal()
     def __init__(self, parent ):
         QWidget.__init__(self, parent)
 
@@ -338,11 +329,11 @@ class ImageView2DHud(QWidget):
 
         self.layout.addSpacing(4)
 
-        self.flipButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.flipButton.clicked.connect(self.on_flipButton)
-        self.flipButton.setFlipIcon()
-        setupFrameStyle( self.flipButton )
-        self.layout.addWidget(self.flipButton)
+        self.swapAxesButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.swapAxesButton.clicked.connect(self.on_swapAxesButton)
+        self.swapAxesButton.setSwapAxesIcon()
+        setupFrameStyle( self.swapAxesButton )
+        self.layout.addWidget(self.swapAxesButton)
 
         self.layout.addSpacing(4)
 
@@ -386,8 +377,8 @@ class ImageView2DHud(QWidget):
     def on_rotRightButton(self):
         self.rotRightButtonClicked.emit()
 
-    def on_flipButton(self):
-        self.flipButtonClicked.emit()
+    def on_swapAxesButton(self):
+        self.swapAxesButtonClicked.emit()
 
     def createAxisLabel(self):
         axisLabel = QLabel()

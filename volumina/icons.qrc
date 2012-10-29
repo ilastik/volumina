@@ -10,5 +10,7 @@
     <file>icons/list-remove.png</file>
     <file>icons/process-stop.png</file>
     <file>icons/view-fullscreen.png</file>
+    <file>icons/rotate-right.png</file>
+    <file>icons/swap-axes.png</file>
   </qresource>
 </RCC>
