@@ -323,7 +323,6 @@ class ImageView2DHud(QWidget):
 
         self.layout.addWidget( leftHudFrame )
 
-        ###
         self.layout.addSpacing(12)
 
         self.rotLeftButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
@@ -347,9 +346,6 @@ class ImageView2DHud(QWidget):
         self.rotRightButton.setRotRightIcon()
         setupFrameStyle( self.rotRightButton )
         self.layout.addWidget(self.rotRightButton)
-
-
-        ###
 
         self.layout.addStretch()
 
@@ -557,24 +553,6 @@ class QuadStatusBar(QHBoxLayout):
         painter.end()
         pixmap = pixmap.scaled(QSize(61,20),Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-        """
-        self.grayScaleLabel.setPixmap(pixmap)
-        self.grayScaleSpinBox = QSpinBox()
-        self.grayScaleSpinBox.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        self.grayScaleSpinBox.setEnabled(False)
-        self.grayScaleSpinBox.setAlignment(Qt.AlignCenter)
-        self.grayScaleSpinBox.setToolTip("grayscaleSpinBox")
-        self.grayScaleSpinBox.setButtonSymbols(QAbstractSpinBox.NoButtons)
-        self.grayScaleSpinBox.setMaximum(255)
-        self.grayScaleSpinBox.setMaximumHeight(20)
-        self.grayScaleSpinBox.setMaximum(255)
-        font = self.grayScaleSpinBox.font()
-        font.setPixelSize(14)
-        self.grayScaleSpinBox.setFont(font)
-        self.grayScaleSpinBox.setStyleSheet("QSpinBox { color: " + str(grayforegroundColor.name()) + "; font: bold; background-color: " + str(graybackgroundColor.name()) + "; border:0;}")
-        self.addWidget(self.grayScaleSpinBox)
-        """
-
         self.addStretch()
 
         self.positionCheckBox = QCheckBox()
@@ -597,10 +575,6 @@ class QuadStatusBar(QHBoxLayout):
 
         self.timeSpinBox = QSpinBox()
         self.addWidget(self.timeSpinBox)
-    """
-    def setGrayScale(self, gray):
-        self.grayScaleSpinBox.setValue(gray)
-    """
 
     def setMouseCoords(self, x, y, z):
         self.xSpinBox.setValue(x)
