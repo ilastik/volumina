@@ -5,8 +5,7 @@ from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QV
                         QCheckBox, QWidget, QPalette, QFrame, QIcon, QTransform, QImage
 import sys, random
 import numpy, qimage2ndarray
-import icons
-
+import icons_rc
 
 def _load_icon(filename, backgroundColor, width, height):
     foreground = QPixmap()
