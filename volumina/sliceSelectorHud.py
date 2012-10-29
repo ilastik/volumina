@@ -201,23 +201,28 @@ class LabelButtons(QLabel):
 
 
     def changeOpacity(self, opacity):
-        if self.buttonStyle == "undock":
+        self.setIcon(opacity=opacity)
+
+    def setIcon(self, icon=None, opacity=OPACITY):
+        if icon is None:
+            icon = self.buttonStyle
+        if icon == "undock":
             self.setUndockIcon(opacity)
-        elif self.buttonStyle == "dock":
+        elif icon == "dock":
             self.setDockIcon(opacity)
-        elif self.buttonStyle == "min":
+        elif icon == "min":
             self.setMinimizeIcon(opacity)
-        elif self.buttonStyle == "max":
+        elif icon == "max":
             self.setMaximizeIcon(opacity)
-        elif self.buttonStyle == "rotleft":
+        elif icon == "rotleft":
             self.setRotLeftIcon(opacity)
-        elif self.buttonStyle == "rotright":
+        elif icon == "rotright":
             self.setRotRightIcon(opacity)
-        elif self.buttonStyle == "swapaxes":
+        elif icon == "swapaxes":
             self.setSwapAxesIcon(opacity)
-        elif self.buttonStyle == "spinUp":
+        elif icon == "spinUp":
             self.setSpinBoxUpIcon(opacity)
-        elif self.buttonStyle == "spinDown":
+        elif icon == "spinDown":
             self.setSpinBoxDownIcon(opacity)
 
     def mouseReleaseEvent(self, event):
@@ -232,18 +237,22 @@ class LabelButtons(QLabel):
 
 class SpinBoxImageView(QHBoxLayout):
     valueChanged = pyqtSignal(int)
-    def __init__(self, parentView, backgroundColor, foregroundColor, value, height, fontSize):
+    def __init__(self, parentView, backgroundColor, foregroundColor,
+                 value, height, fontSize):
         QHBoxLayout.__init__(self)
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
 
         self.labelLayout = QVBoxLayout()
-        self.upLabel = LabelButtons(parentView, backgroundColor, foregroundColor, height/2, height/2)
+        self.upLabel = LabelButtons(parentView, backgroundColor,
+                                    foregroundColor, height/2,
+                                    height/2)
         self.labelLayout.addWidget(self.upLabel)
         self.upLabel.setSpinBoxUpIcon()
         self.upLabel.clicked.connect(self.on_upLabel)
 
-        self.downLabel = LabelButtons(parentView, backgroundColor, foregroundColor, height/2, height/2)
+        self.downLabel = LabelButtons(parentView, backgroundColor,
+                                      foregroundColor, height/2, height/2)
         self.labelLayout.addWidget(self.downLabel)
         self.downLabel.setSpinBoxDownIcon()
         self.downLabel.clicked.connect(self.on_downLabel)
@@ -289,6 +298,15 @@ class SpinBoxImageView(QHBoxLayout):
     def on_downLabel(self):
         self.spinBox.setValue(self.spinBox.value() - 1)
 
+
+
+def setupFrameStyle( frame ):
+    # Use this function to add a consistent frame style to all HUD
+    # elements
+    frame.setFrameShape( QFrame.Box )
+    frame.setFrameShadow( QFrame.Raised )
+    frame.setLineWidth( 2 )
+
 class ImageView2DHud(QWidget):
     dockButtonClicked = pyqtSignal()
     maximizeButtonClicked = pyqtSignal()
@@ -303,9 +321,23 @@ class ImageView2DHud(QWidget):
         self.layout.setContentsMargins(0,4,0,0)
         self.layout.setSpacing(0)
 
-        self.buttons = []
+        self.buttons = {}
 
-    def createImageView2DHud(self, axis, value, backgroundColor, foregroundColor):
+    def _add_button(self, name, handler):
+        button = LabelButtons(self.parent(),
+                              self.backgroundColor,
+                              self.foregroundColor,
+                              self.labelsWidth,
+                              self.labelsheight)
+        self.buttons[name] = button
+        button.clicked.connect(handler)
+        button.setIcon(name)
+        setupFrameStyle(button)
+        self.layout.addWidget(button)
+        self.layout.addSpacing(4)
+
+    def createImageView2DHud(self, axis, value, backgroundColor,
+                             foregroundColor):
         self.axis = axis
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
@@ -315,23 +347,22 @@ class ImageView2DHud(QWidget):
         self.layout.addSpacing(4)
 
         self.axisLabel = self.createAxisLabel()
-        self.sliceSelector = SpinBoxImageView(self.parent(), backgroundColor, foregroundColor, value, self.labelsheight, 12)
+        self.sliceSelector = SpinBoxImageView(self.parent(),
+                                              backgroundColor,
+                                              foregroundColor,
+                                              value,
+                                              self.labelsheight, 12)
 
-        self.buttons.append(self.sliceSelector)
+        self.buttons['slice'] = self.sliceSelector
 
-        # Add left-hand items into a sub-layout so we can draw a frame around them
+        # Add left-hand items into a sub-layout so we can draw a frame
+        # around them
         leftHudLayout = QHBoxLayout()
         leftHudLayout.setContentsMargins(0,0,0,0)
         leftHudLayout.setSpacing(0)
         leftHudLayout.addWidget( self.axisLabel )
         leftHudLayout.addSpacing(1)
         leftHudLayout.addLayout(self.sliceSelector)
-
-        def setupFrameStyle( frame ):
-            # Use this function to add a consistent frame style to all HUD elements
-            frame.setFrameShape( QFrame.Box )
-            frame.setFrameShadow( QFrame.Raised )
-            frame.setLineWidth( 2 )
 
         leftHudFrame = QFrame()
         leftHudFrame.setLayout( leftHudLayout )
@@ -341,51 +372,20 @@ class ImageView2DHud(QWidget):
 
         self.layout.addSpacing(12)
 
-        # TODO: lots of code duplication
-        self.rotLeftButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.buttons.append(self.rotLeftButton)
-        self.rotLeftButton.clicked.connect(self.on_rotLeftButton)
-        self.rotLeftButton.setRotLeftIcon()
-        setupFrameStyle( self.rotLeftButton )
-        self.layout.addWidget(self.rotLeftButton)
-
-        self.layout.addSpacing(4)
-
-        self.swapAxesButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.buttons.append(self.swapAxesButton)
-        self.swapAxesButton.clicked.connect(self.on_swapAxesButton)
-        self.swapAxesButton.setSwapAxesIcon()
-        setupFrameStyle( self.swapAxesButton )
-        self.layout.addWidget(self.swapAxesButton)
-
-        self.layout.addSpacing(4)
-
-        self.rotRightButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.buttons.append(self.rotRightButton)
-        self.rotRightButton.clicked.connect(self.on_rotRightButton)
-        self.rotRightButton.setRotRightIcon()
-        setupFrameStyle( self.rotRightButton )
-        self.layout.addWidget(self.rotRightButton)
+        for name, handler in [('rotleft', self.on_rotLeftButton),
+                              ('swapaxes', self.on_swapAxesButton),
+                              ('rotright', self.on_rotRightButton)]:
+            self._add_button(name, handler)
 
         self.layout.addStretch()
 
-        self.dockButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.buttons.append(self.dockButton)
-        self.dockButton.clicked.connect(self.on_dockButton)
-        self.dockButton.setUndockIcon()
-        setupFrameStyle( self.dockButton )
-        self.layout.addWidget(self.dockButton)
+        for name, handler in [('dock', self.on_dockButton),
+                              ('max', self.on_maxButton)]:
+            self._add_button(name, handler)
 
-        self.layout.addSpacing(4)
-
-        self.maxButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.buttons.append(self.maxButton)
-        self.maxButton.clicked.connect(self.on_maxButton)
-        self.maxButton.setMaximizeIcon()
-        setupFrameStyle(self.maxButton)
-        self.layout.addWidget(self.maxButton)
-
-        self.layout.addSpacing(4)
+        self.sliceSelector = self.buttons['slice']
+        self.dockButton = self.buttons['dock']
+        self.maxButton = self.buttons['max']
 
     def setMaximum(self, v):
         self.sliceSelector.setNewValue(v)
@@ -428,12 +428,15 @@ class ImageView2DHud(QWidget):
         painter.drawPath(path)
         painter.setFont(font)
         painter.end()
-        pixmap = pixmap.scaled(QSize(self.labelsWidth,self.labelsheight),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = pixmap.scaled(QSize(self.labelsWidth,
+                                     self.labelsheight),
+                               Qt.KeepAspectRatio,
+                               Qt.SmoothTransformation)
         return pixmap
 
     def changeOpacity(self, opacity):
         self.axisLabel.setPixmap(self.createAxisLabelPixmap(opacity))
-        for b in self.buttons:
+        for b in self.buttons.values():
             b.changeOpacity(opacity)
 
 
@@ -458,7 +461,9 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     painter.drawPath(path)
     painter.setFont(font)
     painter.end()
-    pixmap = pixmap.scaled(QSize(20,20),Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    pixmap = pixmap.scaled(QSize(20,20),
+                           Qt.KeepAspectRatio,
+                           Qt.SmoothTransformation)
     label.setPixmap(pixmap)
 
     spinbox = QSpinBox()
@@ -472,7 +477,8 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     font = spinbox.font()
     font.setPixelSize(14)
     spinbox.setFont(font)
-    sheet = TEMPLATE.format(foregroundColor.name(), backgroundColor.name())
+    sheet = TEMPLATE.format(foregroundColor.name(),
+                            backgroundColor.name())
     spinbox.setStyleSheet(sheet)
     return label, spinbox
 
@@ -484,24 +490,24 @@ class QuadStatusBar(QHBoxLayout):
         self.setSpacing(0)
 
     def createQuadViewStatusBar(self,
-                                xbackgroundColor,
-                                xforegroundColor,
-                                ybackgroundColor,
-                                yforegroundColor,
-                                zbackgroundColor,
-                                zforegroundColor,
-                                graybackgroundColor,
-                                grayforegroundColor):
-
-        self.xLabel, self.xSpinBox = _get_pos_widget('X', xbackgroundColor, xforegroundColor)
+                                xbackgroundColor, xforegroundColor,
+                                ybackgroundColor, yforegroundColor,
+                                zbackgroundColor, zforegroundColor):
+        self.xLabel, self.xSpinBox = _get_pos_widget('X',
+                                                     xbackgroundColor,
+                                                     xforegroundColor)
         self.addWidget(self.xLabel)
         self.addWidget(self.xSpinBox)
 
-        self.yLabel, self.ySpinBox = _get_pos_widget('Y', ybackgroundColor, yforegroundColor)
+        self.yLabel, self.ySpinBox = _get_pos_widget('Y',
+                                                     ybackgroundColor,
+                                                     yforegroundColor)
         self.addWidget(self.yLabel)
         self.addWidget(self.ySpinBox)
 
-        self.zLabel, self.zSpinBox = _get_pos_widget('Z', zbackgroundColor, zforegroundColor)
+        self.zLabel, self.zSpinBox = _get_pos_widget('Z',
+                                                     zbackgroundColor,
+                                                     zforegroundColor)
         self.addWidget(self.zLabel)
         self.addWidget(self.zSpinBox)
 
