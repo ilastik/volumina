@@ -197,7 +197,7 @@ class LabelButtons(QLabel):
         elif self.buttonStyle == "max":
             self.setMaximizeIcon(opacity)
         elif self.buttonStyle == "rotleft":
-            self.seRotLeftIcon(opacity)
+            self.setRotLeftIcon(opacity)
         elif self.buttonStyle == "rotright":
             self.setRotRightIcon(opacity)
         elif self.buttonStyle == "swapaxes":
@@ -291,6 +291,8 @@ class ImageView2DHud(QWidget):
         self.layout.setContentsMargins(0,4,0,0)
         self.layout.setSpacing(0)
 
+        self.buttons = []
+
     def createImageView2DHud(self, axis, value, backgroundColor, foregroundColor):
         self.axis = axis
         self.backgroundColor = backgroundColor
@@ -302,6 +304,8 @@ class ImageView2DHud(QWidget):
 
         self.axisLabel = self.createAxisLabel()
         self.sliceSelector = SpinBoxImageView(self.parent(), backgroundColor, foregroundColor, value, self.labelsheight, 12)
+
+        self.buttons.append(self.sliceSelector)
 
         # Add left-hand items into a sub-layout so we can draw a frame around them
         leftHudLayout = QHBoxLayout()
@@ -325,42 +329,47 @@ class ImageView2DHud(QWidget):
 
         self.layout.addSpacing(12)
 
-        self.rotLeftButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.rotLeftButton.clicked.connect(self.on_rotLeftButton)
-        self.rotLeftButton.setRotLeftIcon()
-        setupFrameStyle( self.rotLeftButton )
-        self.layout.addWidget(self.rotLeftButton)
+        rotLeftButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.buttons.append(rotLeftButton)
+        rotLeftButton.clicked.connect(self.on_rotLeftButton)
+        rotLeftButton.setRotLeftIcon()
+        setupFrameStyle( rotLeftButton )
+        self.layout.addWidget(rotLeftButton)
 
         self.layout.addSpacing(4)
 
-        self.swapAxesButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.swapAxesButton.clicked.connect(self.on_swapAxesButton)
-        self.swapAxesButton.setSwapAxesIcon()
-        setupFrameStyle( self.swapAxesButton )
-        self.layout.addWidget(self.swapAxesButton)
+        swapAxesButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.buttons.append(swapAxesButton)
+        swapAxesButton.clicked.connect(self.on_swapAxesButton)
+        swapAxesButton.setSwapAxesIcon()
+        setupFrameStyle( swapAxesButton )
+        self.layout.addWidget(swapAxesButton)
 
         self.layout.addSpacing(4)
 
-        self.rotRightButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.rotRightButton.clicked.connect(self.on_rotRightButton)
-        self.rotRightButton.setRotRightIcon()
-        setupFrameStyle( self.rotRightButton )
-        self.layout.addWidget(self.rotRightButton)
+        rotRightButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.buttons.append(rotRightButton)
+        rotRightButton.clicked.connect(self.on_rotRightButton)
+        rotRightButton.setRotRightIcon()
+        setupFrameStyle( rotRightButton )
+        self.layout.addWidget(rotRightButton)
 
         self.layout.addStretch()
 
-        self.dockButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.dockButton.clicked.connect(self.on_dockButton)
-        self.dockButton.setUndockIcon()
-        setupFrameStyle( self.dockButton )
-        self.layout.addWidget(self.dockButton)
+        dockButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.buttons.append(dockButton)
+        dockButton.clicked.connect(self.on_dockButton)
+        dockButton.setUndockIcon()
+        setupFrameStyle( dockButton )
+        self.layout.addWidget(dockButton)
         self.layout.addSpacing(4)
 
-        self.maxButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
-        self.maxButton.clicked.connect(self.on_maxButton)
-        self.maxButton.setMaximizeIcon()
-        setupFrameStyle( self.maxButton )
-        self.layout.addWidget(self.maxButton)
+        maxButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
+        self.buttons.append(maxButton)
+        maxButton.clicked.connect(self.on_maxButton)
+        maxButton.setMaximizeIcon()
+        setupFrameStyle(maxButton)
+        self.layout.addWidget(maxButton)
         self.layout.addSpacing(4)
 
     def setMaximum(self, v):
@@ -409,9 +418,8 @@ class ImageView2DHud(QWidget):
 
     def changeOpacity(self, opacity):
         self.axisLabel.setPixmap(self.createAxisLabelPixmap(opacity))
-        self.sliceSelector.changeOpacity(opacity)
-        self.dockButton.changeOpacity(opacity)
-        self.maxButton.changeOpacity(opacity)
+        for b in self.buttons:
+            b.changeOpacity(opacity)
 
 class QuadStatusBar(QHBoxLayout):
     def __init__(self, parent=None ):
