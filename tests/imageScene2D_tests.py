@@ -77,10 +77,6 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         self.sims.register(self.layer, self.ims)
 
         self.scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
-        self.scene._arrowX.setVisible(False)
-        self.scene._arrowY.setVisible(False)
-        self.scene._rotateLeft.setVisible(False)
-        self.scene._rotateRight.setVisible(False)
 
         self.scene.stackedImageSources = self.sims
         self.scene.sceneShape = (310,290)
