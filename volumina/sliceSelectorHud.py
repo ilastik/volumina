@@ -7,6 +7,9 @@ import sys, random
 import numpy, qimage2ndarray
 import icons_rc
 
+OPACITY = 0.6
+TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
+
 def _load_icon(filename, backgroundColor, width, height):
     foreground = QPixmap()
     foreground.load(filename)
@@ -32,6 +35,14 @@ def _load_icon(filename, backgroundColor, width, height):
 
 # TODO: replace with icon files
 def _draw_icon(shapes, backgroundColor, foregroundColor, opacity, width, height):
+    """Create a pixmap for an icon by drawing shapes.
+
+    Shapes consist of tuples of (name, args), where name is one of
+    'line', 'rect', and 'polygon'.
+
+    For polygons, 'args' must be a list of (x, y) tuples.
+
+    """
     pixmap = QPixmap(250, 250)
     pixmap.fill(backgroundColor)
     painter = QPainter()
@@ -76,7 +87,7 @@ class LabelButtons(QLabel):
         self.pixmapWidth = width
         self.pixmapHeight = height
 
-    def setUndockIcon(self, opacity=0.6):
+    def setUndockIcon(self, opacity=OPACITY):
         self.buttonStyle = "undock"
         self.setToolTip("Undock")
         shapes = [("line", (70.0, 170.0, 190.0, 60.0)),
@@ -90,7 +101,7 @@ class LabelButtons(QLabel):
                             self.pixmapHeight)
         self.setPixmap(pixmap)
 
-    def setDockIcon(self, opacity=0.6):
+    def setDockIcon(self, opacity=OPACITY):
         self.buttonStyle = "dock"
         self.setToolTip("Dock")
         shapes = [("line", (70.0, 170.0, 190.0, 60.0)),
@@ -104,7 +115,7 @@ class LabelButtons(QLabel):
                             self.pixmapHeight)
         self.setPixmap(pixmap)
 
-    def setMaximizeIcon(self, opacity=0.6):
+    def setMaximizeIcon(self, opacity=OPACITY):
         self.buttonStyle = "max"
         self.setToolTip("maximize")
         shapes = [("rect", (50.0, 50.0, 150.0, 150.0))]
@@ -116,7 +127,7 @@ class LabelButtons(QLabel):
                             self.pixmapHeight)
         self.setPixmap(pixmap)
 
-    def setMinimizeIcon(self, opacity=0.6):
+    def setMinimizeIcon(self, opacity=OPACITY):
         shapes = [("rect", (50.0, 50.0, 150.0, 150.0)),
                   ("line", (50.0, 125.0, 200.0, 125.0)),
                   ("line", (125.0, 200.0, 125.0, 50.0))]
@@ -128,7 +139,7 @@ class LabelButtons(QLabel):
                             self.pixmapHeight)
         self.setPixmap(pixmap)
 
-    def setRotLeftIcon(self, opacity=0.6):
+    def setRotLeftIcon(self, opacity=OPACITY):
         self.buttonStyle = "rotleft"
         self.setToolTip("Rotate left")
         pixmap = _load_icon(':icons/icons/rotate-right.png',
@@ -138,7 +149,7 @@ class LabelButtons(QLabel):
         pixmap = pixmap.transformed(QTransform().scale(-1, 1))
         self.setPixmap(pixmap)
 
-    def setRotRightIcon(self, opacity=0.6):
+    def setRotRightIcon(self, opacity=OPACITY):
         self.buttonStyle = "rotright"
         self.setToolTip("Rotate right")
         pixmap = _load_icon(':icons/icons/rotate-right.png',
@@ -147,7 +158,7 @@ class LabelButtons(QLabel):
                               self.pixmapHeight)
         self.setPixmap(pixmap)
 
-    def setSwapAxesIcon(self, opacity=0.6):
+    def setSwapAxesIcon(self, opacity=OPACITY):
         self.buttonStyle = "swapaxes"
         self.setToolTip("Swap axes")
         pixmap = _load_icon(':icons/icons/swap-axes.png',
@@ -156,7 +167,7 @@ class LabelButtons(QLabel):
                               self.pixmapHeight)
         self.setPixmap(pixmap)
 
-    def setSpinBoxUpIcon(self, opacity=0.6):
+    def setSpinBoxUpIcon(self, opacity=OPACITY):
         self.buttonStyle = "spinUp"
         self.setToolTip("+ 1")
         shapes = [("polygon", ((125.0, 50.0),
@@ -171,7 +182,7 @@ class LabelButtons(QLabel):
         self.setPixmap(pixmap)
 
 
-    def setSpinBoxDownIcon(self, opacity=0.6):
+    def setSpinBoxDownIcon(self, opacity=OPACITY):
         self.buttonStyle = "spinDown"
         self.setToolTip("- 1")
         shapes = [("polygon", ((125.0, 200.0),
@@ -236,7 +247,6 @@ class SpinBoxImageView(QHBoxLayout):
 
         self.addLayout(self.labelLayout)
 
-
         self.spinBox = QSpinBox()
         self.spinBox.valueChanged.connect(self.spinBoxValueChanged)
         self.addWidget(self.spinBox)
@@ -249,14 +259,14 @@ class SpinBoxImageView(QHBoxLayout):
         font = self.spinBox.font()
         font.setPixelSize(fontSize)
         self.spinBox.setFont(font)
-        rgb = foregroundColor.getRgb()
-        rgba_string = "rgba("+str(rgb[0])+","+str(rgb[1])+","+str(rgb[2])+","+str(0.6*100)+"%)"
-        self.spinBox.setStyleSheet("QSpinBox { color: " + rgba_string + "; font: bold; background-color: " + str(backgroundColor.name()) + "; border:0;}")
+        self.changeOpacity()
 
-    def changeOpacity(self, opacity):
-        rgb = self.foregroundColor.getRgb()
-        rgba_string = "rgba("+str(rgb[0])+","+str(rgb[1])+","+str(rgb[2])+","+str(opacity*100)+"%)"
-        self.spinBox.setStyleSheet("QSpinBox { color: " + rgba_string + "; font: bold; background-color: " + str(self.backgroundColor.name()) + "; border:0;}")
+    def changeOpacity(self, opacity=OPACITY):
+        r, g, b, a = self.foregroundColor.getRgb()
+        rgba = "rgba({0},{1},{2},{3}%)".format(r, g, b, opacity * 100)
+        sheet = TEMPLATE.format(rgba,
+                                self.backgroundColor.name())
+        self.spinBox.setStyleSheet(sheet)
         self.upLabel.changeOpacity(opacity)
         self.downLabel.changeOpacity(opacity)
 
@@ -398,7 +408,7 @@ class ImageView2DHud(QWidget):
         axisLabel.setPixmap(pixmap)
         return axisLabel
 
-    def createAxisLabelPixmap(self, opacity=0.6):
+    def createAxisLabelPixmap(self, opacity=OPACITY):
         pixmap = QPixmap(250, 250)
         pixmap.fill(self.backgroundColor)
         painter = QPainter()
@@ -458,7 +468,8 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     font = spinbox.font()
     font.setPixelSize(14)
     spinbox.setFont(font)
-    spinbox.setStyleSheet("QSpinBox { color: " + str(foregroundColor.name()) + "; font: bold; background-color: " + str(backgroundColor.name()) + "; border:0;}")
+    sheet = TEMPLATE.format(foregroundColor.name(), backgroundColor.name())
+    spinbox.setStyleSheet(sheet)
     return label, spinbox
 
 
