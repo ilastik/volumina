@@ -69,6 +69,9 @@ def _draw_icon(shapes, backgroundColor, foregroundColor, opacity, width, height)
     return pixmap
 
 
+# TODO: replace with QPushButton. in __init__(), read icon and give
+# correct background color. replace changeOpacity() with turning
+# buttons off.
 class LabelButtons(QLabel):
     clicked = pyqtSignal()
     def __init__(self, parentView, backgroundColor, foregroundColor, width, height):
@@ -338,6 +341,7 @@ class ImageView2DHud(QWidget):
 
         self.layout.addSpacing(12)
 
+        # TODO: lots of code duplication
         self.rotLeftButton = LabelButtons(self.parent(), backgroundColor, foregroundColor, self.labelsWidth, self.labelsheight)
         self.buttons.append(self.rotLeftButton)
         self.rotLeftButton.clicked.connect(self.on_rotLeftButton)
@@ -500,12 +504,6 @@ class QuadStatusBar(QHBoxLayout):
         self.zLabel, self.zSpinBox = _get_pos_widget('Z', zbackgroundColor, zforegroundColor)
         self.addWidget(self.zLabel)
         self.addWidget(self.zSpinBox)
-
-        self.addSpacing(4)
-
-        self.grayScaleLabel = QLabel()
-        self.grayScaleLabel.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        self.addWidget(self.grayScaleLabel)
 
         self.addStretch()
 
