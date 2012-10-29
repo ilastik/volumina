@@ -55,6 +55,11 @@ class ImageView2D(QGraphicsView):
         self.layout().addWidget(self._hud)
         self.layout().addStretch()
 
+        scene = self.scene()
+        hud.rotLeftButtonClicked.connect(scene._onRotateLeft)
+        hud.rotRightButtonClicked.connect(scene._onRotateRight)
+        hud.flipButtonClicked.connect(scene._onSwapAxes)
+
     def __init__(self, imagescene2d):
         """
         Constructs a view upon a ImageScene2D
