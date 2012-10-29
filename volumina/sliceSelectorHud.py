@@ -9,17 +9,22 @@ import icons
 
 
 def _load_icon(filename, backgroundColor, width, height):
-    # foreground = QImage()
-    # foreground.load(filename)
-    # image = QImage()
-    # image.fill(backgroundColor)
-    # painter = QPainter()
-    # painter.begin(image)
-    # painter.drawImage(foreground)
-    # painter.end()
-    # pixmap = QPixmap()
-    # pixmap.fromImage(image)
-    pixmap = QPixmap(filename)
+    foreground = QPixmap()
+    foreground.load(filename)
+
+    pixmap = QPixmap(foreground.size())
+
+    h, s, v, a = backgroundColor.getHsv()
+    s = 70
+    backgroundColor = QColor.fromHsv(h, s, v, a)
+
+    pixmap.fill(backgroundColor)
+
+    painter = QPainter()
+    painter.begin(pixmap)
+    painter.drawPixmap(QPointF(0, 0), foreground)
+    painter.end()
+
     pixmap = pixmap.scaled(QSize(width, height),
                            Qt.KeepAspectRatio,
                            Qt.SmoothTransformation)
