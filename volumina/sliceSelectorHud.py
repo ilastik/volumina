@@ -5,7 +5,7 @@ from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QV
                         QCheckBox, QWidget, QPalette, QFrame, QIcon, QTransform, QImage
 import sys, random
 import numpy, qimage2ndarray
-import icons_rc
+import volumina.icons_rc
 
 TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
 

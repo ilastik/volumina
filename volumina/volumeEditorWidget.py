@@ -15,8 +15,6 @@ from pixelpipeline.datasources import ArraySource, LazyflowSinkSource
 from volumeEditor import VolumeEditor
 import volumina.icons_rc
 
-
-
 class __TimerEventEater( QObject ):
     def eventFilter( self, obj, ev ):
         if isinstance(obj, QSpinBox) and isinstance(ev, QTimerEvent):
