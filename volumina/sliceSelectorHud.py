@@ -13,13 +13,7 @@ TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;
 def _load_icon(filename, backgroundColor, width, height):
     foreground = QPixmap()
     foreground.load(filename)
-
     pixmap = QPixmap(foreground.size())
-
-    h, s, v, a = backgroundColor.getHsv()
-    s = 70
-    backgroundColor = QColor.fromHsv(h, s, v, a)
-
     pixmap.fill(backgroundColor)
 
     painter = QPainter()
@@ -34,7 +28,7 @@ def _load_icon(filename, backgroundColor, width, height):
 
 
 # TODO: replace with icon files
-def _draw_icon(shapes, backgroundColor, foregroundColor, opacity, width, height):
+def _draw_icon(shapes, backgroundColor, foregroundColor, width, height, opacity):
     """Create a pixmap for an icon by drawing shapes.
 
     Shapes consist of tuples of (name, args), where name is one of
@@ -99,9 +93,9 @@ class LabelButtons(QLabel):
         pixmap = _draw_icon(shapes,
                             self.backgroundColor,
                             self.foregroundColor,
-                            opacity,
                             self.pixmapWidth,
-                            self.pixmapHeight)
+                            self.pixmapHeight,
+                            opacity)
         self.setPixmap(pixmap)
 
     def setDockIcon(self, opacity=OPACITY):
@@ -113,9 +107,9 @@ class LabelButtons(QLabel):
         pixmap = _draw_icon(shapes,
                             self.backgroundColor,
                             self.foregroundColor,
-                            opacity,
                             self.pixmapWidth,
-                            self.pixmapHeight)
+                            self.pixmapHeight,
+                            opacity)
         self.setPixmap(pixmap)
 
     def setMaximizeIcon(self, opacity=OPACITY):
@@ -125,9 +119,9 @@ class LabelButtons(QLabel):
         pixmap = _draw_icon(shapes,
                             self.backgroundColor,
                             self.foregroundColor,
-                            opacity,
                             self.pixmapWidth,
-                            self.pixmapHeight)
+                            self.pixmapHeight,
+                            opacity)
         self.setPixmap(pixmap)
 
     def setMinimizeIcon(self, opacity=OPACITY):
@@ -137,18 +131,18 @@ class LabelButtons(QLabel):
         pixmap = _draw_icon(shapes,
                             self.backgroundColor,
                             self.foregroundColor,
-                            opacity,
                             self.pixmapWidth,
-                            self.pixmapHeight)
+                            self.pixmapHeight,
+                            opacity)
         self.setPixmap(pixmap)
 
     def setRotLeftIcon(self, opacity=OPACITY):
         self.buttonStyle = "rotleft"
         self.setToolTip("Rotate left")
         pixmap = _load_icon(':icons/icons/rotate-right.png',
-                              self.backgroundColor,
-                              self.pixmapWidth,
-                              self.pixmapHeight)
+                            self.backgroundColor,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         pixmap = pixmap.transformed(QTransform().scale(-1, 1))
         self.setPixmap(pixmap)
 
@@ -156,18 +150,18 @@ class LabelButtons(QLabel):
         self.buttonStyle = "rotright"
         self.setToolTip("Rotate right")
         pixmap = _load_icon(':icons/icons/rotate-right.png',
-                              self.backgroundColor,
-                              self.pixmapWidth,
-                              self.pixmapHeight)
+                            self.backgroundColor,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
 
     def setSwapAxesIcon(self, opacity=OPACITY):
         self.buttonStyle = "swapaxes"
         self.setToolTip("Swap axes")
         pixmap = _load_icon(':icons/icons/swap-axes.png',
-                              self.backgroundColor,
-                              self.pixmapWidth,
-                              self.pixmapHeight)
+                            self.backgroundColor,
+                            self.pixmapWidth,
+                            self.pixmapHeight)
         self.setPixmap(pixmap)
 
     def setSpinBoxUpIcon(self, opacity=OPACITY):
@@ -179,9 +173,9 @@ class LabelButtons(QLabel):
         pixmap = _draw_icon(shapes,
                             self.backgroundColor,
                             self.foregroundColor,
-                            opacity,
                             self.pixmapWidth,
-                            self.pixmapHeight)
+                            self.pixmapHeight,
+                            opacity)
         self.setPixmap(pixmap)
 
 
@@ -194,9 +188,9 @@ class LabelButtons(QLabel):
         pixmap = _draw_icon(shapes,
                             self.backgroundColor,
                             self.foregroundColor,
-                            opacity,
                             self.pixmapWidth,
-                            self.pixmapHeight)
+                            self.pixmapHeight,
+                            opacity)
         self.setPixmap(pixmap)
 
 
@@ -383,6 +377,7 @@ class ImageView2DHud(QWidget):
                               ('max', self.on_maxButton)]:
             self._add_button(name, handler)
 
+        # some other classes access these members directly.
         self.sliceSelector = self.buttons['slice']
         self.dockButton = self.buttons['undock']
         self.maxButton = self.buttons['max']
@@ -496,18 +491,17 @@ class QuadStatusBar(QHBoxLayout):
         self.xLabel, self.xSpinBox = _get_pos_widget('X',
                                                      xbackgroundColor,
                                                      xforegroundColor)
-        self.addWidget(self.xLabel)
-        self.addWidget(self.xSpinBox)
-
         self.yLabel, self.ySpinBox = _get_pos_widget('Y',
                                                      ybackgroundColor,
                                                      yforegroundColor)
-        self.addWidget(self.yLabel)
-        self.addWidget(self.ySpinBox)
-
         self.zLabel, self.zSpinBox = _get_pos_widget('Z',
                                                      zbackgroundColor,
                                                      zforegroundColor)
+
+        self.addWidget(self.xLabel)
+        self.addWidget(self.xSpinBox)
+        self.addWidget(self.yLabel)
+        self.addWidget(self.ySpinBox)
         self.addWidget(self.zLabel)
         self.addWidget(self.zSpinBox)
 
