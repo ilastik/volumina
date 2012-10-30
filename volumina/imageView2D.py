@@ -239,13 +239,10 @@ class ImageView2D(QGraphicsView):
             self._hud.setVisible(visible)
 
     def focusInEvent(self, event):
-        if self._hud is not None:
-            self._hud.changeOpacity(1)
         self.focusChanged.emit()
 
     def focusOutEvent(self, event):
-        if self._hud is not None:
-            self._hud.changeOpacity(0.6)
+        pass
 
     def changeViewPort(self,qRectf):
         self.fitInView(qRectf,mode = Qt.KeepAspectRatio)

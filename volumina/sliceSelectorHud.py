@@ -7,7 +7,6 @@ import sys, random
 import numpy, qimage2ndarray
 import icons_rc
 
-OPACITY = 0.6
 TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
 
 def _load_icon(filename, backgroundColor, width, height):
@@ -26,55 +25,16 @@ def _load_icon(filename, backgroundColor, width, height):
                            Qt.SmoothTransformation)
     return pixmap
 
-
-# TODO: replace with icon files
-def _draw_icon(shapes, backgroundColor, foregroundColor, width, height, opacity):
-    """Create a pixmap for an icon by drawing shapes.
-
-    Shapes consist of tuples of (name, args), where name is one of
-    'line', 'rect', and 'polygon'.
-
-    For polygons, 'args' must be a list of (x, y) tuples.
-
-    """
-    pixmap = QPixmap(250, 250)
-    pixmap.fill(backgroundColor)
-    painter = QPainter()
-    painter.begin(pixmap)
-    painter.setRenderHint(QPainter.Antialiasing)
-    painter.setOpacity(opacity)
-    pen = QPen(foregroundColor)
-    pen.setWidth(30)
-    painter.setPen(pen)
-    for shape, args in shapes:
-        if shape == "line":
-            painter.drawLine(*args)
-        elif shape == "rect":
-            painter.drawRect(*args)
-        elif shape == "polygon":
-            points = QPolygonF()
-            for point in args:
-                points.append(QPointF(*point))
-            painter.drawPolygon(points)
-    painter.end()
-    pixmap = pixmap.scaled(QSize(width, height),
-                           Qt.KeepAspectRatio,
-                           Qt.SmoothTransformation)
-    return pixmap
-
-
 # TODO: replace with QPushButton. in __init__(), read icon and give
-# correct background color. replace changeOpacity() with turning
-# buttons off.
+# correct background color.
 class LabelButtons(QLabel):
     clicked = pyqtSignal()
-    def __init__(self, parentView, backgroundColor, foregroundColor, width, height):
+    def __init__(self, style, parentView, backgroundColor, foregroundColor, width, height):
         QLabel.__init__(self)
-
         parentView.installEventFilter(self)
-
         self.setColors(backgroundColor, foregroundColor)
         self.setPixmapSize(width, height)
+        self.setIcon(style)
 
     def setColors(self, backgroundColor, foregroundColor):
         self.backgroundColor = backgroundColor
@@ -84,140 +44,28 @@ class LabelButtons(QLabel):
         self.pixmapWidth = width
         self.pixmapHeight = height
 
-    def setUndockIcon(self, opacity=OPACITY):
-        self.buttonStyle = "undock"
-        self.setToolTip("Undock")
-        shapes = [("line", (70.0, 170.0, 190.0, 60.0)),
-                  ("line", (200.0, 140.0, 200.0, 50.0)),
-                  ("line", (110.0, 50.0, 200.0, 50.0))]
-        pixmap = _draw_icon(shapes,
-                            self.backgroundColor,
-                            self.foregroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight,
-                            opacity)
-        self.setPixmap(pixmap)
+    # values: (icon path, tooltip)
+    icons = {
+        'undock' : (':icons/icons/undock.png', "Undock"),
+        'dock' : (':icons/icons/dock.png', "Dock"),
+        'maximize' : (':icons/icons/maximize.png', "Maximize"),
+        'minimize' : (':icons/icons/minimize.png', "Minimize"),
+        'spin-up' : (':icons/icons/spin-up.png', "+ 1"),
+        'spin-down' : (':icons/icons/spin-down.png', "- 1"),
+        'rotate-left' : (':icons/icons/rotate-left.png', "Rotate left"),
+        'rotate-right' : (':icons/icons/rotate-right.png', "Rotate right"),
+        'swap-axes' : (':icons/icons/swap-axes.png', "Swap axes"),
+    }
 
-    def setDockIcon(self, opacity=OPACITY):
-        self.buttonStyle = "dock"
-        self.setToolTip("Dock")
-        shapes = [("line", (70.0, 170.0, 190.0, 60.0)),
-                  ("line", (60.0, 90.0, 60.0, 180.0)),
-                  ("line", (150.0, 180.0, 60.0, 180.0))]
-        pixmap = _draw_icon(shapes,
-                            self.backgroundColor,
-                            self.foregroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight,
-                            opacity)
-        self.setPixmap(pixmap)
-
-    def setMaximizeIcon(self, opacity=OPACITY):
-        self.buttonStyle = "max"
-        self.setToolTip("Maximize")
-        shapes = [("rect", (50.0, 50.0, 150.0, 150.0))]
-        pixmap = _draw_icon(shapes,
-                            self.backgroundColor,
-                            self.foregroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight,
-                            opacity)
-        self.setPixmap(pixmap)
-
-    def setMinimizeIcon(self, opacity=OPACITY):
-        shapes = [("rect", (50.0, 50.0, 150.0, 150.0)),
-                  ("line", (50.0, 125.0, 200.0, 125.0)),
-                  ("line", (125.0, 200.0, 125.0, 50.0))]
-        pixmap = _draw_icon(shapes,
-                            self.backgroundColor,
-                            self.foregroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight,
-                            opacity)
-        self.setPixmap(pixmap)
-
-    def setRotLeftIcon(self, opacity=OPACITY):
-        self.buttonStyle = "rotleft"
-        self.setToolTip("Rotate left")
-        pixmap = _load_icon(':icons/icons/rotate-right.png',
-                            self.backgroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight)
-        pixmap = pixmap.transformed(QTransform().scale(-1, 1))
-        self.setPixmap(pixmap)
-
-    def setRotRightIcon(self, opacity=OPACITY):
-        self.buttonStyle = "rotright"
-        self.setToolTip("Rotate right")
-        pixmap = _load_icon(':icons/icons/rotate-right.png',
+    def setIcon(self, style):
+        self.buttonStyle = style
+        iconpath, tooltip = self.icons[style]
+        self.setToolTip(tooltip)
+        pixmap = _load_icon(iconpath,
                             self.backgroundColor,
                             self.pixmapWidth,
                             self.pixmapHeight)
         self.setPixmap(pixmap)
-
-    def setSwapAxesIcon(self, opacity=OPACITY):
-        self.buttonStyle = "swapaxes"
-        self.setToolTip("Swap axes")
-        pixmap = _load_icon(':icons/icons/swap-axes.png',
-                            self.backgroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight)
-        self.setPixmap(pixmap)
-
-    def setSpinBoxUpIcon(self, opacity=OPACITY):
-        self.buttonStyle = "spinUp"
-        self.setToolTip("+ 1")
-        shapes = [("polygon", ((125.0, 50.0),
-                               (200.0, 180.0),
-                               (50.0, 180.0)))]
-        pixmap = _draw_icon(shapes,
-                            self.backgroundColor,
-                            self.foregroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight,
-                            opacity)
-        self.setPixmap(pixmap)
-
-
-    def setSpinBoxDownIcon(self, opacity=OPACITY):
-        self.buttonStyle = "spinDown"
-        self.setToolTip("- 1")
-        shapes = [("polygon", ((125.0, 200.0),
-                               (200.0, 70.0),
-                               (50.0, 70.0)))]
-        pixmap = _draw_icon(shapes,
-                            self.backgroundColor,
-                            self.foregroundColor,
-                            self.pixmapWidth,
-                            self.pixmapHeight,
-                            opacity)
-        self.setPixmap(pixmap)
-
-
-    def changeOpacity(self, opacity):
-        self.setIcon(opacity=opacity)
-
-    def setIcon(self, icon=None, opacity=OPACITY):
-        if icon is None:
-            icon = self.buttonStyle
-        if icon == "undock":
-            self.setUndockIcon(opacity)
-        elif icon == "dock":
-            self.setDockIcon(opacity)
-        elif icon == "min":
-            self.setMinimizeIcon(opacity)
-        elif icon == "max":
-            self.setMaximizeIcon(opacity)
-        elif icon == "rotleft":
-            self.setRotLeftIcon(opacity)
-        elif icon == "rotright":
-            self.setRotRightIcon(opacity)
-        elif icon == "swapaxes":
-            self.setSwapAxesIcon(opacity)
-        elif icon == "spinUp":
-            self.setSpinBoxUpIcon(opacity)
-        elif icon == "spinDown":
-            self.setSpinBoxDownIcon(opacity)
 
     def mouseReleaseEvent(self, event):
         if self.underMouse():
@@ -238,17 +86,17 @@ class SpinBoxImageView(QHBoxLayout):
         self.foregroundColor = foregroundColor
 
         self.labelLayout = QVBoxLayout()
-        self.upLabel = LabelButtons(parentView, backgroundColor,
-                                    foregroundColor, height/2,
-                                    height/2)
+        self.upLabel = LabelButtons('spin-up', parentView,
+                                    backgroundColor, foregroundColor,
+                                    height/2, height/2)
         self.labelLayout.addWidget(self.upLabel)
-        self.upLabel.setSpinBoxUpIcon()
         self.upLabel.clicked.connect(self.on_upLabel)
 
-        self.downLabel = LabelButtons(parentView, backgroundColor,
-                                      foregroundColor, height/2, height/2)
+        self.downLabel = LabelButtons('spin-down', parentView,
+                                      backgroundColor,
+                                      foregroundColor, height/2,
+                                      height/2)
         self.labelLayout.addWidget(self.downLabel)
-        self.downLabel.setSpinBoxDownIcon()
         self.downLabel.clicked.connect(self.on_downLabel)
 
         self.addLayout(self.labelLayout)
@@ -265,16 +113,14 @@ class SpinBoxImageView(QHBoxLayout):
         font = self.spinBox.font()
         font.setPixelSize(fontSize)
         self.spinBox.setFont(font)
-        self.changeOpacity()
+        self.do_draw()
 
-    def changeOpacity(self, opacity=OPACITY):
+    def do_draw(self):
         r, g, b, a = self.foregroundColor.getRgb()
-        rgba = "rgba({0},{1},{2},{3}%)".format(r, g, b, opacity * 100)
-        sheet = TEMPLATE.format(rgba,
+        rgb = "rgb({0},{1},{2})".format(r, g, b)
+        sheet = TEMPLATE.format(rgb,
                                 self.backgroundColor.name())
         self.spinBox.setStyleSheet(sheet)
-        self.upLabel.changeOpacity(opacity)
-        self.downLabel.changeOpacity(opacity)
 
     def spinBoxValueChanged(self, value):
         self.valueChanged.emit(value)
@@ -293,13 +139,13 @@ class SpinBoxImageView(QHBoxLayout):
         self.spinBox.setValue(self.spinBox.value() - 1)
 
 
-
 def setupFrameStyle( frame ):
     # Use this function to add a consistent frame style to all HUD
     # elements
     frame.setFrameShape( QFrame.Box )
     frame.setFrameShadow( QFrame.Raised )
     frame.setLineWidth( 2 )
+
 
 class ImageView2DHud(QWidget):
     dockButtonClicked = pyqtSignal()
@@ -318,14 +164,15 @@ class ImageView2DHud(QWidget):
         self.buttons = {}
 
     def _add_button(self, name, handler):
-        button = LabelButtons(self.parent(),
-                              self.backgroundColor,
-                              self.foregroundColor,
-                              self.labelsWidth,
-                              self.labelsheight)
+        button = LabelButtons(
+            name,
+            self.parent(),
+            self.backgroundColor,
+            self.foregroundColor,
+            self.labelsWidth,
+            self.labelsheight)
         self.buttons[name] = button
         button.clicked.connect(handler)
-        button.setIcon(name)
         setupFrameStyle(button)
         self.layout.addWidget(button)
         self.layout.addSpacing(4)
@@ -366,21 +213,21 @@ class ImageView2DHud(QWidget):
 
         self.layout.addSpacing(12)
 
-        for name, handler in [('rotleft', self.on_rotLeftButton),
-                              ('swapaxes', self.on_swapAxesButton),
-                              ('rotright', self.on_rotRightButton)]:
+        for name, handler in [('rotate-left', self.on_rotLeftButton),
+                              ('swap-axes', self.on_swapAxesButton),
+                              ('rotate-right', self.on_rotRightButton)]:
             self._add_button(name, handler)
 
         self.layout.addStretch()
 
         for name, handler in [('undock', self.on_dockButton),
-                              ('max', self.on_maxButton)]:
+                              ('maximize', self.on_maxButton)]:
             self._add_button(name, handler)
 
         # some other classes access these members directly.
         self.sliceSelector = self.buttons['slice']
         self.dockButton = self.buttons['undock']
-        self.maxButton = self.buttons['max']
+        self.maxButton = self.buttons['maximize']
 
     def setMaximum(self, v):
         self.sliceSelector.setNewValue(v)
@@ -407,12 +254,11 @@ class ImageView2DHud(QWidget):
         axisLabel.setPixmap(pixmap)
         return axisLabel
 
-    def createAxisLabelPixmap(self, opacity=OPACITY):
+    def createAxisLabelPixmap(self):
         pixmap = QPixmap(250, 250)
         pixmap.fill(self.backgroundColor)
         painter = QPainter()
         painter.begin(pixmap)
-        painter.setOpacity(opacity)
         font = QFont()
         font.setBold(True)
         font.setPixelSize(250-30)
@@ -428,11 +274,6 @@ class ImageView2DHud(QWidget):
                                Qt.KeepAspectRatio,
                                Qt.SmoothTransformation)
         return pixmap
-
-    def changeOpacity(self, opacity):
-        self.axisLabel.setPixmap(self.createAxisLabelPixmap(opacity))
-        for b in self.buttons.values():
-            b.changeOpacity(opacity)
 
 
 def _get_pos_widget(name, backgroundColor, foregroundColor):
