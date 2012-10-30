@@ -62,7 +62,7 @@ class ImageView2DDockWidget(QWidget):
         
     def undockView(self):
         self._isDocked = False
-        self.graphicsView._hud.dockButton.setDockIcon()
+        self.graphicsView._hud.dockButton.setIcon('dock')
         self.graphicsView._hud.maxButton.setEnabled(False)
         
         self.removeGraphicsView()
@@ -72,7 +72,7 @@ class ImageView2DDockWidget(QWidget):
     
     def dockView(self):
         self._isDocked = True
-        self.graphicsView._hud.dockButton.setUndockIcon()
+        self.graphicsView._hud.dockButton.setIcon('undock')
         self.graphicsView._hud.maxButton.setEnabled(True)
         
         self.windowForGraphicsView.layout.removeWidget(self.graphicsView)
@@ -81,11 +81,11 @@ class ImageView2DDockWidget(QWidget):
         
     def maximizeView(self):
         self._isMaximized = True
-        self.graphicsView._hud.maxButton.setMinimizeIcon()
+        self.graphicsView._hud.maxButton.setIcon('minimize')
         
     def minimizeView(self):
         self._isMaximized = False
-        self.graphicsView._hud.maxButton.setMaximizeIcon()
+        self.graphicsView._hud.maxButton.setIcon('maximize')
 
 class QuadView(QWidget):
     def __init__(self, parent, view1, view2, view3, view4 = None):

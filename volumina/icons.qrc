@@ -11,6 +11,13 @@
     <file>icons/process-stop.png</file>
     <file>icons/view-fullscreen.png</file>
     <file>icons/rotate-right.png</file>
+    <file>icons/rotate-left.png</file>
     <file>icons/swap-axes.png</file>
+    <file>icons/maximize.png</file>
+    <file>icons/minimize.png</file>
+    <file>icons/spin-up.png</file>
+    <file>icons/spin-down.png</file>
+    <file>icons/undock.png</file>
+    <file>icons/dock.png</file>
   </qresource>
 </RCC>
