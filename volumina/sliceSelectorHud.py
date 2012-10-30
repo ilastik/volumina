@@ -2,7 +2,7 @@ from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
 
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QPolygonF, QSpinBox, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QPalette, QFrame, QIcon, QTransform, QImage
+                        QCheckBox, QWidget, QPalette, QFrame
 import sys, random
 import numpy, qimage2ndarray
 import volumina.icons_rc
