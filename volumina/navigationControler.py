@@ -453,16 +453,6 @@ class NavigationControler(QObject):
         #re-configure the slice source
         self._sliceSources[axis].setThrough(1,num)
 
-        sc = self._views[axis].scene()
-        if hasattr(sc, "xxx"):
-            sc.xxx.setPlainText("%d" % num)
-        else:
-            sc.xxx = QGraphicsTextItem()
-            sc.xxx.setPos(30,100)
-            #sc.xxx.setTransform(sc.scene2data)
-            sc.xxx.setDefaultTextColor(Qt.red)
-            sc.addItem(sc.xxx)
-
     def _positionValid(self, pos):
         if self._model.shape is None:
             return False
