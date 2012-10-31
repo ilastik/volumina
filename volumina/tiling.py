@@ -396,12 +396,12 @@ class TileProvider( QObject ):
         stack_id = self._current_stack_id
         for tile_no in tile_nos:
             qimg, progress = self._cache.tile(stack_id, tile_no)
-            t = TileProvider.Tile(tile_no,
-                     qimg,
-                     QRectF(self.tiling.imageRects[tile_no]),
-                     progress,
-                     self.tiling)
-            yield t
+            yield TileProvider.Tile(
+                tile_no,
+                qimg,
+                QRectF(self.tiling.imageRects[tile_no]),
+                progress,
+                self.tiling)
 
     def requestRefresh( self, rectF ):
         '''Requests tiles to be refreshed.
@@ -494,15 +494,15 @@ class TileProvider( QObject ):
 
             try:
                 try:
-                    ims, t, tile_nr, stack_id, image_req, timestamp, cache = dirtyLayerQueue.get_nowait()
+                    ims, transform, tile_nr, stack_id, image_req, timestamp, cache = dirtyLayerQueue.get_nowait()
                     queue = dirtyLayerQueue
                 except Empty:
                     try:
-                        ims, t, tile_nr, stack_id, image_req, timestamp, cache = prefetchQueue.get_nowait()
+                        ims, transform, tile_nr, stack_id, image_req, timestamp, cache = prefetchQueue.get_nowait()
                         queue = prefetchQueue
                     except Empty:
                         try:
-                            ims, t, tile_nr, stack_id, image_req, timestamp, cache = dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
+                            ims, transform, tile_nr, stack_id, image_req, timestamp, cache = dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
                             queue = dirtyLayerQueue
                         except Empty:
                             continue
@@ -516,7 +516,7 @@ class TileProvider( QObject ):
             try:
                 if timestamp > cache.layerTimestamp( stack_id, ims, tile_nr ):
                     img = image_req.wait()
-                    img = img.transformed(t)
+                    img = img.transformed(transform)
                     cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
                     if stack_id == self._current_stack_id and cache is self._cache:
                         self.sceneRectChanged.emit(QRectF(self.tiling.imageRects[tile_nr]))
@@ -527,10 +527,10 @@ class TileProvider( QObject ):
 
     def _refreshTile( self, stack_id, tile_no, prefetch=False ):
         if not self._axesAreSwapped:
-            t = QTransform(0,1,0,1,0,0,1,1,1)
+            transform = QTransform(0,1,0,1,0,0,1,1,1)
         else:
-            t = QTransform().rotate(90).scale(1,-1)
-        t = t*self.tiling.data2scene
+            transform = QTransform().rotate(90).scale(1,-1)
+        transform *= self.tiling.data2scene
 
         try:
             if self._cache.tileDirty( stack_id, tile_no ):
@@ -553,7 +553,7 @@ class TileProvider( QObject ):
                             start = time.time()
                             img = ims_req.wait()
 
-                            img = img.transformed(t)
+                            img = img.transformed(transform)
                             stop = time.time()
 
                             ims._layer.timePerTile(stop-start, self.tiling.imageRects[tile_no])
@@ -563,7 +563,7 @@ class TileProvider( QObject ):
                             self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible(), self._sims.viewOccluded() )
                         else:
                             req = (ims,
-                                   t,
+                                   transform,
                                    tile_no,
                                    stack_id,
                                    ims_req,

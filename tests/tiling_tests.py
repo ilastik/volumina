@@ -33,6 +33,11 @@ class TilingTest ( ut.TestCase ):
             t = Tiling((100*i, 100), QTransform(), blockSize = 50)
             self.assertEqual(len(t), (100*i*2)/50)
 
+    def testIntersected(self):
+        pass
+
+    def testIntersectedF(self):
+        pass
 
 class TileProviderTest( ut.TestCase ):
     def setUp( self ):
@@ -53,7 +58,7 @@ class TileProviderTest( ut.TestCase ):
         self.layer2.visible = True
         self.layer2.opacity = 0.3
         self.ims2 = GrayscaleImageSource( self.ds2, self.layer2 )
-        self.layer3 = GrayscaleLayer( self.ds3 ) 
+        self.layer3 = GrayscaleLayer( self.ds3 )
         self.layer3.visible = True
         self.layer3.opacity = 1.0
         self.ims3 = GrayscaleImageSource( self.ds3, self.layer3 )
@@ -110,7 +115,7 @@ class TileProviderTest( ut.TestCase ):
 
 
 class DirtyPropagationTest( ut.TestCase ):
-    
+
     def setUp( self ):
         dataShape = (1, 900, 400, 10, 1) # t,x,y,z,c
         data = np.indices(dataShape)[3] # Data is labeled according to z-index
@@ -128,7 +133,7 @@ class DirtyPropagationTest( ut.TestCase ):
         self.pump = ImagePump( self.lsm, SliceProjection() )
 
     def testEverythingDirtyPropagation( self ):
-        self.lsm.append(self.layer2)        
+        self.lsm.append(self.layer2)
         tiling = Tiling((900,400), QTransform(), blockSize=100)
         tp = TileProvider(tiling, self.pump.stackedImageSources)
         try:
@@ -149,7 +154,7 @@ class DirtyPropagationTest( ut.TestCase ):
                 aimg = byte_view(tile.qimg)
                 self.assertTrue(np.all(aimg[:,:,0:3] == NEW_CONSTANT))
                 self.assertTrue(np.all(aimg[:,:,3] == 255))
-            
+
         finally:
             tp.notifyThreadsToStop()
             tp.joinThreads()
@@ -197,7 +202,7 @@ class DirtyPropagationTest( ut.TestCase ):
             slicing = tuple(slicing)
             self.ds1._array[slicing] = 99
             self.ds1.setDirty( slicing )
-            
+
             # Navigate back down to the third z-slice
             self.pump.syncedSliceSources.through = [0,2,0]
             tp.requestRefresh(QRectF(100,100,200,200))
@@ -206,9 +211,9 @@ class DirtyPropagationTest( ut.TestCase ):
             # Even though the data was out-of-view when it was changed, it should still have new values.
             # If dirtiness wasn't propagated correctly, the cache's old values will be used.
             # (For example, this fails if you comment out the call to setDirty, above.)
-            
-            tiles = tp.getTiles(QRectF(101,101,198,198)) # Shrink accessed rect by 1 pixel on each side 
-                                                         # (Otherwise, tiling overlap_draw causes getTiles() to return 
+
+            tiles = tp.getTiles(QRectF(101,101,198,198)) # Shrink accessed rect by 1 pixel on each side
+                                                         # (Otherwise, tiling overlap_draw causes getTiles() to return
                                                          #  surrounding tiles that we haven't actually touched in this test)
             for tile in tiles:
                 aimg = byte_view(tile.qimg)
