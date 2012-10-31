@@ -92,8 +92,6 @@ class Tiling(object):
         self.sliceShape  = sliceShape
         self.name = name
 
-        self.offset = 50
-
         self.setData2scene(data2scene)
 
     def setData2scene(self, data2scene):
