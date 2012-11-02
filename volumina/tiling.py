@@ -77,7 +77,7 @@ class Tiling(object):
     '''
 
     def __init__(self, sliceShape, data2scene=QTransform(),
-                 blockSize=256, overlap=0, overlap_draw = 1e-3,
+                 blockSize=256, overlap=0, overlap_draw=1e-3,
                  name="Unnamed Tiling"):
         self.blockSize = blockSize
         self.overlap = overlap
@@ -237,7 +237,6 @@ def synchronous( tlockname ):
     return _synched
 
 
-
 class _TilesCache( object ):
     def __init__(self, first_stack_id, sims, maxstacks=None):
         self._lock = Lock()
@@ -342,7 +341,6 @@ class _TilesCache( object ):
             self._tileCacheDirty.caches[stack_id][tile_id] = True
 
 
-
 class TileProvider( QObject ):
     THREAD_HEARTBEAT = 0.2
 
@@ -374,13 +372,9 @@ class TileProvider( QObject ):
     def axesSwapped(self, value):
         self._axesSwapped = value
 
-    def __init__( self, tiling,
-                  stackedImageSources,
-                  cache_size = 100,
-                  request_queue_size = 100000,
-                  n_threads = 2,
-                  layerIdChange_means_dirty=False,
-                  parent=None ):
+    def __init__( self, tiling, stackedImageSources, cache_size=100,
+                  request_queue_size=100000, n_threads=2,
+                  layerIdChange_means_dirty=False, parent=None ):
         QObject.__init__( self, parent = parent )
 
         self.tiling = tiling
