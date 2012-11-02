@@ -17,7 +17,7 @@ from volumina.slicingtools import SliceProjection
 
 class TilingTest ( ut.TestCase ):
     def testNoneShape( self ):
-        t = Tiling((0,0), QTransform())
+        t = Tiling((0,0))
         self.assertEqual( t.imageRectFs, [] )
         self.assertEqual( t.tileRectFs, [] )
         self.assertEqual( t.imageRects, [] )
@@ -30,7 +30,7 @@ class TilingTest ( ut.TestCase ):
 
     def testLen( self ):
         for i in xrange(5):
-            t = Tiling((100*i, 100), QTransform(), blockSize = 50)
+            t = Tiling((100*i, 100), blockSize = 50)
             self.assertEqual(len(t), (100*i*2)/50)
 
 
@@ -70,7 +70,7 @@ class TileProviderTest( ut.TestCase ):
         self.sims = sims
 
     def testSetAllLayersInvisible( self ):
-        tiling = Tiling((900,400), QTransform(), blockSize=100)
+        tiling = Tiling((900,400), blockSize=100)
         tp = TileProvider(tiling, self.sims)
         try:
             tp.requestRefresh(QRectF(100,100,200,200))
@@ -129,7 +129,7 @@ class DirtyPropagationTest( ut.TestCase ):
 
     def testEverythingDirtyPropagation( self ):
         self.lsm.append(self.layer2)
-        tiling = Tiling((900,400), QTransform(), blockSize=100)
+        tiling = Tiling((900,400), blockSize=100)
         tp = TileProvider(tiling, self.pump.stackedImageSources)
         try:
             tp.requestRefresh(QRectF(100,100,200,200))
@@ -156,7 +156,7 @@ class DirtyPropagationTest( ut.TestCase ):
 
     def testOutOfViewDirtyPropagation( self ):
         self.lsm.append(self.layer1)
-        tiling = Tiling((900,400), QTransform(), blockSize=100)
+        tiling = Tiling((900,400), blockSize=100)
         tp = TileProvider(tiling, self.pump.stackedImageSources)
         try:
             # Navigate down to the second z-slice
@@ -164,7 +164,8 @@ class DirtyPropagationTest( ut.TestCase ):
             tp.requestRefresh(QRectF(100,100,200,200))
             tp.join()
 
-            # Sanity check: Do we see the right data on the second slice? (should be all 1s)
+            # Sanity check: Do we see the right data on the second
+            # slice? (should be all 1s)
             tiles = tp.getTiles(QRectF(100,100,200,200))
             for tile in tiles:
                 aimg = byte_view(tile.qimg)
@@ -176,7 +177,8 @@ class DirtyPropagationTest( ut.TestCase ):
             tp.requestRefresh(QRectF(100,100,200,200))
             tp.join()
 
-            # Sanity check: Do we see the right data on the third slice?(should be all 2s)
+            # Sanity check: Do we see the right data on the third
+            # slice?(should be all 2s)
             tiles = tp.getTiles(QRectF(100,100,200,200))
             for tile in tiles:
                 aimg = byte_view(tile.qimg)
@@ -193,7 +195,8 @@ class DirtyPropagationTest( ut.TestCase ):
                 self.assertTrue(np.all(aimg[:,:,3] == 255))
 
             # Change some of the data in the (out-of-view) third z-slice
-            slicing = (slice(None), slice(100,300), slice(100,300), slice(2,3), slice(None))
+            slicing = (slice(None), slice(100,300), slice(100,300),
+                       slice(2,3), slice(None))
             slicing = tuple(slicing)
             self.ds1._array[slicing] = 99
             self.ds1.setDirty( slicing )
@@ -203,16 +206,22 @@ class DirtyPropagationTest( ut.TestCase ):
             tp.requestRefresh(QRectF(100,100,200,200))
             tp.join()
 
-            # Even though the data was out-of-view when it was changed, it should still have new values.
-            # If dirtiness wasn't propagated correctly, the cache's old values will be used.
-            # (For example, this fails if you comment out the call to setDirty, above.)
+            # Even though the data was out-of-view when it was
+            # changed, it should still have new values. If dirtiness
+            # wasn't propagated correctly, the cache's old values will
+            # be used. (For example, this fails if you comment out the
+            # call to setDirty, above.)
 
-            tiles = tp.getTiles(QRectF(101,101,198,198)) # Shrink accessed rect by 1 pixel on each side
-                                                         # (Otherwise, tiling overlap_draw causes getTiles() to return
-                                                         #  surrounding tiles that we haven't actually touched in this test)
+            # Shrink accessed rect by 1 pixel on each side (Otherwise,
+            # tiling overlap_draw causes getTiles() to return
+            # surrounding tiles that we haven't actually touched in
+            # this test)
+            tiles = tp.getTiles(QRectF(101,101,198,198))
+
             for tile in tiles:
                 aimg = byte_view(tile.qimg)
-                # Use any() because the tile borders may not be perfectly aligned with the data we changed.
+                # Use any() because the tile borders may not be
+                # perfectly aligned with the data we changed.
                 self.assertTrue(np.any(aimg[:,:,0:3] == 99))
         finally:
             tp.notifyThreadsToStop()
