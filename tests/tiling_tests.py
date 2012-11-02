@@ -33,6 +33,17 @@ class TilingTest ( ut.TestCase ):
             t = Tiling((100*i, 100), blockSize = 50)
             self.assertEqual(len(t), (100*i*2)/50)
 
+    def testData2Scene(self):
+        t = Tiling((0, 0))
+        trans = QTransform()
+        t.data2scene = trans
+        self.assertEquals(trans, t.data2scene)
+
+        # try using transformation that is not invertible
+        trans = QTransform(1, 1, 1, 1, 1, 1)
+        with self.assertRaises(AssertionError):
+            t.data2scene = trans
+
 
 class TileProviderTest( ut.TestCase ):
     def setUp( self ):
