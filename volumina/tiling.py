@@ -367,12 +367,12 @@ class TileProvider( QObject ):
     '''
 
     @property
-    def axesAreSwapped(self):
-        return self._axesAreSwapped
+    def axesSwapped(self):
+        return self._axesSwapped
 
-    @axesAreSwapped.setter
-    def axesAreSwapped(self, value):
-        self._axesAreSwapped = value
+    @axesSwapped.setter
+    def axesSwapped(self, value):
+        self._axesSwapped = value
 
     def __init__( self, tiling,
                   stackedImageSources,
@@ -384,7 +384,7 @@ class TileProvider( QObject ):
         QObject.__init__( self, parent = parent )
 
         self.tiling = tiling
-        self.axesAreSwapped = False
+        self.axesSwapped = False
         self._sims = stackedImageSources
         self._cache_size = cache_size
         self._request_queue_size = request_queue_size
@@ -560,7 +560,7 @@ class TileProvider( QObject ):
                 queue.task_done()
 
     def _refreshTile( self, stack_id, tile_no, prefetch=False ):
-        if not self.axesAreSwapped:
+        if not self.axesSwapped:
             transform = QTransform(0,1,0,1,0,0,1,1,1)
         else:
             transform = QTransform().rotate(90).scale(1,-1)

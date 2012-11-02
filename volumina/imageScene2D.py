@@ -146,8 +146,8 @@ class ImageScene2D(QGraphicsScene):
         newTransform = transform * t * s #* t2
 
         #axes are swapped if the determinant of our transformation matrix is < 0
-        axesAreSwapped = newTransform.determinant() < 0
-        self._tileProvider.axesAreSwapped = axesAreSwapped
+        axesSwapped = newTransform.determinant() < 0
+        self._tileProvider.axesSwapped = axesSwapped
 
         return newTransform
 
@@ -243,7 +243,6 @@ class ImageScene2D(QGraphicsScene):
         self._dataShape = None
         self._offsetX = 0
         self._offsetY = 0
-        self._axesSwapped = False
         self.name = name
 
         self.data2scene = QTransform(1,0,0,0,1,0,self._offsetX, self._offsetY, 1)

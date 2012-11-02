@@ -33,11 +33,6 @@ class TilingTest ( ut.TestCase ):
             t = Tiling((100*i, 100), QTransform(), blockSize = 50)
             self.assertEqual(len(t), (100*i*2)/50)
 
-    def testIntersected(self):
-        pass
-
-    def testIntersectedF(self):
-        pass
 
 class TileProviderTest( ut.TestCase ):
     def setUp( self ):
