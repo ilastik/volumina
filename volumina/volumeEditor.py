@@ -157,23 +157,6 @@ class VolumeEditor( QObject ):
         self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
 
-        ##
-        ## Other
-        ##
-
-        #self.imageViews[0].setTransform(QTransform(1,0,0,0,1,0,0,0,1))
-        #self.imageViews[1].setTransform(QTransform(0,1,1,0,0,0))
-        #self.imageViews[2].setTransform(QTransform(0,1,1,0,0,0))
-
-
-        #make sure that exactly one of the three slice views has focus
-        #when the program starts up
-        # -- unfortunately, this makes the VolumeEditorWidget crash in
-        #    Qt Designer
-        #def initialFocus():
-        #    self.imageViews[0].setFocus(Qt.MouseFocusReason);
-        #QTimer.singleShot(0,initialFocus)
-
     def scheduleSlicesRedraw(self):
         for s in self.imageScenes:
             s._invalidateRect()
