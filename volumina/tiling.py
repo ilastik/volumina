@@ -75,6 +75,7 @@ class Tiling(object):
                   artifacts between tiles for certain zoom levels (default 1)
 
     '''
+
     def __init__(self, sliceShape, data2scene=QTransform(),
                  blockSize=256, overlap=0, overlap_draw = 1e-3,
                  name="Unnamed Tiling"):
@@ -96,11 +97,15 @@ class Tiling(object):
         self.tileRects   = [None]*numPatches
         self.sliceShape  = sliceShape
         self.name = name
-
-        self.setData2scene(data2scene)
-
-    def setData2scene(self, data2scene):
         self.data2scene = data2scene
+
+    @property
+    def data2scene(self):
+        return self._data2scene
+
+    @data2scene.setter
+    def data2scene(self, data2scene):
+        self._data2scene = data2scene
         self.scene2data, isInvertible = data2scene.inverted()
         assert isInvertible
 
@@ -142,6 +147,7 @@ class Tiling(object):
             self.tileRectFs[ patchNr] = patchRectF
             self.imageRects[ patchNr] = imageRect
             self.tileRects[  patchNr] = patchRect
+
 
     def boundingRectF(self):
         if self.tileRectFs:
@@ -359,6 +365,15 @@ class TileProvider( QObject ):
     parent                    -- QObject
 
     '''
+
+    @property
+    def axesAreSwapped(self):
+        return self._axesAreSwapped
+
+    @axesAreSwapped.setter
+    def axesAreSwapped(self, value):
+        self._axesAreSwapped = value
+
     def __init__( self, tiling,
                   stackedImageSources,
                   cache_size = 100,
@@ -369,7 +384,7 @@ class TileProvider( QObject ):
         QObject.__init__( self, parent = parent )
 
         self.tiling = tiling
-        self._axesAreSwapped = False
+        self.axesAreSwapped = False
         self._sims = stackedImageSources
         self._cache_size = cache_size
         self._request_queue_size = request_queue_size
@@ -399,9 +414,6 @@ class TileProvider( QObject ):
         for thread in self._dirtyLayerThreads:
             thread.daemon = True
         [ thread.start() for thread in self._dirtyLayerThreads ]
-
-    def setAxesSwapped(self, swapped):
-        self._axesAreSwapped = True
 
     def getTiles( self, rectF ):
         '''Get tiles in rect and request a refresh.
@@ -548,7 +560,7 @@ class TileProvider( QObject ):
                 queue.task_done()
 
     def _refreshTile( self, stack_id, tile_no, prefetch=False ):
-        if not self._axesAreSwapped:
+        if not self.axesAreSwapped:
             transform = QTransform(0,1,0,1,0,0,1,1,1)
         else:
             transform = QTransform().rotate(90).scale(1,-1)

@@ -147,7 +147,7 @@ class ImageScene2D(QGraphicsScene):
 
         #axes are swapped if the determinant of our transformation matrix is < 0
         axesAreSwapped = newTransform.determinant() < 0
-        self._tileProvider.setAxesSwapped(axesAreSwapped)
+        self._tileProvider.axesAreSwapped = axesAreSwapped
 
         return newTransform
 
@@ -166,7 +166,7 @@ class ImageScene2D(QGraphicsScene):
     def _finishViewMatrixChange(self):
         self.scene2data, isInvertible = self.data2scene.inverted()
         self.setSceneRect( QRectF(0,0,self.sceneRect().height(), self.sceneRect().width()) )
-        self._tiling.setData2scene( self.data2scene )
+        self._tiling.data2scene = self.data2scene
         self._tileProvider._onSizeChanged()
         QGraphicsScene.invalidate( self, self.sceneRect() )
 
