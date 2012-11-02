@@ -102,50 +102,41 @@ class ImageScene2D(QGraphicsScene):
         """ direction: left ==> -1, right ==> +1"""
         assert direction in [-1, 1]
 
-        #first move center to be the new origin
+        # first move center to be the new origin
         t = QTransform.fromTranslate(-rect.center().x(), -rect.center().y())
         r = QTransform()
-        #roate by 90 degress (either cw or ccw)
+        # roate by 90 degress (either cw or ccw)
         r.rotate(direction*90)
-        #move back
+        # move back
         t2 = QTransform.fromTranslate(rect.center().y(), rect.center().x())
 
         return transform * t*r*t2
 
     def swapAxes(self, transform):
-        #find out the bounding box of the data slice in scene coordinates
-        offsetA = transform.map( QPointF(0,0) )
-        offsetB = transform.map( QPointF(self._dataShape[0], self._dataShape[1]) )
+        # find out the bounding box of the data slice in scene coordinates
+        offsetA = transform.map(QPointF(0,0))
+        offsetB = transform.map(QPointF(self._dataShape[0], self._dataShape[1]))
 
-        #first move origin of data to scene origin
+        # first move origin of data to scene origin
         t = QTransform.fromTranslate(-offsetA.x(), -offsetA.y())
 
-        #look at how the point (1,1) transforms. Depending on the sign of the resulting x and y location,
-        #we can deduce in which direction the axes are pointing and whether they are parallel/antiparallel
-        #to the current axes
-        p = (transform*t).map( QPointF(1,1) )
-
-        flip = 1
-        dx = 0
-        dy = 0
-        if p.x() > 0 and p.y() > 0:
+        # look at how the point (1,1) transforms. Depending on the
+        # sign of the resulting x and y location, we can deduce in
+        # which direction the axes are pointing and whether they are
+        # parallel/antiparallel to the current axes
+        p = (transform * t).map(QPointF(1, 1))
+        if p.x() * p.y() > 0:
             flip = 1.0
             dx, dy = offsetA.y(), offsetA.x()
-        elif p.x() < 0 and p.y() > 0:
+        else:
             flip = -1.0
             dx, dy = offsetB.y(), offsetB.x()
-        elif p.x() > 0 and p.y() < 0: # 1, -1
-            flip = -1.0
-            dx, dy = offsetB.y(), offsetB.x()
-        elif p.x() < 0 and p.y() < 0: # -1, -1
-            flip = 1.0
-            dx, dy = offsetA.y(), offsetA.x()
 
-        s = QTransform(0,flip,0,flip, 0, 0, dx, dy, 1) #swap axes
-
+        s = QTransform(0, flip, 0, flip, 0, 0, dx, dy, 1) #swap axes
         newTransform = transform * t * s #* t2
 
-        #axes are swapped if the determinant of our transformation matrix is < 0
+        # axes are swapped if the determinant of our transformation
+        # matrix is < 0
         axesSwapped = newTransform.determinant() < 0
         self._tileProvider.axesSwapped = axesSwapped
 
@@ -176,6 +167,7 @@ class ImageScene2D(QGraphicsScene):
         The shape of the scene in QGraphicsView's coordinate system.
         """
         return (self.sceneRect().width(), self.sceneRect().height())
+
     @sceneShape.setter
     def sceneShape(self, sceneShape):
         """
