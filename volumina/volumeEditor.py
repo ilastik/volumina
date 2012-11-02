@@ -89,9 +89,6 @@ class VolumeEditor( QObject ):
         self.view3d.dataShape = s[1:4]
         self.shapeChanged.emit()
 
-        # make X scene's axes match old defaults.
-        self.imageScenes[0]._onSwapAxes()
-
     def __init__( self, layerStackModel, labelsink=None, parent=None):
         super(VolumeEditor, self).__init__(parent=parent)
 
@@ -109,7 +106,7 @@ class VolumeEditor( QObject ):
         self.posModel = PositionModel()
         self.brushingModel = BrushingModel()
 
-        self.imageScenes = [ImageScene2D(self.posModel, (0,1,4)),
+        self.imageScenes = [ImageScene2D(self.posModel, (0,1,4), swapped_default=True),
                             ImageScene2D(self.posModel, (0,2,4)),
                             ImageScene2D(self.posModel, (0,3,4))]
         self.imageViews = [ImageView2D(self.imageScenes[i]) for i in [0,1,2]]
@@ -159,6 +156,10 @@ class VolumeEditor( QObject ):
         self.posModel.slicingPositionChanged.connect(self.navCtrl.moveSlicingPosition)
         self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
+
+    def _reset(self):
+        for s in self.imageScenes:
+            s._reset()
 
     def scheduleSlicesRedraw(self):
         for s in self.imageScenes:

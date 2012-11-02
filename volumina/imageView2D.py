@@ -25,6 +25,7 @@ class ImageView2D(QGraphicsView):
         scrollbars
         """
         return self._sliceShape
+
     @sliceShape.setter
     def sliceShape(self, s):
         self._sliceShape = s
@@ -42,7 +43,6 @@ class ImageView2D(QGraphicsView):
 
         hud -- a QWidget
         """
-
         self._hud = hud
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(0,0,0,0)
