@@ -156,33 +156,43 @@ class ImageScene2D(QGraphicsScene):
 
     def _finishViewMatrixChange(self):
         self.scene2data, isInvertible = self.data2scene.inverted()
-        self.setSceneRect( QRectF(0,0,self.sceneRect().height(), self.sceneRect().width()) )
+
+        self._setSceneRect()
+
         self._tiling.data2scene = self.data2scene
         self._tileProvider._onSizeChanged()
         QGraphicsScene.invalidate( self, self.sceneRect() )
 
     @property
     def sceneShape(self):
+        return (self.sceneRect().width(), self.sceneRect().height())
+
+    def _setSceneRect(self):
+        w, h = self.dataShape
+        point = self.data2scene.map(QPointF(w, h))
+        sw, sh = point.x(), point.y()
+        self.setSceneRect(0, 0, sw, sh)
+
+    @property
+    def dataShape(self):
         """
         The shape of the scene in QGraphicsView's coordinate system.
         """
-        return (self.sceneRect().width(), self.sceneRect().height())
+        return self._dataShape
 
-    @sceneShape.setter
-    def sceneShape(self, sceneShape):
+    @dataShape.setter
+    def dataShape(self, value):
         """
         Set the size of the scene in QGraphicsView's coordinate system.
         sceneShape -- (widthX, widthY),
         where the origin of the coordinate system is in the upper left corner
         of the screen and 'x' points right and 'y' points down
         """
-        assert len(sceneShape) == 2
+        assert len(value) == 2
 
-        self._dataShape = sceneShape
+        self._dataShape = value
 
-        w = sceneShape[0] + 2*self._offsetX
-        h = sceneShape[1] + 2*self._offsetY
-        self.setSceneRect(0,0, w,h)
+        self._setSceneRect()
 
         if self._dirtyIndicator:
             self.removeItem(self._dirtyIndicator)

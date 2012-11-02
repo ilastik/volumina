@@ -71,10 +71,10 @@ class SliceIntersectionMarker(QGraphicsItem) :
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
     @property
-    def sceneShape(self):
+    def dataShape(self):
         return (self._width, self._height)
-    @sceneShape.setter
-    def sceneShape(self, shape2D):
+    @dataShape.setter
+    def dataShape(self, shape2D):
         self._width = shape2D[0]
         self._height = shape2D[1]
 

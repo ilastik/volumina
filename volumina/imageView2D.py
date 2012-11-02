@@ -28,15 +28,9 @@ class ImageView2D(QGraphicsView):
     @sliceShape.setter
     def sliceShape(self, s):
         self._sliceShape = s
-
-        r = self.scene().data2scene.mapRect(QRect(0,0,s[0], s[1]))
-        sceneShape = (r.width(), r.height())
-        assert sceneShape[0] > 0
-        assert sceneShape[0] > 1
-
-        self.scene().sceneShape                  = sceneShape
-        self._crossHairCursor.sceneShape         = sceneShape
-        self._sliceIntersectionMarker.sceneShape = sceneShape
+        self.scene().dataShape = s
+        self._crossHairCursor.dataShape = s
+        self._sliceIntersectionMarker.dataShape = s
 
     @property
     def hud(self):
