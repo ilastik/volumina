@@ -75,8 +75,9 @@ class Tiling(object):
                   artifacts between tiles for certain zoom levels (default 1)
 
     '''
-    def __init__(self, sliceShape, data2scene, blockSize=256,
-                 overlap=0, overlap_draw = 1e-3, name="Unnamed Tiling"):
+    def __init__(self, sliceShape, data2scene=QTransform(),
+                 blockSize=256, overlap=0, overlap_draw = 1e-3,
+                 name="Unnamed Tiling"):
         self.blockSize = blockSize
         self.overlap = overlap
         self._patchAccessor = PatchAccessor(sliceShape[0],
