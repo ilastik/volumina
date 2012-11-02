@@ -89,6 +89,9 @@ class VolumeEditor( QObject ):
         self.view3d.dataShape = s[1:4]
         self.shapeChanged.emit()
 
+        # make X scene's axes match old defaults.
+        self.imageScenes[0]._onSwapAxes()
+
     def __init__( self, layerStackModel, labelsink=None, parent=None):
         super(VolumeEditor, self).__init__(parent=parent)
 
