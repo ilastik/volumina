@@ -28,25 +28,25 @@ class ImageTile(object):
 
         self._topLeft = rect.topLeft()
 
-        #Whenever the underlying data changes, the data version is incremented.
-        #By comparing the data version to the image and request version, it can
-        #be determined if the content of this tile is recent or needs to be
-        #re-computed.
+        # Whenever the underlying data changes, the data version is incremented.
+        # By comparing the data version to the image and request version, it can
+        # be determined if the content of this tile is recent or needs to be
+        # re-computed.
 
-        #version of the data
+        # version of the data
         self.dataVer = 0
 
-        #version of self.image
+        # version of self.image
         #
-        #If self.imgVer < self.dataVer, the image needs to be re-computed
-        #from the new data.
+        # If self.imgVer < self.dataVer, the image needs to be re-computed
+        # from the new data.
         self.imgVer  = -1
 
-        #version of the request that has been generated to update the contents
-        #of self.image
+        # version of the request that has been generated to update the contents
+        # of self.image
         #
-        #If self.reqVer == self.dataVer, a request is currently running that will
-        #eventually replace self.image with the new data.
+        # If self.reqVer == self.dataVer, a request is currently running that will
+        # eventually replace self.image with the new data.
         self.reqVer  = -2
 
     def clear(self):
@@ -134,9 +134,9 @@ class Tiling(object):
                               round(patchRectF.width()),
                               round(patchRectF.height()))
 
-            #the image rectangles of neighboring patches can overlap
-            #slightly, to account for inaccuracies in sub-pixel
-            #rendering of many ImagePatch objects
+            # the image rectangles of neighboring patches can overlap
+            # slightly, to account for inaccuracies in sub-pixel
+            # rendering of many ImagePatch objects
             imageRect = QRect(round(imageRectF.x()),
                               round(imageRectF.y()),
                               round(imageRectF.width()),
@@ -641,7 +641,7 @@ class TileProvider( QObject ):
             visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) \
                                     and not self._sims.isOccluded( dirtyImgSrc )
             for tile_no in xrange(len(self.tiling)):
-                #and invalid rect means everything is dirty
+                # and invalid rect means everything is dirty
                 if not sceneRect.isValid() \
                    or self.tiling.tileRects[tile_no].intersected( sceneRect ):
                     for ims in self._sims.viewImageSources():
