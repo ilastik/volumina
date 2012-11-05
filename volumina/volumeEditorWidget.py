@@ -15,8 +15,6 @@ from pixelpipeline.datasources import ArraySource, LazyflowSinkSource
 from volumeEditor import VolumeEditor
 import volumina.icons_rc
 
-
-
 class __TimerEventEater( QObject ):
     def eventFilter( self, obj, ev ):
         if isinstance(obj, QSpinBox) and isinstance(ev, QTimerEvent):
@@ -103,10 +101,18 @@ class VolumeEditorWidget(QWidget):
             v.hud.createImageView2DHud(axisLabels[i], 0, axisColors[i], QColor("white"))
             v.hud.sliceSelector.valueChanged.connect(partial(self.editor.navCtrl.changeSliceAbsolute, axis=i))
 
-        self.quadview = QuadView(self, self.editor.imageViews[2], self.editor.imageViews[0], self.editor.imageViews[1], self.editor.view3d)
+        self.quadview = QuadView(self, self.editor.imageViews[2],
+                                 self.editor.imageViews[0], self.editor.imageViews[1],
+                                 self.editor.view3d)
         self.quadview.installEventFilter(self)
         self.quadViewStatusBar = QuadStatusBar()
-        self.quadViewStatusBar.createQuadViewStatusBar(QColor("#dc143c"), QColor("white"), QColor("green"), QColor("white"), QColor("blue"), QColor("white"), QColor("gray"), QColor("white"))
+        self.quadViewStatusBar.createQuadViewStatusBar(
+            QColor("#dc143c"),
+            QColor("white"),
+            QColor("green"),
+            QColor("white"),
+            QColor("blue"),
+            QColor("white"))
         self.quadview.addStatusBar(self.quadViewStatusBar)
         self.layout.addWidget(self.quadview)
 

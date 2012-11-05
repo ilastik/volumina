@@ -7,47 +7,48 @@ from Queue import Queue, Empty, Full, LifoQueue, PriorityQueue
 from threading import Thread, Event, Lock
 
 import numpy
-from PyQt4.QtCore import QRect, QRectF, QMutex, QPointF, Qt, QSizeF, QObject, pyqtSignal, QThread, QEvent, QCoreApplication
+from PyQt4.QtCore import QRect, QRectF, QMutex, \
+    QPointF, Qt, QSizeF, QObject, pyqtSignal, \
+    QThread, QEvent, QCoreApplication
 from PyQt4.QtGui import QImage, QPainter, QTransform
 
 from patchAccessor import PatchAccessor
 
 
-
 #*******************************************************************************
-# I m a g e T i l e                                                            * 
+# I m a g e T i l e                                                            *
 #*******************************************************************************
 
 class ImageTile(object):
     def __init__(self, rect):
         self._mutex = QMutex()
-        self.image  = QImage(rect.width(), rect.height(), 
+        self.image  = QImage(rect.width(), rect.height(),
                              QImage.Format_ARGB32_Premultiplied)
         self.image.fill(0)
 
         self._topLeft = rect.topLeft()
 
-        #Whenever the underlying data changes, the data version is incremented.
-        #By comparing the data version to the image and request version, it can
-        #be determined if the content of this tile is recent or needs to be
-        #re-computed.
-        
-        #version of the data
+        # Whenever the underlying data changes, the data version is incremented.
+        # By comparing the data version to the image and request version, it can
+        # be determined if the content of this tile is recent or needs to be
+        # re-computed.
+
+        # version of the data
         self.dataVer = 0
-        
-        #version of self.image
+
+        # version of self.image
         #
-        #If self.imgVer < self.dataVer, the image needs to be re-computed
-        #from the new data.
+        # If self.imgVer < self.dataVer, the image needs to be re-computed
+        # from the new data.
         self.imgVer  = -1
-        
-        #version of the request that has been generated to update the contents
-        #of self.image
+
+        # version of the request that has been generated to update the contents
+        # of self.image
         #
-        #If self.reqVer == self.dataVer, a request is currently running that will
-        #eventually replace self.image with the new data.
+        # If self.reqVer == self.dataVer, a request is currently running that will
+        # eventually replace self.image with the new data.
         self.reqVer  = -2
-    
+
     def clear(self):
         self.image.fill(0)
 
@@ -62,66 +63,96 @@ class ImageTile(object):
         self._mutex.unlock()
 
 
-
 class Tiling(object):
     '''Tiling.__init__()
 
     Arguments:
     sliceShape -- (width, height)
-    data2scene -- QTransform from data to image coordinates (default: identity transform)
+    data2scene -- QTransform from data to image coordinates (default:
+                  identity transform)
     blockSize  -- base tile size: blockSize x blockSize (default 256)
     overlap    -- overlap between tiles positive number prevents rendering
                   artifacts between tiles for certain zoom levels (default 1)
 
     '''
-    def __init__(self, sliceShape, data2scene=QTransform(), blockSize=256, overlap=0, overlap_draw = 1e-3):
+
+    def __init__(self, sliceShape, data2scene=QTransform(),
+                 blockSize=256, overlap=0, overlap_draw=1e-3,
+                 name="Unnamed Tiling"):
         self.blockSize = blockSize
         self.overlap = overlap
-        patchAccessor = PatchAccessor(sliceShape[0], sliceShape[1], blockSize=self.blockSize)
+        self._patchAccessor = PatchAccessor(sliceShape[0],
+                                            sliceShape[1],
+                                            blockSize=self.blockSize)
+        self._overlap_draw = overlap_draw
+        self._overlap = overlap
 
-        self.imageRectFs = []
-        self.tileRectFs = []
-        self.imageRects  = []
-        self.tileRects  = []
-        self.sliceShape = sliceShape
-        self.patchAccessor = patchAccessor
+        numPatches = self._patchAccessor.patchCount
+
+        self.imageRectFs = [None]*numPatches
+        self.dataRectFs  = [None]*numPatches
+        self.tileRectFs  = [None]*numPatches
+        self.imageRects  = [None]*numPatches
+        self.dataRects   = [None]*numPatches
+        self.tileRects   = [None]*numPatches
+        self.sliceShape  = sliceShape
+        self.name = name
         self.data2scene = data2scene
 
-        for patchNr in range(patchAccessor.patchCount):
-            #the patch accessor uses the data coordinate system
-            #
-            #because the patch is drawn on the screen, its holds coordinates
-            #corresponding to Qt's QGraphicsScene's system, which need to be
-            #converted to scene coordinates
-            
-            #the image rectangle includes an overlap margin
-            imageRectF = data2scene.mapRect(patchAccessor.patchRectF(patchNr, self.overlap))
-            
-            #the patch rectangle has per default no overlap
-            patchRectF = data2scene.mapRect(patchAccessor.patchRectF(patchNr, 0))
+    @property
+    def data2scene(self):
+        return self._data2scene
 
-            # add a little overlap when the overlap_draw setting is activated
-            if overlap_draw != 0:
-                patchRectF  = QRectF(patchRectF.x()-overlap_draw,     patchRectF.y()-overlap_draw, \
-                                   patchRectF.width()+2*overlap_draw, patchRectF.height()+2*overlap_draw)
+    @data2scene.setter
+    def data2scene(self, data2scene):
+        self._data2scene = data2scene
+        self.scene2data, isInvertible = data2scene.inverted()
+        assert isInvertible
 
-            patchRect  = QRect(round(patchRectF.x()),     round(patchRectF.y()), \
-                               round(patchRectF.width()), round(patchRectF.height()))
-        
-            #the image rectangles of neighboring patches can overlap slightly, to account
-            #for inaccuracies in sub-pixel rendering of many ImagePatch objects
-            imageRect   = QRect(round(imageRectF.x()),     round(imageRectF.y()), \
-                                round(imageRectF.width()), round(imageRectF.height()))
+        for patchNr in range(self._patchAccessor.patchCount):
+            # the patch accessor uses the data coordinate system.
+            # because the patch is drawn on the screen, its holds coordinates
+            # corresponding to Qt's QGraphicsScene's system, which need to be
+            # converted to scene coordinates
 
-            self.imageRectFs.append(imageRectF)
-            self.tileRectFs.append(patchRectF)
-            self.imageRects.append(imageRect)
-            self.tileRects.append(patchRect)
-  
+            # the image rectangle includes an overlap margin
+            imageRectF = data2scene.mapRect(self._patchAccessor.patchRectF(patchNr, self.overlap))
+
+            # the patch rectangle has per default no overlap
+            patchRectF = data2scene.mapRect(self._patchAccessor.patchRectF(patchNr, 0))
+
+            # add a little overlap when the overlap_draw setting is
+            # activated
+            if self._overlap_draw != 0:
+                patchRectF = QRectF(patchRectF.x() - self._overlap_draw,
+                                    patchRectF.y() - self._overlap_draw,
+                                    patchRectF.width() + 2 * self._overlap_draw,
+                                    patchRectF.height() + 2 * self._overlap_draw)
+
+            patchRect = QRect(round(patchRectF.x()),
+                              round(patchRectF.y()),
+                              round(patchRectF.width()),
+                              round(patchRectF.height()))
+
+            # the image rectangles of neighboring patches can overlap
+            # slightly, to account for inaccuracies in sub-pixel
+            # rendering of many ImagePatch objects
+            imageRect = QRect(round(imageRectF.x()),
+                              round(imageRectF.y()),
+                              round(imageRectF.width()),
+                              round(imageRectF.height()))
+
+            self.imageRectFs[patchNr] = imageRectF
+            self.dataRectFs[ patchNr] = imageRectF
+            self.tileRectFs[ patchNr] = patchRectF
+            self.imageRects[ patchNr] = imageRect
+            self.tileRects[  patchNr] = patchRect
+
+
     def boundingRectF(self):
         if self.tileRectFs:
             p = self.tileRectFs[-1]
-            br = QRectF(0,0, p.x()+p.width(), p.y()+p.height()) 
+            br = QRectF(0,0, p.x()+p.width(), p.y()+p.height())
         else:
             br = QRectF(0,0,0,0)
         return br
@@ -137,16 +168,16 @@ class Tiling(object):
 
         # Patch accessor uses data coordinates
         rect = self.data2scene.inverted()[0].mapRect(sceneRect)
-        patchNumbers = self.patchAccessor.getPatchesForRect(
+        patchNumbers = self._patchAccessor.getPatchesForRect(
                             rect.topLeft().x(), rect.topLeft().y(),
                             rect.bottomRight().x(), rect.bottomRight().y() )
         return patchNumbers
 
     def __len__(self):
         return len(self.imageRectFs)
-            
+
 #*******************************************************************************
-# T i l e d I m a g e L a y e r                                                * 
+# T i l e d I m a g e L a y e r                                                *
 #*******************************************************************************
 
 class TiledImageLayer(object):
@@ -164,7 +195,8 @@ class TiledImageLayer(object):
             yield self[i]
 
 class _MultiCache( object ):
-    def __init__( self, first_uid, default_factory=lambda:None, maxcaches=None ):
+    def __init__( self, first_uid, default_factory=lambda:None,
+                  maxcaches=None ):
         self._maxcaches = maxcaches
         self.caches = OrderedDict()
         self.add( first_uid, default_factory=default_factory)
@@ -204,18 +236,19 @@ def synchronous( tlockname ):
         return _synchronizer
     return _synched
 
-    
 
 class _TilesCache( object ):
     def __init__(self, first_stack_id, sims, maxstacks=None):
         self._lock = Lock()
         self._sims = sims
 
-        self._tileCache = _MultiCache(first_stack_id, maxcaches=maxstacks, default_factory=lambda:(None,0.))
-        self._tileCacheDirty = _MultiCache(first_stack_id, default_factory=lambda:True, maxcaches=maxstacks)
-        self._layerCache = _MultiCache(first_stack_id,  maxcaches=maxstacks)
-        self._layerCacheDirty = _MultiCache(first_stack_id, default_factory=lambda:True, maxcaches=maxstacks)
-        self._layerCacheTimestamp = _MultiCache(first_stack_id, default_factory=float, maxcaches=maxstacks)
+        kwargs = {'first_uid' : first_stack_id,
+                  'maxcaches' : maxstacks}
+        self._tileCache = _MultiCache(default_factory=lambda: (None, 0.), **kwargs)
+        self._tileCacheDirty = _MultiCache(default_factory=lambda: True, **kwargs)
+        self._layerCache = _MultiCache(**kwargs)
+        self._layerCacheDirty = _MultiCache(default_factory=lambda: True, **kwargs)
+        self._layerCacheTimestamp = _MultiCache(default_factory=float, **kwargs)
 
     @synchronous('_lock')
     def __contains__( self, stack_id ):
@@ -235,8 +268,11 @@ class _TilesCache( object ):
             occluded = numpy.asarray(stack_occluded)
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
             if numpy.count_nonzero(visibleAndNotOccluded) > 0:
-                dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()])
-                progress = 1.-numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)/float(numpy.count_nonzero(visibleAndNotOccluded))
+                dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)]
+                                       for ims in self._sims.viewImageSources()])
+                num = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)
+                denom = float(numpy.count_nonzero(visibleAndNotOccluded))
+                progress = 1.0 - num / denom
             else:
                 progress = 1.0
         else:
@@ -279,7 +315,7 @@ class _TilesCache( object ):
     def setLayerTimestamp( self, stack_id, layer_id, tile_id, time):
         self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = time
 
-    @synchronous('_lock')    
+    @synchronous('_lock')
     def addStack( self, stack_id ):
         self._tileCache.add( stack_id )
         self._tileCacheDirty.add( stack_id, default_factory=lambda:True )
@@ -296,47 +332,53 @@ class _TilesCache( object ):
         self._layerCacheTimestamp.touch( stack_id )
 
     @synchronous('_lock')
-    def updateTileIfNecessary( self, stack_id, layer_id, tile_id, req_timestamp, img):
+    def updateTileIfNecessary( self, stack_id, layer_id, tile_id,
+                               req_timestamp, img):
         if req_timestamp > self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]:
-            self._layerCache.caches[stack_id][(layer_id, tile_id)]  = img         
+            self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
             self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = False
-            self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = req_timestamp        
+            self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = req_timestamp
             self._tileCacheDirty.caches[stack_id][tile_id] = True
-
 
 
 class TileProvider( QObject ):
     THREAD_HEARTBEAT = 0.2
 
-    Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling') 
-    changed = pyqtSignal( QRectF )
+    Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling')
+    sceneRectChanged = pyqtSignal( QRectF )
 
 
     '''TileProvider __init__
-    
+
     Keyword Arguments:
-    cache_size                -- maximal number of encountered stacks 
-                                 to cache, i.e. slices if the imagesources  
+    cache_size                -- maximal number of encountered stacks
+                                 to cache, i.e. slices if the imagesources
                                  draw from slicesources (default 10)
     request_queue_size        -- maximal number of request to queue up (default 100000)
     n_threads                 -- maximal number of request threads; this determines the
-                                 maximal number of simultaneously running requests 
+                                 maximal number of simultaneously running requests
                                  to the pixelpipeline (default: 2)
-    layerIdChange_means_dirty -- layerId changes invalidate the cache; by default only 
+    layerIdChange_means_dirty -- layerId changes invalidate the cache; by default only
                                  stackId changes do that (default False)
     parent                    -- QObject
-    
+
     '''
-    def __init__( self, tiling,
-                  stackedImageSources,
-                  cache_size = 100,
-                  request_queue_size = 100000,
-                  n_threads = 2,
-                  layerIdChange_means_dirty=False,
-                  parent=None ):
+
+    @property
+    def axesSwapped(self):
+        return self._axesSwapped
+
+    @axesSwapped.setter
+    def axesSwapped(self, value):
+        self._axesSwapped = value
+
+    def __init__( self, tiling, stackedImageSources, cache_size=100,
+                  request_queue_size=100000, n_threads=2,
+                  layerIdChange_means_dirty=False, parent=None ):
         QObject.__init__( self, parent = parent )
 
         self.tiling = tiling
+        self.axesSwapped = False
         self._sims = stackedImageSources
         self._cache_size = cache_size
         self._request_queue_size = request_queue_size
@@ -344,7 +386,8 @@ class TileProvider( QObject ):
         self._layerIdChange_means_dirty = layerIdChange_means_dirty
 
         self._current_stack_id = self._sims.stackId
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._cache_size)
+        self._cache = _TilesCache(self._current_stack_id, self._sims,
+                                  maxstacks=self._cache_size)
 
         self._dirtyLayerQueue = LifoQueue(self._request_queue_size)
         self._prefetchQueue = Queue(self._request_queue_size)
@@ -359,8 +402,9 @@ class TileProvider( QObject ):
             self._sims.layerIdChanged.connect(self._onLayerIdChanged)
 
         self._keepRendering = True
-        
-        self._dirtyLayerThreads = [Thread(target=self._dirtyLayersWorker) for i in range(self._n_threads)]
+
+        self._dirtyLayerThreads = [Thread(target=self._dirtyLayersWorker)
+                                   for i in range(self._n_threads)]
         for thread in self._dirtyLayerThreads:
             thread.daemon = True
         [ thread.start() for thread in self._dirtyLayerThreads ]
@@ -368,10 +412,10 @@ class TileProvider( QObject ):
     def getTiles( self, rectF ):
         '''Get tiles in rect and request a refresh.
 
-        Returns tiles intersectinf with rectF immediatelly and requests a refresh
-        of these tiles. Next time you call this function the tiles may be already
-        (partially) updated. If you want to wait until the rendering is fully complete,
-        call join().
+        Returns tiles intersecting with rectF immediately and requests
+        a refresh of these tiles. Next time you call this function the
+        tiles may be already (partially) updated. If you want to wait
+        until the rendering is fully complete, call join().
 
         '''
         self.requestRefresh( rectF )
@@ -379,17 +423,17 @@ class TileProvider( QObject ):
         stack_id = self._current_stack_id
         for tile_no in tile_nos:
             qimg, progress = self._cache.tile(stack_id, tile_no)
-            t = TileProvider.Tile(tile_no,
-                     qimg,
-                     QRectF(self.tiling.imageRects[tile_no]),
-                     progress,
-                     self.tiling)
-            yield t
+            yield TileProvider.Tile(
+                tile_no,
+                qimg,
+                QRectF(self.tiling.imageRects[tile_no]),
+                progress,
+                self.tiling)
 
     def requestRefresh( self, rectF ):
         '''Requests tiles to be refreshed.
 
-        Returns immediatelly. Call join() to wait for
+        Returns immediately. Call join() to wait for
         the end of the rendering.
 
         '''
@@ -401,11 +445,11 @@ class TileProvider( QObject ):
     def prefetch( self, rectF, through ):
         '''Request fetching of tiles in advance.
 
-        Returns immediatelly. Prefetch will commence after
-        all regular tiles are refreshed (see requestRefresh() and
-        getTiles() ). The prefetch is reset when the 'through'
-        value of the slicing changes. Several calls to prefetch
-        are handeled in Fifo order.
+        Returns immediately. Prefetch will commence after all regular
+        tiles are refreshed (see requestRefresh() and getTiles() ).
+        The prefetch is reset when the 'through' value of the slicing
+        changes. Several calls to prefetch are handeled in Fifo
+        order.
 
         '''
         if self._cache_size > 1:
@@ -420,8 +464,8 @@ class TileProvider( QObject ):
     def join( self ):
         '''Wait until all refresh request are processed.
 
-        Blocks until no refresh request pending anymore and all rendering
-        finished.
+        Blocks until no refresh request pending anymore and all
+        rendering finished.
 
         '''
         return self._dirtyLayerQueue.join()
@@ -430,9 +474,9 @@ class TileProvider( QObject ):
     def notifyThreadsToStop( self ):
         '''Signals render threads to stop.
 
-        Call this method at the end of the lifetime of
-        a TileProvider instance. Otherwise the garbage collector will
-        not clean up the instance (even if you call del).
+        Call this method at the end of the lifetime of a TileProvider
+        instance. Otherwise the garbage collector will not clean up
+        the instance (even if you call del).
 
         '''
         self._keepRendering = False
@@ -445,11 +489,11 @@ class TileProvider( QObject ):
         '''Wait until all threads terminated.
 
         Without calling notifyThreadsToStop, threads will never
-        terminate. 
+        terminate.
 
         Arguments:
         timeout -- timeout in seconds as a floating point number
-        
+
         '''
         for thread in self._dirtyLayerThreads:
             thread.join( timeout )
@@ -460,7 +504,7 @@ class TileProvider( QObject ):
         All threads are alive until notifyThreadsToStop() is
         called. After that, they start dying. Call joinThreads() to wait
         for the last thread to die.
-        
+
         '''
         at = {}
         for thread in self._dirtyLayerThreads:
@@ -474,18 +518,18 @@ class TileProvider( QObject ):
             # See onSizeChanged()
             dirtyLayerQueue = self._dirtyLayerQueue
             prefetchQueue = self._prefetchQueue
-            
+
             try:
                 try:
-                    ims, tile_nr, stack_id, image_req, timestamp, cache = dirtyLayerQueue.get_nowait()
+                    result = dirtyLayerQueue.get_nowait()
                     queue = dirtyLayerQueue
                 except Empty:
                     try:
-                        ims, tile_nr, stack_id, image_req, timestamp, cache = prefetchQueue.get_nowait()
+                        result = prefetchQueue.get_nowait()
                         queue = prefetchQueue
                     except Empty:
                         try:
-                            ims, tile_nr, stack_id, image_req, timestamp, cache = dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
+                            result = dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
                             queue = dirtyLayerQueue
                         except Empty:
                             continue
@@ -496,61 +540,84 @@ class TileProvider( QObject ):
                 #This avoids a lot of warnings.
                 continue
 
+            ims, transform, tile_nr, stack_id, image_req, timestamp, cache = result
             try:
                 if timestamp > cache.layerTimestamp( stack_id, ims, tile_nr ):
                     img = image_req.wait()
+                    img = img.transformed(transform)
                     cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
                     if stack_id == self._current_stack_id and cache is self._cache:
-                        self.changed.emit(QRectF(self.tiling.imageRects[tile_nr]))
+                        self.sceneRectChanged.emit(QRectF(self.tiling.imageRects[tile_nr]))
             except KeyError:
                 pass
             finally:
                 queue.task_done()
 
     def _refreshTile( self, stack_id, tile_no, prefetch=False ):
+        if not self.axesSwapped:
+            transform = QTransform(0,1,0,1,0,0,1,1,1)
+        else:
+            transform = QTransform().rotate(90).scale(1,-1)
+        transform *= self.tiling.data2scene
+
         try:
             if self._cache.tileDirty( stack_id, tile_no ):
                 if not prefetch:
                     self._cache.setTileDirty(stack_id, tile_no, False)
                     img = self._renderTile( stack_id, tile_no )
-                    self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible(), self._sims.viewOccluded() )
+                    self._cache.setTile(stack_id, tile_no, img,
+                                        self._sims.viewVisible(),
+                                        self._sims.viewOccluded())
 
-                # refresh dirty layer tiles 
+                # refresh dirty layer tiles
                 for ims in self._sims.viewImageSources():
-                    if self._cache.layerDirty(stack_id, ims, tile_no) and not self._sims.isOccluded(ims) and self._sims.isVisible(ims):
-                        ims_req = ims.request(self.tiling.imageRects[tile_no], stack_id[1])
+                    if self._cache.layerDirty(stack_id, ims, tile_no) \
+                       and not self._sims.isOccluded(ims) \
+                       and self._sims.isVisible(ims):
+
+                        rect = self.tiling.imageRects[tile_no]
+                        dataRect = self.tiling.scene2data.mapRect(rect)
+                        ims_req = ims.request(dataRect, stack_id[1])
                         if ims.direct:
-                            #The ImageSource 'ims' is fast (it has the direct flag set to true)
-                            #so we process the request synchronously here.
-                            #This improves the responsiveness for layers that have the data readily available.
-                            start = time.time() 
+                            # The ImageSource 'ims' is fast (it has the
+                            # direct flag set to true) so we process
+                            # the request synchronously here. This
+                            # improves the responsiveness for layers
+                            # that have the data readily available.
+                            start = time.time()
                             img = ims_req.wait()
+
+                            img = img.transformed(transform)
                             stop = time.time()
-                            
-                            ims._layer.timePerTile(stop-start, self.tiling.imageRects[tile_no])
-                            
-                            self._cache.updateTileIfNecessary( stack_id, ims, tile_no, time.time(), img )
+
+                            ims._layer.timePerTile(stop-start,
+                                                   self.tiling.imageRects[tile_no])
+
+                            self._cache.updateTileIfNecessary(
+                                stack_id, ims, tile_no, time.time(), img )
                             img = self._renderTile( stack_id, tile_no )
-                            self._cache.setTile( stack_id, tile_no, img, self._sims.viewVisible(), self._sims.viewOccluded() )
+                            self._cache.setTile(stack_id, tile_no,
+                                                img, self._sims.viewVisible(),
+                                                self._sims.viewOccluded() )
                         else:
-                            req = (ims,
-                                   tile_no,
-                                   stack_id,
-                                   ims_req,
-                                   time.time(),
-                                   self._cache)
+                            req = (ims, transform, tile_no, stack_id,
+                                   ims_req, time.time(), self._cache)
                             try:
                                 if prefetch:
                                     self._prefetchQueue.put_nowait( req )
                                 else:
                                     self._dirtyLayerQueue.put_nowait( req )
                             except Full:
-                                warnings.warn("Request queue full. Dropping tile refresh request. Increase queue size!")
+                                msg = " ".join(("Request queue full.",
+                                                "Dropping tile refresh request.",
+                                                "Increase queue size!"))
+                                warnings.warn(msg)
         except KeyError:
             pass
 
     def _renderTile( self, stack_id, tile_nr ):
-        qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
+        qimg = QImage(self.tiling.imageRects[tile_nr].size(),
+                      QImage.Format_ARGB32_Premultiplied)
         #qimg.fill(Qt.white)  # Apparently, some difference between Qt 4.7 and 4.8 causes 
                               #   QImage.fill(Qt.white) to do the wrong thing here.  It might be a Qt bug.
         qimg.fill(0xffffffff) # Use a hex constant instead.
@@ -568,18 +635,21 @@ class TileProvider( QObject ):
         p.end()
         return qimg
 
-    def _onLayerDirty(self, dirtyImgSrc, rect ):
+    def _onLayerDirty(self, dirtyImgSrc, dataRect ):
+        sceneRect = self.tiling.data2scene.mapRect(dataRect)
         if dirtyImgSrc in self._sims.viewImageSources():
-            visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) and not self._sims.isOccluded( dirtyImgSrc )
+            visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) \
+                                    and not self._sims.isOccluded( dirtyImgSrc )
             for tile_no in xrange(len(self.tiling)):
-                #and invalid rect means everything is dirty
-                if not rect.isValid() or self.tiling.tileRects[tile_no].intersected( rect ):
+                # and invalid rect means everything is dirty
+                if not sceneRect.isValid() \
+                   or self.tiling.tileRects[tile_no].intersected( sceneRect ):
                     for ims in self._sims.viewImageSources():
                         self._cache.setLayerDirtyAll(ims, tile_no, True)
                     if visibleAndNotOccluded:
                         self._cache.setTileDirtyAll(tile_no, True)
             if visibleAndNotOccluded:
-                self.changed.emit( QRectF(rect) )
+                self.sceneRectChanged.emit( QRectF(sceneRect) )
 
     def _onStackIdChanged( self, oldId, newId ):
         if newId in self._cache:
@@ -588,7 +658,7 @@ class TileProvider( QObject ):
             self._cache.addStack( newId )
         self._current_stack_id = newId
         self._prefetchQueue = Queue(self._request_queue_size)
-        self.changed.emit(QRectF())
+        self.sceneRectChanged.emit(QRectF())
 
     def _onLayerIdChanged( self, ims, oldId, newId ):
         if self._layerIdChange_means_dirty:
@@ -598,21 +668,22 @@ class TileProvider( QObject ):
         for tile_no in xrange(len(self.tiling)):
             self._cache.setTileDirtyAll(tile_no, True)
         if not self._sims.isOccluded( ims ):
-            self.changed.emit(QRectF())
+            self.sceneRectChanged.emit(QRectF())
 
     def _onOpacityChanged(self, ims, opacity):
         for tile_no in xrange(len(self.tiling)):
             self._cache.setTileDirtyAll(tile_no, True)
-        if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):        
-            self.changed.emit(QRectF())
+        if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):
+            self.sceneRectChanged.emit(QRectF())
 
     def _onSizeChanged(self):
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self._cache_size)
+        self._cache = _TilesCache(self._current_stack_id, self._sims,
+                                  maxstacks=self._cache_size)
         self._dirtyLayerQueue = LifoQueue(self._request_queue_size)
         self._prefetchQueue = Queue(self._request_queue_size)
-        self.changed.emit(QRectF())
-        
+        self.sceneRectChanged.emit(QRectF())
+
     def _onOrderChanged(self):
         for tile_no in xrange(len(self.tiling)):
             self._cache.setTileDirtyAll(tile_no, True)
-        self.changed.emit(QRectF())
+        self.sceneRectChanged.emit(QRectF())

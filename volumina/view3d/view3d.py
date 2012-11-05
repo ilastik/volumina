@@ -15,6 +15,7 @@ from PyQt4.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
                         QToolButton
 from PyQt4.QtCore import pyqtSignal, SIGNAL, QEvent, QTimer
 from PyQt4.QtGui import QMenu, QAction, QColor
+import volumina.icons_rc
 
 import qimage2ndarray
 
@@ -27,13 +28,9 @@ import copy
 from functools import partial
 
 from slicingPlanesWidget import SlicingPlanesWidget
-
-# discover icon path
-from os import path
 from volumina.events import Event
 from volumina.layer import ColortableLayer
 from GenerateModelsFromLabels_thread import MeshExtractorDialog
-_icondir = path.split(__file__)[0]+'/../resources/icons'
 
 def convertVTPtoOBJ(vtpFilename, objFilename):
     f = open(vtpFilename, 'r')
@@ -282,28 +279,28 @@ class OverviewScene(QWidget):
         hbox.setContentsMargins(5,3,5,3)
         
         b1 = QToolButton()
-        b1.setIcon(QIcon(path.join(_icondir, 'x-axis.png')))
+        b1.setIcon(QIcon(':icons/icons/x-axis.png'))
         b1.setCheckable(True); b1.setChecked(True)
         
         b2 = QToolButton()
-        b2.setIcon(QIcon(path.join(_icondir, 'y-axis.png')))
+        b2.setIcon(QIcon(':icons/icons/y-axis.png'))
         b2.setCheckable(True); b2.setChecked(True)
         
         b3 = QToolButton()
-        b3.setIcon(QIcon(path.join(_icondir, 'z-axis.png')))
+        b3.setIcon(QIcon(':icons/icons/z-axis.png'))
         b3.setCheckable(True); b3.setChecked(True)
         
         bAnaglyph = QToolButton()
-        bAnaglyph.setIcon(QIcon(path.join(_icondir, '3d_glasses.png')))
+        bAnaglyph.setIcon(QIcon(':icons/icons/3d_glasses.png'))
         bAnaglyph.setCheckable(True); bAnaglyph.setChecked(False)
         
         bCutter = QToolButton()
-        bCutter.setIcon(QIcon(path.join(_icondir, 'edit-cut.png')))
+        bCutter.setIcon(QIcon(':icons/icons/edit-cut.png'))
         bCutter.setCheckable(True); bCutter.setChecked(False)
         self.bCutter = bCutter
         
         bExportMesh = QToolButton()
-        bExportMesh.setIcon(QIcon(path.join(_icondir, 'document-save-as.png')))
+        bExportMesh.setIcon(QIcon(':icons/icons/document-save-as.png'))
         
         hbox.addWidget(b1)
         hbox.addWidget(b2)

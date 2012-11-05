@@ -15,7 +15,7 @@ from volumina.layer import GrayscaleLayer
 import volumina.pixelpipeline.imagesourcefactories as imsfac
 
 class ImageScene2DTest( ut.TestCase ):
-    
+
     @classmethod
     def setUpClass(cls):
         cls.app = None
@@ -27,19 +27,6 @@ class ImageScene2DTest( ut.TestCase ):
     @classmethod
     def tearDownClass(cls):
         del cls.app
-
-    def testSceneShapeProperty( self ):
-        scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
-        self.assertEqual(scene.sceneShape, (0,0))
-        SHAPE1 = (24,77)
-        scene.sceneShape = SHAPE1
-        self.assertEqual(scene.sceneShape, SHAPE1)
-        SHAPE2 = (101.3,324.5)
-        scene.sceneShape = SHAPE2
-        self.assertEqual(scene.sceneShape, SHAPE2)
-        SHAPE3 = (0,0)
-        scene.sceneShape = SHAPE3
-        self.assertEqual(scene.sceneShape, SHAPE3)
 
     def testStackedImageSourcesProperty( self ):
         s = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
@@ -73,10 +60,11 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         self.layerstack.append(self.layer)
         self.ims = imsfac.createImageSource( self.layer, [self.ds] )
         self.sims.register(self.layer, self.ims)
-        
-        self.scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0) 
+
+        self.scene = ImageScene2D(PositionModel(), (0,3,4), preemptive_fetch_number=0)
+
         self.scene.stackedImageSources = self.sims
-        self.scene.sceneShape = (310,290)
+        self.scene.dataShape = (310,290)
 
     def tearDown( self ):
         if self.scene._tileProvider:
