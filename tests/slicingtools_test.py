@@ -8,11 +8,11 @@ class SlicingToolsTest(unittest.TestCase):
     qrect = QRect(10, 5, 8, 2)
 
     def test_slicing2rect(self):
-        qrect = st.slicing2rect(self.slicing)
+        qrect = st.slicing2rect(self.slicing, invert=True)
         self.assertEquals(qrect, self.qrect)
 
     def test_rect2slicing(self):
-        slicing = st.rect2slicing(self.qrect)
+        slicing = st.rect2slicing(self.qrect, invert=True)
         self.assertEquals(slicing, self.slicing)
 
     def test_slicing_rect_inversion(self):
@@ -28,7 +28,7 @@ class SlicingToolsTest(unittest.TestCase):
 
         a = self.qrect
         b = st.rect2slicing(a)
-        c = st.slicing2rect(c)
+        c = st.slicing2rect(b)
 
         self.assertEquals(a, c)
 
