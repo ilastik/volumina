@@ -5,7 +5,7 @@ from PyQt4.QtCore import QRect
 
 class SlicingToolsTest(unittest.TestCase):
     slicing = (slice(5, 7), slice(10, 18))
-    qrect = QRect(5, 10, 2, 8)
+    qrect = QRect(10, 5, 8, 2)
 
     def test_slicing2rect(self):
         qrect = st.slicing2rect(self.slicing)
