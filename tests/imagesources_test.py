@@ -44,10 +44,10 @@ class GrayscaleImageSourceTest( ut.TestCase ):
             self.assertTrue( rect.isEmpty() )
 
         def checkDirtyRect( rect ):
-            self.assertEqual( rect.x(), 12 )
-            self.assertEqual( rect.y(), 34 )
-            self.assertEqual( rect.width(), 22 )
-            self.assertEqual( rect.height(), 3  )
+            self.assertEqual( rect.x(), 34 )
+            self.assertEqual( rect.y(), 12 )
+            self.assertEqual( rect.width(), 3 )
+            self.assertEqual( rect.height(), 22  )
 
         # should mark everything dirty
         self.ims.isDirty.connect( checkAllDirty )
@@ -100,10 +100,10 @@ class ColortableImageSourceTest( ut.TestCase ):
             self.assertTrue( rect.isEmpty() )
 
         def checkDirtyRect( rect ):
-            self.assertEqual( rect.x(), 12 )
-            self.assertEqual( rect.y(), 34 )
-            self.assertEqual( rect.width(), 22 )
-            self.assertEqual( rect.height(), 3  )
+            self.assertEqual( rect.x(), 34 )
+            self.assertEqual( rect.y(), 12 )
+            self.assertEqual( rect.width(), 3 )
+            self.assertEqual( rect.height(), 22  )
 
         # should mark everything dirty
         self.ims.isDirty.connect( checkAllDirty )
@@ -136,27 +136,27 @@ class RGBAImageSourceTest( ut.TestCase ):
         self.ims_none = RGBAImageSource( ConstantSource(),ConstantSource(),ConstantSource(),ConstantSource(), RGBALayer())
         
     def testRgba( self ):
-        img = self.ims_rgba.request(QRect(0,0,129,104)).wait()
+        img = self.ims_rgba.request(QRect(0,0,104,129)).wait()
         #img.save('rgba.tif')
 
     def testRgb( self ):
-        img = self.ims_rgb.request(QRect(0,0,129,104)).wait()
+        img = self.ims_rgb.request(QRect(0,0,104,129)).wait()
         #img.save('rgb.tif')
 
     def testRg( self ):
-        img = self.ims_rg.request(QRect(0,0,129,104)).wait()
+        img = self.ims_rg.request(QRect(0,0,104,129)).wait()
         #img.save('rg.tif')
 
     def testBa( self ):
-        img = self.ims_ba.request(QRect(0,0,129,104)).wait()
+        img = self.ims_ba.request(QRect(0,0,104,129)).wait()
         #img.save('ba.tif')
 
     def testA( self ):
-        img = self.ims_a.request(QRect(0,0,129,104)).wait()
+        img = self.ims_a.request(QRect(0,0,104,129)).wait()
         #img.save('a.tif')
 
     def testNone( self ):
-        img = self.ims_none.request(QRect(0,0,129,104)).wait()
+        img = self.ims_none.request(QRect(0,0,104,129)).wait()
         #img.save('none.tif')
 
     def testOpaqueness( self ):
