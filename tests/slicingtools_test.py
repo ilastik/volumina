@@ -5,14 +5,14 @@ from PyQt4.QtCore import QRect
 
 class SlicingToolsTest(unittest.TestCase):
     slicing = (slice(5, 7), slice(10, 18))
-    qrect = QRect(10, 5, 8, 2)
+    qrect = QRect(5, 10, 2, 8)
 
     def test_slicing2rect(self):
-        qrect = st.slicing2rect(self.slicing, invert=True)
+        qrect = st.slicing2rect(self.slicing)
         self.assertEquals(qrect, self.qrect)
 
     def test_rect2slicing(self):
-        slicing = st.rect2slicing(self.qrect, invert=True)
+        slicing = st.rect2slicing(self.qrect)
         self.assertEquals(slicing, self.slicing)
 
     def test_slicing_rect_inversion(self):

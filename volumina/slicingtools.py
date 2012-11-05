@@ -70,19 +70,15 @@ def is_pure_slicing( slicing ):
             return False
     return True
 
-def slicing2rect(slicing, invert=False):
-    if invert:
-        slicing = slicing[::-1]
+def slicing2rect(slicing):
     h, v = slicing
     return QRect(h.start, v.start,
                  h.stop - h.start,
                  v.stop - v.start)
 
-def rect2slicing(qrect, seq=tuple, invert=False):
+def rect2slicing(qrect, seq=tuple):
     result = seq((slice(qrect.x(), qrect.x() + qrect.width()),
                   slice(qrect.y(), qrect.y() + qrect.height())))
-    if invert:
-        result = result[::-1]
     return result
 
 def slicing2shape( slicing ):
