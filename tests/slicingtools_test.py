@@ -3,7 +3,6 @@ import numpy as np
 import volumina.slicingtools as st
 from PyQt4.QtCore import QRect
 
-
 class SlicingToolsTest(unittest.TestCase):
     slicing = (slice(5, 7), slice(10, 18))
     qrect = QRect(5, 10, 2, 8)

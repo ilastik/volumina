@@ -13,7 +13,7 @@ not wrapped in a sequence.
 import numpy as np
 from PyQt4.QtCore import QRect
 
-        
+
 #*******************************************************************************
 # S l                                                                          *
 #*******************************************************************************
@@ -59,7 +59,7 @@ def is_bounded( slicing ):
 def is_pure_slicing( slicing ):
     '''Test if slicing is a single slice instance or sequence of instances.
 
-    Impure slicings may additionally contain integer indices, 
+    Impure slicings may additionally contain integer indices,
     ellipses, booleans, or newaxis.
     '''
     slicing = box(slicing)
@@ -70,15 +70,17 @@ def is_pure_slicing( slicing ):
             return False
     return True
 
-def slicing2rect( slicing, width_axis=0, height_axis = 1 ):
-    x = slicing[width_axis].start
-    y = slicing[height_axis].start
-    width = slicing[width_axis].stop - slicing[width_axis].start
-    height = slicing[height_axis].stop - slicing[height_axis].start
+def slicing2rect(slicing):
+    hslice, vslice = slicing
+    x = hslice.start
+    y = vslice.start
+    width = hslice.stop - hslice.start
+    height = vslice.stop - vslice.start
     return QRect(x, y, width, height)
 
 def rect2slicing( qrect, seq=tuple ):
-    return seq((slice(qrect.x(), qrect.x()+qrect.width()), slice(qrect.y(), qrect.y()+qrect.height())))
+    return seq((slice(qrect.x(), qrect.x() + qrect.width()),
+                slice(qrect.y(), qrect.y() + qrect.height())))
 
 def slicing2shape( slicing ):
     assert is_bounded( slicing )
@@ -115,14 +117,14 @@ def intersection( lhs, rhs ):
             return stop2
         return min(stop1, stop2)
     dim = len(lhs)
-    inter = [None] * dim 
+    inter = [None] * dim
     for d in xrange(dim):
         start = max(lhs[d].start, rhs[d].start)
         stop = _min_stop(lhs[d].stop, rhs[d].stop)
-            
+
         if start and stop:
             if( (stop - start) <= 0):
-                return None            
+                return None
         inter[d] = slice(start, stop)
     return tuple(inter)
 
@@ -146,7 +148,7 @@ class SliceProjection( object ):
 
     def __init__( self, abscissa = 1, ordinate = 2, along = [0,3,4] ):
         assert hasattr(along, "__iter__")
-        
+
         self._abscissa = abscissa
         self._ordinate = ordinate
         self._along = along
@@ -160,7 +162,7 @@ class SliceProjection( object ):
             raise ValueError("duplicate axes")
         if axes_set != set(range(self._dim)):
             raise ValueError("axes not from range(0,dim)")
-    
+
     def handednessSwitched( self ):
         if self.ordinate < self.abscissa:
             return True
@@ -186,7 +188,7 @@ class SliceProjection( object ):
         assert domainArray.ndim == self.domainDim, "ndim %d != %d (domainArray.shape=%r, domainDim=%r)" % (domainArray.ndim, self.domainDim, domainArray.shape, self.domainDim)
         slicing = self.domainDim*[0]
         slicing[self._abscissa], slicing[self._ordinate] = slice(None,None), slice(None,None)
-        
+
         projectedArray = domainArray[slicing]
         assert projectedArray.ndim == 2, "dim %d != 2" % projectedArray.ndim
         if self.handednessSwitched():
