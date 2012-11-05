@@ -10,16 +10,16 @@ class PatchAccessor():
     """
     Cut a given 2D shape into patches of given rectangular size
     """
-    
+
     def __init__(self, size_x, size_y, blockSize = 128):
         """
         (size_x, size_y) -- 2D shape
         blockSize        -- maximum width/height of patches
-        
+
         Constructs a PatchAccessor that will divide the given shape
         into patches that have a maximum given size.
         """
-        
+
         self._blockSize = blockSize
         self.size_x = size_x
         self.size_y = size_y
@@ -84,7 +84,6 @@ class PatchAccessor():
         nums = []
         for y in range(sy,ey):
             nums += range(y*self._cX+sx, y*self._cX+ex)
-        
         return nums
 
 if __name__ == "__main__":
