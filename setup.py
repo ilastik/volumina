@@ -6,12 +6,9 @@ packages=['volumina',
           'volumina.widgets',
           'volumina.widgets.ui',
           'volumina.view3d',
-          'volumina.resources',
-          'volumina.resources.icons',
           'volumina._testing']
 
-package_data={'volumina.resources.icons': ['*.png', 'LICENSES'],
-              'volumina.widgets.ui': ['*.ui'],
+package_data={'volumina.widgets.ui': ['*.ui'],
               'volumina': ['*.ui'],
               'volumina._testing': ['*.tif',
                                     '*.png', 
