@@ -169,8 +169,8 @@ class ImageScene2D(QGraphicsScene):
 
     def _setSceneRect(self):
         w, h = self.dataShape
-        point = self.data2scene.map(QPointF(w, h))
-        sw, sh = point.x(), point.y()
+        rect = self.data2scene.mapRect(QRect(0, 0, w, h))
+        sw, sh = rect.width(), rect.height()
         self.setSceneRect(0, 0, sw, sh)
 
     @property
