@@ -168,7 +168,7 @@ class Tiling(object):
 
         # Patch accessor uses data coordinates
         rect = self.data2scene.inverted()[0].mapRect(sceneRect)
-        patchNumbers = self.patchAccessor.getPatchesForRect(
+        patchNumbers = self._patchAccessor.getPatchesForRect(
                             rect.topLeft().x(), rect.topLeft().y(),
                             rect.bottomRight().x(), rect.bottomRight().y() )
         return patchNumbers
