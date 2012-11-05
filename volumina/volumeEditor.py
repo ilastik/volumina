@@ -40,7 +40,7 @@ class VolumeEditor( QObject ):
         for s in self.imageScenes:
             s.showTileOutlines = show
         self._showDebugPatches = show
-        
+
     @property
     def showTileProgress(self):
         return self._showTileProgress
@@ -53,30 +53,30 @@ class VolumeEditor( QObject ):
     @property
     def cacheSize(self):
         return self._cacheSize
-    
+
     @cacheSize.setter
     def cacheSize(self, cache_size):
         self._cacheSize = cache_size
         for s in self.imageScenes:
             s.setCacheSize(cache_size)
-    
+
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
-        
+
     @property
     def navigationInterpreterType(self):
         return type(self.navInterpret)
-    
+
     @navigationInterpreterType.setter
     def navigationInterpreterType(self,navInt):
         self.navInterpret = navInt(self.navCtrl)
         self.eventSwitch.interpreter = self.navInterpret
-    
+
     def setNavigationInterpreter(self, navInterpret):
         self.navInterpret = navInterpret
         self.eventSwitch.interpreter = self.navInterpret
-    
+
     @property
     def dataShape(self):
         return self.posModel.shape5D
@@ -106,14 +106,14 @@ class VolumeEditor( QObject ):
         self.posModel = PositionModel()
         self.brushingModel = BrushingModel()
 
-        self.imageScenes = [ImageScene2D(self.posModel, (0,1,4)),
+        self.imageScenes = [ImageScene2D(self.posModel, (0,1,4), swapped_default=True),
                             ImageScene2D(self.posModel, (0,2,4)),
                             ImageScene2D(self.posModel, (0,3,4))]
         self.imageViews = [ImageView2D(self.imageScenes[i]) for i in [0,1,2]]
         self.imageViews[0].focusChanged.connect(lambda arg=0 : self.lastImageViewFocus(arg))
         self.imageViews[1].focusChanged.connect(lambda arg=1 : self.lastImageViewFocus(arg))
-        self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg)) 
-        
+        self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg))
+
         self.imagepumps = self._initImagePumps()
 
         self.view3d = self._initView3d() if useVTK else QWidget()
@@ -138,9 +138,12 @@ class VolumeEditor( QObject ):
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
         # brushing control
-        self.crosshairControler = CrosshairControler(self.brushingModel, self.imageViews) 
-        self.brushingControler = BrushingControler(self.brushingModel, self.posModel, labelsink)        
+        self.crosshairControler = CrosshairControler(self.brushingModel, self.imageViews)
+        self.brushingControler = BrushingControler(self.brushingModel, self.posModel, labelsink)
         self.brushingInterpreter = BrushingInterpreter(self.navCtrl, self.brushingControler)
+
+        for v in self.imageViews:
+            self.brushingControler._brushingModel.brushSizeChanged.connect(v._sliceIntersectionMarker._set_diameter)
 
         # initial interaction mode
         self.eventSwitch.interpreter = self.navInterpret
@@ -153,26 +156,15 @@ class VolumeEditor( QObject ):
         self.posModel.slicingPositionChanged.connect(self.navCtrl.moveSlicingPosition)
         self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
-        
-        ##
-        ## Other
-        ##
-        self.imageViews[0].setTransform(QTransform(1,0,0,0,1,0,0,0,1))
-        self.imageViews[1].setTransform(QTransform(0,1,1,0,0,0))
-        self.imageViews[2].setTransform(QTransform(0,1,1,0,0,0))
 
-        #make sure that exactly one of the three slice views has focus
-        #when the program starts up
-        # -- unfortunately, this makes the VolumeEditorWidget crash in
-        #    Qt Designer
-        #def initialFocus():
-        #    self.imageViews[0].setFocus(Qt.MouseFocusReason);
-        #QTimer.singleShot(0,initialFocus)
+    def _reset(self):
+        for s in self.imageScenes:
+            s._reset()
 
     def scheduleSlicesRedraw(self):
         for s in self.imageScenes:
             s._invalidateRect()
-        
+
     def setInteractionMode( self, name):
         modes = {'navigation': self.navInterpret, 'brushing': self.brushingInterpreter}
         self.eventSwitch.interpreter = modes[name]
@@ -184,7 +176,7 @@ class VolumeEditor( QObject ):
             scene.deleteLater()
         self._imageViews = []
         QApplication.processEvents()
-    
+
     def closeEvent(self, event):
         event.accept()
 
@@ -221,4 +213,3 @@ class VolumeEditor( QObject ):
             self.posModel.slicingPos = newPos
         view3d.changedSlice.connect(onSliceDragged)
         return view3d
-

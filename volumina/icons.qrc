@@ -10,5 +10,25 @@
     <file>icons/list-remove.png</file>
     <file>icons/process-stop.png</file>
     <file>icons/view-fullscreen.png</file>
+    <file>icons/rotate-right.png</file>
+    <file>icons/rotate-left.png</file>
+    <file>icons/swap-axes.png</file>
+    <file>icons/maximize.png</file>
+    <file>icons/minimize.png</file>
+    <file>icons/spin-up.png</file>
+    <file>icons/spin-down.png</file>
+    <file>icons/undock.png</file>
+    <file>icons/dock.png</file>
+    <file>icons/3d_glasses.png</file>
+    <file>icons/arrow_down.png</file>
+    <file>icons/arrow_up.png</file>
+    <file>icons/document-save-as.png</file>
+    <file>icons/edit-cut.png</file>
+    <file>icons/stock-eye-20-gray.png</file>
+    <file>icons/stock-eye-20.png</file>
+    <file>icons/undock.png</file>
+    <file>icons/x-axis.png</file>
+    <file>icons/y-axis.png</file>
+    <file>icons/z-axis.png</file>
   </qresource>
 </RCC>

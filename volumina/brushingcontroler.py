@@ -15,15 +15,15 @@ class CrosshairControler(QObject):
         self._brushingModel.brushSizeChanged.connect(self._setBrushSize)
         self._brushingModel.brushColorChanged.connect(self._setBrushColor)
         self._imageViews = imageViews
-    
+
     def _setBrushSize(self, size):
         for v in self._imageViews:
             v._crossHairCursor.setBrushSize(size)
-    
+
     def _setBrushColor(self, color):
         for v in self._imageViews:
             v._crossHairCursor.setColor(color)
-            
+
 #*******************************************************************************
 # B r u s h i n g I n t e r p r e t e r                                        *
 #*******************************************************************************
@@ -75,7 +75,7 @@ class BrushingInterpreter( QObject ):
         if self._current_state == self.DEFAULT_MODE:
             ### default mode -> draw mode
             if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton and event.modifiers() == Qt.NoModifier:
-                # navigation interpreter also has to be in 
+                # navigation interpreter also has to be in
                 # default mode to avoid inconsistencies
                 if self._navIntr.state == self._navIntr.DEFAULT_MODE:
                     self._current_state = self.DRAW_MODE
@@ -95,7 +95,7 @@ class BrushingInterpreter( QObject ):
                 self._current_state = self.DEFAULT_MODE
                 self.onEntry_default( watched, event )
                 return True
-            
+
             ### actions in draw mode
             elif etype == QEvent.MouseMove:
                 self.onMouseMove_draw( watched, event )
@@ -119,7 +119,7 @@ class BrushingInterpreter( QObject ):
             self._temp_erasing = True
         imageview.mousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
         self._brushingCtrl.beginDrawing(imageview, imageview.mousePos)
-    
+
     def onExit_draw( self, imageview, event ):
         self._brushingCtrl.endDrawing(imageview.mousePos)
         if self._temp_erasing:
@@ -142,7 +142,7 @@ class BrushingInterpreter( QObject ):
         self._lineItems = []
         for l in lines:
             l.hide()
-        
+
 #*******************************************************************************
 # B r u s h i n g C o n t r o l e r                                            *
 #*******************************************************************************
@@ -153,7 +153,7 @@ class BrushingControler(QObject):
     def __init__(self, brushingModel, positionModel, dataSink):
         QObject.__init__(self, parent=None)
         self._dataSink = dataSink
-        
+
         self._brushingModel = brushingModel
         self._brushingModel.brushStrokeAvailable.connect(self._writeIntoSink)
         self._positionModel = positionModel
@@ -166,30 +166,30 @@ class BrushingControler(QObject):
         self._isDrawing  = True
         self._brushingModel.beginDrawing(pos, imageview.sliceShape)
 
-    def endDrawing(self, pos): 
+    def endDrawing(self, pos):
         self._isDrawing = False
         self._brushingModel.endDrawing(pos)
-        
+
     def setDataSink(self, dataSink):
         self._dataSink = dataSink
-        
+
     def _writeIntoSink(self, brushStrokeOffset, labels):
         activeView = self._positionModel.activeView
         slicingPos = self._positionModel.slicingPos
         t, c       = self._positionModel.time, self._positionModel.channel
-        
+
         slicing = [slice(brushStrokeOffset.x(), brushStrokeOffset.x()+labels.shape[0]), \
                    slice(brushStrokeOffset.y(), brushStrokeOffset.y()+labels.shape[1])]
         slicing.insert(activeView, slice(slicingPos[activeView], slicingPos[activeView]+1))
         slicing = (slice(t,t+1),) + tuple(slicing) + (slice(c,c+1),)
-        
+
         #make the labels 5d for correct graph compatibility
         newshape = list(labels.shape)
         newshape.insert(activeView, 1)
         newshape.insert(0, 1)
         newshape.append(1)
-        
+
         #newlabels = numpy.zeros
-        
+
         self._dataSink.put(slicing, labels.reshape(tuple(newshape)))
         self.wroteToSink.emit()

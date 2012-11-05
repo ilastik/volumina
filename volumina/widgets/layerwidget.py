@@ -9,9 +9,8 @@ from volumina.layer import Layer
 from layercontextmenu import layercontextmenu
 
 from os import path
-import volumina.resources.icons
 from volumina.layerstack import LayerStackModel
-_icondir = path.dirname(volumina.resources.icons.__file__)
+import volumina.icons_rc
 
 #*******************************************************************************
 # L a y e r P a i n t e r                                                      *
@@ -92,10 +91,10 @@ class LayerPainter( object ):
         
         if self.layer.visible:
             painter.drawImage(QRect(self.iconXOffset,0,self.iconSize,self.iconSize), \
-                              QImage(path.join(_icondir, "stock-eye-20.png")))
+                              QImage(":icons/icons/stock-eye-20.png"))
         else:
             painter.drawImage(QRect(self.iconXOffset,0,self.iconSize,self.iconSize), \
-                              QImage(path.join(_icondir, "stock-eye-20-gray.png")))
+                              QImage(":icons/icons/stock-eye-20-gray.png"))
 
         if self.layer.direct:
             painter.save()

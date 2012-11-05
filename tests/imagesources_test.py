@@ -14,12 +14,13 @@ from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageS
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer
 
-
+import numpy as np
+import os.path
+from volumina import _testing
 
 class _ArraySource2d( ArraySource ):
     def request( self, slicing, through=None):
         return super(_ArraySource2d, self).request( slicing )
-
 
 #*******************************************************************************
 # G r a y s c a l e I m a g e S o u r c e T e s t 
@@ -43,10 +44,10 @@ class GrayscaleImageSourceTest( ut.TestCase ):
             self.assertTrue( rect.isEmpty() )
 
         def checkDirtyRect( rect ):
-            self.assertEqual( rect.x(), 12 )
-            self.assertEqual( rect.y(), 34 )
-            self.assertEqual( rect.width(), 22 )
-            self.assertEqual( rect.height(), 3  )
+            self.assertEqual( rect.x(), 34 )
+            self.assertEqual( rect.y(), 12 )
+            self.assertEqual( rect.width(), 3 )
+            self.assertEqual( rect.height(), 22  )
 
         # should mark everything dirty
         self.ims.isDirty.connect( checkAllDirty )
@@ -99,10 +100,10 @@ class ColortableImageSourceTest( ut.TestCase ):
             self.assertTrue( rect.isEmpty() )
 
         def checkDirtyRect( rect ):
-            self.assertEqual( rect.x(), 12 )
-            self.assertEqual( rect.y(), 34 )
-            self.assertEqual( rect.width(), 22 )
-            self.assertEqual( rect.height(), 3  )
+            self.assertEqual( rect.x(), 34 )
+            self.assertEqual( rect.y(), 12 )
+            self.assertEqual( rect.width(), 3 )
+            self.assertEqual( rect.height(), 22  )
 
         # should mark everything dirty
         self.ims.isDirty.connect( checkAllDirty )
@@ -120,9 +121,6 @@ class ColortableImageSourceTest( ut.TestCase ):
 
 class RGBAImageSourceTest( ut.TestCase ):
     def setUp( self ):
-        import numpy as np
-        import os.path
-        from volumina import _testing
         basedir = os.path.dirname(_testing.__file__)
         self.data = np.load(os.path.join(basedir, 'rgba129x104.npy'))
         self.red = _ArraySource2d(self.data[:,:,0])
@@ -138,27 +136,27 @@ class RGBAImageSourceTest( ut.TestCase ):
         self.ims_none = RGBAImageSource( ConstantSource(),ConstantSource(),ConstantSource(),ConstantSource(), RGBALayer())
         
     def testRgba( self ):
-        img = self.ims_rgba.request(QRect(0,0,129,104)).wait()
+        img = self.ims_rgba.request(QRect(0,0,104,129)).wait()
         #img.save('rgba.tif')
 
     def testRgb( self ):
-        img = self.ims_rgb.request(QRect(0,0,129,104)).wait()
+        img = self.ims_rgb.request(QRect(0,0,104,129)).wait()
         #img.save('rgb.tif')
 
     def testRg( self ):
-        img = self.ims_rg.request(QRect(0,0,129,104)).wait()
+        img = self.ims_rg.request(QRect(0,0,104,129)).wait()
         #img.save('rg.tif')
 
     def testBa( self ):
-        img = self.ims_ba.request(QRect(0,0,129,104)).wait()
+        img = self.ims_ba.request(QRect(0,0,104,129)).wait()
         #img.save('ba.tif')
 
     def testA( self ):
-        img = self.ims_a.request(QRect(0,0,129,104)).wait()
+        img = self.ims_a.request(QRect(0,0,104,129)).wait()
         #img.save('a.tif')
 
     def testNone( self ):
-        img = self.ims_none.request(QRect(0,0,129,104)).wait()
+        img = self.ims_none.request(QRect(0,0,104,129)).wait()
         #img.save('none.tif')
 
     def testOpaqueness( self ):
