@@ -114,7 +114,6 @@ class BrushingInterpreter( QObject ):
     ###
     def onEntry_draw( self, imageview, event ):
         if QApplication.keyboardModifiers() == Qt.ShiftModifier:
-            print "enabling erasing"
             self._brushingCtrl._brushingModel.setErasing()
             self._temp_erasing = True
         imageview.mousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
@@ -123,7 +122,6 @@ class BrushingInterpreter( QObject ):
     def onExit_draw( self, imageview, event ):
         self._brushingCtrl.endDrawing(imageview.mousePos)
         if self._temp_erasing:
-            print "disabling erasing"
             self._brushingCtrl._brushingModel.disableErasing()
             self._temp_erasing = False
 
@@ -132,12 +130,16 @@ class BrushingInterpreter( QObject ):
 
         o = imageview.scene().data2scene.map(QPointF(imageview.oldX,imageview.oldY))
         n = imageview.scene().data2scene.map(QPointF(imageview.x,imageview.y))
+        
+        # Draw temporary line for the brush stroke so the user gets feedback before the data is really updated.
         pen = QPen( QBrush(self._brushingCtrl._brushingModel.drawColor), self._brushingCtrl._brushingModel.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         line = imageview.scene().addLine(o.x(), o.y(), n.x(), n.y(), pen)
         self._lineItems.append(line)
         self._brushingCtrl._brushingModel.moveTo(imageview.mousePos)
 
     def clearLines(self):
+        # This is called after the brush stroke is stored to the data.
+        # Our temporary line object is no longer needed because the data provides the true pixel labels that were stored.
         lines = self._lineItems
         self._lineItems = []
         for l in lines:

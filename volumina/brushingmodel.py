@@ -151,7 +151,7 @@ class BrushingModel(QObject):
 
         #update bounding Box
         if not self.bb.isValid():
-            self.bb = QRect(QPoint(x,y), QSize(1,1))
+            self.bb = QRect(QPoint(oldX,oldY), QSize(1,1))
         #grow bounding box
         self.bb.setLeft(  min(self.bb.left(),   max(0,                   x-self.brushSize/2-1) ) )
         self.bb.setRight( max(self.bb.right(),  min(self.sliceRect[0]-1, x+self.brushSize/2+1) ) )
