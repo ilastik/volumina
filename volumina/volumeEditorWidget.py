@@ -15,6 +15,8 @@ from pixelpipeline.datasources import ArraySource, LazyflowSinkSource
 from volumeEditor import VolumeEditor
 import volumina.icons_rc
 
+from volumina.utility import ShortcutManager
+
 class __TimerEventEater( QObject ):
     def eventFilter( self, obj, ev ):
         if isinstance(obj, QSpinBox) and isinstance(ev, QTimerEvent):
@@ -160,9 +162,6 @@ class VolumeEditorWidget(QWidget):
 
         self.editor.posModel.cursorPositionChanged.connect(self._updateInfoLabels)
 
-        # shortcuts
-        self._initShortcuts()
-
         def onShapeChanged():
             self._setupVolumeExtent()
 
@@ -171,6 +170,9 @@ class VolumeEditorWidget(QWidget):
         self.updateGeometry()
         self.update()
         self.quadview.update()
+
+        # shortcuts
+        self._initShortcuts()
 
     def _toggleDebugPatches(self,show):
         self.editor.showDebugPatches = show
@@ -217,19 +219,23 @@ class VolumeEditorWidget(QWidget):
         if self.editor._lastImageViewFocus is not None:
             self.editor.imageViews[self.editor._lastImageViewFocus].centerImage()
 
-    def _shortcutHelper(self, keySequence, group, description, parent, function, context = None, enabled = None):
+    def _shortcutHelper(self, keySequence, group, description, parent, function, context = None, enabled = None, widget=None):
         shortcut = QShortcut(QKeySequence(keySequence), parent, member=function, ambiguousMember=function)
         if context != None:
             shortcut.setContext(context)
         if enabled != None:
             shortcut.setEnabled(True)
+
+        ShortcutManager().register( group, description, shortcut, widget )
         return shortcut, group, description
 
     def _initShortcuts(self):
         self.shortcuts = []
-        self.shortcuts.append(self._shortcutHelper("x", "Navigation", "Minimize/Maximize x-Window", self, self.quadview.switchXMinMax, Qt.ApplicationShortcut, True))
-        self.shortcuts.append(self._shortcutHelper("y", "Navigation", "Minimize/Maximize y-Window", self, self.quadview.switchYMinMax, Qt.ApplicationShortcut, True))
-        self.shortcuts.append(self._shortcutHelper("z", "Navigation", "Minimize/Maximize z-Window", self, self.quadview.switchZMinMax, Qt.ApplicationShortcut, True))
+
+        # TODO: Fix this dependency on ImageView/HUD internals
+        self.shortcuts.append(self._shortcutHelper("x", "Navigation", "Minimize/Maximize x-Window", self, self.quadview.switchXMinMax, Qt.ApplicationShortcut, True, widget=self.editor.imageViews[0].hud.buttons['maximize']))
+        self.shortcuts.append(self._shortcutHelper("y", "Navigation", "Minimize/Maximize y-Window", self, self.quadview.switchYMinMax, Qt.ApplicationShortcut, True, widget=self.editor.imageViews[1].hud.buttons['maximize']))
+        self.shortcuts.append(self._shortcutHelper("z", "Navigation", "Minimize/Maximize z-Window", self, self.quadview.switchZMinMax, Qt.ApplicationShortcut, True, widget=self.editor.imageViews[2].hud.buttons['maximize']))
         
         
         for i, v in enumerate(self.editor.imageViews):
@@ -247,11 +253,13 @@ class VolumeEditorWidget(QWidget):
                 newPos = copy.copy(self.editor.posModel.slicingPos)
                 newPos[axis] += delta
                 self.editor.posModel.slicingPos = newPos
-            self.shortcuts.append(self._shortcutHelper("p", "Navigation", "Slice up",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut))
-            self.shortcuts.append(self._shortcutHelper("o", "Navigation", "Slice down", v, partial(sliceDelta, i, -1), Qt.WidgetShortcut))
             
-            self.shortcuts.append(self._shortcutHelper("Ctrl+Up",   "Navigation", "Slice up",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut))
-            self.shortcuts.append(self._shortcutHelper("Ctrl+Down", "Navigation", "Slice down", v, partial(sliceDelta, i, -1), Qt.WidgetShortcut))
+            # TODO: Fix this dependency on ImageView/HUD internals
+            self.shortcuts.append(self._shortcutHelper("Ctrl+Up",   "Navigation", "Slice up",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut, widget=v.hud.buttons['slice'].upLabel))
+            self.shortcuts.append(self._shortcutHelper("Ctrl+Down", "Navigation", "Slice down", v, partial(sliceDelta, i, -1), Qt.WidgetShortcut, widget=v.hud.buttons['slice'].downLabel))
+            
+            self.shortcuts.append(self._shortcutHelper("p", "Navigation", "Slice up (alternate shortcut)",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut))
+            self.shortcuts.append(self._shortcutHelper("o", "Navigation", "Slice down (alternate shortcut)", v, partial(sliceDelta, i, -1), Qt.WidgetShortcut))
             
             self.shortcuts.append(self._shortcutHelper("Ctrl+Shift+Up",   "Navigation", "10 slices up",   v, partial(sliceDelta, i, 10),  Qt.WidgetShortcut))
             self.shortcuts.append(self._shortcutHelper("Ctrl+Shift+Down", "Navigation", "10 slices down", v, partial(sliceDelta, i, -10), Qt.WidgetShortcut))
