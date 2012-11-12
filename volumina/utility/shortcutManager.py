@@ -2,8 +2,8 @@ import re
 import abc
 import collections
 
-from PyQt4.QtGui import QDialog, QHBoxLayout, QVBoxLayout, QGroupBox, QGridLayout, \
-                        QLabel, QLineEdit, QPushButton, QSpacerItem, QKeySequence
+from PyQt4.QtGui import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, QGroupBox, QGridLayout, \
+                        QLabel, QLineEdit, QPushButton, QSpacerItem, QKeySequence, QWidget
 
 from volumina.utility import Singleton, PreferencesManager
 
@@ -171,8 +171,14 @@ class ShortcutManagerDlg(QDialog):
         buttonLayout.addWidget(cancelButton)
         buttonLayout.addWidget(okButton)
         tempLayout.addLayout(buttonLayout)
-        
-        self.setLayout(tempLayout)
+
+        scrollWidget = QWidget(parent=self)
+        scrollWidget.setLayout(tempLayout)        
+        scroll = QScrollArea(parent=self)
+        scroll.setWidget(scrollWidget)
+        dlgLayout = QVBoxLayout()
+        dlgLayout.addWidget(scroll)
+        self.setLayout(dlgLayout)
         
         # Show the window
         result = self.exec_()
