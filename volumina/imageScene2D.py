@@ -100,9 +100,10 @@ class ImageScene2D(QGraphicsScene):
         self._dirtyIndicator.setVisible(show)
 
     def resetAxes(self, finish=True):
-        # 0, 1, 2, or 3 (CW position of origin from top-left)
+        # rotation is in range(4) and indicates in which corner of the
+        # view the origin lies. 0 = top left, 1 = top right, etc.
         self._rotation = 0
-        self._swapped = self._swappedDefault
+        self._swapped = self._swappedDefault # whether axes are swapped
         self._newAxes()
         self._setSceneRect()
         self.scene2data, isInvertible = self.data2scene.inverted()
@@ -111,29 +112,38 @@ class ImageScene2D(QGraphicsScene):
             self._finishViewMatrixChange()
 
     def _newAxes(self):
-        w, h = self.dataShape
-        rotation = self._rotation
+        """Given self._rotation and self._swapped, calculates and sets
+        the appropriate data2scene transformation.
 
+        """
+        # TODO: this function works, but it is not elegant. There must
+        # be a simpler way to calculate the appropriate tranformation.
+
+        w, h = self.dataShape
+        assert self._rotation in range(0, 4)
+
+        # unlike self._rotation, the local variable 'rotation'
+        # indicates how many times to rotate clockwise after swapping
+        # axes.
+
+        # t1 : do axis swap
         t1 = QTransform()
         if self._swapped:
-            h, w = w, h
             t1 = QTransform(0, 1, 0, 1, 0, 0, 0, 0, 1)
-            if rotation == 1:
-                rotation = 3
-            elif rotation == 3:
-                rotation = 1
+            h, w = w, h
 
+        # t2 : do rotation
         t2 = QTransform()
         t2.rotate(self._rotation * 90)
 
-        if self._rotation == 0:
-            t3 = QTransform()
-        elif self._rotation == 1:
-            t3 = QTransform.fromTranslate(h, 0)
-        elif self._rotation == 2:
-            t3 = QTransform.fromTranslate(w, h)
-        elif self._rotation == 3:
-            t3 = QTransform.fromTranslate(0, w)
+        # t3: shift to re-center
+        rot2trans = {0 : (0, 0),
+                     1 : (h, 0),
+                     2 : (w, h),
+                     3 : (0, w)}
+
+        trans = rot2trans[self._rotation]
+        t3 = QTransform.fromTranslate(*trans)
 
         self.data2scene = t1 * t2 * t3
         if self._tileProvider:
