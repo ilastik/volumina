@@ -2,7 +2,7 @@ from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
 
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QPolygonF, QSpinBox, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QPalette, QFrame
+                        QCheckBox, QWidget, QPalette, QFrame, QTransform
 import sys, random
 import numpy, qimage2ndarray
 import volumina.icons_rc
@@ -35,6 +35,8 @@ class LabelButtons(QLabel):
         self.setColors(backgroundColor, foregroundColor)
         self.setPixmapSize(width, height)
         self.setIcon(style)
+        self._swapped = False
+        self._rotation = 0
 
     def setColors(self, backgroundColor, foregroundColor):
         self.backgroundColor = backgroundColor
@@ -55,6 +57,7 @@ class LabelButtons(QLabel):
         'rotate-left' : (':icons/icons/rotate-left.png', "Rotate left"),
         'rotate-right' : (':icons/icons/rotate-right.png', "Rotate right"),
         'swap-axes' : (':icons/icons/swap-axes.png', "Swap axes"),
+        'swap-axes-swapped' : (':icons/icons/swap-axes-swapped.png', "Swap axes"),
     }
 
     def setIcon(self, style):
@@ -66,10 +69,44 @@ class LabelButtons(QLabel):
                             self.pixmapWidth,
                             self.pixmapHeight)
         self.setPixmap(pixmap)
+        self._orig_pixmap = pixmap
+
+        if style == 'swap-axes':
+            iconpath, _ = self.icons['swap-axes-swapped']
+            self._pixmap_swapped = _load_icon(iconpath,
+                                              self.backgroundColor,
+                                              self.pixmapWidth,
+                                              self.pixmapHeight)
 
     def mouseReleaseEvent(self, event):
         if self.underMouse():
             self.clicked.emit()
+
+    def _resetIcon(self):
+        if self._swapped:
+            pixmap = self._pixmap_swapped
+        else:
+            pixmap = self._orig_pixmap
+        transform = QTransform().rotate(self._rotation * 90)
+        self.setPixmap(pixmap.transformed(transform))
+
+    @property
+    def rotation(self):
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, value):
+        self._rotation = value
+        self._resetIcon()
+
+    @property
+    def swapped(self):
+        return self._swapped
+
+    @swapped.setter
+    def swapped(self, value):
+        self._swapped = value
+        self._resetIcon()
 
     def eventFilter(self, watched, event):
         # Block the parent view from seeing events while we've got the mouse.
@@ -275,6 +312,9 @@ class ImageView2DHud(QWidget):
                                Qt.SmoothTransformation)
         return pixmap
 
+    def setAxes(self, rotation, swapped):
+        self.buttons["swap-axes"].rotation = rotation
+        self.buttons["swap-axes"].swapped = swapped
 
 def _get_pos_widget(name, backgroundColor, foregroundColor):
     label = QLabel()

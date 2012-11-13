@@ -54,6 +54,9 @@ class ImageView2D(QGraphicsView):
         hud.rotRightButtonClicked.connect(scene._onRotateRight)
         hud.swapAxesButtonClicked.connect(scene._onSwapAxes)
 
+        scene.axesChanged.connect(hud.setAxes)
+
+
     def __init__(self, imagescene2d):
         """
         Constructs a view upon a ImageScene2D

@@ -13,6 +13,7 @@
     <file>icons/rotate-right.png</file>
     <file>icons/rotate-left.png</file>
     <file>icons/swap-axes.png</file>
+    <file>icons/swap-axes-swapped.png</file>
     <file>icons/maximize.png</file>
     <file>icons/minimize.png</file>
     <file>icons/spin-up.png</file>
