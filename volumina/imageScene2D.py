@@ -98,6 +98,15 @@ class ImageScene2D(QGraphicsScene):
         self._showTileProgress = show
         self._dirtyIndicator.setVisible(show)
 
+    def resetAxes(self, finish=True):
+        self.data2scene = self.default_data2scene
+        self._setSceneRect()
+        self.scene2data, isInvertible = self.data2scene.inverted()
+        assert isInvertible
+        if finish:
+            self._finishViewMatrixChange()
+
+
     def rot90(self, transform, rect, direction):
         """ direction: left ==> -1, right ==> +1"""
         assert direction in [-1, 1]
@@ -190,7 +199,7 @@ class ImageScene2D(QGraphicsScene):
         """
         assert len(value) == 2
         self._dataShape = value
-        self._reset()
+        self.reset()
         self._finishViewMatrixChange()
 
     def setCacheSize(self, cache_size):
@@ -215,16 +224,12 @@ class ImageScene2D(QGraphicsScene):
         for view in self.views():
             QGraphicsScene.invalidate(self, sceneRectF.intersected(view.viewportRect()))
 
-    def _reset(self):
+    def reset(self):
         """Reset rotations, tiling, etc. Called when first initialized
         and when the underlying data changes.
 
         """
-        self.data2scene = self.default_data2scene
-        self._setSceneRect()
-
-        self.scene2data, isInvertible = self.data2scene.inverted()
-        assert isInvertible
+        self.resetAxes(finish=False)
 
         self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name)
         self._brushingLayer  = TiledImageLayer(self._tiling)
@@ -275,7 +280,7 @@ class ImageScene2D(QGraphicsScene):
                                                  self._offsetX,
                                                  self._offsetY, 1)
         self._swappedDefault = swapped_default
-        self._reset()
+        self.reset()
 
         # BowWave preemptive caching
         self.setPreemptiveFetchNumber(preemptive_fetch_number)
