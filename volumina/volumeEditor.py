@@ -159,7 +159,7 @@ class VolumeEditor( QObject ):
 
     def _reset(self):
         for s in self.imageScenes:
-            s._reset()
+            s.reset()
 
     def scheduleSlicesRedraw(self):
         for s in self.imageScenes:

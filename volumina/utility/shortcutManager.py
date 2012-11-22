@@ -2,8 +2,9 @@ import re
 import abc
 import collections
 
+from PyQt4.QtCore import QStringList, Qt
 from PyQt4.QtGui import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, QGroupBox, QGridLayout, \
-                        QLabel, QLineEdit, QPushButton, QSpacerItem, QKeySequence, QWidget
+                        QLabel, QLineEdit, QPushButton, QSpacerItem, QKeySequence, QWidget, QTreeWidget, QTreeWidgetItem, QSizePolicy
 
 from volumina.utility import Singleton, PreferencesManager
 
@@ -141,24 +142,36 @@ class ShortcutManagerDlg(QDialog):
         super(ShortcutManagerDlg, self).__init__(*args, **kwargs)
         self.setWindowTitle("Shortcut Preferences")
         self.setMinimumWidth(500)
+        self.setMinimumHeight(500)
 
         mgr = ShortcutManager() # Singleton
-        
-        tempLayout = QVBoxLayout()
+
+        scrollWidget = QWidget(parent=self)
+        tempLayout = QVBoxLayout( scrollWidget )
+        scrollWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        treeWidget = QTreeWidget(parent=scrollWidget)
+        treeWidget.setHeaderLabels( ["Action", "Shortcut"] )
+        treeWidget.setSizePolicy( QSizePolicy.Preferred, QSizePolicy.Preferred )
+        treeWidget.setColumnWidth(0, 300)
+        treeWidget.setColumnWidth(1, 50)
 
         # Create a LineEdit for each shortcut,
         # and keep track of them in a dict
         shortcutEdits = dict()
         for group, shortcutDict in mgr.shortcuts.items():
-            grpBox = QGroupBox(group)
-            l = QGridLayout(self)
+            groupItem = QTreeWidgetItem( treeWidget, QStringList( group ) )
+            
             for i, (shortcut, (desc, obj)) in enumerate(shortcutDict.items()):
-                l.addWidget(QLabel(desc), i,0)
+                #label = QLabel(desc)
                 edit = QLineEdit(str(shortcut.key().toString()))
-                l.addWidget(edit, i,1)
                 shortcutEdits[shortcut] = edit
-            grpBox.setLayout(l)
-            tempLayout.addWidget(grpBox)
+                item = QTreeWidgetItem( groupItem, QStringList( desc ) )
+                item.setText(0, desc)
+                #treeWidget.setItemWidget( item, 0, label )
+                treeWidget.setItemWidget( item, 1, edit )
+
+        tempLayout.addWidget( treeWidget )
 
         # Add ok and cancel buttons
         buttonLayout = QHBoxLayout()
@@ -167,15 +180,15 @@ class ShortcutManagerDlg(QDialog):
         okButton = QPushButton("OK")
         okButton.clicked.connect( self.accept )
         okButton.setDefault(True)
-        buttonLayout.addSpacerItem(QSpacerItem(10, 0))
+        buttonLayout.addSpacerItem(QSpacerItem(10, 0, QSizePolicy.Expanding))
         buttonLayout.addWidget(cancelButton)
         buttonLayout.addWidget(okButton)
         tempLayout.addLayout(buttonLayout)
 
-        scrollWidget = QWidget(parent=self)
-        scrollWidget.setLayout(tempLayout)        
         scroll = QScrollArea(parent=self)
         scroll.setWidget(scrollWidget)
+        scroll.setWidgetResizable(True)
+        scroll.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         dlgLayout = QVBoxLayout()
         dlgLayout.addWidget(scroll)
         self.setLayout(dlgLayout)

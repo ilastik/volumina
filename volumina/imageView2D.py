@@ -54,6 +54,9 @@ class ImageView2D(QGraphicsView):
         hud.rotRightButtonClicked.connect(scene._onRotateRight)
         hud.swapAxesButtonClicked.connect(scene._onSwapAxes)
 
+        scene.axesChanged.connect(hud.setAxes)
+
+
     def __init__(self, imagescene2d):
         """
         Constructs a view upon a ImageScene2D
@@ -120,11 +123,6 @@ class ImageView2D(QGraphicsView):
         self._lastPanPoint = QPoint()
         self._dragMode = False
         self._deltaPan = QPointF(0,0)
-
-        #Unfortunately, setting the style like this make the scroll bars look
-        #really crappy...
-        #self.setStyleSheet("QWidget:!focus { border: 2px solid " + self._axisColor[self._axis].name() +"; border-radius: 4px; }\
-        #                    QWidget:focus { border: 2px solid white; border-radius: 4px; }")
 
         #FIXME: Is there are more elegant way to handle this?
 
@@ -233,10 +231,11 @@ class ImageView2D(QGraphicsView):
             self._hud.setVisible(visible)
 
     def focusInEvent(self, event):
+        self.setStyleSheet(".QFrame {border: 2px solid white; border-radius: 4px;}")
         self.focusChanged.emit()
 
     def focusOutEvent(self, event):
-        pass
+        self.setStyleSheet(".QFrame {}")
 
     def changeViewPort(self,qRectf):
         self.fitInView(qRectf,mode = Qt.KeepAspectRatio)
