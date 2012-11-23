@@ -7,11 +7,12 @@ except:
 
 from PyQt4.QtCore import QObject, QRect, pyqtSignal, QMutex
 from PyQt4.QtGui import QImage, QColor
-from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view
+from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
 from asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import cfg
 import numpy as np
+import vigra
 
 #*******************************************************************************
 # I m a g e S o u r c e                                                        *
@@ -210,9 +211,11 @@ class ColortableImageSource( ImageSource ):
         self._colorTable = np.zeros((len(layerColorTable), 4), dtype=np.uint8)
         for i, c in enumerate(layerColorTable):
             color = QColor.fromRgba(c)
-            self._colorTable[i,0] = color.red()
+            #note that we use qimage2ndarray.byte_view() on a QImage with Format_ARGB32 below.
+            #this means that the memory layout actually is B, G, R, A
+            self._colorTable[i,0] = color.blue()
             self._colorTable[i,1] = color.green()
-            self._colorTable[i,2] = color.blue()
+            self._colorTable[i,2] = color.red()
             self._colorTable[i,3] = color.alpha() 
         self.isDirty.emit(QRect()) # empty rect == everything is dirty
         
@@ -245,12 +248,8 @@ class ColortableImageRequest( object ):
         a = self._arrayreq.getResult()
         assert a.ndim == 2
 
-        #make sure that a has values in range [0, colortable_length)
-        a = np.remainder(a, len(self._colorTable))
-        #apply colortable
-        img = self._colorTable[a]
-        img = array2qimage(img)
-
+        img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32) 
+        vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
         return img 
             
     def notify( self, callback, **kwargs ):
