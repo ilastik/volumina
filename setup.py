@@ -5,6 +5,7 @@ packages=['volumina',
           'volumina.colorama',
           'volumina.widgets',
           'volumina.widgets.ui',
+          'volumina.utility',
           'volumina.view3d',
           'volumina._testing']
 
