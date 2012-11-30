@@ -13,6 +13,7 @@ from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicin
 from volumina.config import cfg
 import numpy as np
 import vigra
+import warnings
 
 #*******************************************************************************
 # I m a g e S o u r c e                                                        *
@@ -248,8 +249,24 @@ class ColortableImageRequest( object ):
         a = self._arrayreq.getResult()
         assert a.ndim == 2
 
-        img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32) 
-        vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
+        # Use vigra if possible (much faster)
+        if hasattr(vigra.colors, 'applyColortable'):
+            img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32) 
+            vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
+
+        # Without vigra, do it the slow way 
+        else:
+            # If this warning is annoying you, try this:
+            # warnings.filterwarnings("once")
+            warnings.warn("Using slow colortable images.  Upgrade to VIGRA > 1.9 to use faster implementation.")
+
+            #make sure that a has values in range [0, colortable_length)
+            a = np.remainder(a, len(self._colorTable))
+            #apply colortable
+            colortable = np.roll(np.fliplr(self._colorTable), -1, 1) # self._colorTable is BGRA, but array2qimage wants RGBA
+            img = colortable[a]
+            img = array2qimage(img)
+
         return img 
             
     def notify( self, callback, **kwargs ):
