@@ -136,15 +136,17 @@ class LayerPainter( object ):
 #*******************************************************************************
 
 class LayerDelegate(QStyledItemDelegate):
-    def __init__(self, layersView, parent = None):
+    def __init__(self, layersView, listModel, parent = None):
         QStyledItemDelegate.__init__(self, parent)
         self.currentIndex = -1
         self._view = layersView
-        self._layerPainter = LayerPainter()
         self._editors = {}
+        self._listModel = listModel
         
         #whether to draw all layers expanded
         self.expandAll = True
+        
+        self._listModel.rowsAboutToBeRemoved.connect(self.handleRemovedRows)
     
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)
@@ -159,23 +161,25 @@ class LayerDelegate(QStyledItemDelegate):
         
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            self._layerPainter.layer = layer
+            layerPainter = LayerPainter()
+            layerPainter.layer = layer
             isSelected = option.state & QStyle.State_Selected
             if isSelected:
                 painter.fillRect(option.rect, QColor(0,255,0,10))
             if self.expandAll or option.state & QStyle.State_Selected:
-                self._layerPainter.paint(painter, option.rect, option.palette, 'Expanded', isSelected)
+                layerPainter.paint(painter, option.rect, option.palette, 'Expanded', isSelected)
             else:
-                self._layerPainter.paint(painter, option.rect, option.palette, 'ReadOnly', False)
+                layerPainter.paint(painter, option.rect, option.palette, 'ReadOnly', False)
         else:
             QStyledItemDelegate.paint(self, painter, option, index)
 
     def sizeHint(self, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            self._layerPainter.layer = layer
+            layerPainter = LayerPainter()
+            layerPainter.layer = layer
             mode = "Expanded" if self.expandAll or self._view.currentIndex() == index else 'ReadOnly'
-            return self._layerPainter.sizeHint( mode )
+            return layerPainter.sizeHint( mode )
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
     
@@ -202,6 +206,15 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             QStyledItemDelegate.setModelData(self, editor, model, index)
 
+    def handleRemovedRows(self, parent, start, end):
+        for row in range(start, end):
+            itemData = self._listModel.itemData( self._listModel.index(row) )
+            layer = itemData[Qt.EditRole].toPyObject()
+            assert isinstance(layer, Layer)
+            print "Removing editor"
+            if layer in self._editors:
+                del self._editors[layer]
+    
     def commitAndCloseEditor(self):
         editor = sender()
         self.commitData.emit(editor)
@@ -283,7 +296,7 @@ class LayerWidget(QListView):
         
     def init(self, listModel):
         self.setModel(listModel)
-        self._itemDelegate = LayerDelegate( self )
+        self._itemDelegate = LayerDelegate( self, listModel )
         self.setItemDelegate(self._itemDelegate)
         self.setSelectionModel(listModel.selectionModel)
         #self.setDragDropMode(self.InternalMove)
@@ -451,3 +464,4 @@ if __name__ == "__main__":
     add.clicked.connect(addRandomLayer)
 
     app.exec_()
+
