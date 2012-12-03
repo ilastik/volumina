@@ -221,6 +221,7 @@ class LazyflowSource( QObject ):
         self._priority = priority
         self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
         self._op5.output.notifyDirty( self._dirtyCallback )
+        self._op5.externally_managed = True
 
     def __del__(self):
         if self._op5 is not None:
