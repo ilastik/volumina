@@ -1,4 +1,5 @@
 import threading
+import weakref
 from functools import partial
 from PyQt4.QtCore import QObject, pyqtSignal
 from asyncabcs import RequestABC, SourceABC
@@ -194,6 +195,13 @@ assert issubclass(LazyflowRequest, RequestABC)
 # L a z y f l o w S o u r c e                                                  *
 #*******************************************************************************
 
+def weakref_setDirtyLF( wref, *args, **kwargs ):
+    """
+    LazyflowSource uses this function to subscribe to dirty notifications without giving out a shared reference to itself.
+    Otherwise, LazyflowSource.__del__ would never be called.
+    """
+    wref()._setDirtyLF(*args, **kwargs)
+
 class LazyflowSource( QObject ):
     isDirty = pyqtSignal( object )
 
@@ -211,7 +219,14 @@ class LazyflowSource( QObject ):
         self._op5.input.connect( outslot )
 
         self._priority = priority
-        self._op5.output.notifyDirty(self._setDirtyLF)
+        self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
+        self._op5.output.notifyDirty( self._dirtyCallback )
+
+    def __del__(self):
+        if self._op5 is not None:
+            print "Cleaning up an op5ifiyer"
+            #self._op5.unregisterDirty( self._dirtyCallback )
+            self._op5.cleanUp()
     
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
