@@ -211,7 +211,6 @@ class LayerDelegate(QStyledItemDelegate):
             itemData = self._listModel.itemData( self._listModel.index(row) )
             layer = itemData[Qt.EditRole].toPyObject()
             assert isinstance(layer, Layer)
-            print "Removing editor"
             if layer in self._editors:
                 del self._editors[layer]
     
