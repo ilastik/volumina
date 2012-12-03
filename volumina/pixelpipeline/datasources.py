@@ -225,8 +225,6 @@ class LazyflowSource( QObject ):
 
     def __del__(self):
         if self._op5 is not None:
-            print "Cleaning up an op5ifiyer"
-            #self._op5.unregisterDirty( self._dirtyCallback )
             self._op5.cleanUp()
     
     def request( self, slicing ):
