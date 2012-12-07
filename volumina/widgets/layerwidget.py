@@ -3,8 +3,8 @@ from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
                         QColor, QMenu, QAction, QFontMetrics, QFont, QImage, \
                         QBrush, QPalette, QMouseEvent
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, \
-                         QPoint 
-                         
+                         QPoint
+
 from volumina.layer import Layer
 from layercontextmenu import layercontextmenu
 
@@ -19,27 +19,27 @@ import volumina.icons_rc
 class LayerPainter( object ):
     def __init__(self):
         self.layer = None
-        
+
         self.rect = QRect()
-        
+
         self.fm = QFontMetrics(QFont())
-        
+
         self.iconSize = 20
         self.iconXOffset = 5
         self.textXOffset = 5
         self.progressXOffset = self.iconXOffset+self.iconSize+self.textXOffset
         self.progressYOffset = self.iconSize+5
         self.progressHeight = 10
-        
+
         self.alphaTextWidth = self.fm.boundingRect(u"\u03B1=100.0%").width()
-        
+
     def sizeHint(self, mode):
        if mode == 'ReadOnly':
            return QSize(1,self.fm.height()+5)
        elif mode == 'Expanded' or mode == 'Editable':
            return QSize(1,self.progressYOffset+self.progressHeight+5)
        else:
-           raise RuntimeError("Unknown mode")   
+           raise RuntimeError("Unknown mode")
 
     def overEyeIcon(self, x, y):
         #with a sufficiently large height (100)
@@ -55,7 +55,7 @@ class LayerPainter( object ):
         if checkBoundaries and (y < self.progressYOffset or y > self.progressYOffset + self.progressHeight) \
                            or  (x < self.progressXOffset):
             return -1
-        
+
         percent = (x-self.progressXOffset)/float(parentWidth-self.progressXOffset-10)
         if percent < 0:
             return 0.0
@@ -70,13 +70,13 @@ class LayerPainter( object ):
     def paint(self, painter, rect, palette, mode, isSelected):
         if not self.layer.visible:
             palette.setCurrentColorGroup(QPalette.Disabled)
-        
+
         self.rect = rect
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
-        
+
         painter.setBrush(palette.text())
-        
+
         if isSelected:
             painter.save()
             painter.setBrush(palette.highlight())
@@ -85,10 +85,10 @@ class LayerPainter( object ):
 
         painter.translate(rect.x(), rect.y())
         painter.setFont(QFont())
-        
+
         textOffsetX = self.progressXOffset
         textOffsetY = max(self.fm.height()-self.iconSize,0)/2.0+self.fm.height()
-        
+
         if self.layer.visible:
             painter.drawImage(QRect(self.iconXOffset,0,self.iconSize,self.iconSize), \
                               QImage(":icons/icons/stock-eye-20.png"))
@@ -99,23 +99,23 @@ class LayerPainter( object ):
         if self.layer.direct:
             painter.save()
             painter.setBrush(palette.text())
-            painter.drawEllipse(self.iconXOffset+self.iconSize/2-2, self.iconSize+3, 4,4 ) 
+            painter.drawEllipse(self.iconXOffset+self.iconSize/2-2, self.iconSize+3, 4,4 )
             painter.restore()
-        
+
         #layer name text
         if mode != 'ReadOnly':
             painter.setBrush(palette.highlightedText())
         else:
             painter.setBrush(palette.text())
-        
+
         #layer name
         painter.drawText(QPoint(textOffsetX, textOffsetY), "%s" % self.layer.name)
         #opacity
         text = u"\u03B1=%0.1f%%" % (100.0*(self.layer.opacity))
         painter.drawText(QPoint(textOffsetX+self._progressWidth-self.alphaTextWidth, textOffsetY), text)
-        
-        
-        if mode != 'ReadOnly':  
+
+
+        if mode != 'ReadOnly':
             #frame around percentage indicator
             painter.setBrush(palette.dark())
             painter.save()
@@ -124,11 +124,11 @@ class LayerPainter( object ):
             painter.drawRect(QRect(QPoint(self.progressXOffset, self.progressYOffset), \
                                           QSize(self._progressWidth, self.progressHeight)))
             painter.restore()
-        
+
             #percentage indicator
             painter.drawRect(QRect(QPoint(self.progressXOffset, self.progressYOffset), \
                                           QSize(self._progressWidth*self.layer.opacity, self.progressHeight)))
-            
+
         painter.restore()
 
 #*******************************************************************************
@@ -142,15 +142,15 @@ class LayerDelegate(QStyledItemDelegate):
         self._view = layersView
         self._editors = {}
         self._listModel = listModel
-        
+
         #whether to draw all layers expanded
         self.expandAll = True
-        
+
         self._listModel.rowsAboutToBeRemoved.connect(self.handleRemovedRows)
-    
+
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)
-    
+
     def paint(self, painter, option, index):
         if option.state & QStyle.State_Selected:
             modelIndex = index.row()
@@ -158,7 +158,7 @@ class LayerDelegate(QStyledItemDelegate):
                 model = index.model()
                 self.currentIndex = modelIndex
                 model.wantsUpdate()
-        
+
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
             layerPainter = LayerPainter()
@@ -182,7 +182,7 @@ class LayerDelegate(QStyledItemDelegate):
             return layerPainter.sizeHint( mode )
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
-    
+
     def createEditor(self, parent, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
@@ -191,7 +191,7 @@ class LayerDelegate(QStyledItemDelegate):
             return editor
         else:
             QStyledItemDelegate.createEditor(self, parent, option, index)
-        
+
     def setEditorData(self, editor, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
@@ -213,7 +213,7 @@ class LayerDelegate(QStyledItemDelegate):
             assert isinstance(layer, Layer)
             if layer in self._editors:
                 del self._editors[layer]
-    
+
     def commitAndCloseEditor(self):
         editor = sender()
         self.commitData.emit(editor)
@@ -225,7 +225,7 @@ class LayerDelegate(QStyledItemDelegate):
 
 class LayerEditor(QWidget):
     editingFinished = pyqtSignal()
-    
+
     def __init__(self, parent = None):
         QWidget.__init__(self, parent)
         self.lmbDown = False
@@ -233,7 +233,7 @@ class LayerEditor(QWidget):
         self.setAutoFillBackground(True)
         self._layerPainter = LayerPainter()
         self._layer = None
-        
+
     @property
     def layer(self):
         return self._layer
@@ -244,17 +244,17 @@ class LayerEditor(QWidget):
         self._layer = layer
         self._layer.changed.connect(self.repaint)
         self._layerPainter.layer = layer
-        
+
     def minimumSize(self):
         return self.sizeHint()
-    
+
     def maximumSize(self):
         return self.sizeHint()
-        
+
     def paintEvent(self, e):
         painter = QPainter(self)
         self._layerPainter.paint(painter, self.rect(), self.palette(), 'Editable', True)
-        
+
     def mouseMoveEvent(self, event):
         if self.lmbDown:
             opacity = self._layerPainter.percentForPosition(event.x(), event.y(), self.rect().width(), checkBoundaries=False)
@@ -265,13 +265,13 @@ class LayerEditor(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.RightButton:
             return
-        
+
         self.lmbDown = True
-        
+
         if self._layerPainter.overEyeIcon(event.x(), event.y()):
             self._layer.visible = not self._layer.visible
             self.update()
-        
+
         opacity = self._layerPainter.percentForPosition(event.x(), event.y(), self.rect().width())
         if opacity >= 0:
             self._layer.opacity = opacity
@@ -286,13 +286,13 @@ class LayerEditor(QWidget):
 
 class LayerWidget(QListView):
     def __init__(self, parent = None, model=None):
-        
+
         QListView.__init__(self, parent)
 
         if model is None:
             model = LayerStackModel()
         self.init(model)
-        
+
     def init(self, listModel):
         self.setModel(listModel)
         self._itemDelegate = LayerDelegate( self, listModel )
@@ -303,7 +303,7 @@ class LayerWidget(QListView):
         #self.setDragDropOverwriteMode(False)
         self.model().selectionModel.selectionChanged.connect(self.onSelectionChanged)
         QTimer.singleShot(0, self.selectFirstEntry)
-    
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Up or event.key() == Qt.Key_Down:
             return super(LayerWidget, self).keyPressEvent(event)
@@ -313,45 +313,45 @@ class LayerWidget(QListView):
             if row < 0:
                 return
             layer = self.model()[row]
-        
+
             if event.key() == Qt.Key_Right:
                 if layer.opacity < 1.0:
                     layer.opacity = min(1.0, layer.opacity + 0.01)
             elif event.key() == Qt.Key_Left:
                 if layer.opacity > 0.0:
                     layer.opacity = max(0.0, layer.opacity - 0.01)
-    
+
     def resizeEvent(self, e):
         self.updateGUI()
         QListView.resizeEvent(self, e)
-    
-    def contextMenuEvent(self, event):        
+
+    def contextMenuEvent(self, event):
         idx = self.indexAt(event.pos())
         layer = self.model()[idx.row()]
         #print "Context menu for layer '%s'" % layer.name
-        
+
         layercontextmenu( layer, self.mapToGlobal(event.pos()), self )
-            
+
     def selectFirstEntry(self):
         #self.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.model().selectionModel.setCurrentIndex(self.model().index(0), QItemSelectionModel.SelectCurrent)
         self.updateGUI()
-    
+
     def updateGUI(self):
         self.openPersistentEditor(self.model().selectedIndex())
-    
+
     def eventFilter(self, sender, event):
         #http://stackoverflow.com/questions/1224432/
         #how-do-i-respond-to-an-internal-drag-and-drop-operation-using-a-qlistwidget
         if (event.type() == QEvent.ChildRemoved):
             self.onOrderChanged()
         return False
-    
+
     def onSelectionChanged(self, selected, deselected):
         if len(deselected) > 0:
             self.closePersistentEditor(deselected[0].indexes()[0])
         self.updateGUI()
-    
+
     def onOrderChanged(self):
         self.updateGUI()
 
@@ -359,7 +359,7 @@ class LayerWidget(QListView):
         prevIndex = self.model().selectedIndex()
         newIndex = self.indexAt( event.pos() )
         super(LayerWidget, self).mousePressEvent(event)
-        
+
         # HACK: The first click merely gives focus to the list item without actually passing the event to it.
         # We'll simulate a mouse click on the item by calling mousePressEvent() and mouseReleaseEvent on the appropriate editor
         if prevIndex != newIndex and newIndex.row() != -1:
@@ -385,41 +385,41 @@ if __name__ == "__main__":
 
     from PyQt4.QtGui import QApplication, QPushButton, QHBoxLayout, QVBoxLayout
     from volumina.pixelpipeline.datasources import ArraySource
-    
+
     app = QApplication(sys.argv)
-            
+
     model = LayerStackModel()
-    
+
     o1 = Layer()
     o1.name = "Fancy Layer"
     o1.opacity = 0.5
     model.append(o1)
-    
+
     o2 = Layer()
     o2.name = "Some other Layer"
     o2.opacity = 0.25
     model.append(o2)
-    
+
     o3 = Layer()
     o3.name = "Invisible Layer"
     o3.opacity = 0.15
     o3.visible = False
     model.append(o3)
-    
+
     o4 = Layer()
     o4.name = "Fancy Layer II"
     o4.opacity = 0.95
     model.append(o4)
-    
+
     o5 = Layer()
     o5.name = "Fancy Layer III"
     o5.opacity = 0.65
     model.append(o5)
-    
+
     o6 = Layer()
     o6.name = "Lazyflow Layer"
     o6.opacity = 1
-    
+
     testVolume = numpy.random.rand(100,100,100,3).astype('uint8')
     source = [ArraySource(testVolume)]
     o6._datasources = source
@@ -432,22 +432,22 @@ if __name__ == "__main__":
     w = QWidget()
     lh = QHBoxLayout(w)
     lh.addWidget(view)
-    
+
     up   = QPushButton('Up')
     down = QPushButton('Down')
     delete = QPushButton('Delete')
     add = QPushButton('Add')
     lv  = QVBoxLayout()
     lh.addLayout(lv)
-    
+
     lv.addWidget(up)
     lv.addWidget(down)
     lv.addWidget(delete)
     lv.addWidget(add)
-    
+
     w.setGeometry(100, 100, 800,600)
     w.show()
-    
+
     up.clicked.connect(model.moveSelectedUp)
     model.canMoveSelectedUp.connect(up.setEnabled)
     down.clicked.connect(model.moveSelectedDown)
@@ -463,4 +463,3 @@ if __name__ == "__main__":
     add.clicked.connect(addRandomLayer)
 
     app.exec_()
-

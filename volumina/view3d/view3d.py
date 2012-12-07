@@ -8,7 +8,7 @@ from vtk import vtkRenderer, vtkConeSource, vtkPolyDataMapper, vtkActor, \
                     vtkMaskFields, vtkGeometryFilter, vtkThreshold, vtkDataObject, \
                     vtkDataSetAttributes, vtkCutter, vtkPlane, vtkPropAssembly, \
                     vtkGenericOpenGLRenderWindow, QVTKWidget, vtkOBJExporter, \
-                    vtkPropCollection, vtkAppendPolyData
+                    vtkPropCollection, vtkAppendPolyData, vtkCellPicker
 
 from PyQt4.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
                         QSizePolicy, QSpacerItem, QIcon, QFileDialog, \
@@ -182,6 +182,7 @@ class Outliner(vtkPropAssembly):
         self.cutter.SetCutFunction(plane)
         self.cutter.Update()
 
+
 #*******************************************************************************
 # O v e r v i e w S c e n e                                                    *
 #*******************************************************************************
@@ -325,11 +326,14 @@ class OverviewScene(QWidget):
         Event.register("layerContextMenuRequested", layerContextMenu)
 
     def layerContextMenu(self, layer, menu):
-      if isinstance( layer, ColortableLayer ):
-        def show3D():
-          data = layer._datasources[0].request((slice(0,1,None), slice(None,None,None), slice(None,None,None), slice(None,None,None), slice(0,1,None))).wait()[0,:,:,:,0]
-          self.SetColorTable(layer._colorTable)
-          self.DisplayObjectMeshes(data)#, suppressLabels=(), smooth=True):
+        if isinstance( layer, ColortableLayer ):
+            def show3D():
+                data = layer._datasources[0].request((slice(0,1,None),
+                                                      slice(None,None,None), slice(None,None,None),
+                                                      slice(None,None,None),
+                                                      slice(0,1,None))).wait()[0,:,:,:,0]
+                self.SetColorTable(layer._colorTable)
+                self.DisplayObjectMeshes(data)#, suppressLabels=(), smooth=True):
 
         show3dAction = QAction("Show in 3D Overview", menu)
         show3dAction.triggered.connect(show3D)

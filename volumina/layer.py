@@ -107,7 +107,7 @@ class Layer( QObject ):
         self._layerId = None
         self.direct = direct
         self._toolTip = ""
-        
+
         if self.direct:
             #in direct mode, we calculate the average time per tile for debug purposes
             #this is useful to identify which of your layers cause slowness
@@ -117,6 +117,9 @@ class Layer( QObject ):
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
         self.nameChanged.connect(self.changed)
+
+        self.contexts = []
+
         
 #*******************************************************************************
 # C l i c k a b l e L a y e r                                                  *

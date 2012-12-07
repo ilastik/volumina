@@ -143,4 +143,11 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
     menu.addAction(export)
     menu.addSeparator()
     _add_actions( layer, menu )
+
+    menu.addSeparator()
+    for name, callback in layer.contexts:
+        action = QAction(name, menu)
+        action.triggered.connect(callback)
+        menu.addAction(action)
+
     menu.exec_(pos)    

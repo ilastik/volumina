@@ -30,18 +30,13 @@ class SlicingPlanesWidget(vtkPropAssembly):
             p.ScaleEnabledOff()
             p.SetOrigin(0.25,0.25,0.25)
             p.PlaceWidget([0.1,dataShape[0],0.1,dataShape[1],0.1,dataShape[2]])
-            if i==0:
-                p.SetNormal(1,0,0)
-                p.GetSelectedPlaneProperty().SetColor(1,0,0)
-                p.GetEdgesProperty().SetColor(1,0,0) #bug in VTK
-            elif i==1:
-                p.SetNormal(0,1,0)
-                p.GetSelectedPlaneProperty().SetColor(0,1,0)
-                p.GetEdgesProperty().SetColor(0,1,0) #bug in VTK
-            else: 
-                p.SetNormal(0,0,1)
-                p.GetSelectedPlaneProperty().SetColor(0,0,1)
-                p.GetEdgesProperty().SetColor(0,0,1) #bug in VTK
+
+            args = [0, 0, 0]
+            args[i] = 1
+            p.SetNormal(*args)
+            p.GetSelectedPlaneProperty().SetColor(*args)
+            p.GetEdgesProperty().SetColor(*args) #bug in VTK
+
             p.GetPlaneProperty().SetOpacity(0.001)
             #do not draw outline
             p.GetOutlineProperty().SetColor(0,0,0)
@@ -88,10 +83,13 @@ class SlicingPlanesWidget(vtkPropAssembly):
         p = vtkPlane()
         self.planes[axis].GetRepresentation().GetPlane(p)
         return p
+
     def PlaneX(self):
         return self.Plane(0)
+
     def PlaneY(self):
         return self.Plane(1)
+
     def PlaneZ(self):
         return self.Plane(2)
         
