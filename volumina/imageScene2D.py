@@ -217,6 +217,9 @@ class ImageScene2D(QGraphicsScene):
     def cacheSize(self):
         return self._tileProvider._cache_size
 
+    def setPrefetchingEnabled(self, enable):
+        self._prefetching_enabled = enable
+
     def setPreemptiveFetchNumber(self, n):
         if n > self.cacheSize() - 1:
             self._n_preemptive = self.cacheSize() - 1
@@ -277,7 +280,8 @@ class ImageScene2D(QGraphicsScene):
 
         self._tileProvider = None
         self._dirtyIndicator = None
-
+        self._prefetching_enabled = False
+        
         self._swappedDefault = swapped_default
         self.reset()
 
@@ -347,8 +351,9 @@ class ImageScene2D(QGraphicsScene):
                 self._dirtyIndicator.setTileProgress(tile.id, tile.progress)
 
         # preemptive fetching
-        for through in self._bowWave(self._n_preemptive):
-            self._tileProvider.prefetch(sceneRectF, through)
+        if self._prefetching_enabled:
+            for through in self._bowWave(self._n_preemptive):
+                self._tileProvider.prefetch(sceneRectF, through)
 
     def joinRendering(self):
         return self._tileProvider.join()
