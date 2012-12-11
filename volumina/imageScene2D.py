@@ -41,9 +41,9 @@ class DirtyIndicator(QGraphicsItem):
             if self._indicate[i] == 1.0:
                 continue
 
-            # Don't show unless 300 millisecs have passed since the tile progress was reset.
+            # Don't show unless 1000 millisecs have passed since the tile progress was reset.
             startTime = self._zeroProgressTimestamp[i]
-            if startTime is not None and datetime.datetime.now() - startTime < datetime.timedelta(milliseconds=300):
+            if startTime is not None and datetime.datetime.now() - startTime < datetime.timedelta(milliseconds=1000):
                 continue
 
             w,h = p.width(), p.height()
