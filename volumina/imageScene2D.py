@@ -94,7 +94,8 @@ class ImageScene2D(QGraphicsScene):
     @property
     def showTileProgress(self):
         return self._showTileProgress
-    @showTileOutlines.setter
+    
+    @showTileProgress.setter
     def showTileProgress(self, show):
         self._showTileProgress = show
         self._dirtyIndicator.setVisible(show)
