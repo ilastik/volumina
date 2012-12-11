@@ -337,9 +337,6 @@ class ImageScene2D(QGraphicsScene):
             self._dirtyIndicator.setVisible(settled)
 
     def drawBackground(self, painter, sceneRectF):
-        painter.setBrush(QBrush(QColor(220, 220, 220)))
-        painter.drawRect(QRect(0, 0, *self.sceneShape))
-
         if self._tileProvider is None:
             return
 
