@@ -1,7 +1,7 @@
 **Volumina** - Volume Slicing and Editing Library
 =============================================
 
-[![Build Status](https://secure.travis-ci.org/Ilastik/volumina.png)](http://travis-ci.org/Ilastik/volumina)
+[![Build Status](https://travis-ci.org/ilastik/volumina.png?branch=master)](https://travis-ci.org/ilastik/volumina)
 
 [Code coverage](http://ilastik.github.com/volumina/cover/index.html)
 
