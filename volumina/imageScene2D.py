@@ -298,6 +298,7 @@ class ImageScene2D(QGraphicsScene):
     def __del__(self):
         if self._tileProvider:
             self._tileProvider.notifyThreadsToStop()
+        self.joinRendering()
 
     def _onSizeChanged(self):
         self._brushingLayer  = TiledImageLayer(self._tiling)
