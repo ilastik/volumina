@@ -11,7 +11,7 @@ First, test volumina
 
     $ python setup.py nosetests
 
-and then install it:
+and then install:
 
     $ python setup.py install
 
