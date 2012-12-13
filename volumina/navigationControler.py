@@ -1,14 +1,14 @@
-from PyQt4.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal, \
-                         QRectF, QPoint
-from PyQt4.QtGui  import QColor, QCursor, QMouseEvent, QApplication, \
-                         QPainter, QPen, QGraphicsView, QGraphicsTextItem
+from PyQt4.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
+from PyQt4.QtGui  import QColor, QCursor 
 
 import copy
 from functools import partial
 
-from imageView2D import ImageView2D
-from imageScene2D import ImageScene2D
 from eventswitch import InterpreterABC
+
+from volumina.sliceIntersectionMarker import SliceIntersectionMarker
+from volumina.imageScene2D import DirtyIndicator
+import volumina
 
 def posView2D(pos3d, axis):
     """convert from a 3D position to a 2D position on the slicing plane
@@ -53,6 +53,7 @@ class NavigationInterpreter(QObject):
         ### the following implements a simple state machine
         if self._current_state == self.DEFAULT_MODE:
             ### default mode -> drag mode
+
             if    (etype == QEvent.MouseButtonPress and event.button() == Qt.MidButton) \
                or (etype == QEvent.MouseButtonPress and event.modifiers() == Qt.ShiftModifier):
                 # self.onExit_default(): call it here, if needed
@@ -66,19 +67,15 @@ class NavigationInterpreter(QObject):
                 return self.onMouseMove_default( watched, event )
 
             elif etype == QEvent.Wheel:
-                 self.onWheel_default( watched, event )
-                 event.accept()
-                 return True
+                self.onWheel_default( watched, event )
+                event.accept()
+                return True
 
             elif etype == QEvent.MouseButtonDblClick:
-                self.onMouseDoubleClick_default( watched, event )
-                event.accept()
-                return True
+                return self.onMouseDoubleClick_default( watched, event )
 
             elif etype == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
-                self.onMousePressRight_default( watched, event )
-                event.accept()
-                return True
+                return self.onMousePressRight_default( watched, event )
 
         elif self._current_state == self.DRAG_MODE:
             ### drag mode -> default mode
@@ -151,6 +148,7 @@ class NavigationInterpreter(QObject):
         if imageview._ticker.isActive():
             #the view is still scrolling
             #do nothing until it comes to a complete stop
+            event.ignore()
             return False
 
         imageview.mousePos = mousePos = imageview.mapMouseCoordinates2Data(event.pos())
@@ -158,18 +156,40 @@ class NavigationInterpreter(QObject):
         dataX = imageview.x = mousePos.x()
         dataY = imageview.y = mousePos.y()
 
-        return self._navCtrl.positionDataCursor(QPointF(dataX, dataY), self._navCtrl._views.index(imageview))
+        self._navCtrl.positionDataCursor(QPointF(dataX, dataY), self._navCtrl._views.index(imageview))
+
+        #do not accept event
+        event.ignore()
+        return False
 
     def onMousePressRight_default( self, imageview, event ):
         #make sure that we have the cursor at the correct position
         #before we call the context menu
         self.onMouseMove_default( imageview, event )
+
+        if len( self._itemsAt(imageview, event.pos()) ) > 0:
+            return False
+
         pos = event.pos()
         imageview.customContextMenuRequested.emit( pos )
+        return True
+
+    def _itemsAt(self, imageview, pos):
+        """returns all QGraphicsItem under the posistion 'pos', except those managed internally by volumina"""
+        itms = imageview.items(pos)
+        itms = [x for x in itms if not ( \
+                  isinstance(x, volumina.sliceIntersectionMarker.SliceIntersectionMarker) or \
+                  isinstance(x, volumina.imageScene2D.DirtyIndicator) or \
+                  isinstance(x, volumina.crossHairCursor.CrossHairCursor) ) ]
+        return itms
 
     def onMouseDoubleClick_default( self, imageview, event ):
+        if len( self._itemsAt(imageview, event.pos()) ) > 0:
+            return False
+
         dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
         self._navCtrl.navigateToPoint(dataMousePos.x(), dataMousePos.y(), self._navCtrl._views.index(imageview))
+        return True
 
     ###
     ### Drag Mode
