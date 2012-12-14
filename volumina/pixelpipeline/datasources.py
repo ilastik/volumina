@@ -9,6 +9,7 @@ from volumina.config import cfg
 import numpy as np
 
 import volumina.adaptors
+from volumina.slicingtools import slicing2shape
 
 _has_vigra = True
 try:
@@ -171,12 +172,20 @@ class LazyflowRequest( object ):
 
     def __init__(self, op, slicing, prio ):
         self._req = LazyflowRequest._req_on_demand(op, slicing, prio) 
+        self._slicing = slicing
+        self._shape = slicing2shape(slicing)
 
     def wait( self ):
-        return self._req[0].wait()
+        a = self._req[0].wait()
+        assert(isinstance(a, np.ndarray))
+        assert(a.shape == self._shape), "LazyflowRequest.wait(): we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._shape, self._slicing, a.shape)
+        return a
         
     def getResult(self):
-        return self._req[0].getResult()
+        a = self._req[0].getResult()
+        assert(isinstance(a, np.ndarray))
+        assert(a.shape == self._shape), "LazyflowRequest.getResult(): we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._shape, self._slicing, a.shape)
+        return a
 
     def adjustPriority(self,delta):
         self._req[0].adjustPriority(delta)
