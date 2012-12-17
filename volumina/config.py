@@ -3,7 +3,7 @@ import io, os
 
 default_config = """
 [pixelpipeline]
-verbose: true
+verbose: false
 """
 
 cfg = ConfigParser.SafeConfigParser()
