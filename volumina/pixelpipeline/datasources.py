@@ -166,7 +166,7 @@ class LazyflowRequest( object ):
                 assert(self.p[0].output.ready())
                 reqobj = self.p[0].output[self.p[1]].allocate(priority = self.p[2])
             else:
-                reqobj = ArrayRequest( np.zeros(slicing2shape(self.p[1]), dtype=np.uint8 ), self.p[1] )
+                reqobj = ArrayRequest( np.zeros(slicing2shape(self.p[1]), dtype=np.uint8 ), (slice(None),) * len(self.p[1]) )
 
             self[0] = reqobj
             return reqobj
