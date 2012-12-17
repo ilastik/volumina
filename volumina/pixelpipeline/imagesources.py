@@ -118,9 +118,7 @@ class GrayscaleImageRequest( object ):
         
     def toImage( self ):
         a = self._arrayreq.getResult()
-        assert isinstance(a, np.ndarray) 
         assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
-        assert a.shape[0] > 0 and a.shape[1] > 0
         
         normalize = self._normalize 
         img = gray2qimage(a, normalize)

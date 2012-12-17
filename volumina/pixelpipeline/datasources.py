@@ -9,7 +9,6 @@ from volumina.config import cfg
 import numpy as np
 
 import volumina.adaptors
-from volumina.slicingtools import slicing2shape
 
 _has_vigra = True
 try:
