@@ -218,9 +218,12 @@ class ColortableImageSource( ImageSource ):
         layerColorTable = self._layer.colorTable
         self._colorTable = np.zeros((len(layerColorTable), 4), dtype=np.uint8)
         for i, c in enumerate(layerColorTable):
-            color = QColor.fromRgba(c)
             #note that we use qimage2ndarray.byte_view() on a QImage with Format_ARGB32 below.
             #this means that the memory layout actually is B, G, R, A
+            if isinstance(c, QColor):
+                color = c
+            else: 
+                color = QColor.fromRgba(c)
             self._colorTable[i,0] = color.blue()
             self._colorTable[i,1] = color.green()
             self._colorTable[i,2] = color.red()
