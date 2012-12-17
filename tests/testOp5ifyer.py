@@ -10,15 +10,30 @@ else:
     import random
     import vigra
     import numpy
-    from lazyflow.graph import Graph
+    from lazyflow.graph import Graph, Operator, InputSlot, OutputSlot
     from lazyflow.roi import TinyVector
     from lazyflow.roi import roiToSlice
-    
+    from volumina.pixelpipeline.datasources import LazyflowSource
+
     # Use logging instead of print statements ...
     import logging
     logger = logging.getLogger(__name__)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     
+    class OpMuncher( Operator ):
+        Input = InputSlot()
+        Output = OutputSlot()
+
+        def execute( slot, subindex, roi, result ):
+            result[...] = 0
+            return result
+
+        def setupOutputs( self ):
+            self.Output.meta.assignFrom( self.Input.meta )
+
+        def propagateDirty( self, slot, subindex, roi ):
+            self.Output.setDirty( roi )
+
     class TestOp5ifyer(unittest.TestCase):
     
         def setUp(self):
@@ -146,6 +161,14 @@ else:
                 reorderedInput = self.inArray.withAxes(*[tag.key for tag in self.operator.outputs["output"].meta.axistags])
                 assert numpy.all(vresult == reorderedInput[roiToSlice(roi[0], roi[1])])
     
+        def test_Incomplete_graph( self ):
+            g = Graph()
+            opMunch = OpMuncher( graph = g )
+            ls = LazyflowSource(opMunch.Output)
+            res = ls.request((slice(1, 2, None),)).wait()
+            assert res.shape == (1,)
+            assert res[0] == 0
+
     if __name__ == "__main__":
         #logger.setLevel(logging.DEBUG)
         unittest.main()
