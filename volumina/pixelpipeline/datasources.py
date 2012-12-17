@@ -158,7 +158,7 @@ class LazyflowRequest( object ):
     ## delay the creation of the lazyflow request until one of these
     ## Volumina request methods is actually called
     class _req_on_demand(dict):
-        def __init__( self, op, slicing, prio):
+        def __init__( self, op, slicing, prio ):
             self.p = (op, slicing, prio)
     
         def __missing__(self, key):
@@ -170,21 +170,22 @@ class LazyflowRequest( object ):
             self[0] = reqobj
             return reqobj
 
-    def __init__(self, op, slicing, prio ):
+    def __init__(self, op, slicing, prio, name="Unnamed LazyflowRequest" ):
         self._req = LazyflowRequest._req_on_demand(op, slicing, prio) 
         self._slicing = slicing
         self._shape = slicing2shape(slicing)
+        self.name = name
 
     def wait( self ):
         a = self._req[0].wait()
         assert(isinstance(a, np.ndarray))
-        assert(a.shape == self._shape), "LazyflowRequest.wait(): we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._shape, self._slicing, a.shape)
+        assert(a.shape == self._shape), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self.name, self._shape, self._slicing, a.shape)
         return a
         
     def getResult(self):
         a = self._req[0].getResult()
         assert(isinstance(a, np.ndarray))
-        assert(a.shape == self._shape), "LazyflowRequest.getResult(): we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._shape, self._slicing, a.shape)
+        assert(a.shape == self._shape), "LazyflowRequest.getResult() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self.name, self._shape, self._slicing, a.shape)
         return a
 
     def adjustPriority(self,delta):
@@ -243,7 +244,7 @@ class LazyflowSource( QObject ):
             volumina.printLock.release()
         if not is_pure_slicing(slicing):
             raise Exception('LazyflowSource: slicing is not pure')
-        return LazyflowRequest( self._op5, slicing, self._priority )
+        return LazyflowRequest( self._op5, slicing, self._priority, name=self.objectName() )
 
     def _setDirtyLF(self, slot, roi):
         self.setDirty(roi.toSlice())
