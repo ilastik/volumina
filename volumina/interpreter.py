@@ -17,9 +17,8 @@ class ClickReportingInterpreter(QObject):
 
     def eventFilter( self, watched, event ):
         if event.type() == QEvent.MouseButtonPress:
-            pos = self.posModel.cursorPos
-            pos = [int(i) for i in pos]
-            pos = [0,] + pos + [0,]
+            pos = [int(i) for i in self.posModel.cursorPos]
+            pos = [self.posModel.time] + pos + [self.posModel.channel]
 
             if event.button() == Qt.LeftButton:
                 gPos = watched.mapToGlobal( event.pos() )
