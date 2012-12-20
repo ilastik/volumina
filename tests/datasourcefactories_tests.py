@@ -40,13 +40,20 @@ class Test_DatasourceFactories(TestCase):
     def test_lazyflowSource(self):
         if hasLazyflow:
             import vigra
+            def test_source( src, array ):
+                self.assertEqual(type(src), LazyflowSource)
+                self.assertEqual(squeeze(ndarray(src._op5.output.meta.shape)).shape, array.shape)
+
             for i in range(2,6):
                 array = rand(*self.dim[:i]).view(vigra.VigraArray)
                 array.axistags = vigra.defaultAxistags('txyzc'[:i])
                 self.op.inputs["Input"].setValue(array)
-                source = createDataSource(self.op.outputs["Output"])
-                self.assertEqual(type(source), LazyflowSource, 'Resulting datatype is not as expected')
-                self.assertEqual(squeeze(ndarray(source._op5.output.meta.shape)).shape, array.shape, 'Inputdatashape does not match outputdatashape')
+
+                source_output = createDataSource(self.op.Output)
+                test_source( source_output, array )
+                source_input = createDataSource(self.op.Input)
+                test_source( source_input, array )
+
         else:
             pass
         

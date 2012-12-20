@@ -12,19 +12,30 @@ except:
     hasLazyflow = False
 
 if hasLazyflow:
-    @multimethod(lazyflow.graph.OutputSlot,bool)
-    def createDataSource(source,withShape = False):
+    def _createDataSourceLazyflow( slot, withShape ):
         #has to handle Lazyflow source
-        src = LazyflowSource(source)
+        src = LazyflowSource(slot)
         shape = src._op5.output.meta.shape
         if withShape:
             return src,shape
         else:
             return src
+
+    @multimethod(lazyflow.graph.OutputSlot,bool)
+    def createDataSource(source,withShape = False):
+        return _createDataSourceLazyflow( source, withShape )
+
+    @multimethod(lazyflow.graph.InputSlot,bool)
+    def createDataSource(source,withShape = False):
+        return _createDataSourceLazyflow( source, withShape )
     
     @multimethod(lazyflow.graph.OutputSlot)
     def createDataSource(source):
-        return createDataSource(source,False)
+        return _createDataSourceLazyflow( source, False )
+
+    @multimethod(lazyflow.graph.InputSlot)
+    def createDataSource(source):
+        return _createDataSourceLazyflow( source, False )
 
 @multimethod(numpy.ndarray,bool)
 def createDataSource(source,withShape = False):
