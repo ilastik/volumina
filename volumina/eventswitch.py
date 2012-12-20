@@ -1,5 +1,6 @@
 from PyQt4.QtCore import QObject, Qt, QEvent
-from PyQt4.QtGui import QAbstractScrollArea
+from PyQt4.QtGui import QMouseEvent
+
 from abc import ABCMeta, abstractmethod
 
 from pixelpipeline.asyncabcs import _has_attributes
@@ -72,5 +73,10 @@ class EventSwitch( QObject ):
             #which will be the QGraphicsView itself
             return self._interpreter.eventFilter(watched.parent(), event)
         else:
-            return self._interpreter.eventFilter(watched, event)
+            # prevent double delivery of unhandled mouse events that
+            # bubble up from the underlying viewport
+            if not isinstance(event, QMouseEvent):
+                return self._interpreter.eventFilter(watched, event)
+            else:
+                return False
 
