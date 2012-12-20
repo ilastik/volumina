@@ -6,6 +6,7 @@ from PyQt4.QtGui import QColor
 
 from widgets.layerDialog import GrayscaleLayerDialog
 from widgets.layerDialog import RGBALayerDialog
+from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.datasourcefactories import createDataSource
 from volumina.pixelpipeline.asyncabcs import SourceABC
 
@@ -124,46 +125,6 @@ class Layer( QObject ):
 #*******************************************************************************
 # C l i c k a b l e L a y e r                                                  *
 #*******************************************************************************
-
-class ClickInterpreter(QObject):
-    """Intercepts RIGHT CLICK and double click events on a layer and calls a given functor with the clicked
-       position."""
-       
-    def __init__(self, editor, layer, onClickFunctor, parent=None):
-        """ editor:         VolumeEditor object
-            layer:          Layer instance on which was clicked
-            onClickFunctor: a function f(layer, position5D, windowPosition
-        """
-        QObject.__init__(self, parent)
-        self.baseInterpret = editor.navInterpret
-        self.posModel      = editor.posModel
-        self._onClick = onClickFunctor
-        self._layer = layer
-
-    def start( self ):
-        self.baseInterpret.start()
-
-    def stop( self ):
-        self.baseInterpret.stop()
-
-    def eventFilter( self, watched, event ):
-        ctrl = False
-        etype = event.type()
-        if etype == QEvent.MouseButtonPress or etype == QEvent.MouseButtonDblClick:
-            ctrl = (event.modifiers() == Qt.ControlModifier)
-            rightButton = (event.button() == Qt.RightButton)
-            leftButton  = (event.button() == Qt.LeftButton)
-
-            if not rightButton:
-                return self.baseInterpret.eventFilter(watched, event)
-            
-            pos = self.posModel.cursorPos
-            pos = [int(i) for i in pos]
-            pos = [self.posModel.time] + pos + [self.posModel.channel]
-            self._onClick(self._layer, tuple(pos), event.pos())
-            return True
-        
-        return self.baseInterpret.eventFilter(watched, event)
 
 class ClickableLayer( Layer ):
     """A layer that, when being activated/selected, switches to an interpreter than can intercept

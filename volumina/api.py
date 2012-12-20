@@ -6,7 +6,6 @@ from volumina.pixelpipeline.datasources import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
 from volumina.volumeEditor import VolumeEditor
-#from volumina.imageEditorWidget import ImageEditorWidget
 from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.widgets.layerwidget import LayerWidget
 
