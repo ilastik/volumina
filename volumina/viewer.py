@@ -110,7 +110,7 @@ class Viewer(QMainWindow):
 
             #if its 2D, maximize the corresponding window
             if len([i for i in list(self.dataShape)[1:4] if i == 1]) == 1:
-                viewAxis = [i for i in range(1,4) if self.dataShape[i] != 1][0] - 1
+                viewAxis = [i for i in range(1,4) if self.dataShape[i] == 1][0] - 1
                 self.viewer.quadview.switchMinMax(viewAxis)    
         
     def addGrayscaleLayer(self, a, name=None, direct=False):
