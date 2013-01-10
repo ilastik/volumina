@@ -225,8 +225,8 @@ class ColortableImageSource( ImageSource ):
             else: 
                 color = QColor.fromRgba(c)
             self._colorTable[i,0] = color.blue()
-            self._colorTable[i,0] = color.red()
             self._colorTable[i,1] = color.green()
+            self._colorTable[i,2] = color.red()
             self._colorTable[i,3] = color.alpha() 
         self.isDirty.emit(QRect()) # empty rect == everything is dirty
         
