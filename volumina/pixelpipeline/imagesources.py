@@ -259,7 +259,6 @@ class ColortableImageRequest( object ):
         a = self._arrayreq.getResult()
         assert a.ndim == 2
 
-<<<<<<< HEAD
         # Use vigra if possible (much faster)
         if _has_vigra and hasattr(vigra.colors, 'applyColortable'):
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32) 
@@ -278,14 +277,6 @@ class ColortableImageRequest( object ):
             colortable = np.roll(np.fliplr(self._colorTable), -1, 1) # self._colorTable is BGRA, but array2qimage wants RGBA
             img = colortable[a]
             img = array2qimage(img)
-=======
-        #make sure that a has values in range [0, colortable_length)
-        a = np.remainder(a, len(self._colorTable))
-        #apply colortable
-        print self._colorTable
-        img = self._colorTable[a]
-        img = array2qimage(img)
->>>>>>> for colortable source, accept QColor color tables as well
 
         return img 
             
