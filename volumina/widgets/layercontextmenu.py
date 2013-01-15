@@ -12,7 +12,7 @@ from exportDlg import ExportDialog
 _has_lazyflow = True
 try:
     from lazyflow.graph import Graph
-    from lazyflow.operators.obsolete.operators import OpArrayPiper
+    from lazyflow.operators.operators import OpArrayPiper
     from lazyflow.roi import roiToSlice
 except ImportError as e:
     exceptStr = str(e)
