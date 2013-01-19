@@ -10,6 +10,7 @@ from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.imagepump import StackedImageSources
 
 import datetime
+import threading
 
 #*******************************************************************************
 # D i r t y I n d i c a t o r                                                  *
@@ -294,6 +295,9 @@ class ImageScene2D(QGraphicsScene):
         self._posModel.timeChanged.connect(self._onTimeChanged)
         self._posModel.channelChanged.connect(self._onChannelChanged)
         self._posModel.slicingPositionChanged.connect(self._onSlicingPositionChanged)
+        
+        self._drawingThread = None
+        self._allTilesCompleteEvent = threading.Event()
 
     def __del__(self):
         if self._tileProvider:
@@ -340,14 +344,25 @@ class ImageScene2D(QGraphicsScene):
     def drawBackground(self, painter, sceneRectF):
         if self._tileProvider is None:
             return
+        
+        if self._drawingThread is None:
+            self._drawingThread = threading.current_thread()
 
         tiles = self._tileProvider.getTiles(sceneRectF)
+        allComplete = True
         for tile in tiles:
             # prevent flickering
-            if not tile.progress < 1.0:
+            if tile.progress >= 1.0:
                 painter.drawImage(tile.rectF, tile.qimg)
+            else:
+                allComplete = False
             if self._showTileProgress:
                 self._dirtyIndicator.setTileProgress(tile.id, tile.progress)
+
+        if allComplete:
+            self._allTilesCompleteEvent.set()
+        else:
+            self._allTilesCompleteEvent.clear()
 
         # preemptive fetching
         if self._prefetching_enabled:
@@ -356,6 +371,23 @@ class ImageScene2D(QGraphicsScene):
 
     def joinRendering(self):
         return self._tileProvider.join()
+
+    def joinRenderingAllTiles(self):
+        """
+        Wait until all tiles in the scene have been 100% rendered.
+        Note: This is useful for testing only.  If called from the GUI thread, the GUI thread will block until all tiles are rendered!
+        """
+        # If this is the main thread, keep repainting (otherwise we'll deadlock).
+        if threading.current_thread() == self._drawingThread:
+            finished = False
+            sceneRectF = self.views()[0].viewportRect()
+            while not finished:
+                finished = True
+                tiles = self._tileProvider.getTiles(sceneRectF)
+                for tile in tiles:
+                    finished &= tile.progress >= 1.0
+        else:
+            self._allTilesCompleteEvent.wait()
 
     def _bowWave(self, n):
         shape5d = self._posModel.shape5D
