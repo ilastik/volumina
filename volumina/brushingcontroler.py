@@ -130,7 +130,7 @@ class BrushingInterpreter( QObject ):
 
         o = imageview.scene().data2scene.map(QPointF(imageview.oldX,imageview.oldY))
         n = imageview.scene().data2scene.map(QPointF(imageview.x,imageview.y))
-        
+
         # Draw temporary line for the brush stroke so the user gets feedback before the data is really updated.
         pen = QPen( QBrush(self._brushingCtrl._brushingModel.drawColor), self._brushingCtrl._brushingModel.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         line = imageview.scene().addLine(o.x(), o.y(), n.x(), n.y(), pen)
@@ -195,3 +195,59 @@ class BrushingControler(QObject):
 
         self._dataSink.put(slicing, labels.reshape(tuple(newshape)))
         self.wroteToSink.emit()
+
+
+class ClickInterpreter2(BrushingInterpreter):
+    "Intercepts right click and passes the rest to the normal brushing interperter"
+
+    def __init__(self, editor, layer, onClickFunctor, parent=None):
+        navCtrl = editor.navCtrl
+        brushingControler = editor.brushingControler
+        super(ClickInterpreter2, self).__init__(navCtrl, brushingControler)
+        self.posModel = editor.posModel
+        self._onClick = onClickFunctor
+        self._layer = layer
+
+    def eventFilter(self, watched, event):
+        etype = event.type()
+        ### the following implements a simple state machine
+
+        #Whatever the state, right click always clicks
+        if etype==QEvent.MouseButtonPress and event.button()==Qt.RightButton:
+            pos = self.posModel.cursorPos
+            pos = [int(i) for i in pos]
+            pos = [self.posModel.time] + pos + [self.posModel.channel]
+            print self._layer.name
+            self._onClick(self._layer, tuple(pos), event.pos())
+            return True
+
+        if self._current_state == self.DEFAULT_MODE:
+            ### default mode -> draw mode
+            if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton and event.modifiers() == Qt.NoModifier:
+                # navigation interpreter also has to be in
+                # default mode to avoid inconsistencies
+                if self._navIntr.state == self._navIntr.DEFAULT_MODE:
+                    self._current_state = self.DRAW_MODE
+                    self.onEntry_draw( watched, event )
+                    return True
+                else:
+                    return self._navIntr.eventFilter( watched, event )
+
+            ### actions in default mode
+            # let the navigation interpreter handle common events
+            return self._navIntr.eventFilter( watched, event )
+
+        elif self._current_state == self.DRAW_MODE:
+            ### draw mode -> default mode
+            if etype == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
+                self.onExit_draw( watched, event )
+                self._current_state = self.DEFAULT_MODE
+                self.onEntry_default( watched, event )
+                return True
+
+            ### actions in draw mode
+            elif etype == QEvent.MouseMove:
+                self.onMouseMove_draw( watched, event )
+                return True
+
+        return False
