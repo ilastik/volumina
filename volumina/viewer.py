@@ -130,8 +130,13 @@ class Viewer(QMainWindow):
         return layer
     
     def addRGBALayer(self, a, name=None):
-        source,self.dataShape = createDataSource(a,True)
-        layer = RGBALayer(source[0],source[1],source[2])
+        assert a.shape[2] >= 3
+        sources = [None, None, None,None]
+        for i in range(3):
+            sources[i], self.dataShape = createDataSource(a[...,i], True)
+        if(a.shape[2] >= 4):
+            sources[3], self.dataShape = createDataSource(a[...,3], True) 
+        layer = RGBALayer(sources[0],sources[1],sources[2], sources[3])
         if name:
             layer.name = name
         self.layerstack.append(layer)
