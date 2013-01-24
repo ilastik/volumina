@@ -44,7 +44,7 @@ def createDataSource(source,withShape = False):
     if len(source.shape) == 2:
         source = source.reshape( (1,) + source.shape + (1,1) )
     elif len(source.shape) == 3 and source.shape[2] <= 4:
-        source = source.reshape( (1,) + source.shape[0:2] + (1,) + source.shape[2] )
+        source = source.reshape( (1,) + source.shape[0:2] + (1,) + (source.shape[2],) )
     elif len(source.shape) == 3:
         source = source.reshape( (1,) + source.shape + (1,) )
     elif len(source.shape) == 4:
