@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QPointF, QRectF, QLineF, Qt
-from PyQt4.QtGui import QGraphicsObject, QGraphicsRectItem, QGraphicsLineItem, QPen
+from PyQt4.QtGui import QGraphicsObject, QGraphicsRectItem, QGraphicsLineItem, QPen, QColor
 
 from volumina.skeletons.qGraphicsSkeletonNode import QGraphicsSkeletonNode
 
@@ -70,19 +70,31 @@ class SkeletonsLayer(QGraphicsObject):
         
         for e in ePlane:
             l = QLineF(e[0].pointF(), e[1].pointF())
-            
+
+            c1 = e[0].color()
+            c2 = e[1].color()
+            mixColor = QColor( (c1.red()+c2.red())/2,
+                               (c1.green()+c2.green())/2,
+                               (c1.blue()+c2.blue())/2 )
+
             line = QGraphicsLineItem(self._scene.data2scene.map(l))
-            line.setPen(QPen(Qt.red))
+            line.setPen(QPen(mixColor))
             self._scene.addItem(line)
             self._edge2view[e] = line
             
-        for e in eIntersected:
+        for theEdge, e in eIntersected:
+            c1 = theEdge[0].color()
+            c2 = theEdge[1].color()
+            mixColor = QColor( (c1.red()+c2.red())/2,
+                               (c1.green()+c2.green())/2,
+                               (c1.blue()+c2.blue())/2 )
+
             nodeSize = 6
             p = QGraphicsRectItem(-nodeSize/2, -nodeSize/2, nodeSize, nodeSize)
             pos2D = list(e)
             del pos2D[self._axis]
             p.setPos(self._scene.data2scene.map(QPointF(*pos2D)))
-            p.setPen(QPen(Qt.red))
+            p.setPen(QPen(mixColor))
             self._scene.addItem(p)
             self._edge2view[e] = p
             

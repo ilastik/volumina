@@ -1,4 +1,5 @@
 from PyQt4.QtCore import QPointF
+from PyQt4.QtGui import QColor
 
 class SkeletonNode:
     def __init__(self, pos3D, axis, skeletons):
@@ -11,6 +12,20 @@ class SkeletonNode:
         self.axis = axis
         self._skeletons = skeletons
         self._selected = False
+        self._isMovable = True
+        self._color = QColor(0,0,255)
+
+    def setColor(self, c):
+        self._color = c
+
+    def color(self):
+        return self._color
+
+    def isMovable(self):
+        return self._isMovable
+
+    def setMovable(self, movable):
+        self._isMovable = movable
     
     def __str__(self):
         return "SkeletonNode(pos=%r, axis=%r)" % (self.pos, self.axis)

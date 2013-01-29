@@ -25,9 +25,11 @@ class Skeletons(QObject):
         
         self._selectMode = Skeletons.SelectExclusive
         self._edgeMode   = Skeletons.AutoAddEdge
-        
-    def addNode(self, node):
+    
+    def addNode(self, node, interactive=True):
         self._nodes.append(node)
+        if not interactive:
+            return
         if self._selectMode == Skeletons.SelectExclusive:
             prevNode = list(self._selectedNodes)[0] if len(self._selectedNodes) > 0 else None
             self._unselectAll()
@@ -124,7 +126,7 @@ class Skeletons(QObject):
                 p = d*l + l0
                 
                 #print "found edge:", e
-                edgesIntersected.append( (float(p[0]), float(p[1]), float(p[2])) )
+                edgesIntersected.append( (e, (float(p[0]), float(p[1]), float(p[2]))) )
             elif A == axisIntersect and A == B:
                 #print "found edge lying within plane", e
                 edgesPlane.append( e )

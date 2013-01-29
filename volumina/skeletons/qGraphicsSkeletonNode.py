@@ -86,7 +86,7 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
         self._resizeHandles = []
         
         self._hoverColor    = QColor(145, 160, 255,128)
-        self._normalColor   = QColor(90, 195, 230,128)
+        self._normalColor   = self._node.color() #QColor(90, 195, 230,128)
         self._selectedColor = QColor(0,255,0,128)
         
         self._updateColor()
@@ -171,6 +171,9 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
                 #FIXME: Implement
 
     def mouseMoveEvent(self, event):
+        if not self._node.isMovable():
+            return
+
         super(QGraphicsSkeletonNode, self).mouseMoveEvent(event)
         
         dataPos = self.scene().scene2data.map(event.scenePos())

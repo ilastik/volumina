@@ -36,7 +36,9 @@ class Skeletons3D:
                 cubeActor.GetProperty().SetColor(0,1,0)
             else:
                 cubeActor.GetProperty().SetColor(0,0,0)
-        
+
+        return
+         
         for e in self._skeletons._edges:
             if e not in self._edge2view:
                 '''
