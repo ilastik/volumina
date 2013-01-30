@@ -11,7 +11,7 @@ from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.widgets.layerwidget import LayerWidget
 from volumina.navigationControler import NavigationInterpreter
 
-from PyQt4.QtCore import QRectF, QTimer
+from PyQt4.QtCore import QRectF, QTimer, QObject
 from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp, \
     QImage, QPainter, QMessageBox
 from PyQt4.uic import loadUi
@@ -31,10 +31,61 @@ except ImportError as e:
     _has_lazyflow = False
 from volumina.adaptors import Array5d
 
+
+#******************************************************************************
+# C l i c k a b l e S e g m e n t a t i o n L a y e r                         * 
+#******************************************************************************
+
+class ClickableSegmentationLayer(QObject):
+    def __init__(self, seg, viewer, name=None, direct=None, parent=None):
+        """ seg: segmentation image/volume (5D) """
+        super(ClickableSegmentationLayer, self).__init__(parent)
+
+        assert seg.ndim == 5
+
+        #public attributes 
+        self.layer = None #volumina layer object
+
+        self._M = seg.max()
+        self._clickedObjects = dict() #maps from object to the label that is used for it
+        self._usedLabels = set()
+        self._seg = seg
+
+        relabeling = numpy.zeros(self._M+1, dtype=self._seg.dtype)
+
+        #add layer
+        colortable = volumina.layer.generateRandomColors(1000, "hsv", {"v": 1.0}, zeroIsTransparent=True)
+        layer, source = viewer.addRelabelingColorTableLayer(seg, clickFunctor=self.onClick, name=name,
+            relabeling=relabeling, colortable=colortable, direct=direct)
+        layer.zeroIsTransparent = True
+        layer.colortableIsRandom = True
+        self.layer = layer
+
+    def onClick(self, layer, pos5D, pos):
+        obj = layer.data.originalData[pos5D]
+        if obj in self._clickedObjects:
+            self.layer._datasources[0].setRelabelingEntry(obj, 0)
+            self._usedLabels.remove( self._clickedObjects[obj] )
+            del self._clickedObjects[obj]
+        else:
+            self._labels = sorted(list(self._usedLabels))
+            
+            #find first free entry
+            if self._labels:
+                for l in range(1, self._labels[-1]+2):
+                    if l not in self._labels:
+                        break
+                assert l not in self._usedLabels
+            else:
+                l = 1
+           
+            self._usedLabels.add(l) 
+            self._clickedObjects[obj] = l
+            self.layer._datasources[0].setRelabelingEntry(obj, l)
+
 #******************************************************************************
 # V i e w e r                                                                 *
 #******************************************************************************
-
 
 class Viewer(QMainWindow):
     """High-level API to view multi-dimensional arrays.
@@ -182,41 +233,8 @@ class Viewer(QMainWindow):
         return (layer, source)
     
     def addClickableSegmentationLayer(self, a, name=None, direct=False):
-        M = a.max()
-        clickedObjects = dict() #maps from object to the label that is used for it
-        usedLabels = set()
-        def onClick(layer, pos5D, pos):
-            obj = layer.data.originalData[pos5D]
-            if obj in clickedObjects:
-                layer._datasources[0].setRelabelingEntry(obj, 0)
-                usedLabels.remove( clickedObjects[obj] )
-                del clickedObjects[obj]
-            else:
-                labels = sorted(list(usedLabels))
-                
-                #find first free entry
-                if labels:
-                    for l in range(1, labels[-1]+2):
-                        if l not in labels:
-                            break
-                    assert l not in usedLabels
-                else:
-                    l = 1
-               
-                usedLabels.add(l) 
-                clickedObjects[obj] = l
-                layer._datasources[0].setRelabelingEntry(obj, l)
+        return ClickableSegmentationLayer(a, self, name=name, direct=direct) 
         
-        colortable = volumina.layer.generateRandomColors(1000, "hsv", {"v": 1.0}, zeroIsTransparent=True)
-             
-        layer, source = self.addRelabelingColorTableLayer(a, clickFunctor=onClick, name=None,
-            relabeling=numpy.zeros(M+1, dtype=a.dtype), colortable=colortable, direct=direct)
-        if name is not None:
-            layer.name = name
-        layer.zeroIsTransparent = True
-        layer.colortableIsRandom = True
-        return layer 
-
     def _randomColors(self, M=256):
         """Generates a pleasing color table with M entries."""
 
