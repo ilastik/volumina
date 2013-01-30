@@ -33,26 +33,33 @@ class Skeletons3D:
             
             self._cubeBoundsFromNode(cube, n)
             if n.isSelected():
-                cubeActor.GetProperty().SetColor(0,1,0)
+                cubeActor.GetProperty().SetColor(1,0,0)
             else:
-                cubeActor.GetProperty().SetColor(0,0,0)
+                c = n.color()
+                r,g,b = c.red()/255.0, c.green()/255.0, c.blue()/255.0
+                cubeActor.GetProperty().SetColor(r,g,b)
 
-        return
-         
         for e in self._skeletons._edges:
             if e not in self._edge2view:
-                '''
-                print "add edge", e
+
+                c1 = self._node2view[e[0]][0]
+                c2 = self._node2view[e[1]][0]
+                p1 = e[0]
+                p2 = e[1]
                 source = vtk.vtkLineSource()
+                source.SetPoint1(*p1.pos)
+                source.SetPoint2(*p2.pos)
                 mapper = vtk.vtkPolyDataMapper()
                 mapper.SetInputConnection(source.GetOutputPort())
                 actor = vtk.vtkActor()
                 actor.SetMapper(mapper)
-                actor.GetProperty().SetColor(0,0,0)
+                c = p1.color() #TODO
+                r,g,b = c.red()/255.0, c.green()/255.0, c.blue()/255.0
+                actor.GetProperty().SetColor(r,g,b)
                 self._view3D.qvtk.renderer.AddActor(actor)
                 self._edge2view[e] = source
+               
                 '''
-                
                 pointsSource = vtk.vtkProgrammableSource()
                 
                 def makePoints():
@@ -64,6 +71,7 @@ class Skeletons3D:
                     thePoints = p1+p2
         
                     points = vtk.vtkPoints()
+                    assert len(thePoints) >= 8 
                     for pt in thePoints:
                         points.InsertNextPoint(*pt)
                     
@@ -73,6 +81,7 @@ class Skeletons3D:
                 
                 delaunay = vtk.vtkDelaunay3D()
                 delaunay.SetInputConnection(pointsSource.GetOutputPort())
+                delaunay.Update()
                 
                 surfaceFilter = vtk.vtkDataSetSurfaceFilter()
                 surfaceFilter.SetInputConnection(delaunay.GetOutputPort()) 
@@ -85,6 +94,7 @@ class Skeletons3D:
                 self._view3D.qvtk.renderer.AddActor(actor)
                 
                 self._edge2view[e] = pointsSource
+                '''
            
             pointsSource = self._edge2view[e]
             pointsSource.Modified()
