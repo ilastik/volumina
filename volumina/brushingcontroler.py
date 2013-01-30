@@ -213,7 +213,7 @@ class ClickInterpreter2(BrushingInterpreter):
         ### the following implements a simple state machine
 
         #Whatever the state, right click always clicks
-        if etype==QEvent.MouseButtonPress and event.button()==Qt.RightButton:
+        if etype==QEvent.MouseButtonPress and event.button()==Qt.LeftButton:
             pos = self.posModel.cursorPos
             pos = [int(i) for i in pos]
             pos = [self.posModel.time] + pos + [self.posModel.channel]
@@ -222,32 +222,12 @@ class ClickInterpreter2(BrushingInterpreter):
             return True
 
         if self._current_state == self.DEFAULT_MODE:
-            ### default mode -> draw mode
             if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton and event.modifiers() == Qt.NoModifier:
-                # navigation interpreter also has to be in
-                # default mode to avoid inconsistencies
                 if self._navIntr.state == self._navIntr.DEFAULT_MODE:
-                    self._current_state = self.DRAW_MODE
-                    self.onEntry_draw( watched, event )
                     return True
-                else:
-                    return self._navIntr.eventFilter( watched, event )
-
-            ### actions in default mode
-            # let the navigation interpreter handle common events
             return self._navIntr.eventFilter( watched, event )
 
         elif self._current_state == self.DRAW_MODE:
-            ### draw mode -> default mode
-            if etype == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
-                self.onExit_draw( watched, event )
-                self._current_state = self.DEFAULT_MODE
-                self.onEntry_default( watched, event )
-                return True
-
-            ### actions in draw mode
-            elif etype == QEvent.MouseMove:
-                self.onMouseMove_draw( watched, event )
-                return True
+            return True
 
         return False
