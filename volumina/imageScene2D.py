@@ -296,7 +296,6 @@ class ImageScene2D(QGraphicsScene):
         self._posModel.channelChanged.connect(self._onChannelChanged)
         self._posModel.slicingPositionChanged.connect(self._onSlicingPositionChanged)
         
-        self._drawingThread = None
         self._allTilesCompleteEvent = threading.Event()
 
     def __del__(self):
@@ -344,9 +343,6 @@ class ImageScene2D(QGraphicsScene):
     def drawBackground(self, painter, sceneRectF):
         if self._tileProvider is None:
             return
-        
-        if self._drawingThread is None:
-            self._drawingThread = threading.current_thread()
 
         tiles = self._tileProvider.getTiles(sceneRectF)
         allComplete = True
@@ -378,7 +374,7 @@ class ImageScene2D(QGraphicsScene):
         Note: This is useful for testing only.  If called from the GUI thread, the GUI thread will block until all tiles are rendered!
         """
         # If this is the main thread, keep repainting (otherwise we'll deadlock).
-        if threading.current_thread() == self._drawingThread:
+        if threading.current_thread().name == "MainThread":
             finished = False
             sceneRectF = self.views()[0].viewportRect()
             while not finished:
