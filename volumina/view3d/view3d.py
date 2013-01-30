@@ -231,11 +231,15 @@ class OverviewScene(QWidget):
         return self._dataShape
     @dataShape.setter
     def dataShape(self, shape):
+        if shape == self._dataShape:
+            return
+
         self._dataShape = shape
         
         if self.planes:
             self.qvtk.renderer.RemoveActor(self.planes)
             del self.planes
+
         self.planes = SlicingPlanesWidget(shape, self.qvtk.GetInteractor())
         #self.planes.SetInteractor(self.qvtk.GetInteractor())
         self.planes.AddObserver("CoordinatesEvent", self.slicingCallback)
@@ -266,6 +270,7 @@ class OverviewScene(QWidget):
         self.objects = []
         self.planes = None
         self.axes = None
+        self._dataShape = None
         
         layout = QVBoxLayout()
         layout.setMargin(0)
