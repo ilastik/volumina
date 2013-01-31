@@ -39,6 +39,7 @@ def makeVolumeRenderingPipeline(in_volume):
     volumeProperty = vtk.vtkVolumeProperty()
     volumeProperty.SetColor(colorFunc)
     volumeProperty.SetScalarOpacity(alphaChannelFunc)
+    volumeProperty.ShadeOn()
 
     volume = vtk.vtkVolume()
     volume.SetMapper(volumeMapper)
