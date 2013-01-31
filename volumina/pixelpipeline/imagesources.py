@@ -121,6 +121,11 @@ class GrayscaleImageRequest( object ):
         assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
         
         normalize = self._normalize 
+        if normalize:
+            #clipping has been implemented in this commit,
+            #but it is not yet available in the packages obtained via easy_install
+            #http://www.informatik.uni-hamburg.de/~meine/hg/qimage2ndarray/diff/fcddc70a6dea/qimage2ndarray/__init__.py
+            a = np.clip(a, *normalize)
         img = gray2qimage(a, normalize)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
