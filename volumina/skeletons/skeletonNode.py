@@ -1,12 +1,17 @@
-from PyQt4.QtCore import QPointF
+from PyQt4.QtCore import QPointF, QObject, pyqtSignal
 from PyQt4.QtGui import QColor
 
-class SkeletonNode:
+class SkeletonNode(QObject):
+    selected = pyqtSignal(bool)
+
     def __init__(self, pos3D, axis, skeletons):
+        super(SkeletonNode, self).__init__()
+
         from volumina.skeletons import Skeletons
         assert isinstance(skeletons, Skeletons)
-        
         assert len(pos3D) == 3
+        assert axis in [0,1,2]
+
         self.pos = pos3D
         self.shape = [6,6,6]
         self.axis = axis
@@ -62,6 +67,7 @@ class SkeletonNode:
         if self._selected == selected:
             return
         self._selected = selected
+        self.selected.emit(self._selected)
 
     def isSelected(self):
         return self._selected
