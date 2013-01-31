@@ -11,9 +11,9 @@ from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.widgets.layerwidget import LayerWidget
 from volumina.navigationControler import NavigationInterpreter
 
-from PyQt4.QtCore import QRectF, QTimer, QObject
+from PyQt4.QtCore import QRectF, QTimer, QObject, pyqtSignal
 from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp, \
-    QImage, QPainter, QMessageBox
+    QImage, QPainter, QMessageBox, QColor
 from PyQt4.uic import loadUi
 import volumina.icons_rc
 
@@ -37,6 +37,10 @@ from volumina.adaptors import Array5d
 #******************************************************************************
 
 class ClickableSegmentationLayer(QObject):
+
+    #whether label (int) is shown (true) or hidden (false)
+    clickedValue = pyqtSignal(int, bool, QColor)
+
     def __init__(self, seg, viewer, name=None, direct=None, parent=None):
         """ seg: segmentation image/volume (5D) """
         super(ClickableSegmentationLayer, self).__init__(parent)
@@ -63,10 +67,13 @@ class ClickableSegmentationLayer(QObject):
 
     def onClick(self, layer, pos5D, pos):
         obj = layer.data.originalData[pos5D]
+        shown = True
+        color = QColor()
         if obj in self._clickedObjects:
             self.layer._datasources[0].setRelabelingEntry(obj, 0)
             self._usedLabels.remove( self._clickedObjects[obj] )
             del self._clickedObjects[obj]
+            shown = False
         else:
             self._labels = sorted(list(self._usedLabels))
             
@@ -78,10 +85,13 @@ class ClickableSegmentationLayer(QObject):
                 assert l not in self._usedLabels
             else:
                 l = 1
-           
+            color = self.layer.colorTable[l]
+            color = QColor.fromRgba(color)
+
             self._usedLabels.add(l) 
             self._clickedObjects[obj] = l
             self.layer._datasources[0].setRelabelingEntry(obj, l)
+        self.clickedValue.emit(obj, shown, color)
 
 #******************************************************************************
 # V i e w e r                                                                 *
