@@ -48,7 +48,8 @@ class ClickableSegmentationLayer(QObject):
         assert seg.ndim == 5
 
         #public attributes 
-        self.layer = None #volumina layer object
+        self.layer            = None #volumina layer object
+        self.relabelingSource = None #RelabelingArraySource
 
         self._M = seg.max()
         self._clickedObjects = dict() #maps from object to the label that is used for it
@@ -64,6 +65,16 @@ class ClickableSegmentationLayer(QObject):
         layer.zeroIsTransparent = True
         layer.colortableIsRandom = True
         self.layer = layer
+        self.relabelingSource = source
+
+    def setMaxLabel(self, l):
+        self._M = l
+        self.relabelingSource.setRelabeling(numpy.zeros(self._M+1, dtype=self._seg.dtype))
+
+    def deselectAll(self):
+        self._clickedObjects = dict()
+        self._usedLabels = set()
+        self.relabelingSource.clearRelabeling() 
 
     def onClick(self, layer, pos5D, pos):
         obj = layer.data.originalData[pos5D]
