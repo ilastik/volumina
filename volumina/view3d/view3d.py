@@ -419,6 +419,12 @@ class OverviewScene(QWidget):
         c = copy.copy(self.planes.coordinate)
         c[axis] = num
         self.planes.SetCoordinate(c)
+
+        # set the current point as the camera's focal point
+        cam = self.qvtk.renderer.GetActiveCamera()
+        cam.SetFocalPoint( *c ) #rotate around this point
+        cam.Modified();
+
         self.__updateCutter()
         self.qvtk.update()
     
