@@ -121,6 +121,10 @@ class RelabelingArraySource( ArraySource ):
         self._relabeling = relabeling
         self.setDirty(5*(slice(None),))
 
+    def clearRelabeling( self ):
+        self._relabeling[:] = 0
+        self.setDirty(5*(slice(None),))
+
     def setRelabelingEntry( self, index, value, setDirty=True ):
         """Sets the entry for data value index to value, such that afterwards
            relabeling[index] =  value.
