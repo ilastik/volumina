@@ -45,13 +45,14 @@ def makeVolumeRenderingPipeline(in_volume):
     volume.SetMapper(volumeMapper)
     volume.SetProperty(volumeProperty)
 
-    return dataImporter, colorFunc, volume
+    return dataImporter, colorFunc, volume, volumeMapper
 
 
 class LabelManager(object):
     def __init__(self, n):
         self._available = set(range(1, n))
         self._used = set([])
+        self._n = n
 
     def request(self):
         if len(self._available) == 0:
@@ -61,11 +62,13 @@ class LabelManager(object):
         self._used.add(label)
         return label
 
-    def free(self, label):
-        if label in self._used:
+    def free(self, label=None):
+        if label is None:
+            self._used = set([])
+            self._available = set(range(1, self._n))
+        elif label in self._used:
             self._used.remove(label)
             self._available.add(label)
-
 
 class RenderingManager(object):
     """Encapsulates the work of adding/removing objects to the
@@ -86,8 +89,9 @@ class RenderingManager(object):
     def setup(self, shape):
         shape = shape[::-1]
         self._volume = numpy.zeros(shape, dtype=numpy.uint8)
-        dataImporter, colorFunc, volume = makeVolumeRenderingPipeline(self._volume)
+        dataImporter, colorFunc, volume, volumeMapper = makeVolumeRenderingPipeline(self._volume)
         self._renderer.AddVolume(volume)
+        self._mapper = volumeMapper
         self._volumeRendering = volume
         self._dataImporter = dataImporter
         self._colorFunc = colorFunc
@@ -125,7 +129,7 @@ class RenderingManager(object):
 
     def clear(self, ):
         self._volume[:] = 0
-
+        self.labelmgr.free()
 
 if __name__ == "__main__":
 
