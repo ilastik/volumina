@@ -19,9 +19,16 @@ class SkeletonNode(QObject):
         self._selected = False
         self._isMovable = True
         self._color = QColor(0,0,255)
+        self._name = "unnamed node"
 
     def setColor(self, c):
         self._color = c
+
+    def setName(self, name):
+        self._name = name
+
+    def name(self):
+        return self._name
 
     def color(self):
         return self._color
