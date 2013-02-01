@@ -456,7 +456,7 @@ class OverviewScene(QWidget):
         
         self.polygonAppender = vtkAppendPolyData()
         for g in self.dlg.extractor.meshes.values():
-            self.polygonAppender.AddInput(graph=g)
+            self.polygonAppender.AddInput(g)
         
         self.cutter[0] = Outliner(self.polygonAppender.GetOutput())
         self.cutter[0].GetOutlineProperty().SetColor(1,0,0)
@@ -483,7 +483,7 @@ class OverviewScene(QWidget):
         for i, g in self.dlg.extractor.meshes.items():
             print " - showing object with label =", i
             mapper = vtkPolyDataMapper()
-            mapper.SetInput(graph=g)
+            mapper.SetInput(g)
             actor = vtkActor()
             actor.SetMapper(mapper)
             self.qvtk.registerObject(actor)
@@ -512,7 +512,8 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
 
-    o = OverviewScene(None, [100,100,100])
+    o = OverviewScene(None)
+    o.dataShape = [100,100,100]
     o.changedSlice.connect(updateSlice)
     o.show()
     o.resize(600,600)
@@ -527,7 +528,7 @@ if __name__ == '__main__':
     seg[80:100,80:100,80:100] = 4
     seg[80:100,80:100,20:50] = 5
     
-    colorTable = [qRgb(255,0,0), qRgb(0,255,0), qRgb(255,255,0), qRgb(255,0,255), qRgb(0,0,255), qRgb(128,0,128)]
+    colorTable = [QColor(255,0,0).rgba(), QColor(0,255,0).rgba(), QColor(255,255,0).rgba(), QColor(255,0,255).rgba(), QColor(0,0,255).rgba(), QColor(128,0,128).rgba()]
     o.SetColorTable(colorTable)
     
     QTimer.singleShot(0, partial(o.DisplayObjectMeshes, seg, suppressLabels=(1,)))
