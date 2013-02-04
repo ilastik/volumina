@@ -26,14 +26,18 @@ def __numpyTypeToVtkType(dtype):
     elif dtype == numpy.uint32:
         #define VTK_UNSIGNED_INT    7
         return 7
+    elif dtype == numpy.float32:
+        #define VTK_FLOAT          10
+        return 10
+    elif dtype == numpy.float64:
+        #define VTK_DOUBLE         11
+        return 11
     else:
         raise RuntimeError("type conversion not implemented...")
     #define VTK_VOID            0
     #define VTK_BIT             1
     #define VTK_LONG            8
     #define VTK_UNSIGNED_LONG   9
-    #define VTK_FLOAT          10
-    #define VTK_DOUBLE         11
     #define VTK_ID_TYPE        12
     #define VTK_SIGNED_CHAR    15
 
