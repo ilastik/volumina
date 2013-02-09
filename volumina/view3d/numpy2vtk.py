@@ -33,7 +33,7 @@ def __numpyTypeToVtkType(dtype):
         #define VTK_DOUBLE         11
         return 11
     else:
-        raise RuntimeError("type conversion not implemented...")
+        raise RuntimeError("type conversion from nummpy.dtype=%r not implemented..." % dtype)
     #define VTK_VOID            0
     #define VTK_BIT             1
     #define VTK_LONG            8
