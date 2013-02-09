@@ -10,6 +10,7 @@ from volumina.volumeEditor import VolumeEditor
 from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.widgets.layerwidget import LayerWidget
 from volumina.navigationControler import NavigationInterpreter
+from volumina import colortables
 
 from PyQt4.QtCore import QRectF, QTimer, QObject, pyqtSignal
 from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp, \
@@ -41,7 +42,7 @@ class ClickableSegmentationLayer(QObject):
     #whether label (int) is shown (true) or hidden (false)
     clickedValue = pyqtSignal(int, bool, QColor)
 
-    def __init__(self, seg, viewer, name=None, direct=None, parent=None):
+    def __init__(self, seg, viewer, name=None, direct=None, parent=None, colortable=None):
         """ seg: segmentation image/volume (5D) """
         super(ClickableSegmentationLayer, self).__init__(parent)
 
@@ -59,7 +60,10 @@ class ClickableSegmentationLayer(QObject):
         relabeling = numpy.zeros(self._M+1, dtype=self._seg.dtype)
 
         #add layer
-        colortable = volumina.layer.generateRandomColors(1000, "hsv", {"v": 1.0}, zeroIsTransparent=True)
+        if colortable is None:
+            colortable = volumina.layer.generateRandomColors(1000, "hsv", {"v": 1.0}, zeroIsTransparent=True)
+            colortable[1:17] = colortables.default16
+        
         layer, source = viewer.addRelabelingColorTableLayer(seg, clickFunctor=self.onClick, name=name,
             relabeling=relabeling, colortable=colortable, direct=direct)
         layer.zeroIsTransparent = True
@@ -253,8 +257,8 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return (layer, source)
     
-    def addClickableSegmentationLayer(self, a, name=None, direct=False):
-        return ClickableSegmentationLayer(a, self, name=name, direct=direct) 
+    def addClickableSegmentationLayer(self, a, name=None, direct=False, colortable=None):
+        return ClickableSegmentationLayer(a, self, name=name, direct=direct, colortable=colortable) 
         
     def _randomColors(self, M=256):
         """Generates a pleasing color table with M entries."""
@@ -268,6 +272,8 @@ class Viewer(QMainWindow):
                 color = numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255
                 qColor = QColor(*color)
                 colors.append(qColor.rgba())
+        #for the first 16 objects, use some colors that are easily distinguishable
+        colors[1:17] = colortables.default16 
         return colors
         
 if __name__ == "__main__":
