@@ -160,7 +160,7 @@ class PositionModel(QObject):
         return self._slicingPos
     @slicingPos.setter
     def slicingPos(self, pos):
-        if pos == self._slicingPos:
+        if numpy.all(pos == self._slicingPos):
             return
         oldPos = self._slicingPos
         
