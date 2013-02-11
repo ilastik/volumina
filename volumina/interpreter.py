@@ -33,19 +33,28 @@ class ClickReportingInterpreter(QObject):
 
 
 class ClickInterpreter(QObject):
-    """Intercepts RIGHT CLICK and double click events on a layer and calls a given functor with the clicked
-       position."""
+    """Intercepts mouse clicks (right clicks by default) and double
+       click events on a layer and calls a given functor with the
+       clicked position.
+
+    """
        
-    def __init__(self, editor, layer, onClickFunctor, parent=None):
+    def __init__(self, editor, layer, onClickFunctor, parent=None, right=True, double=True):
         """ editor:         VolumeEditor object
             layer:          Layer instance on which was clicked
             onClickFunctor: a function f(layer, position5D, windowPosition
+            right: If True, intercept right clicks, otherwise intercept left clicks.
         """
         QObject.__init__(self, parent)
         self.baseInterpret = editor.navInterpret
         self.posModel      = editor.posModel
         self._onClick = onClickFunctor
         self._layer = layer
+        if right:
+            self.button = Qt.RightButton
+        else:
+            self.button = Qt.LeftButton
+        self.double = double
 
     def start( self ):
         self.baseInterpret.start()
@@ -54,20 +63,17 @@ class ClickInterpreter(QObject):
         self.baseInterpret.stop()
 
     def eventFilter( self, watched, event ):
-        ctrl = False
         etype = event.type()
-        if etype == QEvent.MouseButtonPress or etype == QEvent.MouseButtonDblClick:
-            ctrl = (event.modifiers() == Qt.ControlModifier)
-            rightButton = (event.button() == Qt.RightButton)
-            leftButton  = (event.button() == Qt.LeftButton)
-
-            if not rightButton:
-                return self.baseInterpret.eventFilter(watched, event)
-            
+        handle = False
+        if etype == QEvent.MouseButtonPress and event.button() == self.button:
+            handle = True
+        if etype == QEvent.MouseButtonDblClick and self.double and event.button() == self.button:
+            handle = True
+        if handle:
             pos = self.posModel.cursorPos
             pos = [int(i) for i in pos]
             pos = [self.posModel.time] + pos + [self.posModel.channel]
             self._onClick(self._layer, tuple(pos), event.pos())
             return True
-        
-        return self.baseInterpret.eventFilter(watched, event)
+        else:
+            return self.baseInterpret.eventFilter(watched, event)

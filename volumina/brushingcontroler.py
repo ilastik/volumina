@@ -195,39 +195,3 @@ class BrushingControler(QObject):
 
         self._dataSink.put(slicing, labels.reshape(tuple(newshape)))
         self.wroteToSink.emit()
-
-
-class ClickInterpreter2(BrushingInterpreter):
-    "Intercepts right click and passes the rest to the normal brushing interperter"
-
-    def __init__(self, editor, layer, onClickFunctor, parent=None):
-        navCtrl = editor.navCtrl
-        brushingControler = editor.brushingControler
-        super(ClickInterpreter2, self).__init__(navCtrl, brushingControler)
-        self.posModel = editor.posModel
-        self._onClick = onClickFunctor
-        self._layer = layer
-
-    def eventFilter(self, watched, event):
-        etype = event.type()
-        ### the following implements a simple state machine
-
-        #Whatever the state, right click always clicks
-        if etype==QEvent.MouseButtonPress and event.button()==Qt.LeftButton:
-            pos = self.posModel.cursorPos
-            pos = [int(i) for i in pos]
-            pos = [self.posModel.time] + pos + [self.posModel.channel]
-            print self._layer.name
-            self._onClick(self._layer, tuple(pos), event.pos())
-            return True
-
-        if self._current_state == self.DEFAULT_MODE:
-            if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton and event.modifiers() == Qt.NoModifier:
-                if self._navIntr.state == self._navIntr.DEFAULT_MODE:
-                    return True
-            return self._navIntr.eventFilter( watched, event )
-
-        elif self._current_state == self.DRAW_MODE:
-            return True
-
-        return False
