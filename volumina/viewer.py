@@ -211,7 +211,7 @@ class Viewer(QMainWindow):
         sources = [None, None, None,None]
         for i in range(3):
             sources[i], self.dataShape = createDataSource(a[...,i], True)
-        if(a.shape[2] >= 4):
+        if(a.shape[3] >= 4):            
             sources[3], self.dataShape = createDataSource(a[...,3], True) 
         layer = RGBALayer(sources[0],sources[1],sources[2], sources[3])
         if name:
