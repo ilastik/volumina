@@ -42,8 +42,11 @@ class ClickableSegmentationLayer(QObject):
     #whether label (int) is shown (true) or hidden (false)
     clickedValue = pyqtSignal(int, bool, QColor)
 
-    def __init__(self, seg, viewer, name=None, direct=None, parent=None, colortable=None):
-        """ seg: segmentation image/volume (5D) """
+    def __init__(self, seg, viewer, name=None, direct=None, parent=None, colortable=None, reuseColors=True):
+        """ seg:         segmentation image/volume (5D) 
+            reuseColors: if True, colors are assigned based on the number of currently visible objects,
+                         if False, a segment with 'label' is assigned colortable[label] as color
+        """
         super(ClickableSegmentationLayer, self).__init__(parent)
 
         assert seg.ndim == 5
@@ -51,6 +54,7 @@ class ClickableSegmentationLayer(QObject):
         #public attributes 
         self.layer            = None #volumina layer object
         self.relabelingSource = None #RelabelingArraySource
+        self._reuseColors     = reuseColors
 
         self._M = seg.max()
         self._clickedObjects = dict() #maps from object to the label that is used for it
@@ -97,16 +101,19 @@ class ClickableSegmentationLayer(QObject):
         else:
             self._labels = sorted(list(self._usedLabels))
             
-            #find first free entry
-            if self._labels:
-                for l in range(1, self._labels[-1]+2):
-                    if l not in self._labels:
-                        break
-                assert l not in self._usedLabels
+            if self._reuseColors:
+                #find first free entry
+                if self._labels:
+                    for l in range(1, self._labels[-1]+2):
+                        if l not in self._labels:
+                            break
+                    assert l not in self._usedLabels
+                else:
+                    l = 1
             else:
-                l = 1
-            color = self.layer.colorTable[l]
-            color = QColor.fromRgba(color)
+                l = label
+                
+            color = self.labelColor(l)
 
             self._usedLabels.add(l) 
             self._clickedObjects[label] = l
@@ -266,8 +273,8 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return (layer, source)
     
-    def addClickableSegmentationLayer(self, a, name=None, direct=False, colortable=None):
-        return ClickableSegmentationLayer(a, self, name=name, direct=direct, colortable=colortable) 
+    def addClickableSegmentationLayer(self, a, name=None, direct=False, colortable=None, reuseColors=True):
+        return ClickableSegmentationLayer(a, self, name=name, direct=direct, colortable=colortable, reuseColors=reuseColors) 
         
     def _randomColors(self, M=256):
         """Generates a pleasing color table with M entries."""
