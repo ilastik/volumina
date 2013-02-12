@@ -79,15 +79,20 @@ class ClickableSegmentationLayer(QObject):
         self._clickedObjects = dict()
         self._usedLabels = set()
         self.relabelingSource.clearRelabeling() 
+        
+    def labelColor(self, label):
+        """ return the current color for object 'label' """
+        color = self.layer.colorTable[label]
+        color = QColor.fromRgba(color)
+        return color
 
-    def onClick(self, layer, pos5D, pos):
-        obj = layer.data.originalData[pos5D]
-        shown = True
+    def toggleLabel(self, label):
         color = QColor()
-        if obj in self._clickedObjects:
-            self.layer._datasources[0].setRelabelingEntry(obj, 0)
-            self._usedLabels.remove( self._clickedObjects[obj] )
-            del self._clickedObjects[obj]
+        shown = True
+        if label in self._clickedObjects:
+            self.layer._datasources[0].setRelabelingEntry(label, 0)
+            self._usedLabels.remove( self._clickedObjects[label] )
+            del self._clickedObjects[label]
             shown = False
         else:
             self._labels = sorted(list(self._usedLabels))
@@ -104,9 +109,13 @@ class ClickableSegmentationLayer(QObject):
             color = QColor.fromRgba(color)
 
             self._usedLabels.add(l) 
-            self._clickedObjects[obj] = l
-            self.layer._datasources[0].setRelabelingEntry(obj, l)
-        self.clickedValue.emit(obj, shown, color)
+            self._clickedObjects[label] = l
+            self.layer._datasources[0].setRelabelingEntry(label, l)
+        self.clickedValue.emit(label, shown, color)
+
+    def onClick(self, layer, pos5D, pos):
+        obj = layer.data.originalData[pos5D]
+        self.toggleLabel(obj)
 
 #******************************************************************************
 # V i e w e r                                                                 *
