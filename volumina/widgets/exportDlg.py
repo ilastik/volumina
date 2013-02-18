@@ -219,28 +219,28 @@ class ExportDialog(QDialog):
         return []
         
     def accept(self, *args, **kwargs):
-            if self.radioButtonStack.isChecked():
-                key = self.createKeyForOutputShape()
-                if _has_lazyflow:
-                    writer = OpStackWriter(graph=self.graph)
-                    writer.inputs["input"].connect(self.input)
-                    writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
-                    writer.inputs["dummy"].setValue(["zt"])
-                    writer.outputs["WritePNGStack"][key].allocate().wait()
-                
-            if self.radioButtonH5.isChecked():
-                h5Key = self.createRoiForOutputShape()
-                if _has_lazyflow:
-                    writerH5 = OpH5Writer(graph=self.graph)
-                    writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
-                    writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
-                    writerH5.inputs["input"].connect(self.input)
-                    writerH5.inputs["blockShape"].setValue(int(self.spinBoxHdf5BlockShape.value()))
-                    writerH5.inputs["dataType"].setValue(str(self.comboBoxHdf5DataType.currentText()))
-                    writerH5.inputs["roi"].setValue(h5Key)
-                    writerH5.inputs["normalize"].setValue(self.createNormalizeValue())
-                    writerH5.outputs["WriteImage"][:].allocate().wait()
-            return QDialog.accept(self, *args, **kwargs)
+        if self.radioButtonStack.isChecked():
+            key = self.createKeyForOutputShape()
+            if _has_lazyflow:
+                writer = OpStackWriter(graph=self.graph)
+                writer.inputs["input"].connect(self.input)
+                writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
+                writer.inputs["dummy"].setValue(["zt"])
+                writer.outputs["WritePNGStack"][key].allocate().wait()
+
+        if self.radioButtonH5.isChecked():
+            h5Key = self.createRoiForOutputShape()
+            if _has_lazyflow:
+                writerH5 = OpH5Writer(graph=self.graph)
+                writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
+                writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
+                writerH5.inputs["input"].connect(self.input)
+                writerH5.inputs["blockShape"].setValue(int(self.spinBoxHdf5BlockShape.value()))
+                writerH5.inputs["dataType"].setValue(str(self.comboBoxHdf5DataType.currentText()))
+                writerH5.inputs["roi"].setValue(h5Key)
+                writerH5.inputs["normalize"].setValue(self.createNormalizeValue())
+                writerH5.outputs["WriteImage"][:].allocate().wait()
+        return QDialog.accept(self, *args, **kwargs)
         
     def show(self):
         if not _has_lazyflow:

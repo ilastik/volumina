@@ -121,7 +121,6 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
 
     '''
     def onExport():
-        
         if _has_lazyflow:
             inputArray = layer.datasources[0].request((slice(None),)).wait()
             expDlg = ExportDialog(parent = menu)
