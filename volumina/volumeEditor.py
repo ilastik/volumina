@@ -142,7 +142,8 @@ class VolumeEditor( QObject ):
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
         # brushing control
-        self.crosshairControler = CrosshairControler(self.brushingModel, self.imageViews)
+        if crosshair:
+            self.crosshairControler = CrosshairControler(self.brushingModel, self.imageViews)
         self.brushingControler = BrushingControler(self.brushingModel, self.posModel, labelsink)
         self.brushingInterpreter = BrushingInterpreter(self.navCtrl, self.brushingControler)
 
@@ -158,7 +159,8 @@ class VolumeEditor( QObject ):
         self.posModel.channelChanged.connect(self.navCtrl.changeChannel)
         self.posModel.timeChanged.connect(self.navCtrl.changeTime)
         self.posModel.slicingPositionChanged.connect(self.navCtrl.moveSlicingPosition)
-        self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
+        if crosshair:
+            self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
 
     def _reset(self):
