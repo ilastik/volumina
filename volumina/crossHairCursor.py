@@ -64,12 +64,31 @@ class CrossHairCursor(QGraphicsItem) :
         self.brushSize = 0
 
         self.mode = self.modeXYPosition
+        self._enabled = True
+
+    @property
+    def enabled(self):
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, v):
+        if not v:
+            self.setVisible(False)
+        self._enabled = v
+
+    def setVisible(self, visible):
+        # TODO: though the crosshair is hidden, its position is still
+        # updated. instead of just hiding it, we should
+        # not instantiate it in the first place.
+        if self._enabled:
+            super(CrossHairCursor, self).setVisible(visible)
 
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
     @property
     def dataShape(self):
         return (self._width, self._height)
+
     @dataShape.setter
     def dataShape(self, shape2D):
         self._width  = shape2D[0]
