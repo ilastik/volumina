@@ -89,7 +89,7 @@ class VolumeEditor( QObject ):
         self.view3d.dataShape = s[1:4]
         self.shapeChanged.emit()
 
-    def __init__( self, layerStackModel, labelsink=None, parent=None):
+    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True):
         super(VolumeEditor, self).__init__(parent=parent)
 
         ##
@@ -113,6 +113,10 @@ class VolumeEditor( QObject ):
         self.imageViews[0].focusChanged.connect(lambda arg=0 : self.lastImageViewFocus(arg))
         self.imageViews[1].focusChanged.connect(lambda arg=1 : self.lastImageViewFocus(arg))
         self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg))
+
+        if not crosshair:
+            for view in self.imageViews:
+                view._crossHairCursor.enabled = False
 
         self.imagepumps = self._initImagePumps()
 
