@@ -58,7 +58,7 @@ class ExportDialog(QDialog):
         # style
         #=======================================================================
         self.on_radioButtonH5Clicked()
-        self.on_checkBoxNormalizeClicked(0)
+        self.checkBoxNormalize.setCheckState(False)
         
         folderPath = os.path.abspath(__file__)
         folderPath = folderPath.split("/")
@@ -130,11 +130,21 @@ class ExportDialog(QDialog):
         self.widgetOptionsHDF5.setVisible(True)
         self.widgetOptionsStack.setVisible(False)
         self.correctFilePathSuffix()
+
+        self.checkBoxNormalize.setDisabled(False)
+        self.spinBoxNormalizeStart.setDisabled(False)
+        self.spinBoxNormalizeStop.setDisabled(False)
         
     def on_radioButtonStackClicked(self):
         self.widgetOptionsHDF5.setVisible(False)
         self.widgetOptionsStack.setVisible(True)
         self.correctFilePathSuffix()
+
+        # normalization not implemented for stack writer
+        self.checkBoxNormalize.setDisabled(True)
+        self.spinBoxNormalizeStart.setDisabled(True)
+        self.spinBoxNormalizeStop.setDisabled(True)
+
         
 #===============================================================================
 # options
@@ -190,7 +200,8 @@ class ExportDialog(QDialog):
 #===============================================================================
     def createNormalizeValue(self):
         if self.checkBoxNormalize.isChecked():
-            return [int(self.spinBoxNormalizeStart.value()) , int(self.spinBoxNormalizeStop.value())]
+            return [int(self.spinBoxNormalizeStart.value()),
+                    int(self.spinBoxNormalizeStop.value())]
         else:
             return -1
     
