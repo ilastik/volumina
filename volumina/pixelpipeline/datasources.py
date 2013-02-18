@@ -4,7 +4,8 @@ from functools import partial
 from PyQt4.QtCore import QObject, pyqtSignal
 from asyncabcs import RequestABC, SourceABC
 import volumina
-from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, index2slice, sl
+from volumina.slicingtools import is_pure_slicing, slicing2shape, \
+    is_bounded, make_bounded, index2slice, sl
 from volumina.config import cfg
 import numpy as np
 
@@ -177,6 +178,9 @@ class LazyflowRequest( object ):
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
         self._req = LazyflowRequest._req_on_demand(op, slicing, prio) 
         self._slicing = slicing
+        shape = op.output.meta.shape
+        if shape is not None:
+            slicing = make_bounded(slicing, shape)
         self._shape = slicing2shape(slicing)
         self._objectName = objectName
 

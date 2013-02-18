@@ -12,6 +12,7 @@ not wrapped in a sequence.
 '''
 import numpy as np
 from PyQt4.QtCore import QRect
+import itertools
 
 
 #*******************************************************************************
@@ -55,6 +56,28 @@ def is_bounded( slicing ):
     '''For all dimensions: stop value of slice is not None '''
     slicing = box(slicing)
     return all((sl.stop != None for sl in slicing))
+
+def make_bounded(slicing, shape):
+    """Convert unbounded slices to the size of the corresponding
+    dimension.
+
+    >>> make_bounded((slice(0, 1), slice(None)), shape=(10, 10, 10))
+    (slice(0, 1), slice(0, 10), slice(0, 10))
+
+    """
+    assert len(slicing) <= len(shape)
+    slicing = index2slice(slicing)
+    result = []
+    for slc, dim in itertools.izip_longest(slicing, shape):
+        if slc is None:
+            slc = slice(None)
+        start, stop, step = slc.start, slc.stop, slc.step
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = dim
+        result.append(slice(start, stop, step))
+    return tuple(result)
 
 def is_pure_slicing( slicing ):
     '''Test if slicing is a single slice instance or sequence of instances.
