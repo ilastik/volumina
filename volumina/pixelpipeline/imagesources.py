@@ -277,6 +277,7 @@ class ColortableImageRequest( object ):
                 warnings.warn("Using slow colortable images.  Upgrade to VIGRA > 1.9 to use faster implementation.")
 
             #make sure that a has values in range [0, colortable_length)
+            a = a.astype(np.uint8)
             a = np.remainder(a, len(self._colorTable))
             #apply colortable
             colortable = np.roll(np.fliplr(self._colorTable), -1, 1) # self._colorTable is BGRA, but array2qimage wants RGBA
