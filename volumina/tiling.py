@@ -1,3 +1,4 @@
+import sys
 import time
 import collections
 import warnings
@@ -547,9 +548,14 @@ class TileProvider( QObject ):
                     img = img.transformed(transform)
                     cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
                     if stack_id == self._current_stack_id and cache is self._cache:
-                        self.sceneRectChanged.emit(QRectF(self.tiling.imageRects[tile_nr]))
-            except KeyError:
-                pass
+                        try:
+                            self.sceneRectChanged.emit(QRectF(self.tiling.imageRects[tile_nr]))
+                        except KeyError:
+                            pass
+            except:
+                import traceback
+                sys.stderr.write("ERROR: volumina tiling layer rendering worker thread caught an unhandled exception:")
+                traceback.print_exc()
             finally:
                 queue.task_done()
 
