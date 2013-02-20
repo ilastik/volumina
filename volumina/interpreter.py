@@ -42,7 +42,7 @@ class ClickInterpreter(QObject):
     def __init__(self, editor, layer, onClickFunctor, parent=None, right=True, double=True):
         """ editor:         VolumeEditor object
             layer:          Layer instance on which was clicked
-            onClickFunctor: a function f(layer, position5D, windowPosition
+            onClickFunctor: a function f(layer, position5D, windowPosition)
             right: If True, intercept right clicks, otherwise intercept left clicks.
         """
         QObject.__init__(self, parent)

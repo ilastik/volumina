@@ -89,6 +89,9 @@ class ClickableSegmentationLayer(QObject):
         color = self.layer.colorTable[label]
         color = QColor.fromRgba(color)
         return color
+    
+    def labelShown(self, label):
+        return label in self._clickedObjects
 
     def toggleLabel(self, label):
         color = QColor()
@@ -254,7 +257,7 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return layer
     
-    def addRelabelingColorTableLayer(self, a, name=None, relabeling=None, colortable=None, direct=False, clickFunctor=None):
+    def addRelabelingColorTableLayer(self, a, name=None, relabeling=None, colortable=None, direct=False, clickFunctor=None, right=True):
         if colortable is None:
             colortable = self._randomColors()
         source = RelabelingArraySource(a)
@@ -267,7 +270,7 @@ class Viewer(QMainWindow):
         if clickFunctor is None:
             layer = ColortableLayer(source, colortable, direct=direct)
         else:
-            layer = ClickableColortableLayer(self.editor, clickFunctor, source, colortable, direct=direct)
+            layer = ClickableColortableLayer(self.editor, clickFunctor, source, colortable, direct=direct, right=right)
         if name:
             layer.name = name 
         self.layerstack.append(layer)

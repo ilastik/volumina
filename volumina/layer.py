@@ -129,10 +129,10 @@ class Layer( QObject ):
 class ClickableLayer( Layer ):
     """A layer that, when being activated/selected, switches to an interpreter than can intercept
        right click events"""
-    def __init__( self, editor, clickFunctor, direct=False ):
+    def __init__( self, editor, clickFunctor, direct=False, right=True ):
         super(ClickableLayer, self).__init__(direct=direct)
         self._editor = editor
-        self._clickInterpreter = ClickInterpreter(editor, self, clickFunctor)
+        self._clickInterpreter = ClickInterpreter(editor, self, clickFunctor, right=right)
         self._inactiveInterpreter = self._editor.eventSwitch.interpreter
     
     def setActive(self, active):
@@ -285,9 +285,9 @@ class ColortableLayer( Layer ):
 class ClickableColortableLayer(ClickableLayer):
     colorTableChanged = pyqtSignal()
     
-    def __init__( self, editor, clickFunctor, datasource , colorTable, direct=False ):
+    def __init__( self, editor, clickFunctor, datasource , colorTable, direct=False, right=True ):
         assert isinstance(datasource, SourceABC)
-        super(ClickableColortableLayer, self).__init__(editor, clickFunctor, direct=direct)
+        super(ClickableColortableLayer, self).__init__(editor, clickFunctor, direct=direct, right=right)
         self._datasources = [datasource]
         self._colorTable = colorTable
         self.data = datasource
