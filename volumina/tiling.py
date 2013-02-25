@@ -15,6 +15,7 @@ from PyQt4.QtGui import QImage, QPainter, QTransform
 
 from patchAccessor import PatchAccessor
 
+import volumina
 
 #*******************************************************************************
 # I m a g e T i l e                                                            *
@@ -554,8 +555,9 @@ class TileProvider( QObject ):
                             pass
             except:
                 import traceback
-                sys.stderr.write("ERROR: volumina tiling layer rendering worker thread caught an unhandled exception:")
-                traceback.print_exc()
+                with volumina.printLock:
+                    sys.stderr.write("ERROR: volumina tiling layer rendering worker thread caught an unhandled exception:")
+                    traceback.print_exc()
             finally:
                 queue.task_done()
 
