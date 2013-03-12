@@ -71,10 +71,14 @@ class VolumeEditorWidget(QWidget):
 
         '''
         maxChannel = self.editor.posModel.shape5D[-1] - 1
+        self.quadview.statusBar.channelLabel.setHidden(maxChannel == 0)
+        self.quadview.statusBar.channelSpinBox.setHidden(maxChannel == 0)
         self.quadview.statusBar.channelSpinBox.setRange(0,maxChannel)
         self.quadview.statusBar.channelSpinBox.setSuffix("/{}".format( maxChannel ) )
 
         maxTime = self.editor.posModel.shape5D[0] - 1
+        self.quadview.statusBar.timeLabel.setHidden(maxTime == 0)
+        self.quadview.statusBar.timeSpinBox.setHidden(maxTime == 0)
         self.quadview.statusBar.timeSpinBox.setRange(0,maxTime)
         self.quadview.statusBar.timeSpinBox.setSuffix("/{}".format( maxTime ) )
         
