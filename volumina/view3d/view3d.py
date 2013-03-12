@@ -286,20 +286,25 @@ class OverviewScene(QWidget):
         
         b1 = QToolButton()
         b1.setIcon(QIcon(':icons/icons/x-axis.png'))
+        b1.setToolTip("Show x slicing plane")
         b1.setCheckable(True); b1.setChecked(True)
         
         b2 = QToolButton()
         b2.setIcon(QIcon(':icons/icons/y-axis.png'))
+        b2.setToolTip("Show y slicing plane")
         b2.setCheckable(True); b2.setChecked(True)
         
         b3 = QToolButton()
         b3.setIcon(QIcon(':icons/icons/z-axis.png'))
+        b3.setToolTip("Show z slicing plane")
         b3.setCheckable(True); b3.setChecked(True)
         
         bAnaglyph = QToolButton()
         bAnaglyph.setIcon(QIcon(':icons/icons/3d_glasses.png'))
+        bAnaglyph.setToolTip("Show in anaglyph 3D")
         bAnaglyph.setCheckable(True); bAnaglyph.setChecked(False)
-        
+       
+        '''
         bCutter = QToolButton()
         bCutter.setIcon(QIcon(':icons/icons/edit-cut.png'))
         bCutter.setCheckable(True); bCutter.setChecked(False)
@@ -307,22 +312,23 @@ class OverviewScene(QWidget):
         
         bExportMesh = QToolButton()
         bExportMesh.setIcon(QIcon(':icons/icons/document-save-as.png'))
+        '''
         
         hbox.addWidget(b1)
         hbox.addWidget(b2)
         hbox.addWidget(b3)
         hbox.addWidget(bAnaglyph)
-        hbox.addWidget(bCutter)
+        #hbox.addWidget(bCutter)
         hbox.addStretch()
-        hbox.addWidget(bExportMesh)
+        #hbox.addWidget(bExportMesh)
         layout.addLayout(hbox)
         
         self.connect(b1, SIGNAL("clicked()"), self.TogglePlaneWidgetX)
         self.connect(b2, SIGNAL("clicked()"), self.TogglePlaneWidgetY)
         self.connect(b3, SIGNAL("clicked()"), self.TogglePlaneWidgetZ)
         self.connect(bAnaglyph, SIGNAL("clicked()"), self.ToggleAnaglyph3D)
-        self.connect(bExportMesh, SIGNAL("clicked()"), self.exportMesh)
-        bCutter.toggled.connect(self.useCutterToggled)
+        #self.connect(bExportMesh, SIGNAL("clicked()"), self.exportMesh)
+        #bCutter.toggled.connect(self.useCutterToggled)
         self.connect(self.qvtk, SIGNAL("objectPicked"), self.__onObjectPicked)
         
         def layerContextMenu(layer, menu):
@@ -346,7 +352,8 @@ class OverviewScene(QWidget):
 
     @property
     def useCutter(self):
-        return self.bCutter.isChecked()
+        return False
+        #return self.bCutter.isChecked()
 
     def useCutterToggled(self):
         self.__updateCutter()
