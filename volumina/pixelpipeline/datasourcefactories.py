@@ -1,8 +1,5 @@
-import copy
 from volumina.multimethods import multimethod
-from imagesources import GrayscaleImageSource, ColortableImageSource, \
-                         RGBAImageSource, AlphaModulatedImageSource
-from datasources import ConstantSource,ArraySource,LazyflowSource
+from datasources import ArraySource, LazyflowSource
 import numpy
 
 hasLazyflow = True

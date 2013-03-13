@@ -1,5 +1,4 @@
 import vtk
-import h5py
 import numpy
 import colorsys
 # http://www.scipy.org/Cookbook/vtkVolumeRendering

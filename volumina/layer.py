@@ -1,13 +1,10 @@
-import random, colorsys
+import colorsys
 import numpy
 
-from PyQt4.QtCore import QObject, pyqtSignal, QEvent, Qt
+from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.QtGui import QColor
 
-from widgets.layerDialog import GrayscaleLayerDialog
-from widgets.layerDialog import RGBALayerDialog
 from volumina.interpreter import ClickInterpreter
-from volumina.pixelpipeline.datasourcefactories import createDataSource
 from volumina.pixelpipeline.asyncabcs import SourceABC
 
 #*******************************************************************************

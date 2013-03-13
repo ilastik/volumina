@@ -3,7 +3,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from functools import partial
 import numpy
-import sys, h5py, copy
+import h5py
 from numpy2vtk import toVtkImageData
 
 #*******************************************************************************
@@ -38,8 +38,6 @@ class MeshExtractor(QThread):
         print "MeshExtractor::run()"
         self.meshes = dict()
         
-        count = 0
-        
         if self.numpyVolume is None:
             raise RuntimeError("You need to call SetInput() first")
    
@@ -57,7 +55,6 @@ class MeshExtractor(QThread):
         #Define all of the variables
         startLabel          = 0
         endLabel            = numpy.max(self.numpyVolume[:])
-        filePrefix          = 'label'
         smoothingIterations = 15
         passBand            = 0.001
         featureAngle        = 120.0
@@ -227,7 +224,7 @@ class MeshExtractorDialog(QDialog):
 
 if __name__ == '__main__':
     #make the program quit on Ctrl+C
-    import signal, numpy
+    import signal 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     
     app = QApplication(sys.argv)
