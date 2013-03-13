@@ -1,10 +1,8 @@
 import copy
 
-from PyQt4.QtCore import Qt, pyqtSignal, QObject, QTimer
-from PyQt4.QtGui import QApplication, QWidget, QBrush, QPen, QColor, QTransform
+from PyQt4.QtCore import Qt, pyqtSignal, QObject
+from PyQt4.QtGui import QApplication, QWidget
 
-import volumina
-import volumina.pixelpipeline
 import volumina.pixelpipeline.imagepump
 from eventswitch import EventSwitch
 from imageScene2D import ImageScene2D
@@ -15,7 +13,6 @@ from brushingcontroler import BrushingInterpreter, BrushingControler, \
                               CrosshairControler
 from brushingmodel import BrushingModel
 from slicingtools import SliceProjection
-from pixelpipeline.slicesources import SyncedSliceSources
 
 useVTK = True
 try:
