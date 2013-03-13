@@ -2,15 +2,13 @@ import sys
 import time
 import collections
 import warnings
-from collections import deque, defaultdict, OrderedDict
-from Queue import Queue, Empty, Full, LifoQueue, PriorityQueue
+from collections import defaultdict, OrderedDict
+from Queue import Queue, Empty, Full, LifoQueue
 
-from threading import Thread, Event, Lock
+from threading import Thread, Lock
 
 import numpy
-from PyQt4.QtCore import QRect, QRectF, QMutex, \
-    QPointF, Qt, QSizeF, QObject, pyqtSignal, \
-    QThread, QEvent, QCoreApplication
+from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
 from PyQt4.QtGui import QImage, QPainter, QTransform
 
 from patchAccessor import PatchAccessor
