@@ -365,6 +365,14 @@ class QuadStatusBar(QHBoxLayout):
         self.setContentsMargins(0,4,0,0)
         self.setSpacing(0)
 
+    def showXYCoordinates(self):
+        self.zLabel.setHidden(True)
+        self.zSpinBox.setHidden(True)
+        
+    def showXYZCoordinates(self):
+        self.zLabel.setHidden(False)
+        self.zSpinBox.setHidden(False)
+    
     def createQuadViewStatusBar(self,
                                 xbackgroundColor, xforegroundColor,
                                 ybackgroundColor, yforegroundColor,

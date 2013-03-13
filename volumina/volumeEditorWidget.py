@@ -87,7 +87,9 @@ class VolumeEditorWidget(QWidget):
     
     def init(self, volumina):
         self.editor = volumina
-
+        
+        self.hudsShown = [True]*3
+        
         def onViewFocused():
             axis = self.editor._lastImageViewFocus;
             self.toggleSelectedHUD.setChecked( self.editor.imageViews[axis]._hud.isVisible() )
@@ -167,6 +169,19 @@ class VolumeEditorWidget(QWidget):
         self.editor.posModel.cursorPositionChanged.connect(self._updateInfoLabels)
 
         def onShapeChanged():
+            singletonDims = filter( lambda (i,dim): dim == 1, enumerate(self.editor.posModel.shape5D[1:4]) )
+            if len(singletonDims) == 1:
+                # Maximize the slicing view for this axis
+                axis = singletonDims[0][0]
+                self.quadview.ensureMaximized(axis)
+                self.hudsShown[axis] = self.editor.imageViews[axis].hudVisible()
+                self.editor.imageViews[axis].setHudVisible(False)
+                self.quadViewStatusBar.showXYCoordinates()
+            else:
+                self.quadViewStatusBar.showXYZCoordinates()
+                for i in range(3):
+                    self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
+        
             self._setupVolumeExtent()
 
         self.editor.shapeChanged.connect(onShapeChanged)
@@ -291,7 +306,6 @@ if __name__ == "__main__":
     import sys
     from layerstack import LayerStackModel
     from volumina.layer import GrayscaleLayer
-    from volumina.pixelpipeline.datasources import ArraySource
     
     array = numpy.random.rand(1,100,100,100,1)
     array *= 255

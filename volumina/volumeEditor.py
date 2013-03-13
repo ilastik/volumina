@@ -1,6 +1,6 @@
 import copy
 
-from PyQt4.QtCore import Qt, pyqtSignal, QObject
+from PyQt4.QtCore import pyqtSignal, QObject
 from PyQt4.QtGui import QApplication, QWidget
 
 import volumina.pixelpipeline.imagepump
@@ -84,6 +84,7 @@ class VolumeEditor( QObject ):
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
+        
         self.shapeChanged.emit()
 
     def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True):
@@ -92,8 +93,8 @@ class VolumeEditor( QObject ):
         ##
         ## properties
         ##
-        self._showDebugPatches = False
-        self._showTileProgress = True
+        self._showDebugPatches   = False
+        self._showTileProgress   = True
         self._lastImageViewFocus = None
 
         ##

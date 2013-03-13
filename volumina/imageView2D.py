@@ -229,6 +229,9 @@ class ImageView2D(QGraphicsView):
     def setHudVisible(self, visible):
         if self._hud is not None:
             self._hud.setVisible(visible)
+            
+    def hudVisible(self):
+        return self._hud.isVisible()
 
     def focusInEvent(self, event):
         self.setStyleSheet(".QFrame {border: 2px solid white; border-radius: 4px;}")
