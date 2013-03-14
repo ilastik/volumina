@@ -572,8 +572,8 @@ class TileProvider( QObject ):
         try:
             if self._cache.tileDirty( stack_id, tile_no ):
                 if not prefetch:
-                    img = self._renderTile( stack_id, tile_no )
                     self._cache.setTileDirty(stack_id, tile_no, False)
+                    img = self._renderTile( stack_id, tile_no )
                     self._cache.setTile(stack_id, tile_no, img,
                                         self._sims.viewVisible(),
                                         self._sims.viewOccluded())
