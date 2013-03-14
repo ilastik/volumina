@@ -1,18 +1,21 @@
+#Python
 import sys
 import time
 import collections
 import warnings
 from collections import defaultdict, OrderedDict
+from threading import Thread, Lock
 from Queue import Queue, Empty, Full, LifoQueue
 
-from threading import Thread, Lock
-
+#SciPy
 import numpy
-from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
-from PyQt4.QtGui import QImage, QPainter, QTransform
 
+#PyQt
+from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal, Qt
+from PyQt4.QtGui import QImage, QPainter, QTransform, QColor
+
+#volumina
 from patchAccessor import PatchAccessor
-
 import volumina
 
 #*******************************************************************************
