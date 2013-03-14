@@ -416,10 +416,10 @@ class NormalizingSource( QObject ):
         rawSource: The original datasource whose data will be normalized
         
         bounds: The range of the original source's data, given as a tuple of (min,max)
-                Alternatively, thee following strings can be provided instead of a bounds tuple:
+                Alternatively, the following strings can be provided instead of a bounds tuple:
                     'autoMinMax' - Track the min and max values observed from all requests and normalize to that range
                     'autoPercentiles' - Track the 1 and 99 percentiles and normalize all data to that range
-                Note: When an incoming request causes the lower or uppoer bound to change, the entire source is marked dirty.
+                Note: When an incoming request causes the lower or upper bound to change, the entire source is marked dirty.
         """
         super(NormalizingSource, self).__init__(parent)
         self._rawSource = rawSource
