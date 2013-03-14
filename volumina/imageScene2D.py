@@ -347,10 +347,12 @@ class ImageScene2D(QGraphicsScene):
         tiles = self._tileProvider.getTiles(sceneRectF)
         allComplete = True
         for tile in tiles:
-            # prevent flickering
-            if tile.progress >= 1.0:
-                painter.drawImage(tile.rectF, tile.qimg)
-            else:
+            #We always draw the tile, even though it might not be up-to-date
+            #In ilastik's live mode, the user sees the old result while adding
+            #new brush strokes on top
+            #See also ilastik issue #132 and tests/lazy_test.py
+            painter.drawImage(tile.rectF, tile.qimg)
+            if tile.progress < 1.0:
                 allComplete = False
             if self._showTileProgress:
                 self._dirtyIndicator.setTileProgress(tile.id, tile.progress)
