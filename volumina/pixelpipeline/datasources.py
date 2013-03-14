@@ -61,6 +61,9 @@ class ArraySource( QObject ):
     def __init__( self, array ):
         super(ArraySource, self).__init__()
         self._array = array
+        
+    def dtype(self):
+        return self._array.dtype
 
     def request( self, slicing ):
         if not is_pure_slicing(slicing):
@@ -183,7 +186,7 @@ class LazyflowRequest( object ):
             slicing = make_bounded(slicing, shape)
         self._shape = slicing2shape(slicing)
         self._objectName = objectName
-
+        
     def wait( self ):
         a = self._req[0].wait()
         assert(isinstance(a, np.ndarray))
@@ -244,6 +247,9 @@ class LazyflowSource( QObject ):
     def __del__(self):
         if self._op5 is not None:
             self._op5.cleanUp()
+            
+    def dtype(self):
+        return self._orig_outslot.meta.dtype
     
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
@@ -422,6 +428,7 @@ class NormalizingSource( QObject ):
                 Note: When an incoming request causes the lower or upper bound to change, the entire source is marked dirty.
         """
         super(NormalizingSource, self).__init__(parent)
+        
         self._rawSource = rawSource
         self._rawSource.isDirty.connect( self.isDirty )
         if isinstance(bounds, tuple):
@@ -430,6 +437,9 @@ class NormalizingSource( QObject ):
         else:
             self._method = bounds
             self._bounds = (None, None)
+            
+    def dtype(self):
+        return self._rawSource.dtype()
     
     def request( self, slicing ):
         rawRequest = self._rawSource.request(slicing)

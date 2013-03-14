@@ -1,10 +1,16 @@
+#Python
 from functools import partial
-from PyQt4.QtCore import QPoint, pyqtSignal, Qt
+
+#Qt
+from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem, QColor
+
+#volumina
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
 from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
-from volumina.events import Event
 from exportDlg import ExportDialog
+
+#===----------------------------------------------------------------------------------------------------------------===
 
 ###
 ### lazyflow input
@@ -13,11 +19,9 @@ _has_lazyflow = True
 try:
     from lazyflow.graph import Graph
     from lazyflow.operators.operators import OpArrayPiper
-    from lazyflow.roi import roiToSlice
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
-
 
 def _add_actions_grayscalelayer( layer, menu ):
     def adjust_thresholds_callback():
@@ -30,7 +34,7 @@ def _add_actions_grayscalelayer( layer, menu ):
         dlg.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])
         dlg.grayChannelThresholdingWidget.valueChanged.connect(dbgPrint)
         dlg.show()
-
+        
     adjThresholdAction = QAction("Adjust thresholds", menu)
     adjThresholdAction.triggered.connect(adjust_thresholds_callback)
     menu.addAction(adjThresholdAction)
