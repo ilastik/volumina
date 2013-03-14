@@ -40,7 +40,6 @@ class GenericArraySourceTest:
 
     def testSetDirty( self ):
         self.signal_emitted = False
-        slicing = self.slicing
 
         def slot( sl ):
             self.signal_emitted = True
@@ -225,17 +224,5 @@ if has_lazyflow:
             req = self.source.request(slicing)
             assert (req.wait() == inData).all()
             
-
 if __name__ == '__main__':
     ut.main()
-
-
-
-
-
-
-
-
-
-
-

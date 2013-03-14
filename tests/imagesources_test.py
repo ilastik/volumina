@@ -1,22 +1,22 @@
+#Python
 import unittest as ut
+import os
 import sys
 sys.path.append("../.")
 
+#SciPy
 import numpy
-import os.path
 
-from PyQt4.QtCore import QRect, pyqtSignal
+#PyQt
+from PyQt4.QtCore import QRect
 from PyQt4.QtGui import QImage
 from PyQt4.QtGui import QColor
 
+#volumina
 import volumina._testing
 from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageSource, ColortableImageSource
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer
-
-import numpy as np
-import os.path
-from volumina import _testing
 
 class _ArraySource2d( ArraySource ):
     def request( self, slicing, through=None):
@@ -121,8 +121,8 @@ class ColortableImageSourceTest( ut.TestCase ):
 
 class RGBAImageSourceTest( ut.TestCase ):
     def setUp( self ):
-        basedir = os.path.dirname(_testing.__file__)
-        self.data = np.load(os.path.join(basedir, 'rgba129x104.npy'))
+        basedir = os.path.dirname(volumina._testing.__file__)
+        self.data = numpy.load(os.path.join(basedir, 'rgba129x104.npy'))
         self.red = _ArraySource2d(self.data[:,:,0])
         self.green = _ArraySource2d(self.data[:,:,1])
         self.blue = _ArraySource2d(self.data[:,:,2])
