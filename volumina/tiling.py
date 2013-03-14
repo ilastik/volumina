@@ -545,15 +545,17 @@ class TileProvider( QObject ):
 
             ims, transform, tile_nr, stack_id, image_req, timestamp, cache = result
             try:
-                if timestamp > cache.layerTimestamp( stack_id, ims, tile_nr ):
-                    img = image_req.wait()
-                    img = img.transformed(transform)
-                    cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
-                    if stack_id == self._current_stack_id and cache is self._cache:
-                        try:
+                try:
+                    layerTimestamp = cache.layerTimestamp( stack_id, ims, tile_nr )
+                except KeyError:
+                    pass
+                else:
+                    if timestamp > layerTimestamp:
+                        img = image_req.wait()
+                        img = img.transformed(transform)
+                        cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
+                        if stack_id == self._current_stack_id and cache is self._cache:
                             self.sceneRectChanged.emit(QRectF(self.tiling.imageRects[tile_nr]))
-                        except KeyError:
-                            pass
             except:
                 import traceback
                 with volumina.printLock:
