@@ -24,7 +24,7 @@ class ImageTile(object):
         self._mutex = QMutex()
         self.image  = QImage(rect.width(), rect.height(),
                              QImage.Format_ARGB32_Premultiplied)
-        self.image.fill(0)
+        self.image.fill(0x00000000)
 
         self._topLeft = rect.topLeft()
 
@@ -569,8 +569,8 @@ class TileProvider( QObject ):
         try:
             if self._cache.tileDirty( stack_id, tile_no ):
                 if not prefetch:
-                    self._cache.setTileDirty(stack_id, tile_no, False)
                     img = self._renderTile( stack_id, tile_no )
+                    self._cache.setTileDirty(stack_id, tile_no, False)
                     self._cache.setTile(stack_id, tile_no, img,
                                         self._sims.viewVisible(),
                                         self._sims.viewOccluded())
@@ -621,14 +621,9 @@ class TileProvider( QObject ):
         except KeyError:
             pass
 
-    def _renderTile( self, stack_id, tile_nr ):
-        qimg = QImage(self.tiling.imageRects[tile_nr].size(),
-                      QImage.Format_ARGB32_Premultiplied)
-        #qimg.fill(Qt.white)  # Apparently, some difference between Qt 4.7 and 4.8 causes 
-                              #   QImage.fill(Qt.white) to do the wrong thing here.  It might be a Qt bug.
-        qimg.fill(0xffffffff) # Use a hex constant instead.
-
-        p = QPainter(qimg)
+    def _renderTile( self, stack_id, tile_nr): 
+        qimg = None
+        p = None
         for i, v in enumerate(reversed(self._sims)):
             visible, layerOpacity, layerImageSource = v
             if not visible:
@@ -636,11 +631,18 @@ class TileProvider( QObject ):
 
             patch = self._cache.layer(stack_id, layerImageSource, tile_nr )
             if patch is not None:
+                if qimg is None:
+                    qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
+                    qimg.fill(0xffffffff) # Use a hex constant instead.
+                    p = QPainter(qimg)
                 p.setOpacity(layerOpacity)
                 p.drawImage(0,0, patch)
-        p.end()
-        return qimg
+        
+        if p is not None:
+            p.end()
 
+        return qimg
+    
     def _onLayerDirty(self, dirtyImgSrc, dataRect ):
         sceneRect = self.tiling.data2scene.mapRect(dataRect)
         if dirtyImgSrc in self._sims.viewImageSources():

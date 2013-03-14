@@ -351,7 +351,8 @@ class ImageScene2D(QGraphicsScene):
             #In ilastik's live mode, the user sees the old result while adding
             #new brush strokes on top
             #See also ilastik issue #132 and tests/lazy_test.py
-            painter.drawImage(tile.rectF, tile.qimg)
+            if tile.qimg is not None:
+                painter.drawImage(tile.rectF, tile.qimg)
             if tile.progress < 1.0:
                 allComplete = False
             if self._showTileProgress:

@@ -99,9 +99,8 @@ class TileProviderTest( ut.TestCase ):
             tp.join()
             tiles = tp.getTiles(QRectF(100,100,200,200))
             for tile in tiles:
-                aimg = byte_view(tile.qimg)
-                self.assertTrue(np.all(aimg[:,:,0:3] == 255)) # all white
-                self.assertTrue(np.all(aimg[:,:,3] == 255))
+                # If all tiles are invisible, then no tile is even rendered at all.
+                assert tile.qimg is None
 
             self.layer1.visible = False
             self.layer2.visible = True

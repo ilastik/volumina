@@ -73,6 +73,7 @@ class ImageScene2D_RenderTest( ut.TestCase ):
 
     def renderScene( self, s, exportFilename=None):
         img = QImage(310,290,QImage.Format_ARGB32_Premultiplied)
+        img.fill(0)
         p = QPainter(img)
         s.render(p)
         s.joinRendering()
@@ -94,8 +95,8 @@ class ImageScene2D_RenderTest( ut.TestCase ):
 
         self.layer.visible = False
         aimg = self.renderScene(self.scene)
-        self.assertTrue(np.all(aimg[:,:,0:3] == 255)) # all white
-        self.assertTrue(np.all(aimg[:,:,3] == 255))
+        self.assertTrue(np.all(aimg[:,:,0:3] == 0)) # all white
+        self.assertTrue(np.all(aimg[:,:,3] == 0))
 
         self.layer.visible = True
         aimg = self.renderScene(self.scene)
