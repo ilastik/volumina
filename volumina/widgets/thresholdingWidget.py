@@ -1,8 +1,12 @@
+#Python
+from os import path
+
+#PyQt
 from PyQt4 import uic
 from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QWidget
+from PyQt4.QtGui import QWidget, QButtonGroup
 
-from os import path
+#===----------------------------------------------------------------------------------------------------------------===
 
 class ThresholdingWidget(QWidget):
     valueChanged = pyqtSignal(int, int)
@@ -11,6 +15,8 @@ class ThresholdingWidget(QWidget):
         QWidget.__init__(self, parent)
             
         p = path.split(__file__)[0]
+        if not p:
+            p = "."
         
         uic.loadUi(p+"/ui/thresholdingWidget.ui", self)
         self.setRange(0,255)
@@ -55,3 +61,13 @@ class ThresholdingWidget(QWidget):
         self._minSpin.setValue(minimum)
         self._maxSpin.setValue(maximum)
         
+#===----------------------------------------------------------------------------------------------------------------===
+#=== __name__ == "__main__"                                                                                         ===
+#===----------------------------------------------------------------------------------------------------------------===
+
+if __name__ == "__main__":
+    from PyQt4.QtGui import QApplication
+    app = QApplication([])
+    w = ThresholdingWidget()
+    w.show()
+    app.exec_()
