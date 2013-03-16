@@ -22,13 +22,14 @@ class LayerPainter( object ):
 
         self.rect = QRect()
 
-        self.fm = QFontMetrics(QFont())
+        self.font = QFont(QFont().defaultFamily(), 9)
+        self.fm = QFontMetrics(self.font)
 
         self.iconSize = 20
-        self.iconXOffset = 5
-        self.textXOffset = 5
+        self.iconXOffset = 3
+        self.textXOffset = 3
         self.progressXOffset = self.iconXOffset+self.iconSize+self.textXOffset
-        self.progressYOffset = self.iconSize+5
+        self.progressYOffset = self.iconSize+3
         self.progressHeight = 10
 
         self.alphaTextWidth = self.fm.boundingRect(u"\u03B1=100.0%").width()
@@ -37,7 +38,7 @@ class LayerPainter( object ):
        if mode == 'ReadOnly':
            return QSize(1,self.fm.height()+5)
        elif mode == 'Expanded' or mode == 'Editable':
-           return QSize(1,self.progressYOffset+self.progressHeight+5)
+           return QSize(1,self.progressYOffset+self.progressHeight+3)
        else:
            raise RuntimeError("Unknown mode")
 
@@ -84,7 +85,7 @@ class LayerPainter( object ):
             painter.restore()
 
         painter.translate(rect.x(), rect.y())
-        painter.setFont(QFont())
+        painter.setFont(self.font)
 
         textOffsetX = self.progressXOffset
         textOffsetY = max(self.fm.height()-self.iconSize,0)/2.0+self.fm.height()
