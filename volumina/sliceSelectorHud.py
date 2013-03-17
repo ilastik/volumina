@@ -1,11 +1,8 @@
+#PyQt
 from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
-
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
-                        QFont, QPainterPath, QBrush, QPolygonF, QSpinBox, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QPalette, QFrame, QTransform
-import sys, random
-import numpy, qimage2ndarray
-import volumina.icons_rc
+                        QFont, QPainterPath, QBrush, QSpinBox, QAbstractSpinBox, \
+                        QCheckBox, QWidget, QFrame, QTransform
 
 TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
 
@@ -424,6 +421,7 @@ class QuadStatusBar(QHBoxLayout):
 
 
 if __name__ == "__main__":
+    import sys
     from PyQt4.QtGui import QDialog, QApplication
     #make the program quit on Ctrl+C
     import signal

@@ -1,27 +1,19 @@
 """High-level API.
 
 """
-from pixelpipeline.imagepump import ImagePump
 from volumina.pixelpipeline.datasources import *
 from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
 from volumina.volumeEditor import VolumeEditor
-from volumina.volumeEditorWidget import VolumeEditorWidget
-from volumina.widgets.layerwidget import LayerWidget
 from volumina.navigationControler import NavigationInterpreter
 from volumina import colortables
 
-from PyQt4.QtCore import QRectF, QTimer, QObject, pyqtSignal
-from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp, \
-    QImage, QPainter, QMessageBox, QColor
+from PyQt4.QtCore import QTimer
+from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp
 from PyQt4.uic import loadUi
-import volumina.icons_rc
 
 import os
-import sys
-import numpy
-import colorsys
 import random
 
 _has_lazyflow = True

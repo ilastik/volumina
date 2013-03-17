@@ -226,7 +226,7 @@ class VolumeEditorWidget(QWidget):
             
     
     def _toggleHUDs(self, checked):
-        for i, v in enumerate(self.editor.imageViews):
+        for v in self.editor.imageViews:
             v.setHudVisible(checked)
             
     def _toggleSelectedHud(self, checked):
@@ -234,7 +234,7 @@ class VolumeEditorWidget(QWidget):
             self.editor.imageViews[self.editor._lastImageViewFocus].setHudVisible(checked)
             
     def _centerAllImages(self):
-        for i, v in enumerate(self.editor.imageViews):
+        for v in self.editor.imageViews:
             v.centerImage()
             
     def _centerImage(self):
