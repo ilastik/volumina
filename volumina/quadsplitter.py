@@ -99,7 +99,7 @@ class QuadView(QWidget):
         
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-        self.layout.setContentsMargins(4, 4, 4, 4)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         
         self.splitVertical = QSplitter(Qt.Vertical, self)

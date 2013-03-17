@@ -1,20 +1,22 @@
 #!/usr/bin/env python
-from PyQt4.QtCore import Qt, QTimer, QRectF, QEvent, QObject, QTimerEvent
-from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, \
-                        QSplitter, QVBoxLayout, QHBoxLayout, QPushButton, \
+
+#Python
+from functools import partial
+import copy
+
+#SciPy
+import numpy
+
+#PyQt
+from PyQt4.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent
+from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, QHBoxLayout, \
                         QColor, QSizePolicy, QAction, QIcon, QSpinBox
 
-import numpy, copy
-from functools import partial
-
+#volumina
 from quadsplitter import QuadView
-      
 from sliceSelectorHud import ImageView2DHud, QuadStatusBar
-from pixelpipeline.datasources import ArraySource, LazyflowSinkSource
-
+from pixelpipeline.datasources import ArraySource
 from volumeEditor import VolumeEditor
-import volumina.icons_rc
-
 from volumina.utility import ShortcutManager
 
 class __TimerEventEater( QObject ):
@@ -97,6 +99,7 @@ class VolumeEditorWidget(QWidget):
 
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         
         self.setLayout(self.layout)
         
