@@ -179,10 +179,13 @@ class VolumeEditorWidget(QWidget):
                 self.hudsShown[axis] = self.editor.imageViews[axis].hudVisible()
                 self.editor.imageViews[axis].setHudVisible(False)
                 self.quadViewStatusBar.showXYCoordinates()
+                
+                self.quadview.statusBar.positionCheckBox.setVisible(False)
             else:
                 self.quadViewStatusBar.showXYZCoordinates()
                 for i in range(3):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
+                self.quadview.statusBar.positionCheckBox.setVisible(True)
         
             self._setupVolumeExtent()
 

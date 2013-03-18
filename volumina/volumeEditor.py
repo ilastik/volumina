@@ -1,6 +1,9 @@
 #Python
 import copy
 
+#SciPy
+import numpy
+
 #PyQt
 from PyQt4.QtCore import pyqtSignal, QObject
 from PyQt4.QtGui import QApplication, QWidget
@@ -80,6 +83,11 @@ class VolumeEditor( QObject ):
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
+      
+        #for 2D images, disable the slice intersection marker
+        x = numpy.sum(numpy.asarray(s[1:4]) == 1) 
+        self.navCtrl.indicateSliceIntersection = (x != 1)
+        
         self.shapeChanged.emit()
         
     def lastImageViewFocus(self, axis):
