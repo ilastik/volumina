@@ -1,8 +1,11 @@
+#Python
 import copy
 
+#PyQt
 from PyQt4.QtCore import pyqtSignal, QObject
 from PyQt4.QtGui import QApplication, QWidget
 
+#volumina
 import volumina.pixelpipeline.imagepump
 from eventswitch import EventSwitch
 from imageScene2D import ImageScene2D
@@ -50,21 +53,15 @@ class VolumeEditor( QObject ):
     @property
     def cacheSize(self):
         return self._cacheSize
-
     @cacheSize.setter
     def cacheSize(self, cache_size):
         self._cacheSize = cache_size
         for s in self.imageScenes:
             s.setCacheSize(cache_size)
 
-    def lastImageViewFocus(self, axis):
-        self._lastImageViewFocus = axis
-        self.newImageView2DFocus.emit()
-
     @property
     def navigationInterpreterType(self):
         return type(self.navInterpret)
-
     @navigationInterpreterType.setter
     def navigationInterpreterType(self,navInt):
         self.navInterpret = navInt(self.navCtrl)
@@ -77,15 +74,17 @@ class VolumeEditor( QObject ):
     @property
     def dataShape(self):
         return self.posModel.shape5D
-
     @dataShape.setter
     def dataShape(self, s):
         self.posModel.shape5D = s
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
-        
         self.shapeChanged.emit()
+        
+    def lastImageViewFocus(self, axis):
+        self._lastImageViewFocus = axis
+        self.newImageView2DFocus.emit()
 
     def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True):
         super(VolumeEditor, self).__init__(parent=parent)

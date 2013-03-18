@@ -164,7 +164,6 @@ class VolumeEditorWidget(QWidget):
             self.quadview.statusBar.timeSpinBox.setValue(newT)
         self.editor.posModel.timeChanged.connect(getTime) 
 
-
         def toggleSliceIntersection(state):
             self.editor.navCtrl.indicateSliceIntersection = (state == Qt.Checked)
         self.quadview.statusBar.positionCheckBox.stateChanged.connect(toggleSliceIntersection)
