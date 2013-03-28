@@ -267,7 +267,7 @@ class ColortableImageRequest( object ):
         # Use vigra if possible (much faster)
         if _has_vigra and hasattr(vigra.colors, 'applyColortable'):
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32) 
-            vigra.colors.applyColortable(a.astype(np.uint8), self._colorTable, byte_view(img))
+            vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
 
         # Without vigra, do it the slow way 
         else:
