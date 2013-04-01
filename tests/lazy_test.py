@@ -1,4 +1,10 @@
 import unittest as ut
+has_vigra = True
+try:
+    import vigra
+except:
+    has_vigra = False
+
 import os
 import time
 
@@ -7,7 +13,8 @@ from PyQt4.QtGui import QImage, QPainter, QApplication
 
 from qimage2ndarray import byte_view
 import numpy
-import vigra
+
+from volumina.utility.tests import skipUnlessHasModule
 
 from volumina.imageScene2D import ImageScene2D
 from volumina.positionModel import PositionModel
@@ -48,6 +55,7 @@ class OpLazy(Operator):
         time.sleep(self.delay)
         return result
 
+@ut.skipUnless(has_vigra, "module vigra not found")
 class ImageScene2D_LazyTest( ut.TestCase ):
 
     @classmethod
