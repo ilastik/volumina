@@ -2,7 +2,7 @@ import unittest as ut
 has_vigra = True
 try:
     import vigra
-except:
+except ImportError:
     has_vigra = False
 
 import os
@@ -23,7 +23,11 @@ from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 import volumina.pixelpipeline.imagesourcefactories as imsfac
 
-from lazyflow.graph import Operator, OutputSlot, Graph
+has_lazyflow = True
+try:
+    from lazyflow.graph import Operator, OutputSlot, Graph
+except ImportError:
+    has_lazyflow = False
 
 class OpLazy(Operator):
     Output = OutputSlot()
@@ -54,6 +58,7 @@ class OpLazy(Operator):
         return result
 
 @ut.skipUnless(has_vigra, "module vigra not found")
+@ut.skipUnless(has_lazyflow, "module lazyflow not found")
 class ImageScene2D_LazyTest( ut.TestCase ):
 
     @classmethod
