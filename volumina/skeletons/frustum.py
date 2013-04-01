@@ -1,14 +1,23 @@
 #!/usr/bin/env python
 
-import vtk
+# optional dependency; catch import error to not break nosetests
+has_vtk = True
+try:
+    import vtk
+except ImportError:
+    print "Warning: could not import optional dependency VTK"
+    has_vtk = False
+
+
 from numpy import asarray as A
- 
-ren = vtk.vtkRenderer()
-renWin = vtk.vtkRenderWindow()
-renWin.AddRenderer(ren)
- 
-iren = vtk.vtkRenderWindowInteractor()
-iren.SetRenderWindow(renWin)
+
+if has_vtk:
+    ren = vtk.vtkRenderer()
+    renWin = vtk.vtkRenderWindow()
+    renWin.AddRenderer(ren)
+    
+    iren = vtk.vtkRenderWindowInteractor()
+    iren.SetRenderWindow(renWin)
  
 def convexHull(thePoints, color):
     points = vtk.vtkPoints()

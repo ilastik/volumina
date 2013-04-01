@@ -14,8 +14,6 @@ from PyQt4.QtGui import QImage, QPainter, QApplication
 from qimage2ndarray import byte_view
 import numpy
 
-from volumina.utility.tests import skipUnlessHasModule
-
 from volumina.imageScene2D import ImageScene2D
 from volumina.positionModel import PositionModel
 from volumina.pixelpipeline.datasources import LazyflowSource
