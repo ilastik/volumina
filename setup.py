@@ -2,6 +2,7 @@ from setuptools import setup
 
 packages=['volumina', 
           'volumina.pixelpipeline',
+          'volumina.skeletons',
           'volumina.colorama',
           'volumina.widgets',
           'volumina.widgets.ui',

@@ -134,11 +134,12 @@ class Skeletons(QObject):
         return (nodes, edgesIntersected, edgesPlane)
         
 if __name__ == "__main__":
+    from volumina.skeletons.skeletons import Skeletons
     s = Skeletons()
    
-    n1 = SkeletonNode( (10,20,30), 2)
-    n2 = SkeletonNode( (10,20,40), 2)
-    n3 = SkeletonNode( (15,25,30), 2)
+    n1 = SkeletonNode( (10,20,30), 2, s)
+    n2 = SkeletonNode( (10,20,40), 2, s)
+    n3 = SkeletonNode( (15,25,30), 2, s)
     s.addNode(n1)
     s.addNode(n2)
     s.addNode(n3)
