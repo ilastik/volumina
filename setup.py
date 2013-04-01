@@ -22,5 +22,6 @@ setup(name='volumina',
       description='Volume Slicing and Editing',
       url='https://github.com/Ilastik/volumina',
       packages=packages,
-      package_data=package_data
+      package_data=package_data,
+      setup_requires=['nose>=1.0']
      )
