@@ -24,7 +24,8 @@ After you entered a virtual environment you can automatically execute all the st
 
     $ ./install-development-reqs-virtualenv-ubuntu.sh
 
-from the "requirements" directory in the volumina repository.
+from the "requirements" directory in the volumina repository. Note, that we use distribute instead of setuptools.
+So, create your virtualenvs using `mkvirtualenv --distribute`.
 
 1. Virtual Python Environment
 -----------------------------
