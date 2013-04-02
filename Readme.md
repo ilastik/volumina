@@ -32,7 +32,7 @@ So, create your virtualenvs using `mkvirtualenv --distribute`.
 
 Make a new virtualenv for volumina
 
-    $ virtualenv voluminave/
+    $ virtualenv --distribute voluminave/
 
 and activate it
 
