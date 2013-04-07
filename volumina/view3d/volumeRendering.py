@@ -1,3 +1,4 @@
+from PyQt4.QtGui import QApplication
 import vtk
 import numpy
 import colorsys
@@ -84,6 +85,10 @@ class RenderingManager(object):
         self.labelmgr = LabelManager(NOBJECTS)
         self.ready = False
         self._cmap = {}
+        
+        def release_qvtk_handle():
+            del self._qvtk
+        QApplication.instance().aboutToQuit.connect( release_qvtk_handle )
 
     def setup(self, shape):
         shape = shape[::-1]
