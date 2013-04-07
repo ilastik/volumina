@@ -28,7 +28,6 @@ class LabelButtons(QLabel):
     clicked = pyqtSignal()
     def __init__(self, style, parentView, backgroundColor, foregroundColor, width, height):
         QLabel.__init__(self)
-        parentView.installEventFilter(self)
         self.setColors(backgroundColor, foregroundColor)
         self.setPixmapSize(width, height)
         self.setIcon(style)
@@ -75,9 +74,8 @@ class LabelButtons(QLabel):
                                               self.pixmapWidth,
                                               self.pixmapHeight)
 
-    def mouseReleaseEvent(self, event):
-        if self.underMouse():
-            self.clicked.emit()
+    def mousePressEvent(self, event):
+        self.clicked.emit()
 
     def _resetIcon(self):
         if self._swapped:
@@ -104,12 +102,6 @@ class LabelButtons(QLabel):
     def swapped(self, value):
         self._swapped = value
         self._resetIcon()
-
-    def eventFilter(self, watched, event):
-        # Block the parent view from seeing events while we've got the mouse.
-        if self.underMouse():
-            return True
-        return False
 
 class SpinBoxImageView(QHBoxLayout):
     valueChanged = pyqtSignal(int)
