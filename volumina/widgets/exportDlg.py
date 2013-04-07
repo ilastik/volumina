@@ -99,6 +99,7 @@ class ExportDialog(QDialog):
     def on_pushButtonPathClicked(self):
         oldPath = self.lineEditFilePath.displayText()
         fileDlg = QFileDialog()
+        fileDlg.setOption( QFileDialog.DontUseNativeDialog, True )
         newPath = str(fileDlg.getSaveFileName(self, "Save File", str(self.lineEditFilePath.displayText())))
         if newPath == "":
             newPath = oldPath
