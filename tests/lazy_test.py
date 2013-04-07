@@ -2,7 +2,6 @@
 has_dependencies = True
 try:
     import vigra
-    import murg
     from lazyflow.graph import Operator, OutputSlot, Graph
 except ImportError:
     has_dependencies = False
@@ -59,8 +58,6 @@ if has_dependencies:
             time.sleep(self.delay)
             return result
 
-    @ut.skipUnless(has_vigra, "module vigra not found")
-    @ut.skipUnless(has_lazyflow, "module lazyflow not found")
     class ImageScene2D_LazyTest( ut.TestCase ):
 
         @classmethod
