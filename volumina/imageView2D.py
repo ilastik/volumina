@@ -68,6 +68,8 @@ class ImageView2D(QGraphicsView):
         self.setScene(imagescene2d)
 
         self.mousePos = QPointF(0,0)
+        # FIXME: These int members shadow QWidget.x() and QWidget.y(), which can lead to confusion when debugging...
+        self.x, self.y = (0,0)
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -85,7 +87,7 @@ class ImageView2D(QGraphicsView):
 
         self._ticker = QTimer(self)
         self._ticker.timeout.connect(self._tickerEvent)
-
+        
         #
         # Setup the Viewport for fast painting
         #
