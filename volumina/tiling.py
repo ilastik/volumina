@@ -561,10 +561,9 @@ class TileProvider( QObject ):
                             if stack_id == self._current_stack_id and cache is self._cache:
                                 self.sceneRectChanged.emit(QRectF(self.tiling.imageRects[tile_nr]))
             except:
-                import traceback
                 with volumina.printLock:
-                    sys.stderr.write("ERROR: volumina tiling layer rendering worker thread caught an unhandled exception:")
-                    traceback.print_exc()
+                    sys.excepthook( *sys.exc_info() )
+                    sys.stderr.write("ERROR: volumina tiling layer rendering worker thread caught an unhandled exception.  See above.")
             finally:
                 queue.task_done()
 
