@@ -12,7 +12,7 @@ from vtk import vtkRenderer, vtkConeSource, vtkPolyDataMapper, vtkActor, \
 
 from PyQt4.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
                         QSizePolicy, QSpacerItem, QIcon, QFileDialog, \
-                        QToolButton
+                        QToolButton, QApplication
 from PyQt4.QtCore import pyqtSignal, SIGNAL, QEvent, QTimer
 from PyQt4.QtGui import QMenu, QAction, QColor
 import volumina.icons_rc
@@ -283,6 +283,13 @@ class OverviewScene(QWidget):
         hbox.setMargin(0)
         hbox.setSpacing(5)
         hbox.setContentsMargins(5,3,5,3)
+        
+        def delete_gl_widget():
+            # This is called just before the app quits to avoid this error during shutdown:
+            # QGLContext::makeCurrent: Cannot make invalid context current
+            self.qvtk.setParent(None)
+            del self.qvtk
+        QApplication.instance().aboutToQuit.connect( delete_gl_widget )
         
         b1 = QToolButton()
         b1.setIcon(QIcon(':icons/icons/x-axis.png'))
