@@ -438,6 +438,13 @@ class NormalizingSource( QObject ):
             self._method = bounds
             self._bounds = (None, None)
             
+    @property
+    def dataSlot(self):
+        if hasattr(self._rawSource, "_orig_outslot"):
+            return self._rawSource._orig_outslot
+        else:
+            return None
+            
     def dtype(self):
         return self._rawSource.dtype()
     

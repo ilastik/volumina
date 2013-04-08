@@ -125,13 +125,15 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
 
     '''
     def onExport():
-        if _has_lazyflow:
-            inputArray = layer.datasources[0].request((slice(None),)).wait()
-            expDlg = ExportDialog(parent = menu)
-            g = Graph()
-            piper = OpArrayPiper(graph=g)
-            piper.inputs["Input"].setValue(inputArray)
-            expDlg.setInput(piper.outputs["Output"],g)
+        dataSource = layer.datasources[0]
+        if not hasattr(dataSource, "dataSlot"):
+            raise RuntimeError("can not export from a non-lazyflow data source (layer=%r, datasource=%r)" % (type(layer), type(dataSource)) )
+        expDlg = ExportDialog(parent = menu)
+        import lazyflow
+        assert isinstance(dataSource.dataSlot, lazyflow.graph.Slot), "slot is of type %r" % (type(dataSource.dataSlot))
+        assert isinstance(dataSource.dataSlot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(dataSource.dataSlot.getRealOperator()))
+        expDlg.setInput(dataSource.dataSlot)
+            
         expDlg.show()
         
     menu = QMenu("Menu", parent)

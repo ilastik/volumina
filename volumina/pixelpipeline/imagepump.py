@@ -1,7 +1,12 @@
+#Python
 from functools import partial
+
+#PyQt
 from PyQt4.QtCore import QObject, pyqtSignal, QRect
-from slicesources import SliceSource, SyncedSliceSources
-from imagesourcefactories import createImageSource
+
+#volumina
+from volumina.pixelpipeline.slicesources import SliceSource, SyncedSliceSources
+from volumina.pixelpipeline.imagesourcefactories import createImageSource
 from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, ColortableImageSource
 
 class StackedImageSources( QObject ):

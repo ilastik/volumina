@@ -1,9 +1,10 @@
 #Python
 import os
+from collections import OrderedDict
 
 #PyQt
 from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
-                        QDialogButtonBox, QMessageBox
+                        QDialogButtonBox, QMessageBox, QProgressDialog, QLabel
 from PyQt4.QtCore import QRegExp, Qt
 from PyQt4 import uic
 
@@ -31,12 +32,12 @@ class ExportDialog(QDialog):
         if p == "/": p = "."+p
         uic.loadUi(p+"ui/exporterDlg.ui", self)
         
-        self.checkBoxDummyList = [self.checkBoxDummy1, self.checkBoxDummy2, self.checkBoxDummy3, self.checkBoxDummy4, \
-                                  self.checkBoxDummy5, self.checkBoxDummy6]
-        self.lineEditInputShapeList = [self.lineEditInputShapeT, self.lineEditInputShapeX, self.lineEditInputShapeY, \
-                                    self.lineEditInputShapeZ, self.lineEditInputShapeC]
-        self.lineEditOutputShapeList = [self.lineEditOutputShapeT, self.lineEditOutputShapeX, self.lineEditOutputShapeY, \
-                                     self.lineEditOutputShapeZ, self.lineEditOutputShapeC]
+        self.line_outputShape = OrderedDict()
+        self.line_outputShape['t'] = self.lineEditOutputShapeT
+        self.line_outputShape['x'] = self.lineEditOutputShapeX
+        self.line_outputShape['y'] = self.lineEditOutputShapeY
+        self.line_outputShape['z'] = self.lineEditOutputShapeZ
+        self.line_outputShape['c'] = self.lineEditOutputShapeC
         
         #=======================================================================
         # connections
@@ -45,12 +46,12 @@ class ExportDialog(QDialog):
         self.radioButtonH5.clicked.connect(self.on_radioButtonH5Clicked)
         self.radioButtonStack.clicked.connect(self.on_radioButtonStackClicked)
         self.comboBoxStackFileType.currentIndexChanged.connect(self.comboBoxStackFileTypeChanged)
-        self.checkBoxDummy1.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkBoxDummy2.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkBoxDummy3.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkBoxDummy4.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkBoxDummy5.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkBoxDummy6.stateChanged.connect(self.on_checkBoxDummyClicked)
+        self.check_xy.stateChanged.connect(self.on_checkBoxDummyClicked)
+        self.check_xz.stateChanged.connect(self.on_checkBoxDummyClicked)
+        self.check_yz.stateChanged.connect(self.on_checkBoxDummyClicked)
+        self.check_xt.stateChanged.connect(self.on_checkBoxDummyClicked)
+        self.check_yt.stateChanged.connect(self.on_checkBoxDummyClicked)
+        self.check_zt.stateChanged.connect(self.on_checkBoxDummyClicked)
         self.checkBoxNormalize.stateChanged.connect(self.on_checkBoxNormalizeClicked)
         self.lineEditOutputShapeX.textEdited.connect(self.lineEditOutputShapeChanged)
         self.lineEditOutputShapeY.textEdited.connect(self.lineEditOutputShapeChanged)
@@ -80,14 +81,24 @@ class ExportDialog(QDialog):
         self.setRegExToLineEditOutputShape()
         self.setDefaultComboBoxHdf5DataType()
         
+    def _volumeMetaString(self, slot):
+        v = "shape = {"
+        for i, (axis, extent) in enumerate(zip(slot.meta.axistags, slot.meta.shape)):
+            v += axis.key + ": " + str(extent)
+            assert axis.key in self.line_outputShape.keys()
+            if i < len(slot.meta.shape)-1:
+                v += " "
+        v += "}, dtype = " + str(slot.meta.dtype)
+        return v
+        
     def setVolumeShapeInfo(self):
-        for i in range(len(self.input.meta.shape)):
-            self.lineEditInputShapeList[i].setText("0 - %d" % (int(self.input.meta.shape[i])-1))
-            self.lineEditOutputShapeList[i].setText("0 - %d" % (int(self.input.meta.shape[i])-1))
+        for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
+            self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
+        self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
             
     def setRegExToLineEditOutputShape(self):
         r = QRegExp("([0-9]*)(-|\W)+([0-9]*)")
-        for i in self.lineEditOutputShapeList:
+        for i in self.line_outputShape.values():
             i.setValidator(QRegExpValidator(r, i))
             
     def setDefaultComboBoxHdf5DataType(self):
@@ -162,9 +173,9 @@ class ExportDialog(QDialog):
             
     def on_checkBoxDummyClicked(self):
         checkedList = []
-        for i in range(len(self.checkBoxDummyList)):
-            if self.checkBoxDummyList[i].isChecked():
-                checkedList.append(str(self.checkBoxDummyList[i].text()))
+        #for i in range(len(self.checkBoxDummyList)):
+        #    if self.checkBoxDummyList[i].isChecked():
+        #        checkedList.append(str(self.checkBoxDummyList[i].text()))
         return checkedList
     
     def comboBoxStackFileTypeChanged(self, int):
@@ -219,41 +230,51 @@ class ExportDialog(QDialog):
     def createRoiForOutputShape(self):
         start = []
         stop = []
-        for i in range(len(self.lineEditOutputShapeList)):
-            r = self.lineEditOutputShapeList[i].validator().regExp()
-            r.indexIn(self.lineEditOutputShapeList[i].displayText())
+        for key, extent in self.line_outputShape.iteritems():
+            r = extent.validator().regExp()
+            r.indexIn(extent.displayText())
             #TODO: FIX THIS, its hacky
             if r.cap(1) != '' and r.cap(3) != '':
                 c1 = int(r.cap(1))
                 c3 = int(r.cap(3)) + 1 # GUI input is [start, stop] but keys are [start, stop), so add 1
                 start.append(c1)
                 stop.append(c3)
-        if _has_lazyflow:
-                return [TinyVector(start), TinyVector(stop)]
-        return []
+        roi = [TinyVector(start), TinyVector(stop)]
+        print "[ExportDlg] export roi =", roi
+        return roi
         
     def accept(self, *args, **kwargs):
+        
+        dlg = QProgressDialog(self)
+        dlg.setLabel(QLabel("exporting..."))
+        dlg.setMinimum(0)
+        dlg.setMaximum(100)
+        
         if self.radioButtonStack.isChecked():
             key = self.createKeyForOutputShape()
-            if _has_lazyflow:
-                writer = OpStackWriter()
-                writer.inputs["input"].connect(self.input)
-                writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
-                writer.inputs["dummy"].setValue(["zt"])
-                writer.outputs["WritePNGStack"][key].allocate().wait()
+            
+            writer = OpStackWriter(self.input.getRealOperator())
+            writer.inputs["input"].connect(self.input)
+            writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
+            writer.inputs["dummy"].setValue(["zt"])
+            writer.outputs["WritePNGStack"][key].allocate().wait()
 
-        if self.radioButtonH5.isChecked():
+        elif self.radioButtonH5.isChecked():
             h5Key = self.createRoiForOutputShape()
-            if _has_lazyflow:
-                writerH5 = OpH5Writer()
-                writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
-                writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
-                writerH5.inputs["input"].connect(self.input)
-                writerH5.inputs["blockShape"].setValue(int(self.spinBoxHdf5BlockShape.value()))
-                writerH5.inputs["dataType"].setValue(str(self.comboBoxHdf5DataType.currentText()))
-                writerH5.inputs["roi"].setValue(h5Key)
-                writerH5.inputs["normalize"].setValue(self.createNormalizeValue())
-                writerH5.outputs["WriteImage"][:].allocate().wait()
+          
+            writerH5 = OpH5Writer(self.input.getRealOperator())
+            writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
+            writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
+            writerH5.inputs["input"].connect(self.input)
+            writerH5.inputs["blockShape"].setValue(int(self.spinBoxHdf5BlockShape.value()))
+            writerH5.inputs["dataType"].setValue(str(self.comboBoxHdf5DataType.currentText()))
+            writerH5.inputs["roi"].setValue(h5Key)
+            writerH5.inputs["normalize"].setValue(self.createNormalizeValue())
+            writerH5.outputs["WriteImage"][:].allocate().wait()
+        
+        else:
+            raise RuntimeError("unhandled button")
+        
         return QDialog.accept(self, *args, **kwargs)
         
     def show(self):
@@ -279,5 +300,6 @@ if __name__ == '__main__':
     
     d = ExportDialog()
     d.setInput(a.Output)
+    
     d.show()
     app.exec_()
