@@ -1,8 +1,11 @@
+#Python
+import os
+
+#PyQt
 from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
                         QDialogButtonBox, QMessageBox
 from PyQt4.QtCore import QRegExp, Qt
 from PyQt4 import uic
-import os
 
 ###
 ### lazyflow input
@@ -71,9 +74,8 @@ class ExportDialog(QDialog):
 #===============================================================================
 # set input data informations
 #===============================================================================
-    def setInput(self, inputSlot, graph):
+    def setInput(self, inputSlot):
         self.input = inputSlot
-        self.graph = graph
         self.setVolumeShapeInfo()
         self.setRegExToLineEditOutputShape()
         self.setDefaultComboBoxHdf5DataType()
@@ -234,7 +236,7 @@ class ExportDialog(QDialog):
         if self.radioButtonStack.isChecked():
             key = self.createKeyForOutputShape()
             if _has_lazyflow:
-                writer = OpStackWriter(graph=self.graph)
+                writer = OpStackWriter()
                 writer.inputs["input"].connect(self.input)
                 writer.inputs["filepath"].setValue(str(self.lineEditFilePath.displayText()))
                 writer.inputs["dummy"].setValue(["zt"])
@@ -243,7 +245,7 @@ class ExportDialog(QDialog):
         if self.radioButtonH5.isChecked():
             h5Key = self.createRoiForOutputShape()
             if _has_lazyflow:
-                writerH5 = OpH5Writer(graph=self.graph)
+                writerH5 = OpH5Writer()
                 writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
                 writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
                 writerH5.inputs["input"].connect(self.input)
@@ -265,7 +267,17 @@ class ExportDialog(QDialog):
         
 if __name__ == '__main__':
     from PyQt4.QtGui import QApplication
+    import vigra, numpy
+    from lazyflow.operators import OpArrayPiper
+    from lazyflow.graph import Graph
     app = QApplication(list())
+   
+    g = Graph()
+    arr = vigra.Volume((20,30,40), dtype=numpy.uint8)
+    a = OpArrayPiper(graph=g)
+    a.Input.setValue(arr)
+    
     d = ExportDialog()
+    d.setInput(a.Output)
     d.show()
     app.exec_()
