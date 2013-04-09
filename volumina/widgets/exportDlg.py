@@ -8,17 +8,20 @@ from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
 from PyQt4.QtCore import QRegExp, Qt
 from PyQt4 import uic
 
+
 ###
 ### lazyflow input
 ###
 _has_lazyflow = True
 try:
+    from lazyflow.operators import OpSubRegion
     from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
-    from lazyflow.roi import TinyVector
+    from lazyflow.operators.vigraOperators import OpH5WriterBigDataset
+    from lazyflow.roi import TinyVector, sliceToRoi
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
-
+import threading
 
 class ExportDialog(QDialog):
     def __init__(self, parent=None):
@@ -64,9 +67,9 @@ class ExportDialog(QDialog):
         self.on_radioButtonH5Clicked()
         self.checkBoxNormalize.setCheckState(False)
         
-        folderPath = os.path.abspath(__file__)
+        folderPath = os.path.abspath(os.getcwd())
         folderPath = folderPath.split("/")
-        folderPath = folderPath[0:-1]
+        #folderPath = folderPath[0:-1]
         folderPath.append("Untitled.h5")
         folderPath = "/".join(folderPath)
         self.setLineEditFilePath(folderPath)
@@ -95,6 +98,7 @@ class ExportDialog(QDialog):
         for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
             self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
         self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
+        self.lineEditOutputShapeListValidation()
             
     def setRegExToLineEditOutputShape(self):
         r = QRegExp("([0-9]*)(-|\W)+([0-9]*)")
@@ -184,24 +188,48 @@ class ExportDialog(QDialog):
     # lineEditOutputShape    
     #===========================================================================
     def lineEditOutputShapeListValidation(self):
+
+        lineEditOutputShapeList = []
+        isValidDict = OrderedDict()
+        volumeShape = self.input.meta.getTaggedShape()
+        for key,value in self.line_outputShape.items():
+            if key not in volumeShape:
+                isValidDict[key] = "Disabled" 
+                continue
+            limits = [int(token) for token in str(value.text()).split() if token.isdigit()]
+
+            isValidDict[key] = False
+            if len(limits) != 2:
+                continue
+            elif limits[0] >= volumeShape[key] or limits[1] >= volumeShape[key]:
+                continue
+            elif limits[1] < limits[0]:
+                continue
+            lineEditOutputShapeList.append(slice(limits[0],limits[1]))
+            isValidDict[key] = True
+
         isValid = True
-        for i in range(len(self.lineEditOutputShapeList)):
-            r = self.lineEditOutputShapeList[i].validator().regExp()
-            r.indexIn(self.lineEditOutputShapeList[i].displayText())
-            p = self.lineEditOutputShapeList[i].palette()
-            if r.cap(1) == "" or r.cap(2) == "" or r.cap(3) == "" or \
-            int(r.cap(1)) > int(r.cap(3)) or int(r.cap(3)) > int(self.input.meta.shape[i])-1:
-                p.setColor(QPalette.Base, Qt.red)
-                p.setColor(QPalette.Text,Qt.white)
-                isValid = False
-            else:
+        for key,value in isValidDict.items():
+            p = QPalette()
+            if value == True:
                 p.setColor(QPalette.Base, Qt.white)
                 p.setColor(QPalette.Text,Qt.black)
-            self.lineEditOutputShapeList[i].setPalette(p)
+            elif value == False:
+                allValid = False
+                p.setColor(QPalette.Base, Qt.red)
+                p.setColor(QPalette.Text,Qt.white)
+            elif value == "Disabled":
+                p.setColor(QPalette.Base, Qt.gray)
+                p.setColor(QPalette.Text,Qt.gray)
+                
+            self.line_outputShape[key].setPalette(p)
+
         if isValid:
             self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+
+        self.roi = tuple(lineEditOutputShapeList)
 
     def setLineEditFilePath(self, filePath):
         self.lineEditFilePath.setText(filePath)
@@ -220,11 +248,7 @@ class ExportDialog(QDialog):
             return -1
     
     def createKeyForOutputShape(self):
-        key = []
-        for i in range(len(self.lineEditOutputShapeList)):
-            r = self.lineEditOutputShapeList[i].validator().regExp()
-            r.indexIn(self.lineEditOutputShapeList[i].displayText())
-            key.append(slice(int(r.cap(1)), int(r.cap(3)), 1))
+        
         return key
     
     def createRoiForOutputShape(self):
@@ -260,17 +284,44 @@ class ExportDialog(QDialog):
             writer.outputs["WritePNGStack"][key].allocate().wait()
 
         elif self.radioButtonH5.isChecked():
-            h5Key = self.createRoiForOutputShape()
-          
-            writerH5 = OpH5Writer(self.input.getRealOperator())
-            writerH5.inputs["filename"].setValue(str(self.lineEditFilePath.displayText()))
-            writerH5.inputs["hdf5Path"].setValue(str(self.lineEditHdf5Path.displayText()))
-            writerH5.inputs["input"].connect(self.input)
-            writerH5.inputs["blockShape"].setValue(int(self.spinBoxHdf5BlockShape.value()))
-            writerH5.inputs["dataType"].setValue(str(self.comboBoxHdf5DataType.currentText()))
-            writerH5.inputs["roi"].setValue(h5Key)
-            writerH5.inputs["normalize"].setValue(self.createNormalizeValue())
-            writerH5.outputs["WriteImage"][:].allocate().wait()
+            import h5py
+            h5f = h5py.File(str(self.lineEditFilePath.displayText()),'w')
+            hdf5path = str(self.lineEditHdf5Path.displayText())
+            roi = sliceToRoi(self.roi,self.input.meta.shape)
+            subRegion = OpSubRegion(self.input.getRealOperator())
+            #subRegion.Start.setValue(tuple([k for k in h5Key[0]]))
+            subRegion.Start.setValue(tuple([k for k in roi[0]]))
+            subRegion.Stop.setValue(tuple([k for k in roi[1]]))
+            subRegion.Input.connect(self.input)
+    
+            writerH5 = OpH5WriterBigDataset(self.input.getRealOperator())
+            writerH5.hdf5File.setValue(h5f)
+            writerH5.hdf5Path.setValue(hdf5path)
+            writerH5.Image.connect(subRegion.Output)
+            def handleProgress(percent):
+                # Stop sending progress if we were cancelled
+                if self.predictionStorageEnabled:
+                    curprogress = progress + percent * (increment / 100.0)
+                    self.progressSignal.emit(curprogress)
+            writerH5.progressSignal.subscribe(handleProgress)
+
+            self._storageRequest = writerH5.WriteImage[...]
+            finishedEvent = threading.Event()
+            def handleFinish(result):
+                finishedEvent.set()
+
+            def handleCancel():
+                logger.info("Full volume prediction save CANCELLED.")
+                self._storageRequest = None
+                finishedEvent.set()
+
+            # Trigger the write and wait for it to complete or cancel.
+            self._storageRequest.notify_finished(handleFinish)
+            self._storageRequest.notify_cancelled(handleCancel)
+            self._storageRequest.submit() # Can't call wait().  See note above.
+            finishedEvent.wait()
+            writerH5.cleanUp()
+
         
         else:
             raise RuntimeError("unhandled button")
