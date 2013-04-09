@@ -205,7 +205,7 @@ class ExportDialog(QDialog):
                 continue
             elif limits[1] < limits[0]:
                 continue
-            lineEditOutputShapeList.append(slice(limits[0],limits[1]))
+            lineEditOutputShapeList.append(slice(limits[0],limits[1] + 1))
             isValidDict[key] = True
 
         isValid = True
@@ -290,20 +290,21 @@ class ExportDialog(QDialog):
             roi = sliceToRoi(self.roi,self.input.meta.shape)
             subRegion = OpSubRegion(self.input.getRealOperator())
             #subRegion.Start.setValue(tuple([k for k in h5Key[0]]))
+
             subRegion.Start.setValue(tuple([k for k in roi[0]]))
             subRegion.Stop.setValue(tuple([k for k in roi[1]]))
             subRegion.Input.connect(self.input)
-    
+   
             writerH5 = OpH5WriterBigDataset(self.input.getRealOperator())
             writerH5.hdf5File.setValue(h5f)
             writerH5.hdf5Path.setValue(hdf5path)
             writerH5.Image.connect(subRegion.Output)
-            def handleProgress(percent):
-                # Stop sending progress if we were cancelled
-                if self.predictionStorageEnabled:
-                    curprogress = progress + percent * (increment / 100.0)
-                    self.progressSignal.emit(curprogress)
-            writerH5.progressSignal.subscribe(handleProgress)
+            #def handleProgress(percent):
+            #    # Stop sending progress if we were cancelled
+            #    if self.predictionStorageEnabled:
+            #        curprogress = progress + percent * (increment / 100.0)
+            #        self.progressSignal.emit(curprogress)
+            #writerH5.progressSignal.subscribe(handleProgress)
 
             self._storageRequest = writerH5.WriteImage[...]
             finishedEvent = threading.Event()
