@@ -1,4 +1,6 @@
-Copyright 2013 <name> 
+volumina is licensed under the following terms (identical to the MIT license)
+
+Copyright (c) 2013 Bernhard X. Kausler, Thorben Kroeger
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
