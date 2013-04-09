@@ -1,7 +1,7 @@
 import os
 
 from PyQt4 import uic
-from PyQt4.QtGui import QDialog
+from PyQt4.QtGui import QDialog, QDialogButtonBox
 
 class MultiStepProgressDialog(QDialog):
     def __init__(self, parent=None):
@@ -10,6 +10,7 @@ class MultiStepProgressDialog(QDialog):
         
         self._numberOfSteps = 1
         self._currentStep = 0
+        self._steps = []
         self._update()
 
     def setNumberOfSteps(self, n):
@@ -18,13 +19,26 @@ class MultiStepProgressDialog(QDialog):
         self._currentStep = 0
         self._update()
     
+    def setSteps(self, steps):
+        self._steps = steps
+        self.setNumberOfSteps(len(self._steps))
+    
+    def finishStep(self):
+        self._currentStep = self._currentStep + 1
+        self._update()
+        if self._currentStep == self._numberOfSteps:
+            self.buttonBox.button(QDialogButtonBox.Ok).setText("Finished!")
+            self.buttonBox.button(QDialogButtonBox.Cancel).hide()
+            self.currentStepProgress.setValue(100)
+
+    
     def _update(self):
         self.currentStepProgress.setValue(0)
         self.overallProgress.setMinimum(0)
         self.overallProgress.setMaximum(self._numberOfSteps)
-        self.overallProgress.setFormat("step %%v of %d" % self._numberOfSteps)
+        self.overallProgress.setFormat("step %d of %d" % (self._currentStep, self._numberOfSteps))
 
-        self.overallProgress.setValue(0)
+        self.overallProgress.setValue(self._currentStep)
         self._updateCurrentStepLabel()
     
     def setStepProgress(self, x):
