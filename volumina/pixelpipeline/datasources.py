@@ -171,7 +171,7 @@ class LazyflowRequest( object ):
         def __missing__(self, key):
             if self.p[0].output.meta.shape is not None:
                 assert(self.p[0].output.ready())
-                reqobj = self.p[0].output[self.p[1]].allocate(priority = self.p[2])
+                reqobj = self.p[0].output[self.p[1]]
             else:
                 reqobj = ArrayRequest( np.zeros(slicing2shape(self.p[1]), dtype=np.uint8 ), (slice(None),) * len(self.p[1]) )
 
