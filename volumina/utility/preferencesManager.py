@@ -39,13 +39,16 @@ class PreferencesManager():
             if not os.path.exists(self._filePath):
                 return {}
             else:
-                with open(self._filePath, 'r') as f:
-                    return pickle.load(f)
-        
+                try:
+                    with open(self._filePath, 'rb') as f:
+                        return pickle.load(f)
+                except EOFError:
+                    os.remove(self._filePath)
+                    return {}
     def _save(self):
         if self._dirty:
             with self._lock:
-                with open(self._filePath, 'w') as f:
+                with open(self._filePath, 'wb') as f:
                     pickle.dump(self._prefs, f)
                 self._dirty = False
 
