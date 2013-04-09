@@ -76,7 +76,8 @@ class NavigationInterpreter(QObject):
 
             elif etype == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
                 return self.onMousePressRight_default( watched, event )
-
+            
+            
         elif self._current_state == self.DRAG_MODE:
             ### drag mode -> default mode
             if etype == QEvent.MouseButtonRelease:
@@ -107,7 +108,6 @@ class NavigationInterpreter(QObject):
         k_ctrl = (event.modifiers() == Qt.ControlModifier)
         k_shift = (event.modifiers() == Qt.ShiftModifier)
         k_shift_alt = (event.modifiers() == (Qt.ShiftModifier | Qt.AltModifier))
-
         imageview.mousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
 
         sceneMousePos = imageview.mapToScene(event.pos())
@@ -363,8 +363,11 @@ class NavigationControler(QObject):
         if delta == 0:
             return
         newSlice = self._model.slicingPos[axis] + delta
-        if newSlice < 0 or newSlice >= self._model.volumeExtent(axis):
-            return
+        
+        #sanitize
+        newSlice = 0 if newSlice < 0 else newSlice
+        newSlice = self._model.volumeExtent(axis)-1 if newSlice >= self._model.volumeExtent(axis) else newSlice
+
         newPos = copy.copy(self._model.slicingPos)
         newPos[axis] = newSlice
 

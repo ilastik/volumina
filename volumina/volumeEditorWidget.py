@@ -277,6 +277,16 @@ class VolumeEditorWidget(QWidget):
                 newPos = copy.copy(self.editor.posModel.slicingPos)
                 newPos[axis] += delta
                 self.editor.posModel.slicingPos = newPos
+
+            def jumpToFirstSlice(axis):
+                newPos = copy.copy(self.editor.posModel.slicingPos)
+                newPos[axis] = 0
+                self.editor.posModel.slicingPos = newPos
+                
+            def jumpToLastSlice(axis):
+                newPos = copy.copy(self.editor.posModel.slicingPos)
+                newPos[axis] = self.editor.posModel.shape[axis]-1
+                self.editor.posModel.slicingPos = newPos
             
             # TODO: Fix this dependency on ImageView/HUD internals
             self.shortcuts.append(self._shortcutHelper("Ctrl+Up",   "Navigation", "Slice up",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut, widget=v.hud.buttons['slice'].upLabel))
@@ -287,6 +297,10 @@ class VolumeEditorWidget(QWidget):
             
             self.shortcuts.append(self._shortcutHelper("Ctrl+Shift+Up",   "Navigation", "10 slices up",   v, partial(sliceDelta, i, 10),  Qt.WidgetShortcut))
             self.shortcuts.append(self._shortcutHelper("Ctrl+Shift+Down", "Navigation", "10 slices down", v, partial(sliceDelta, i, -10), Qt.WidgetShortcut))
+            self.shortcuts.append(self._shortcutHelper("Shift+Up",   "Navigation", "Jump to first slice",   v, partial(jumpToFirstSlice, i),  Qt.WidgetShortcut))
+            self.shortcuts.append(self._shortcutHelper("Shift+Down", "Navigation", "Jump to last slice", v, partial(jumpToLastSlice, i), Qt.WidgetShortcut))
+
+            
 
     def _updateInfoLabels(self, pos):
         self.quadViewStatusBar.setMouseCoords(*pos)
