@@ -1,13 +1,24 @@
 #Python
 import os
+import threading
 from collections import OrderedDict
+from functools import partial
 
 #PyQt
 from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
                         QDialogButtonBox, QMessageBox, QProgressDialog, QLabel
-from PyQt4.QtCore import QRegExp, Qt
+from PyQt4.QtCore import QRegExp, Qt, QTimer, pyqtSignal
 from PyQt4 import uic
 
+#SciPy
+import h5py
+
+#volumina
+from multiStepProgressDialog import MultiStepProgressDialog
+
+#ilastik
+from ilastik.utility.gui.threadRouter import threadRouted
+from ilastik.utility.gui import ThunkEventHandler
 
 ###
 ### lazyflow input
@@ -15,15 +26,17 @@ from PyQt4 import uic
 _has_lazyflow = True
 try:
     from lazyflow.operators import OpSubRegion
-    from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
+    from lazyflow.operators.ioOperators import OpStackWriter 
     from lazyflow.operators.vigraOperators import OpH5WriterBigDataset
     from lazyflow.roi import TinyVector, sliceToRoi
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
-import threading
 
 class ExportDialog(QDialog):
+    
+    progressSignal = pyqtSignal(float)
+    
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
         if not _has_lazyflow:
@@ -268,11 +281,8 @@ class ExportDialog(QDialog):
         return roi
         
     def accept(self, *args, **kwargs):
-        
-        dlg = QProgressDialog(self)
-        dlg.setLabel(QLabel("exporting..."))
-        dlg.setMinimum(0)
-        dlg.setMaximum(100)
+        dlg = MultiStepProgressDialog(self)
+        #thunkEventHandler = ThunkEventHandler(dlg)
         
         if self.radioButtonStack.isChecked():
             key = self.createKeyForOutputShape()
@@ -284,12 +294,10 @@ class ExportDialog(QDialog):
             writer.outputs["WritePNGStack"][key].allocate().wait()
 
         elif self.radioButtonH5.isChecked():
-            import h5py
-            h5f = h5py.File(str(self.lineEditFilePath.displayText()),'w')
+            h5f = h5py.File(str(self.lineEditFilePath.displayText()), 'w')
             hdf5path = str(self.lineEditHdf5Path.displayText())
             roi = sliceToRoi(self.roi,self.input.meta.shape)
             subRegion = OpSubRegion(self.input.getRealOperator())
-            #subRegion.Start.setValue(tuple([k for k in h5Key[0]]))
 
             subRegion.Start.setValue(tuple([k for k in roi[0]]))
             subRegion.Stop.setValue(tuple([k for k in roi[1]]))
@@ -299,36 +307,42 @@ class ExportDialog(QDialog):
             writerH5.hdf5File.setValue(h5f)
             writerH5.hdf5Path.setValue(hdf5path)
             writerH5.Image.connect(subRegion.Output)
-            #def handleProgress(percent):
-            #    # Stop sending progress if we were cancelled
-            #    if self.predictionStorageEnabled:
-            #        curprogress = progress + percent * (increment / 100.0)
-            #        self.progressSignal.emit(curprogress)
-            #writerH5.progressSignal.subscribe(handleProgress)
 
             self._storageRequest = writerH5.WriteImage[...]
             finishedEvent = threading.Event()
+            
             def handleFinish(result):
                 finishedEvent.set()
-
             def handleCancel():
-                logger.info("Full volume prediction save CANCELLED.")
-                self._storageRequest = None
-                finishedEvent.set()
+                print "Full volume prediction save CANCELLED."
+            def cancelRequest():
+                print "Cancelling request"
+                self._storageRequest.cancel()
+            def onProgressGUI(x):
+                print "xxx",x
+                dlg.setStepProgress(x)
+            self.progressSignal.connect(onProgressGUI)
+            def onProgressLazyflow(x):
+                self.progressSignal.emit(x)
 
             # Trigger the write and wait for it to complete or cancel.
             self._storageRequest.notify_finished(handleFinish)
             self._storageRequest.notify_cancelled(handleCancel)
-            self._storageRequest.submit() # Can't call wait().  See note above.
+            
+            dlg.rejected.connect(cancelRequest)
+            writerH5.progressSignal.subscribe( onProgressLazyflow )
+            self._storageRequest.submit() 
+            
+            dlg.exec_()
+            
             finishedEvent.wait()
             writerH5.cleanUp()
-
         
         else:
             raise RuntimeError("unhandled button")
         
         return QDialog.accept(self, *args, **kwargs)
-        
+    
     def show(self):
         if not _has_lazyflow:
             popUp = QMessageBox(parent=self)
@@ -346,7 +360,7 @@ if __name__ == '__main__':
     app = QApplication(list())
    
     g = Graph()
-    arr = vigra.Volume((20,30,40), dtype=numpy.uint8)
+    arr = vigra.Volume((600,800,400), dtype=numpy.uint8)
     a = OpArrayPiper(graph=g)
     a.Input.setValue(arr)
     

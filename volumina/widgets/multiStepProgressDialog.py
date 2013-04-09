@@ -27,6 +27,9 @@ class MultiStepProgressDialog(QDialog):
         self.overallProgress.setValue(0)
         self._updateCurrentStepLabel()
     
+    def setStepProgress(self, x):
+        self.currentStepProgress.setValue(x)
+    
     def _updateCurrentStepLabel(self):
         self.currentStepLabel.setText("ETA: %f min" % (42.42))
 
