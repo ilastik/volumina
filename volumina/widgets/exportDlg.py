@@ -17,6 +17,7 @@ import numpy
 
 #SciPy
 import h5py
+import numpy
 
 #volumina
 from multiStepProgressDialog import MultiStepProgressDialog
