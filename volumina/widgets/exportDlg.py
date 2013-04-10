@@ -26,8 +26,7 @@ from ilastik.utility.gui import ThunkEventHandler
 _has_lazyflow = True
 try:
     from lazyflow.operators import OpSubRegion
-    from lazyflow.operators.ioOperators import OpStackWriter 
-    from lazyflow.operators.vigraOperators import OpH5WriterBigDataset
+    from lazyflow.operators.ioOperators import OpStackWriter, OpH5WriterBigDataset
     from lazyflow.roi import TinyVector, sliceToRoi
 except ImportError as e:
     exceptStr = str(e)
