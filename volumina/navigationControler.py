@@ -77,17 +77,7 @@ class NavigationInterpreter(QObject):
             elif etype == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
                 return self.onMousePressRight_default( watched, event )
             
-            # shift + up = jump to first frame
-            elif etype == QEvent.KeyPress and event.key() == Qt.Key_Up:
-                self._navCtrl.changeSliceAbsolute(0, self._navCtrl._views.index(watched))
-                return True
-
-            # shift + down = jump to last frame
-            elif etype == QEvent.KeyPress and event.key() == Qt.Key_Down:
-                lastIdx = self._navCtrl._model.volumeExtent(self._navCtrl._views.index(watched))-1
-                self._navCtrl.changeSliceAbsolute(lastIdx, self._navCtrl._views.index(watched))
-                return True
-
+            
         elif self._current_state == self.DRAG_MODE:
             ### drag mode -> default mode
             if etype == QEvent.MouseButtonRelease:
