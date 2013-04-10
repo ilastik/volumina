@@ -443,7 +443,7 @@
             </font>
            </property>
            <property name="text">
-            <string>to Range</string>
+            <string>to</string>
            </property>
           </widget>
          </item>

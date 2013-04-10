@@ -4,12 +4,16 @@ import threading
 from collections import OrderedDict
 from functools import partial
 import re
+import logging
 
 #PyQt
 from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
                         QDialogButtonBox, QMessageBox, QProgressDialog, QLabel
 from PyQt4.QtCore import QRegExp, Qt, QTimer, pyqtSignal
 from PyQt4 import uic
+
+#numpy
+import numpy
 
 #SciPy
 import h5py
@@ -21,14 +25,13 @@ from multiStepProgressDialog import MultiStepProgressDialog
 from ilastik.utility.gui.threadRouter import threadRouted
 from ilastik.utility.gui import ThunkEventHandler
 
-from sitecustomize import debug_trace
 ###
 ### lazyflow input
 ###
 _has_lazyflow = True
 try:
     from lazyflow.operators import OpSubRegion, OpPixelOperator 
-    from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
+    from lazyflow.operators.ioOperators import OpStackWriter 
     from lazyflow.operators.vigraOperators import OpH5WriterBigDataset
     from lazyflow.roi import TinyVector, sliceToRoi
 except ImportError as e:
@@ -36,6 +39,9 @@ except ImportError as e:
     _has_lazyflow = False
 
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
+
+logger = logging.getLogger(__name__)
+traceLogger = logging.getLogger('TRACE.' + __name__)
 
 class ExportDialog(QDialog):
     
@@ -69,6 +75,7 @@ class ExportDialog(QDialog):
         self.radioButtonH5.clicked.connect(self.on_radioButtonH5Clicked)
         self.radioButtonStack.clicked.connect(self.on_radioButtonStackClicked)
         self.comboBoxStackFileType.currentIndexChanged.connect(self.comboBoxStackFileTypeChanged)
+        self.comboBoxHdf5DataType.currentIndexChanged.connect(self.setLayerValueRangeInfo)
         self.checkXY.stateChanged.connect(self.on_checkBoxDummyClicked)
         self.checkXZ.stateChanged.connect(self.on_checkBoxDummyClicked)
         self.checkXT.stateChanged.connect(self.on_checkBoxDummyClicked)
@@ -81,6 +88,7 @@ class ExportDialog(QDialog):
         self.lineEditOutputShapeT.textEdited.connect(self.validateRoi)
         self.lineEditOutputShapeC.textEdited.connect(self.validateRoi)
         self.normalizationComboBox.currentIndexChanged.connect(self.on_normalizationComboBoxChanged)
+        
         self.inputValueRange.textEdited.connect(self.validateInputValueRange)
         self.outputValueRange.textEdited.connect(self.validateInputValueRange)
         #=======================================================================
@@ -105,7 +113,6 @@ class ExportDialog(QDialog):
         self.setVolumeShapeInfo()
         self.setRegExToLineEditOutputShape()
         self.setDefaultComboBoxHdf5DataType()
-        self.setLayerValueRangeInfo()
         self.validateRoi()
         
     def _volumeMetaString(self, slot):
@@ -125,11 +132,19 @@ class ExportDialog(QDialog):
     
     def setLayerValueRangeInfo(self):
         inputDRange = [0,0]
-        if self.input.meta.drange:
-            inputDRange = self.input.meta.drange
+        if hasattr(self, "input"):
+            if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
+                inputDRange = self.input.meta.drange
             
         self.inputValueRange.setText("%d - %d" % tuple(inputDRange))
-        self.outputValueRange.setText("%d - %d" % tuple(inputDRange))
+        outputType = self.getOutputDtype()
+        typeLimits = []
+        try:
+            typeLimits.append(numpy.iinfo(outputType).min)
+            typeLimits.append(numpy.iinfo(outputType).max)
+        except:
+            typeLimits = inputDRange
+        self.outputValueRange.setText("%d - %d" % tuple(typeLimits))
             
     def setRegExToLineEditOutputShape(self):
         r = QRegExp("([0-9]*)(-|\W)+([0-9]*)")
@@ -137,9 +152,12 @@ class ExportDialog(QDialog):
             i.setValidator(QRegExpValidator(r, i))
             
     def setDefaultComboBoxHdf5DataType(self):
-        dtype = str(self.input.meta.dtype)
+        dtype = self.input.meta.dtype
+        if hasattr(self.input.meta.dtype, "type"):
+            dtype = dtype.type
+        dtype = str(dtype)
         for i in range(self.comboBoxHdf5DataType.count()):
-            if dtype == str(self.comboBoxHdf5DataType.itemText(i)):
+            if str(self.comboBoxHdf5DataType.itemText(i)) in dtype:
                 self.comboBoxHdf5DataType.setCurrentIndex(i)
 #===============================================================================
 # file
@@ -188,7 +206,7 @@ class ExportDialog(QDialog):
     def getOutputDtype(self):
         if self.radioButtonH5.isChecked():
             h5type = str(self.comboBoxHdf5DataType.currentText())
-            return numpy.dtype(h5type)
+            return numpy.dtype(h5type).type
             #parse for type / bits
             
         elif self.radioButtonStack.isChecked():
@@ -220,6 +238,7 @@ class ExportDialog(QDialog):
             self.outputValueRange.setEnabled(False)
 
         else:
+            self.setLayerValueRangeInfo()
             p.setColor(QPalette.Base,Qt.white)
             p.setColor(QPalette.Text,Qt.black)
             self.inputValueRange.setPalette(p)
@@ -231,14 +250,6 @@ class ExportDialog(QDialog):
         self.validateInputValueRange()
 
 
-    def on_checkBoxNormalizeClicked(self, int):
-        if int == 0:
-            #self.spinBoxNormalizeStart.setDisabled(True)
-            self.spinBoxNormalizeStop.setDisabled(True)
-        else:
-            #self.spinBoxNormalizeStart.setDisabled(False)
-            self.spinBoxNormalizeStop.setDisabled(False)
-            
     def on_checkBoxDummyClicked(self):
         checkedList = []
         #for i in range(len(self.checkBoxDummyList)):
@@ -289,11 +300,11 @@ class ExportDialog(QDialog):
         for key,value in isValidDict.items():
             p = QPalette()
             if value == True:
-                p.setColor(QPalette.Base, Qt.white)
+                p.setColor(QPalette.Base,Qt.white)
                 p.setColor(QPalette.Text,Qt.black)
             elif value == False:
                 isValid = False
-                p.setColor(QPalette.Base, Qt.red)
+                p.setColor(QPalette.Base,Qt.red)
                 p.setColor(QPalette.Text,Qt.white)
             elif value == "Disabled":
                 p.setColor(QPalette.Base, Qt.gray)
@@ -314,7 +325,7 @@ class ExportDialog(QDialog):
         self.lineEditOutputShapeListValidation()
 
     def validateInputValueRange(self):
-        isValid = True
+        allValid = True
         if self.normalizationMethod > 0:
             #validate input range:
             dtypes = [self.input.meta.dtype, self.getOutputDtype()]
@@ -322,16 +333,19 @@ class ExportDialog(QDialog):
             for i, valueRange in enumerate([self.inputValueRange,
                                             self.outputValueRange]):
                 limits = []
+                dtype = dtypes[i]
+                if hasattr(dtype, 'type'):
+                    dtype = dtype.type
                 for token in str(valueRange.text()).split():
                     try:
-                        num = dtypes[i].type(token)
+                        num = dtype(token)
                         limits.append(num)
                     except:
                         pass
-
             
                 p = QPalette()
 
+                isValid = True
                 if len(limits) != 2:
                     isValid = False
                 elif not limits[1] > limits[0]:
@@ -343,12 +357,15 @@ class ExportDialog(QDialog):
                     p.setColor(QPalette.Base,Qt.white)
                     p.setColor(QPalette.Text,Qt.black)
                 else:
+                    logger.debug("range is invalid" +  str(limits))
                     p.setColor(QPalette.Base,Qt.red)
                     p.setColor(QPalette.Text,Qt.white)
                 
                 valueRange.setPalette(p) 
+
+                allValid = allValid and isValid
         
-        self.validInputOutputRange = isValid
+        self.validInputOutputRange = allValid
 
         self.validateOptions()
         
@@ -401,7 +418,7 @@ class ExportDialog(QDialog):
             converter.Input.connect(inputVolume.Output)
             
             def convertToType(val):
-                return outputDtype.type(val)
+                return outputDtype(val)
             converter.Function.setValue(convertToType)
             inputVolume = converter
 
