@@ -13,6 +13,7 @@ from PyQt4 import uic
 
 #SciPy
 import h5py
+import numpy
 
 #volumina
 from multiStepProgressDialog import MultiStepProgressDialog
@@ -21,14 +22,13 @@ from multiStepProgressDialog import MultiStepProgressDialog
 from ilastik.utility.gui.threadRouter import threadRouted
 from ilastik.utility.gui import ThunkEventHandler
 
-from sitecustomize import debug_trace
 ###
 ### lazyflow input
 ###
 _has_lazyflow = True
 try:
     from lazyflow.operators import OpSubRegion, OpPixelOperator 
-    from lazyflow.operators.ioOperators import OpH5Writer,OpStackWriter 
+    from lazyflow.operators.ioOperators import OpStackWriter 
     from lazyflow.operators.vigraOperators import OpH5WriterBigDataset
     from lazyflow.roi import TinyVector, sliceToRoi
 except ImportError as e:
