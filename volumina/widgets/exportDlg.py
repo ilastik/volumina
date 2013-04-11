@@ -17,7 +17,6 @@ import numpy
 
 #SciPy
 import h5py
-import numpy
 
 #volumina
 from multiStepProgressDialog import MultiStepProgressDialog
@@ -33,7 +32,7 @@ _has_lazyflow = True
 try:
     from lazyflow.operators import OpSubRegion, OpPixelOperator 
     from lazyflow.operators.ioOperators import OpStackWriter 
-    from lazyflow.operators.vigraOperators import OpH5WriterBigDataset
+    from lazyflow.operators.ioOperators import OpH5WriterBigDataset
     from lazyflow.roi import TinyVector, sliceToRoi
 except ImportError as e:
     exceptStr = str(e)
@@ -77,12 +76,6 @@ class ExportDialog(QDialog):
         self.radioButtonStack.clicked.connect(self.on_radioButtonStackClicked)
         self.comboBoxStackFileType.currentIndexChanged.connect(self.comboBoxStackFileTypeChanged)
         self.comboBoxHdf5DataType.currentIndexChanged.connect(self.setLayerValueRangeInfo)
-        self.checkXY.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkXZ.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkXT.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkYZ.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkYT.stateChanged.connect(self.on_checkBoxDummyClicked)
-        self.checkZT.stateChanged.connect(self.on_checkBoxDummyClicked)
         self.lineEditOutputShapeX.textEdited.connect(self.validateRoi)
         self.lineEditOutputShapeY.textEdited.connect(self.validateRoi)
         self.lineEditOutputShapeZ.textEdited.connect(self.validateRoi)
@@ -112,6 +105,7 @@ class ExportDialog(QDialog):
     def setInput(self, inputSlot):
         self.input = inputSlot
         self.setVolumeShapeInfo()
+        self.setAvailableImageAxes()
         self.setRegExToLineEditOutputShape()
         self.setDefaultComboBoxHdf5DataType()
         self.validateRoi()
@@ -131,13 +125,43 @@ class ExportDialog(QDialog):
             self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
         self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
     
+    def setAvailableImageAxes(self):
+        axisTags = self.input.meta.axistags
+        extents  = self.input.meta.shape
+        comboBoxes = [self.axesComboBox1, self.axesComboBox2, self.axesComboBox3]
+        
+        for index, tag in enumerate(axisTags):
+            for box in comboBoxes[:-1]:
+                box.addItem(tag.key, index)
+            if extents[index] < 4:
+                comboBoxes[-1].addItem(tag.key, index)
+        self.axesComboBox3.addItem("None", None)
+        comboBoxes[-1].setCurrentIndex(comboBoxes[-1].findText("None"))
+        #set to good defaults, i.e. x,y,c
+        activeBox = 0
+        for tag in 'xyztc':
+            i = axisTags.index(tag)
+            if i < len(axisTags):
+                j = comboBoxes[activeBox].findText(tag)
+                if j != -1:
+                    comboBoxes[activeBox].setCurrentIndex(j)
+                    activeBox = activeBox + 1
+                    if activeBox == 3:
+                        break
+    
+
     def setLayerValueRangeInfo(self):
-        inputDRange = [0,0]
+        inputDRange = [0,1]
+        dtype = numpy.uint8
         if hasattr(self, "input"):
+            dtype = self.input.meta.dtype 
             if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
                 inputDRange = self.input.meta.drange
+            if hasattr(dtype, "type"):
+                dtype = dtype.type
+        stringifiedInputDRange = [str(dtype(i)) for i in inputDRange]
             
-        self.inputValueRange.setText("%d - %d" % tuple(inputDRange))
+        self.inputValueRange.setText("%s - %s" % tuple(stringifiedInputDRange))
         outputType = self.getOutputDtype()
         typeLimits = []
         try:
@@ -145,7 +169,8 @@ class ExportDialog(QDialog):
             typeLimits.append(numpy.iinfo(outputType).max)
         except:
             typeLimits = inputDRange
-        self.outputValueRange.setText("%d - %d" % tuple(typeLimits))
+        stringifiedOutputDRange = [str(outputType(i)) for i in typeLimits]
+        self.outputValueRange.setText("%s - %s" % tuple(stringifiedOutputDRange))
             
     def setRegExToLineEditOutputShape(self):
         r = QRegExp("([0-9]*)(-|\W)+([0-9]*)")

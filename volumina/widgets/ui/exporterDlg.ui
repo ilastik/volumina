@@ -536,47 +536,14 @@
           <layout class="QHBoxLayout" name="horizontalLayout_7">
            <item>
             <layout class="QGridLayout" name="gridLayout_4">
-             <item row="1" column="2">
-              <widget class="QCheckBox" name="checkXT">
-               <property name="text">
-                <string>xt</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QCheckBox" name="checkZT">
-               <property name="text">
-                <string>zt</string>
-               </property>
-              </widget>
-             </item>
              <item row="1" column="0">
-              <widget class="QCheckBox" name="checkXY">
-               <property name="text">
-                <string>xy</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QCheckBox" name="checkYZ">
-               <property name="text">
-                <string>yz</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QCheckBox" name="checkYT">
-               <property name="text">
-                <string>yt</string>
-               </property>
-              </widget>
+              <widget class="QComboBox" name="axesComboBox1"/>
              </item>
              <item row="1" column="1">
-              <widget class="QCheckBox" name="checkXZ">
-               <property name="text">
-                <string>xz</string>
-               </property>
-              </widget>
+              <widget class="QComboBox" name="axesComboBox2"/>
+             </item>
+             <item row="1" column="2">
+              <widget class="QComboBox" name="axesComboBox3"/>
              </item>
             </layout>
            </item>
