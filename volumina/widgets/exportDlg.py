@@ -91,7 +91,7 @@ class ExportDialog(QDialog):
         self.on_radioButtonH5Clicked()
         self.on_normalizationComboBoxChanged()
         
-        folderPath = os.path.abspath(os.getcwd())
+        folderPath = os.path.abspath(os.getcwd()).replace("\\","/")
         folderPath = folderPath.split("/")
         #folderPath = folderPath[0:-1]
         folderPath.append("Untitled.h5")
@@ -195,6 +195,7 @@ class ExportDialog(QDialog):
         newPath = str(fileDlg.getSaveFileName(self, "Save File", str(self.lineEditFilePath.displayText())))
         if newPath == "":
             newPath = oldPath
+        newPath = newPath.replace("\\","/")
         self.lineEditFilePath.setText(newPath)
         self.correctFilePathSuffix()
     
