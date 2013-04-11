@@ -65,7 +65,7 @@ class SliceSource( QObject ):
     def through( self, value ):
         value = list(value)
         if len(value) != len(self.sliceProjection.along):
-            raise ValueError("SliceSource.through.setter: length of value differs from along lenth: %s != %s " %(str(len(value)), str(len(self.sliceProjection.along))))
+            raise ValueError("SliceSource.through.setter: length of value differs from along length: %s != %s " %(str(len(value)), str(len(self.sliceProjection.along))))
         if value != self._through:
             old = self._through
             old_id = self.id
@@ -88,9 +88,31 @@ class SliceSource( QObject ):
         through[index] = value
         self.through = through
 
-    def request( self, slicing2D, through=None ):
+    def request( self, slicing2D, along_through=None ):
+        '''Return a SliceRequest for a subregion of the slice.
+
+        By default the currently set through value is used for
+        the slicing. Optionally, some or all through values can
+        be set to a another value (useful for requesting out-of-view
+        slices as necessary for prefetching).
+        
+        Arguments:
+        slicing2D    -- pair of 'slice' objects: abscissa, ordinate
+        along_trough -- sequence of pairs or None; 
+                        pair is '(along axis, through value)'
+
+        Returns: a SliceRequest for a 2d array
+
+        '''
         assert len(slicing2D) == 2
-        through = through if through else self.through 
+        # override through with caller values
+        if along_through:
+            through = list(self._through)
+            for axis, value in along_through:
+                through[axis] = value
+        else:
+           through = tuple(self._through)
+
         slicing = self.sliceProjection.domain(through, slicing2D[0], slicing2D[1])
         
         if volumina.verboseRequests:
@@ -136,7 +158,7 @@ class SyncedSliceSources( QObject ):
 
     @property
     def id( self ):
-        return (self, tuple(self._through))
+        return (self, tuple(zip(self._sync_along, self._through)))
 
     @property
     def through( self ):

@@ -44,7 +44,7 @@ class ImageSource( QObject ):
         self._opaque = guarantees_opaqueness
         self.direct = direct
 
-    def request( self, rect, through=None ):
+    def request( self, rect, along_through=None ):
         raise NotImplementedError
 
     def setDirty( self, slicing ):
@@ -91,7 +91,7 @@ class GrayscaleImageSource( ImageSource ):
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
 
-    def request( self, qrect, through=None ):
+    def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
             print Fore.RED + "  GrayscaleImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
@@ -101,7 +101,7 @@ class GrayscaleImageSource( ImageSource ):
             
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
-        req = self._arraySource2D.request(s, through)
+        req = self._arraySource2D.request(s, along_through)
         return GrayscaleImageRequest( req, self._layer.normalize[0], direct=self.direct )
 assert issubclass(GrayscaleImageSource, SourceABC)
 
@@ -152,7 +152,7 @@ class AlphaModulatedImageSource( ImageSource ):
 
         self._arraySource2D.isDirty.connect(self.setDirty)
 
-    def request( self, qrect, through=None ):
+    def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
             print Fore.RED + "  AlphaModulatedImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
@@ -162,7 +162,7 @@ class AlphaModulatedImageSource( ImageSource ):
             
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
-        req = self._arraySource2D.request(s, through)
+        req = self._arraySource2D.request(s, along_through)
         return AlphaModulatedImageRequest( req, self._layer.tintColor, self._layer.normalize[0] )
 assert issubclass(AlphaModulatedImageSource, SourceABC)
 
@@ -235,7 +235,7 @@ class ColortableImageSource( ImageSource ):
             self._colorTable[i,3] = color.alpha() 
         self.isDirty.emit(QRect()) # empty rect == everything is dirty
         
-    def request( self, qrect, through=None ):
+    def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
             print Fore.RED + "  ColortableImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d) = %r" \
@@ -245,7 +245,7 @@ class ColortableImageSource( ImageSource ):
             
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
-        req = self._arraySource2D.request(s, through)
+        req = self._arraySource2D.request(s, along_through)
         return ColortableImageRequest( req, self._colorTable, self.direct )
 assert issubclass(ColortableImageSource, SourceABC)
 
@@ -319,7 +319,7 @@ class RGBAImageSource( ImageSource ):
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)
 
-    def request( self, qrect, through=None ):
+    def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
             print Fore.RED + "  RGBAImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
@@ -329,10 +329,10 @@ class RGBAImageSource( ImageSource ):
             
         assert isinstance(qrect, QRect)
         s = rect2slicing( qrect )
-        r = self._channels[0].request(s, through)
-        g = self._channels[1].request(s, through)
-        b = self._channels[2].request(s, through)
-        a = self._channels[3].request(s, through)
+        r = self._channels[0].request(s, along_through)
+        g = self._channels[1].request(s, along_through)
+        b = self._channels[2].request(s, along_through)
+        a = self._channels[3].request(s, along_through)
         shape = list( slicing2shape(s) )
         assert len(shape) == 2
         assert all([x > 0 for x in shape])
@@ -389,7 +389,7 @@ assert issubclass(RGBAImageRequest, RequestABC)
 
 class RandomImageSource( ImageSource ):
     '''Random noise image for testing and debugging.'''
-    def request( self, qrect, through=None ):
+    def request( self, qrect, along_through=None ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         shape = slicing2shape( s )

@@ -110,7 +110,7 @@ class StackedImageSources( QObject ):
         layerStackModel.orderChanged.connect( self._onOrderChanged )
         layerStackModel.layerRemoved.connect( self._onLayerRemoved )
 
-        self._stackId = (None, (0,0,0))
+        self._stackId = (None, tuple())
 
     def __len__( self ):
         return len([ _ for _ in self])
@@ -294,6 +294,7 @@ class ImagePump( object ):
         self._layerStackModel = layerStackModel
         self._projection = sliceProjection
         self._layerToSliceSrcs = {}
+        self._sliceSrcToImageSrc = {}
     
         # setup image source stack and slice sources
         self._syncedSliceSources = SyncedSliceSources( sync_along=sync_along )
@@ -321,9 +322,25 @@ class ImagePump( object ):
                 self._syncedSliceSources.remove(ss)
         assert(len(self._syncedSliceSources) == 0 )
         self._layerToSliceSrcs = {}
+        self._sliceSrcToImageSrc = {}
 
     def _onIdChanged( self, old, new ):
         self._stackedImageSources.stackId = new
+
+    def _onSourceThroughChanged( self, src, old, new ):
+        # if at least one not synced along axis has changed,
+        # mark the corresponding image source as dirty
+        sa = self._syncedSliceSources.getSyncAlong()
+        mark_dirty = False
+        for i in xrange(len(new)):
+            if i not in sa:
+                if old[i] != new[i]:
+                    mark_dirty = True
+                    break
+
+        if mark_dirty:
+            self._sliceSrcToImageSrc[src].setDirty((slice(None),slice(None)))
+        
 
     def _createSources( self, layer ):
         def sliceSrcOrNone( datasrc ):
@@ -341,11 +358,14 @@ class ImagePump( object ):
         sliceSources, imageSource = self._createSources(layer)
         for ss in sliceSources:
             self._syncedSliceSources.add(ss)
+            self._sliceSrcToImageSrc[ss] = imageSource
+            ss.throughChanged.connect(partial(self._onSourceThroughChanged, ss))
         self._layerToSliceSrcs[layer] = sliceSources
         self._stackedImageSources.register(layer, imageSource)
 
     def _removeLayer( self, layer ):
         for ss in self._layerToSliceSrcs[layer]:
             self._syncedSliceSources.remove(ss)
+            del self._sliceSrcToImageSrc[ss]
         del self._layerToSliceSrcs[layer]
 
