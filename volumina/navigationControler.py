@@ -2,6 +2,7 @@ from PyQt4.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
 from PyQt4.QtGui  import QColor, QCursor 
 
 import copy
+import warnings
 from functools import partial
 
 from eventswitch import InterpreterABC
@@ -345,10 +346,34 @@ class NavigationControler(QObject):
         self._model.time = new_t
 
     def changeChannel(self, newChannel):
+        '''Change channel for all layers simultaneously.
+
+        This function can be used if all layers are synced along the
+        channel axis and the new channel value exists for all
+        layers. Use 'layerChangeChannel()' otherwise.
+        
+        '''
+        for pump in self._imagePumps:
+            if 2 not in pump.syncedSliceSources.getSyncAlong():
+                raise RuntimeError("NavigationControler.changeChannel: channel axis not synced in all image pumps; can't apply method")
         if self._model.shape is None:
             return
         for i in range(3):
             self._imagePumps[i].syncedSliceSources.setThrough(2, newChannel)
+
+    def layerChangeChannel( self, layer, newChannel):
+        '''Change the channel for a single layer.
+
+        This function can be used when the layers are not synced along
+        the channel axis. Use 'changeChannel()' otherwise.
+
+        '''
+        for pump in self._imagePumps:
+            for src in pump.layerToSliceSources( layer ):
+                src.setThrough(2, newChannel)
+        # Note: we update the slice sources of a layer
+        # sequentially. This could cause flickering if there are
+        # two or more slice sources per layer (like a RGBA layer). 
 
     def changeSliceRelative(self, delta, axis):
         if self._model.shape is None:
@@ -474,7 +499,7 @@ class NavigationControler(QObject):
         self._views[axis].hud.sliceSelector.setValue(num)
 
         #re-configure the slice source
-        self._imagePumps[axis].setThrough(1,num)
+        self._imagePumps[axis].syncedSliceSources.setThrough(1,num)
 
     def _positionValid(self, pos):
         if self._model.shape is None:
