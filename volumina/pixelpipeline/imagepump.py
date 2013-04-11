@@ -296,7 +296,7 @@ class ImagePump( object ):
         self._layerToSliceSrcs = {}
     
         ## setup image source stack and slice sources
-        self._syncedSliceSources = SyncedSliceSources( len(sliceProjection.along) * (0,) )
+        self._syncedSliceSources = SyncedSliceSources( sync_along=(0,1,2) )
         self._stackedImageSources = StackedImageSources( layerStackModel )
         self._stackedImageSources.stackId = self._syncedSliceSources.id
         for layer in self._layerStackModel:
