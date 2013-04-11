@@ -209,7 +209,7 @@ class LazyflowRequest( object ):
         self._req[0].submit()
 
     def notify( self, callback, **kwargs ):
-        self._req[0].notify( callback, **kwargs)
+        self._req[0].notify_finished( partial(callback, (), **kwargs) )
 assert issubclass(LazyflowRequest, RequestABC)
 
 #*******************************************************************************
