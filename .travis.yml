@@ -2,7 +2,7 @@ language: python
 python:
    - "2.7"
 install:
-   - sudo apt-get install python-qt4 python-qt4-dev python-sip python-sip-dev
+   - sudo apt-get install python-qt4 python-qt4-dev python-sip python-sip-dev libhdf5-dev
    - ln -s /usr/lib/python2.7/dist-packages/PyQt4/ $VIRTUAL_ENV/lib/python2.7/site-packages/
    - ln -s /usr/lib/python2.7/dist-packages/sip.so $VIRTUAL_ENV/lib/python2.7/site-packages/
    - ln -s /usr/lib/python2.7/dist-packages/sipdistutils.py $VIRTUAL_ENV/lib/python2.7/site-packages/
