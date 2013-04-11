@@ -289,14 +289,14 @@ class ImagePump( object ):
     def stackedImageSources( self ):
         return self._stackedImageSources
 
-    def __init__( self, layerStackModel, sliceProjection ):
+    def __init__( self, layerStackModel, sliceProjection, sync_along=(0,1,2) ):
         super(ImagePump, self).__init__()
         self._layerStackModel = layerStackModel
         self._projection = sliceProjection
         self._layerToSliceSrcs = {}
     
-        ## setup image source stack and slice sources
-        self._syncedSliceSources = SyncedSliceSources( sync_along=(0,1,2) )
+        # setup image source stack and slice sources
+        self._syncedSliceSources = SyncedSliceSources( sync_along=sync_along )
         self._stackedImageSources = StackedImageSources( layerStackModel )
         self._stackedImageSources.stackId = self._syncedSliceSources.id
         for layer in self._layerStackModel:

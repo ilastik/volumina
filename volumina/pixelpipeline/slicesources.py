@@ -145,7 +145,7 @@ class SyncedSliceSources( QObject ):
     def through( self, value ):
         value = list(value)
         if len(value) != len(self._sync_along):
-            raise ValueError("SyncedSliceSources.through.setter: length of value differs from along lenth: %s != %s " %(str(len(value)), str(len(self._sync_along))))
+            raise ValueError("SyncedSliceSources.through.setter: length of value differs from along length: %s != %s " %(str(len(value)), str(len(self._sync_along))))
 
         if value != self._through:
             old = self._through
