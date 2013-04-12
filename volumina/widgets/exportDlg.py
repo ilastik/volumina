@@ -57,13 +57,14 @@ class ExportDialog(QDialog):
     progressSignal = pyqtSignal(float)
     finishedStepSignal = pyqtSignal()
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, layername = "Untitled"):
         QDialog.__init__(self, parent)
         if not _has_lazyflow:
             QDialog.setEnabled(self,False)
         self.validRoi = True
         self.validInputOutputRange = True
         self.validAxesComboBoxes = True
+        self.layername = layername
         self.initUic()
 
     def initUic(self):
@@ -107,14 +108,11 @@ class ExportDialog(QDialog):
         self.on_normalizationComboBoxChanged()
         self.stackFilePatternPreview.setReadOnly(True)
         
-        folderPath = os.path.abspath(os.getcwd()).replace("\\","/")
-        self.lineEditStackPath.setText(folderPath)
-        folderPath = folderPath.split("/")
-        #folderPath = folderPath[0:-1]
-        folderPath.append("Untitled.h5")
-        folderPath = "/".join(folderPath)
-        self.lineEditStackFileName.setText("Untitled")
-        self.lineEditH5FilePath.setText(folderPath)
+        folderPath = os.path.abspath(os.getcwd())
+        folderPath = folderPath.replace("\\","/")
+        folderPath = folderPath + "/" + self.layername
+        self.updateH5Paths(folderPath)
+        self.updateStackPaths(folderPath)
          
         
 #===============================================================================
@@ -129,6 +127,7 @@ class ExportDialog(QDialog):
         self.validateRoi()
         
     def setupWriters(self):
+
         if not hasattr(self, "stackWriter"):
             self.stackWriter = OpStackWriter(self.input.getRealOperator())
         if not hasattr(self, "h5Writer"):
@@ -149,11 +148,12 @@ class ExportDialog(QDialog):
 
 
     def updateStackWriter(self):
-        self.setupWriters()
-        self.stackWriter.Image.connect(self.input)
         pattern = [""]
-        if self.stackWriter.FilePattern.ready():
-            pattern = self.stackWriter.FilePattern[:].wait()
+        if hasattr(self, "input"):
+            self.setupWriters()
+            self.stackWriter.Image.connect(self.input)
+            if self.stackWriter.FilePattern.ready():
+                pattern = self.stackWriter.FilePattern[:].wait()
         #self.stackWriter.Input.disconnect()
         placeholders = re.findall("%04d", pattern[0])
         insertedPattern = pattern[0] % tuple([0 for i in xrange(len(placeholders))])
@@ -170,6 +170,8 @@ class ExportDialog(QDialog):
         return v
         
     def setVolumeShapeInfo(self):
+        import sitecustomize
+        sitecustomize.debug_trace()
         for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
             self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
         for key in "txyzc":
@@ -185,7 +187,7 @@ class ExportDialog(QDialog):
         for index, tag in enumerate(axisTags):
             for box in self.comboBoxes[:-1]:
                 box.addItem(tag.key, index)
-            if extents[index] < 4:
+            if extents[index] <= 4:
                 self.comboBoxes[-1].addItem(tag.key, index)
         self.axesComboBox3.addItem("None", None)
         self.comboBoxes[-1].setCurrentIndex(self.comboBoxes[-1].findText("None"))
@@ -249,17 +251,11 @@ class ExportDialog(QDialog):
 # file
 #===============================================================================
     def on_pushButtonPathClicked(self):
-        oldPath = self.lineEditH5FilePath.displayText()
         fileDlg = QFileDialog()
         fileDlg.setOption( QFileDialog.DontUseNativeDialog, True )
         path = str(fileDlg.getSaveFileName(self, "Save File",
                                               str(self.lineEditH5FilePath.displayText())))
-        
-        newPath, newFilename = self.fixFilePath(path, separateFile = False, suffix =
-                                      "h5")
-
-        newSuffix = newFilename.split(".")[-1]
-        self.lineEditH5FilePath.setText(newPath)
+        self.updateH5Paths(path)
     
     def fixFilePath(self, oldPath, separateFile, suffix):
     
@@ -282,21 +278,32 @@ class ExportDialog(QDialog):
 
 
     def on_pushButtonStackPathClicked(self):
-        oldPath = self.lineEditStackPath.displayText()
         folderDlg = QFileDialog() 
-        folderDlg.setDefaultSuffix(self.comboBoxStackFileType.currentText())
         suffix = str(self.comboBoxStackFileType.currentText())
         path = str(folderDlg.getSaveFileName(self, "Save File",
                                               str(self.lineEditStackFileName.displayText()
                                                  + "." + suffix)))
+        self.updateStackPaths(path)
+
+    def updateH5Paths(self, path):
+        
+        newPath, newFilename = self.fixFilePath(path, separateFile = False, suffix =
+                                      "h5")
+
+        newSuffix = newFilename.split(".")[-1]
+        self.lineEditH5FilePath.setText(newPath)
+
+
+    def updateStackPaths(self, path):
+        suffix = str(self.comboBoxStackFileType.currentText())
         newPath, newFilename = self.fixFilePath(path, separateFile = True, suffix =
                                       suffix)
-
         newSuffix = newFilename.split(".")[-1]
         self.lineEditStackPath.setText(newPath)
         self.lineEditStackFileName.setText(".".join(newFilename.split(".")[:-1]))
         self.comboBoxStackFileType.setCurrentIndex(self.comboBoxStackFileType.findText(newSuffix))
         self.updateStackWriter()
+
         
 
 #===============================================================================
@@ -567,11 +574,12 @@ class ExportDialog(QDialog):
         dlg.finishStep()
         #step 2
         writer = None
+        h5f = None
         if self.radioButtonStack.isChecked():
             writer = self.stackWriter
         elif self.radioButtonH5.isChecked():
             writer = self.h5Writer
-            h5f = h5py.File(str(self.lineEditH5FilePath.displayText()), 'w')
+            h5f = h5py.File(str(self.lineEditH5FilePath.displayText()), 'a')
             writer.hdf5File.setValue(h5f)
 
         writer.Image.connect(inputVolume.Output)
@@ -605,7 +613,8 @@ class ExportDialog(QDialog):
         dlg.exec_()
         
         writer.cleanUp()
-        
+        if h5f is not None:
+            h5f.close()
         
         return QDialog.accept(self, *args, **kwargs)
     
