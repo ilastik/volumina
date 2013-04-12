@@ -170,8 +170,6 @@ class ExportDialog(QDialog):
         return v
         
     def setVolumeShapeInfo(self):
-        import sitecustomize
-        sitecustomize.debug_trace()
         for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
             self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
         for key in "txyzc":
