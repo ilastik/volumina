@@ -75,6 +75,22 @@ class VolumeEditor( QObject ):
         self.eventSwitch.interpreter = self.navInterpret
 
     @property
+    def syncAlongAxes( self ):
+        '''Axes orthogonal to slices, whose values are synced between layers.
+
+        Returns: a tuple of up to three values, encoding:
+                 0 - time
+                 1 - space
+                 2 - channel
+
+                 for example the meaning of (0,1) is: time and orthogonal space axes
+                 are synced for all layers, channel is not. (For the x-y slice, the space
+                 axis would be z and so on.)
+ 
+        '''
+        return tuple(self._sync_along)
+
+    @property
     def dataShape(self):
         return self.posModel.shape5D
     @dataShape.setter
@@ -94,8 +110,9 @@ class VolumeEditor( QObject ):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
 
-    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True):
+    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True, syncAlongAxes=(0,1,2)):
         super(VolumeEditor, self).__init__(parent=parent)
+        self._sync_along = tuple(syncAlongAxes)
 
         ##
         ## properties
@@ -142,8 +159,7 @@ class VolumeEditor( QObject ):
 
         # navigation control
         v3d = self.view3d if useVTK else None
-        syncedSliceSources = [self.imagepumps[i].syncedSliceSources for i in [0,1,2]]
-        self.navCtrl      = NavigationControler(self.imageViews, syncedSliceSources, self.posModel, view3d=v3d)
+        self.navCtrl      = NavigationControler(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
         # brushing control
@@ -211,9 +227,9 @@ class VolumeEditor( QObject ):
         alongTZC = SliceProjection( abscissa = 1, ordinate = 2, along = [0,3,4] )
 
         imagepumps = []
-        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTXC ))
-        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTYC ))
-        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTZC ))
+        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTXC, self._sync_along ))
+        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTYC, self._sync_along ))
+        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTZC, self._sync_along ))
         return imagepumps
 
     def _initView3d( self ):

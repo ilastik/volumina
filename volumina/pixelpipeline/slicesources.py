@@ -60,9 +60,12 @@ class SliceSource( QObject ):
 
     @property
     def through( self ):
-        return self._through
+        return list(self._through) # make a copy
     @through.setter
     def through( self, value ):
+        value = list(value)
+        if len(value) != len(self.sliceProjection.along):
+            raise ValueError("SliceSource.through.setter: length of value differs from along length: %s != %s " %(str(len(value)), str(len(self.sliceProjection.along))))
         if value != self._through:
             old = self._through
             old_id = self.id
@@ -85,9 +88,31 @@ class SliceSource( QObject ):
         through[index] = value
         self.through = through
 
-    def request( self, slicing2D, through=None ):
+    def request( self, slicing2D, along_through=None ):
+        '''Return a SliceRequest for a subregion of the slice.
+
+        By default the currently set through value is used for
+        the slicing. Optionally, some or all through values can
+        be set to a another value (useful for requesting out-of-view
+        slices as necessary for prefetching).
+        
+        Arguments:
+        slicing2D    -- pair of 'slice' objects: abscissa, ordinate
+        along_trough -- sequence of pairs or None; 
+                        pair is '(along axis, through value)'
+
+        Returns: a SliceRequest for a 2d array
+
+        '''
         assert len(slicing2D) == 2
-        through = through if through else self.through 
+        # override through with caller values
+        if along_through:
+            through = list(self._through)
+            for axis, value in along_through:
+                through[axis] = value
+        else:
+           through = tuple(self._through)
+
         slicing = self.sliceProjection.domain(through, slicing2D[0], slicing2D[1])
         
         if volumina.verboseRequests:
@@ -133,32 +158,48 @@ class SyncedSliceSources( QObject ):
 
     @property
     def id( self ):
-        return (self, tuple(self._through))
+        return (self, tuple(zip(self._sync_along, self._through)))
 
     @property
     def through( self ):
-        return self._through
+        return list(self._through) # make a copy
     @through.setter
     def through( self, value ):
+        value = list(value)
+        if len(value) != len(self._sync_along):
+            raise ValueError("SyncedSliceSources.through.setter: length of value differs from along length: %s != %s " %(str(len(value)), str(len(self._sync_along))))
+
         if value != self._through:
             old = self._through
             old_id = self.id
             self._through = value
-            for src in self._srcs:
-                src.through = value
+            map(self._syncSliceSource , self._srcs)
             self.throughChanged.emit(tuple(old), tuple(value))
             self.idChanged.emit(old, self.id)
 
-    def __init__(self, through = None, slicesrcs = []):
+    def __init__(self, sync_along=(0,1), initial_through=None):
         super(SyncedSliceSources, self).__init__()
-        self._srcs = set(slicesrcs)
-        self._through = through
+        if len(sync_along) != len(set(sync_along)):
+            raise ValueError("SyncedSliceSources.__init__(): sync_along contains duplicate entries: %s" %str(sync_along))
+        self._sync_along = tuple(sync_along)
+
+        if not initial_through:
+            self._through = [0,]*len(self._sync_along)
+        else:
+            initial_through = list(initial_through)
+            if len(initial_through) != len(self._sync_along):
+                raise ValueError("SyncedSliceSources.__init__(): len(initial_through) != len(sync_along): %s != %s" %(str(len(initial_through)), str(len(self._sync_along))))
+            self._through = initial_through
+        self._srcs = set()
 
     def __len__( self ):
         return len(self._srcs)
 
     def __iter__( self ):
         return iter(self._srcs)
+
+    def getSyncAlong( self ):
+        return self._sync_along
 
     def setThrough( self, index, value ):
         assert index < len(self.through)
@@ -168,12 +209,18 @@ class SyncedSliceSources( QObject ):
 
     def add( self, sliceSrc ):
         assert isinstance( sliceSrc, SliceSource ), 'wrong type: %s' % str(type(sliceSrc))
-        sliceSrc.through = self.through
+        self._syncSliceSource( sliceSrc ) 
         self._srcs.add( sliceSrc )
 
     def remove( self, sliceSrc ):
         assert isinstance( sliceSrc, SliceSource )
         self._srcs.remove( sliceSrc )
+
+    def _syncSliceSource( self, sliceSrc ): 
+        through = sliceSrc.through
+        for i in xrange(len(self._through)):
+            through[self._sync_along[i]] = self._through[i] 
+        sliceSrc.through = through
 
 
 

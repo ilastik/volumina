@@ -10,8 +10,7 @@ from volumina.pixelpipeline.imagesourcefactories import createImageSource
 from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, ColortableImageSource
 
 class StackedImageSources( QObject ):
-    """
-    Manages an ordered stack of image sources.
+    """Manages an ordered stack of image sources.
     
     The StackedImageSources manages the 'add' and 'remove' operation to a stack
     of objects derived from 'ImageSource'. The stacking order mirrors the
@@ -110,7 +109,7 @@ class StackedImageSources( QObject ):
         layerStackModel.orderChanged.connect( self._onOrderChanged )
         layerStackModel.layerRemoved.connect( self._onLayerRemoved )
 
-        self._stackId = (None, (0,0,0))
+        self._stackId = (None, tuple())
 
     def __len__( self ):
         return len([ _ for _ in self])
@@ -281,6 +280,22 @@ class StackedImageSources( QObject ):
 #*******************************************************************************
 
 class ImagePump( object ):
+    '''Manages a pixelpipeline to render images of slices through high-dimensional data.
+
+    At creation time the image pump takes a layerstack with high-dimensional data
+    sources (not simply 2D data) as input. It generates slice sources
+    for all data sources according to a projection provided by the
+    caller. Subsequently, image sources are created from the slice
+    sources---one image source per layer. The image sources are
+    managed by a StackedImageSources instance. The slice sources are
+    stored in a SyncedSliceSources instance.
+
+    At run time the ImagePump monitors signals from its contained data
+    structures (in particular, the slice sources, the
+    SyncedSliceSources container, and the layer stack) and updates the
+    stacked image sources if necessary.
+
+    '''
     @property
     def syncedSliceSources( self ):
         return self._syncedSliceSources
@@ -289,14 +304,15 @@ class ImagePump( object ):
     def stackedImageSources( self ):
         return self._stackedImageSources
 
-    def __init__( self, layerStackModel, sliceProjection ):
+    def __init__( self, layerStackModel, sliceProjection, sync_along=(0,1,2) ):
         super(ImagePump, self).__init__()
         self._layerStackModel = layerStackModel
         self._projection = sliceProjection
-        self._layerToSliceSrcs = {}
+        self._layerToSliceSrcs = {} # non-injective mapping
+        self._sliceSrcToImageSrc = {} # injective mapping
     
-        ## setup image source stack and slice sources
-        self._syncedSliceSources = SyncedSliceSources( len(sliceProjection.along) * (0,) )
+        # setup image source stack and slice sources
+        self._syncedSliceSources = SyncedSliceSources( sync_along=sync_along )
         self._stackedImageSources = StackedImageSources( layerStackModel )
         self._stackedImageSources.stackId = self._syncedSliceSources.id
         for layer in self._layerStackModel:
@@ -306,6 +322,24 @@ class ImagePump( object ):
         self._layerStackModel.layerAdded.connect( self._onLayerAdded )
         self._layerStackModel.layerRemoved.connect( self._onLayerRemoved )
         self._layerStackModel.stackCleared.connect( self._onStackCleared )
+
+    # mappings
+    def layerToSliceSources( self, layer ):
+        '''Map from Layer instance to SliceSource instances.
+       
+        returns: list of one or more SliceSource instances
+
+        '''
+        return self._layerToSliceSrcs[layer]
+
+    def sliceSourceToImageSource( self, slicesource ):
+        '''Map from SliceSource instance to ImageSource instance.
+
+        This is a non-injective mapping, that is, more than one
+        slice source can map to the same image source.
+
+        '''
+        return self._sliceSrcToImageSrc[slicesource]
 
     def _onLayerAdded( self, layer, row ):
         self._addLayer( layer )
@@ -321,9 +355,25 @@ class ImagePump( object ):
                 self._syncedSliceSources.remove(ss)
         assert(len(self._syncedSliceSources) == 0 )
         self._layerToSliceSrcs = {}
+        self._sliceSrcToImageSrc = {}
 
     def _onIdChanged( self, old, new ):
         self._stackedImageSources.stackId = new
+
+    def _onSourceThroughChanged( self, src, old, new ):
+        # if at least one not synced along axis has changed,
+        # mark the corresponding image source as dirty
+        sa = self._syncedSliceSources.getSyncAlong()
+        mark_dirty = False
+        for i in xrange(len(new)):
+            if i not in sa:
+                if old[i] != new[i]:
+                    mark_dirty = True
+                    break
+
+        if mark_dirty:
+            self._sliceSrcToImageSrc[src].setDirty((slice(None),slice(None)))
+        
 
     def _createSources( self, layer ):
         def sliceSrcOrNone( datasrc ):
@@ -341,11 +391,14 @@ class ImagePump( object ):
         sliceSources, imageSource = self._createSources(layer)
         for ss in sliceSources:
             self._syncedSliceSources.add(ss)
+            self._sliceSrcToImageSrc[ss] = imageSource
+            ss.throughChanged.connect(partial(self._onSourceThroughChanged, ss))
         self._layerToSliceSrcs[layer] = sliceSources
         self._stackedImageSources.register(layer, imageSource)
 
     def _removeLayer( self, layer ):
         for ss in self._layerToSliceSrcs[layer]:
             self._syncedSliceSources.remove(ss)
+            del self._sliceSrcToImageSrc[ss]
         del self._layerToSliceSrcs[layer]
 

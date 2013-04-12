@@ -135,7 +135,7 @@ class DirtyPropagationTest( ut.TestCase ):
         self.layer2 = GrayscaleLayer( self.ds2 )
 
         self.lsm = LayerStackModel()
-        self.pump = ImagePump( self.lsm, SliceProjection() )
+        self.pump = ImagePump( self.lsm, SliceProjection(), sync_along=(0,1,2) )
 
     def testEverythingDirtyPropagation( self ):
         self.lsm.append(self.layer2)
