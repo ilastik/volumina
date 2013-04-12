@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>691</width>
-    <height>641</height>
+    <height>697</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,37 +16,117 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout_3">
-     <item row="0" column="1">
+     <item row="6" column="1">
+      <widget class="QWidget" name="widgetOptionsStack" native="true">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QLineEdit" name="lineEditStackPath"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonStackPath">
+            <property name="text">
+             <string>Choose Directory</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLineEdit" name="lineEditStackFileName"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_15">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>File Type</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboBoxStackFileType">
+            <item>
+             <property name="text">
+              <string>png</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>jpeg</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>bmp</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tiff</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutPreview">
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Image Axes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="axesComboBox1"/>
+          </item>
+          <item>
+           <widget class="QComboBox" name="axesComboBox2"/>
+          </item>
+          <item>
+           <widget class="QComboBox" name="axesComboBox3"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutPreview">
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Preview</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="stackFilePatternPreview"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="5" column="0" rowspan="3">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Options</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
       <widget class="QLabel" name="inputVolumeDescription">
        <property name="text">
         <string>describe the input volume here</string>
        </property>
       </widget>
-     </item>
-     <item row="1" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QLineEdit" name="lineEditFilePath">
-         <property name="text">
-          <string>Untitled</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButtonPath">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <italic>false</italic>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Choose Directory...</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
      </item>
      <item row="3" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -98,45 +178,43 @@
       </layout>
      </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>File</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>Input</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="7" column="1">
       <widget class="QWidget" name="widgetOptionsHDF5" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <property name="margin">
          <number>0</number>
         </property>
         <item>
-         <layout class="QFormLayout" name="formLayout_10">
-          <property name="fieldGrowthPolicy">
-           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-          </property>
+         <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
-           <widget class="QLabel" name="label_16">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
+           <widget class="QLineEdit" name="lineEditH5FilePath">
             <property name="text">
-             <string>HDF5 Path</string>
+             <string>Untitled</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="lineEditHdf5Path">
+           <widget class="QPushButton" name="pushButtonPath">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <italic>false</italic>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Choose HDF5 File...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="lineEditH5DataPath">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -145,6 +223,25 @@
             </property>
             <property name="text">
              <string>volume/data</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_16">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>HDF5 Path</string>
             </property>
            </widget>
           </item>
@@ -227,7 +324,7 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="0" colspan="2">
+     <item row="8" column="0" colspan="2">
       <widget class="Line" name="line_2">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -253,14 +350,7 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="0" rowspan="4">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Options</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="1">
+     <item row="9" column="1">
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
         <widget class="QLabel" name="label_27">
@@ -407,7 +497,7 @@
        </item>
       </layout>
      </item>
-     <item row="10" column="0">
+     <item row="9" column="0">
       <widget class="QLabel" name="label_6">
        <property name="text">
         <string>Region of Interest</string>
@@ -480,78 +570,6 @@
         </widget>
        </item>
       </layout>
-     </item>
-     <item row="7" column="1">
-      <widget class="QWidget" name="widgetOptionsStack" native="true">
-       <layout class="QGridLayout" name="gridLayout_6">
-        <property name="margin">
-         <number>0</number>
-        </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_15">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>File Type</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Export&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QComboBox" name="comboBoxStackFileType">
-          <item>
-           <property name="text">
-            <string>png</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>jpeg</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>bmp</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tiff</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QWidget" name="ExportAxesWidget" native="true">
-          <layout class="QHBoxLayout" name="horizontalLayout_7">
-           <item>
-            <layout class="QGridLayout" name="gridLayout_4">
-             <item row="1" column="0">
-              <widget class="QComboBox" name="axesComboBox1"/>
-             </item>
-             <item row="1" column="1">
-              <widget class="QComboBox" name="axesComboBox2"/>
-             </item>
-             <item row="1" column="2">
-              <widget class="QComboBox" name="axesComboBox3"/>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
      </item>
     </layout>
    </item>
