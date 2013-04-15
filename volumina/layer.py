@@ -31,7 +31,6 @@ class Layer( QObject ):
     visibleChanged = pyqtSignal(bool) 
     opacityChanged = pyqtSignal(float) 
     nameChanged = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)
 
     @property
     def visible( self ):
@@ -67,14 +66,6 @@ class Layer( QObject ):
     @property
     def datasources( self ):
         return self._datasources
-
-    @property
-    def numberOfChannels( self ):
-        return self._nchannels
-    @numberOfChannels.setter
-    def numberOfChannels( self, n ):
-        self._nchannels = n
-        self.numberOfChannelsChanged.emit(n)
 
     @property
     def layerId( self ):
@@ -117,7 +108,6 @@ class Layer( QObject ):
         self._layerId = None
         self.direct = direct
         self._toolTip = ""
-        self._nchannels = 1
 
         if self.direct:
             #in direct mode, we calculate the average time per tile for debug purposes
@@ -128,7 +118,6 @@ class Layer( QObject ):
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
         self.nameChanged.connect(self.changed)
-        self.numberOfChannelsChanged.connect(self.changed)
 
         self.contexts = []
 
