@@ -80,14 +80,12 @@ def _add_actions_rgbalayer( layer, menu ):
         dlg.alphaChannelThresholdingWidget.valueChanged.connect(partial(dbgPrint, 3))
 
         def redAutoRange(state):
-            print "red", state
             if state == 2:
                 layer.set_normalize(0, None) # set to auto
                 dlg.redChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1]) #update gui
             if state == 0:
                 pass
         def greenAutoRange(state):
-            print "green", state
             if state == 2:
                 layer.set_normalize(1, None) # set to auto
                 dlg.greenChannelThresholdingWidget.setValue(layer.normalize[1][0], layer.normalize[1][1]) #update gui
