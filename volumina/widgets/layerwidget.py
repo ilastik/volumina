@@ -3,7 +3,7 @@ from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
                         QAbstractItemView, QPainter, QItemSelectionModel, \
                         QColor, QMenu, QAction, QFontMetrics, QFont, QImage, \
                         QBrush, QPalette, QMouseEvent, QVBoxLayout, QLabel, QGridLayout, QPixmap, \
-                        QPushButton
+                        QPushButton, QSpinBox
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, \
                          QPoint
 
@@ -151,15 +151,24 @@ class LayerItemWidget( QWidget ):
         self._opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction())))
         self._toggleEye = ToggleEye()
         self._toggleEye.setActive(False)
-        self._toggleEye.setFixedWidth(25)
+        self._toggleEye.setFixedWidth(35)
+        self._toggleEye.setToolTip("Visibility")
+        self._channelSelector = QSpinBox()
+        self._channelSelector.setFrame( False )
+        self._channelSelector.setFont( self._font )
+        self._channelSelector.setMaximumWidth( 35 )
+        self._channelSelector.setAlignment(Qt.AlignRight)
+        self._channelSelector.setToolTip("Channel")
+        self._channelSelector.setVisible(False)
 
         self._layout = QGridLayout()
-        self._layout.addWidget( self._toggleEye, 0, 0, 2, 1 )
+        self._layout.addWidget( self._toggleEye, 0, 0 )
         self._layout.addWidget( self._nameLabel, 0, 1 )
         self._layout.addWidget( self._opacityLabel, 0, 2 )
+        self._layout.addWidget( self._channelSelector, 1, 0)
         self._layout.addWidget( self._bar, 1, 1, 1, 2 )
 
-        self._layout.setColumnMinimumWidth( 0, 25 )
+        self._layout.setColumnMinimumWidth( 0, 35 )
         self._layout.setSpacing(0)
         self._layout.setContentsMargins(5,2,5,2)
 
@@ -181,7 +190,10 @@ class LayerItemWidget( QWidget ):
             self._bar.setFraction( self._layer.opacity )
             self._opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction())))
             self._nameLabel.setText( self._layer.name )
-
+            
+            if self._layer.numberOfChannels > 1:
+                self._channelSelector.setVisible(True)
+                self._channelSelector.setMaximum(self._layer.numberOfChannels)
             self.update()
 
 class LayerDelegate(QStyledItemDelegate):
@@ -379,6 +391,7 @@ if __name__ == "__main__":
     o2 = Layer()
     o2.name = "Some other Layer"
     o2.opacity = 0.25
+    o2.numberOfChannels = 3
     model.append(o2)
 
     o3 = Layer()
