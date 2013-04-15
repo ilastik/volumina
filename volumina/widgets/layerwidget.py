@@ -1,7 +1,8 @@
+import warnings
 from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
                         QAbstractItemView, QPainter, QItemSelectionModel, \
                         QColor, QMenu, QAction, QFontMetrics, QFont, QImage, \
-                        QBrush, QPalette, QMouseEvent
+                        QBrush, QPalette, QMouseEvent, QVBoxLayout, QLabel, QGridLayout, QPixmap
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, \
                          QPoint
 
@@ -132,9 +133,127 @@ class LayerPainter( object ):
 
         painter.restore()
 
-#*******************************************************************************
-# L a y e r D e l e g a t e                                                    *
-#*******************************************************************************
+class FractionSelectionBar( QWidget ):
+    fractionChanged = pyqtSignal(float, float)
+
+    def __init__( self, initial_fraction=1., parent=None ):
+        QWidget.__init__( self, parent=parent )
+        self._fraction = initial_fraction
+        self._lmbDown = False
+
+    def fraction( self ):
+        return self._fraction
+
+    def setFraction( self, value ):
+        if(value < 0.):
+            value = 0.
+            warnings.warn("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 0." % str(value))
+        if(value > 1.):
+            value = 1.
+            warnings.warn("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 1." % str(value))
+        old = self._fraction
+        self._fraction = float(value)
+        self.update()
+        self.fractionChanged.emit(old, self._fraction)
+
+    def mouseMoveEvent(self, event):
+        if self._lmbDown:
+            self.setFraction(self._fractionFromPosition( event.posF() ))
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.RightButton:
+            return
+        self._lmbDown = True
+        self.setFraction(self._fractionFromPosition( event.posF() ))
+
+    def mouseReleaseEvent(self, event):
+        self._lmbDown = False
+
+    def paintEvent( self, ev ):
+        painter = QPainter(self)
+
+        # calc bar offset
+        y_offset =(self.height() - self._barHeight()) // 2
+        ## prevent negative offset
+        y_offset = 0 if y_offset < 0 else y_offset
+
+        # frame around fraction indicator
+        painter.setBrush(self.palette().dark())
+        painter.save()
+        ## no fill color
+        b = painter.brush(); b.setStyle(Qt.NoBrush); painter.setBrush(b)
+        painter.drawRect(
+            QRect(QPoint(0, y_offset),
+                  QSize(self._barWidth(), self._barHeight())))
+        painter.restore()
+
+        # fraction indicator
+        painter.drawRect(
+            QRect(QPoint(0, y_offset),
+                  QSize(self._barWidth()*self._fraction, self._barHeight())))
+
+    def sizeHint( self ):
+        return QSize(100, self._barHeight())
+
+    def minimumSizeHint( self ):
+        return QSize(1, self._barHeight())
+
+    def _barWidth( self ):
+        return self.width()-1
+
+    def _barHeight( self ):
+        return 10
+
+    def _fractionFromPosition( self, pointf ):
+        frac = pointf.x() / self.width()
+        # mouse has left the widget
+        if frac < 0.:
+            frac = 0.
+        if frac > 1.:
+            frac = 1.
+        return frac
+
+class BarContainer( QWidget ):
+    def __init__( self, parent=None ):
+        QWidget.__init__( self, parent=parent )
+        self.bar = FractionSelectionBar()
+
+        self._layout = QVBoxLayout()
+        self._layout.addWidget( self.bar )
+
+        self.setLayout( self._layout )
+
+class LayerItemWidget( QWidget ):
+    def __init__( self, parent=None ):
+        QWidget.__init__( self, parent=parent )
+        self._font = QFont(QFont().defaultFamily(), 9)
+        self._fm = QFontMetrics( self._font )
+        self._bar = FractionSelectionBar()
+        self._bar.setFixedHeight(15)
+        self._nameLabel = QLabel( "NAME" )
+        self._nameLabel.setFont( self._font )
+        self._nameLabel.setFixedHeight(self._fm.boundingRect("NAME").height())
+        text = u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction()))
+        self._opacityLabel = QLabel( text )
+        self._opacityLabel.setAlignment(Qt.AlignRight)
+        self._opacityLabel.setFont( self._font )
+        self._opacityLabel.setFixedHeight(self._fm.boundingRect("NAME").height()) 
+        self._visibleLabel = QLabel()
+        self._visibleLabel.setPixmap(QPixmap(":icons/icons/stock-eye-20.png"))
+        self._visibleLabel.setFixedWidth(25)
+
+        self._layout = QGridLayout()
+        self._layout.addWidget( self._visibleLabel, 0, 0, 2, 1 )
+        self._layout.addWidget( self._nameLabel, 0, 1 )
+        self._layout.addWidget( self._opacityLabel, 0, 2 )
+        self._layout.addWidget( self._bar, 1, 1, 1, 2 )
+
+        self._layout.setColumnMinimumWidth( 0, 25 )
+        # self._layout.setRowMinimumHeight( 0, 20 )
+        # self._layout.setRowMinimumHeight( 1, 20 )
+
+        self.setLayout( self._layout)
+        
 
 class LayerDelegate(QStyledItemDelegate):
     def __init__(self, layersView, listModel, parent = None):
@@ -162,32 +281,39 @@ class LayerDelegate(QStyledItemDelegate):
 
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            layerPainter = LayerPainter()
-            layerPainter.layer = layer
-            isSelected = option.state & QStyle.State_Selected
-            if isSelected:
-                painter.fillRect(option.rect, QColor(0,255,0,10))
-            if self.expandAll or option.state & QStyle.State_Selected:
-                layerPainter.paint(painter, option.rect, option.palette, 'Expanded', isSelected)
-            else:
-                layerPainter.paint(painter, option.rect, option.palette, 'ReadOnly', False)
+            w = LayerItemWidget()
+            w.setFixedSize( option.rect.width(), option.rect.height() )
+            w.render(painter, targetOffset=QPoint( option.rect.x()+10, option.rect.y()+10 ))
+            # layerPainter = LayerPainter()
+            # layerPainter.layer = layer
+            # isSelected = option.state & QStyle.State_Selected
+            # if isSelected:
+            #     painter.fillRect(option.rect, QColor(0,255,0,10))
+            # if self.expandAll or option.state & QStyle.State_Selected:
+            #     layerPainter.paint(painter, option.rect, option.palette, 'Expanded', isSelected)
+            # else:
+            #     layerPainter.paint(painter, option.rect, option.palette, 'ReadOnly', False)
         else:
             QStyledItemDelegate.paint(self, painter, option, index)
 
     def sizeHint(self, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            layerPainter = LayerPainter()
-            layerPainter.layer = layer
-            mode = "Expanded" if self.expandAll or self._view.currentIndex() == index else 'ReadOnly'
-            return layerPainter.sizeHint( mode )
+            w = LayerItemWidget()
+            #w.setFixedSize( option.rect.width(), option.rect.height() )
+            return w.sizeHint()
+            # layerPainter = LayerPainter()
+            # layerPainter.layer = layer
+            # mode = "Expanded" if self.expandAll or self._view.currentIndex() == index else 'ReadOnly'
+            # return layerPainter.sizeHint( mode )
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
 
     def createEditor(self, parent, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            editor = LayerEditor(parent)
+            editor = LayerItemWidget(parent=parent)#LayerEditor(parent)
+            #editor.setFixedSize( option.rect.width(), option.rect.height() )
             self._editors[layer] = editor
             return editor
         else:
@@ -219,10 +345,6 @@ class LayerDelegate(QStyledItemDelegate):
         editor = sender()
         self.commitData.emit(editor)
         self.closeEditor.emit(editor)
-
-#*******************************************************************************
-# L a y e r E d i t o r                                                        *
-#*******************************************************************************
 
 class LayerEditor(QWidget):
     editingFinished = pyqtSignal()
@@ -445,6 +567,7 @@ if __name__ == "__main__":
     lv.addWidget(down)
     lv.addWidget(delete)
     lv.addWidget(add)
+    lv.addWidget(LayerItemWidget())
 
     w.setGeometry(100, 100, 800,600)
     w.show()
