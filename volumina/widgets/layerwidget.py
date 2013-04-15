@@ -26,6 +26,8 @@ class FractionSelectionBar( QWidget ):
         return self._fraction
 
     def setFraction( self, value ):
+        if value == self._fraction:
+            return
         if(value < 0.):
             value = 0.
             warnings.warn("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 0." % str(value))
@@ -34,17 +36,18 @@ class FractionSelectionBar( QWidget ):
             warnings.warn("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 1." % str(value))
         self._fraction = float(value)
         self.update()
-        self.fractionChanged.emit(self._fraction)
 
     def mouseMoveEvent(self, event):
         if self._lmbDown:
             self.setFraction(self._fractionFromPosition( event.posF() ))
+            self.fractionChanged.emit(self._fraction)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.RightButton:
             return
         self._lmbDown = True
         self.setFraction(self._fractionFromPosition( event.posF() ))
+        self.fractionChanged.emit(self._fraction)
 
     def mouseReleaseEvent(self, event):
         self._lmbDown = False
@@ -99,19 +102,21 @@ class ToggleEye( QLabel ):
     def __init__( self, parent=None ):
         QWidget.__init__( self, parent=parent )
         self._active = True
-        self.setActive(self._active)
+        self._eye_open = QPixmap(":icons/icons/stock-eye-20.png")
+        self._eye_closed = QPixmap(":icons/icons/stock-eye-20-gray.png")
+        self.setPixmap(self._eye_open)
 
     def active( self ):
         return self._active
 
     def setActive( self, b ):
+        if b == self._active:
+            return
         self._active = b
         if b:
-            self.setPixmap(QPixmap(":icons/icons/stock-eye-20.png"))
-            self.activeChanged.emit(True)
+            self.setPixmap(self._eye_open)
         else:
-            self.setPixmap(QPixmap(":icons/icons/stock-eye-20-gray.png"))
-            self.activeChanged.emit(False)
+            self.setPixmap(self._eye_closed)
 
     def toggle( self ):
         if self.active():
@@ -121,6 +126,7 @@ class ToggleEye( QLabel ):
 
     def mousePressEvent( self, ev ):
         self.toggle()
+        self.activeChanged.emit( self._active )
 
 class LayerItemWidget( QWidget ):
     @property
@@ -129,13 +135,14 @@ class LayerItemWidget( QWidget ):
     @layer.setter
     def layer(self, layer):
         if self._layer:
-            self._layer.changed.disconnect()
+            self._layer.changed.disconnect(self._updateState)
         self._layer = layer
         self._updateState()
         self._layer.changed.connect(self._updateState)
 
     def __init__( self, parent=None ):
         QWidget.__init__( self, parent=parent )
+        print "CREATION"
         self._layer = None
 
         self._font = QFont(QFont().defaultFamily(), 9)
@@ -178,11 +185,12 @@ class LayerItemWidget( QWidget ):
         self._toggleEye.activeChanged.connect( self._onEyeToggle )
 
     def _onFractionChanged( self, fraction ):
-        if self._layer:
+        if self._layer and (fraction != self._layer.opacity):
             self._layer.opacity = fraction
 
     def _onEyeToggle( self, active ):
-        self._layer.visible = active
+        if self._layer and (active != self._layer.visible):
+            self._layer.visible = active
 
     def _updateState( self ):
         if self._layer:
@@ -202,6 +210,7 @@ class LayerDelegate(QStyledItemDelegate):
         self.currentIndex = -1
         self._view = layersView
         self._editors = {}
+        self._w = LayerItemWidget()
         self._listModel = listModel
         self._listModel.rowsAboutToBeRemoved.connect(self.handleRemovedRows)
 
@@ -219,7 +228,7 @@ class LayerDelegate(QStyledItemDelegate):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
             pic = QPixmap( option.rect.width(), option.rect.height() )
-            w = LayerItemWidget()
+            w = self._w
             w.layer = layer
             w.setGeometry( option.rect )
             w.setAutoFillBackground(True)
@@ -348,22 +357,22 @@ class LayerWidget(QListView):
     def onOrderChanged(self):
         self.updateGUI()
 
-    def mousePressEvent(self, event):
-        prevIndex = self.model().selectedIndex()
-        newIndex = self.indexAt( event.pos() )
-        super(LayerWidget, self).mousePressEvent(event)
+    # def mousePressEvent(self, event):
+    #     prevIndex = self.model().selectedIndex()
+    #     newIndex = self.indexAt( event.pos() )
+    #     super(LayerWidget, self).mousePressEvent(event)
 
-        # HACK: The first click merely gives focus to the list item without actually passing the event to it.
-        # We'll simulate a mouse click on the item by calling mousePressEvent() and mouseReleaseEvent on the appropriate editor
-        if prevIndex != newIndex and newIndex.row() != -1:
-            layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
-            assert isinstance(layer, Layer)
-            editor = self._itemDelegate._editors[layer]
-            editorPos = event.pos() - editor.geometry().topLeft()
-            editorPress = QMouseEvent( QMouseEvent.MouseButtonPress, editorPos, event.button(), event.buttons(), event.modifiers() )
-            editor.mousePressEvent(editorPress)
-            editorRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, editorPos, event.button(), event.buttons(), event.modifiers() )
-            editor.mouseReleaseEvent(editorRelease)
+    #     # HACK: The first click merely gives focus to the list item without actually passing the event to it.
+    #     # We'll simulate a mouse click on the item by calling mousePressEvent() and mouseReleaseEvent on the appropriate editor
+    #     if prevIndex != newIndex and newIndex.row() != -1:
+    #         layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
+    #         assert isinstance(layer, Layer)
+    #         editor = self._itemDelegate._editors[layer]
+    #         editorPos = event.pos() - editor.geometry().topLeft()
+    #         editorPress = QMouseEvent( QMouseEvent.MouseButtonPress, editorPos, event.button(), event.buttons(), event.modifiers() )
+    #         editor.mousePressEvent(editorPress)
+    #         editorRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, editorPos, event.button(), event.buttons(), event.modifiers() )
+    #         editor.mouseReleaseEvent(editorRelease)
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
