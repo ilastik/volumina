@@ -464,6 +464,8 @@ class NormalizingSource( QObject ):
 
     def __eq__( self, other ):
         equal = True
+        if other is None:
+            return False
         equal &= isinstance( other, NormalizingSource )
         equal &= ( self._rawSource == other._rawSource )
         equal &= ( self._method == other._method )
