@@ -6,6 +6,9 @@ from PyQt4.QtGui import QColor
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
+from volumina.pixelpipeline.datasources import MinMaxSource 
+
+from functools import partial
 
 #*******************************************************************************
 # L a y e r                                                                    *
@@ -142,6 +145,24 @@ class ClickableLayer( Layer ):
 # N o r m a l i z a b l e L a y e r                                            *
 #*******************************************************************************
 
+def dtype_to_default_normalize(dsource, normalize):
+    if dsource is not None:
+        dtype = dsource.dtype()
+    else:
+        dtype = numpy.uint8
+    if normalize is None:
+        if dtype == numpy.uint8:
+            normalize = (0,2**8-1)
+        elif dtype == numpy.uint16:
+            normalize = (0,2**16-1)
+        elif dtype == numpy.uint32:
+            normalize = (0,2**32-1)
+        elif dtype == numpy.float32:
+            normalize = (0,1)
+        elif dtype == numpy.float64:
+            normalize = (0,1)
+    return normalize
+    
 class NormalizableLayer( Layer ):
     '''
     int -- datasource index
@@ -160,43 +181,64 @@ class NormalizableLayer( Layer ):
     @property
     def range( self ):
         return self._range
+
     def set_range( self, datasourceIdx, value ):
         '''
         value -- (rmin, rmax)
         '''
         self._range[datasourceIdx] = value
         self.rangeChanged.emit(datasourceIdx, value[0], value[1])
-
     
     @property
     def normalize( self ):
         return self._normalize
+
     def set_normalize( self, datasourceIdx, value ):
         '''
         value -- (nmin, nmax)
+        value -- None : grabs (min, max) from the MinMaxSource
         '''
+        if value is None:
+            value = self._datasources[datasourceIdx]._bounds
         self._normalize[datasourceIdx] = value 
         self.normalizeChanged.emit(datasourceIdx, value[0], value[1])
 
-    def __init__( self, direct=False ):
+    def __init__( self, datasources, direct=False ):
         super(NormalizableLayer, self).__init__(direct=direct)
         self._normalize = []
         self._range = []
+        self._datasources = datasources
+        self._autoMinMax = True
+
+        for i,datasource in enumerate(datasources):
+            if datasource is not None:
+                mmSource = MinMaxSource(datasource)
+                self._datasources[i] = mmSource
+                range = dtype_to_default_normalize(datasource, None)
+                self._normalize.append(range)
+                self._range.append(range)
+                mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
+            else:
+                self._normalize.append((0,1))
+                self._range.append((0,1))
+                
 
         self.rangeChanged.connect(self.changed)
         self.normalizeChanged.connect(self.changed)
+
+    def _bounds_changed(self, datasourceIdx, range):
+        if self._autoMinMax:
+            self.set_normalize(datasourceIdx, range)
+
 
 #*******************************************************************************
 # G r a y s c a l e L a y e r                                                  *
 #*******************************************************************************
 
 class GrayscaleLayer( NormalizableLayer ):
-    def __init__( self, datasource, range = (0,255), normalize = (0,255), direct=False ):
+    def __init__( self, datasource, range = None, normalize = None, direct=False ):
         assert isinstance(datasource, SourceABC)
-        super(GrayscaleLayer, self).__init__(direct=direct)
-        self._datasources = [datasource]
-        self._normalize = [normalize]
-        self._range = [range] 
+        super(GrayscaleLayer, self).__init__([datasource],direct=direct)
 
 #*******************************************************************************
 # A l p h a M o d u l a t e d L a y e r                                        *
@@ -214,12 +256,11 @@ class AlphaModulatedLayer( NormalizableLayer ):
             self._tintColor = c
             self.tintColorChanged.emit()
     
-    def __init__( self, datasource, tintColor = QColor(255,0,0), range = (0,255), normalize = (0,255) ):
+    def __init__( self, datasource, tintColor = QColor(255,0,0), range = (0,255), normalize = None ):
         assert isinstance(datasource, SourceABC)
-        super(AlphaModulatedLayer, self).__init__()
-        self._datasources = [datasource]
-        self._normalize = [normalize]
-        self._range = [range]
+        super(AlphaModulatedLayer, self).__init__([datasource])
+        range = dtype_to_default_normalize(datasource, range)
+        normalize = dtype_to_default_normalize(datasource, normalize)
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
         
@@ -322,18 +363,15 @@ class RGBALayer( NormalizableLayer ):
 
     def __init__( self, red = None, green = None, blue = None, alpha = None, \
                   color_missing_value = 0, alpha_missing_value = 255,
-                  range = 4*[(0,255)],
-                  normalizeR=(0,255), normalizeG=(0,255), normalizeB=(0,255), normalizeA=(0,255)):
+                  range = (None,)*4,
+                  normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None):
         assert red is None or isinstance(red, SourceABC)
         assert green is None or isinstance(green, SourceABC)
         assert blue is None or isinstance(blue, SourceABC)
         assert alpha is None or isinstance(alpha, SourceABC)
-        super(RGBALayer, self).__init__()
-        self._datasources = [red,green,blue,alpha]
-        self._normalize   = [normalizeR, normalizeG, normalizeB, normalizeA]
+        super(RGBALayer, self).__init__([red,green,blue,alpha])
         self._color_missing_value = color_missing_value
         self._alpha_missing_value = alpha_missing_value
-        self._range = range
 
     @classmethod
     def createFromMultichannel(cls, data):

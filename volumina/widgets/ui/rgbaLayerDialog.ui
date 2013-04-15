@@ -69,14 +69,21 @@
          <item>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QLabel" name="label_2">
+            <widget class="QLabel" name="redAutoRange_2">
              <property name="text">
               <string>&lt;b&gt;Red channel&lt;/b&gt;</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="redChannelThresholdingWidget"/>
+            <widget class="QCheckBox" name="redAutoRange">
+             <property name="text">
+              <string>automatic range</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ThresholdingWidget" name="redChannelThresholdingWidget" native="true"/>
            </item>
           </layout>
          </item>
@@ -121,7 +128,14 @@
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="greenChannelThresholdingWidget"/>
+            <widget class="QCheckBox" name="greenAutoRange">
+             <property name="text">
+              <string>automatic range</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ThresholdingWidget" name="greenChannelThresholdingWidget" native="true"/>
            </item>
           </layout>
          </item>
@@ -166,7 +180,14 @@
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="blueChannelThresholdingWidget"/>
+            <widget class="QCheckBox" name="blueAutoRange">
+             <property name="text">
+              <string>automatic range</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ThresholdingWidget" name="blueChannelThresholdingWidget" native="true"/>
            </item>
           </layout>
          </item>
@@ -211,7 +232,14 @@
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="alphaChannelThresholdingWidget"/>
+            <widget class="QCheckBox" name="alphaAutoRange">
+             <property name="text">
+              <string>automatic range</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ThresholdingWidget" name="alphaChannelThresholdingWidget" native="true"/>
            </item>
           </layout>
          </item>

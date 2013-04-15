@@ -77,7 +77,14 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="grayChannelThresholdingWidget"/>
+            <widget class="QCheckBox" name="grayAutoRange">
+             <property name="text">
+              <string>automatic Range</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ThresholdingWidget" name="grayChannelThresholdingWidget" native="true"/>
            </item>
           </layout>
          </item>

@@ -79,6 +79,8 @@ class ArraySource( QObject ):
         self.isDirty.emit( slicing )
 
     def __eq__( self, other ):
+        if other is None:
+            return False
         # Use id for efficiency
         return self._array is other._array
     
@@ -269,6 +271,8 @@ class LazyflowSource( QObject ):
         self.isDirty.emit( slicing )
 
     def __eq__( self, other ):
+        if other is None:
+            return False
         return self._orig_outslot is other._orig_outslot
     
     def __ne__( self, other ):
@@ -300,6 +304,8 @@ class LazyflowSinkSource( LazyflowSource ):
         self._inputSlot[transposedSlicing] = transposedArray.view(np.ndarray)
 
     def __eq__( self, other ):
+        if other is None:
+            return False
         result = super(LazyflowSinkSource, self).__eq__(other)
         result &= self._inputSlot == other._inputSlot
         return result
@@ -374,12 +380,119 @@ class ConstantSource( QObject ):
         self.isDirty.emit( slicing )
 
     def __eq__( self, other ):
+        if other is None:
+            return False
         return self._constant == other._constant
     
     def __ne__( self, other ):
         return not ( self == other )
 
+    def dtype(self):
+        return self._dtype
+
 assert issubclass(ConstantSource, SourceABC)
+
+
+class MinMaxUpdateRequest( object ):
+    def __init__( self, rawRequest, update_func ):
+        self._rawRequest = rawRequest
+        self._update_func = update_func
+
+    def wait( self ):
+        rawData = self._rawRequest.wait()
+        self._result = rawData
+        self._update_func(rawData)
+        return self._result
+    
+    # callback( result = result, **kwargs )
+    def notify( self, callback, **kwargs ):
+        def handleResult(rawResult):
+            self._result =  rawResult
+            self._update_func(rawResult)
+            callback( self._result, **kwargs )
+        self._rawRequest.notify( handleResult )
+
+    def getResult(self):
+        return self._result
+
+assert issubclass(MinMaxUpdateRequest, RequestABC)
+
+
+
+
+class MinMaxSource( QObject ):
+    """
+    A datasource that serves as a normalizing decorator for other datasources.
+    All data from the original (raw) data source is normalized to the range (0,255) before it is provided to the caller.
+    """
+    isDirty = pyqtSignal( object )
+    boundsChanged = pyqtSignal(object)
+    
+    def __init__( self, rawSource, parent=None ):
+        """
+        rawSource: The original datasource whose data will be normalized
+        
+        bounds: The range of the original source's data, given as a tuple of (min,max)
+                Alternatively, the following strings can be provided instead of a bounds tuple:
+                    'autoMinMax' - Track the min and max values observed from all requests and normalize to that range
+                    'autoPercentiles' - Track the 1 and 99 percentiles and normalize all data to that range
+                Note: When an incoming request causes the lower or upper bound to change, the entire source is marked dirty.
+        """
+        super(MinMaxSource, self).__init__(parent)
+        
+        self._rawSource = rawSource
+        self._rawSource.isDirty.connect( self.isDirty )
+        self._bounds = [1e9,-1e9]
+            
+    @property
+    def dataSlot(self):
+        if hasattr(self._rawSource, "_orig_outslot"):
+            return self._rawSource._orig_outslot
+        else:
+            return None
+            
+    def dtype(self):
+        return self._rawSource.dtype()
+    
+    def request( self, slicing ):
+        rawRequest = self._rawSource.request(slicing)
+        return MinMaxUpdateRequest( rawRequest, self._getMinMax )
+
+    def setDirty( self, slicing ):
+        self._rawSource.setDirty( slicing )
+
+    def __eq__( self, other ):
+        equal = True
+        if other is None:
+            return False
+        equal &= isinstance( other, MinMaxSource )
+        equal &= ( self._rawSource == other._rawSource )
+        return equal
+
+    def __ne__( self, other ):
+        return not ( self == other )
+
+    def _getMinMax(self, data):
+        dmin = np.min(data)
+        dmax = np.max(data)
+        dmin = min(self._bounds[0], dmin)
+        dmax = max(self._bounds[1], dmax)
+        dirty = False
+        if self._bounds[0]-dmin > 1e-2:
+            dirty = True
+        if dmax-self._bounds[1] > 1e-2:
+            dirty = True
+
+        if dirty:
+            self._bounds[0] = min(self._bounds[0], dmin)
+            self._bounds[1] = max(self._bounds[0], dmax)
+            print self._bounds
+            self.boundsChanged.emit(self._bounds)
+            self.setDirty( sl[:,:,:,:,:] )
+
+
+assert issubclass(MinMaxSource, SourceABC)
+
 
 #*******************************************************************************
 # N o r m a l i z i n g R e q u e s t                                          *
