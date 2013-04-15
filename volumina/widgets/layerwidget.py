@@ -2,8 +2,7 @@ import warnings
 from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
                         QAbstractItemView, QPainter, QItemSelectionModel, \
                         QColor, QMenu, QAction, QFontMetrics, QFont, QImage, \
-                        QBrush, QPalette, QMouseEvent, QVBoxLayout, QLabel, QGridLayout, QPixmap, \
-                        QPushButton
+                        QBrush, QPalette, QMouseEvent, QVBoxLayout, QLabel, QGridLayout, QPixmap
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, \
                          QPoint
 
@@ -14,8 +13,128 @@ from os import path
 from volumina.layerstack import LayerStackModel
 import volumina.icons_rc
 
+#*******************************************************************************
+# L a y e r P a i n t e r                                                      *
+#*******************************************************************************
+
+class LayerPainter( object ):
+    def __init__(self):
+        self.layer = None
+
+        self.rect = QRect()
+
+        self.font = QFont(QFont().defaultFamily(), 9)
+        self.fm = QFontMetrics(self.font)
+
+        self.iconSize = 20
+        self.iconXOffset = 3
+        self.textXOffset = 3
+        self.progressXOffset = self.iconXOffset+self.iconSize+self.textXOffset
+        self.progressYOffset = self.iconSize+3
+        self.progressHeight = 10
+
+        self.alphaTextWidth = self.fm.boundingRect(u"\u03B1=100.0%").width()
+
+    def sizeHint(self, mode):
+       if mode == 'ReadOnly':
+           return QSize(1,self.fm.height()+5)
+       elif mode == 'Expanded' or mode == 'Editable':
+           return QSize(1,self.progressYOffset+self.progressHeight+3)
+       else:
+           raise RuntimeError("Unknown mode")
+
+    def overEyeIcon(self, x, y):
+        #with a sufficiently large height (100)
+        #we make sure that the user can also click below the eye to toggle
+        #the layer
+        return QPoint(x,y) in QRect(self.iconXOffset,0,self.iconSize,100)
+
+    def percentForPosition(self, x, y, parentWidth, checkBoundaries=True):
+        """
+        For some strange reason, self.rect.width() is sometimes 0 when this is called.
+        For that reason, we can't use self._progressWidth and we must pass in the parentWidth as an argument.
+        """
+        if checkBoundaries and (y < self.progressYOffset or y > self.progressYOffset + self.progressHeight) \
+                           or  (x < self.progressXOffset):
+            return -1
+
+        percent = (x-self.progressXOffset)/float(parentWidth-self.progressXOffset-10)
+        if percent < 0:
+            return 0.0
+        if percent > 1:
+            return 1.0
+        return percent
+
+    @property
+    def _progressWidth(self):
+        return self.rect.width()-self.progressXOffset-10
+
+    def paint(self, painter, rect, palette, mode, isSelected):
+        if not self.layer.visible:
+            palette.setCurrentColorGroup(QPalette.Disabled)
+
+        self.rect = rect
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        painter.setBrush(palette.text())
+
+        if isSelected:
+            painter.save()
+            painter.setBrush(palette.highlight())
+            painter.drawRect(rect)
+            painter.restore()
+
+        painter.translate(rect.x(), rect.y())
+        painter.setFont(self.font)
+
+        textOffsetX = self.progressXOffset
+        textOffsetY = max(self.fm.height()-self.iconSize,0)/2.0+self.fm.height()
+
+        if self.layer.visible:
+            painter.drawImage(QRect(self.iconXOffset,0,self.iconSize,self.iconSize), \
+                              QImage(":icons/icons/stock-eye-20.png"))
+        else:
+            painter.drawImage(QRect(self.iconXOffset,0,self.iconSize,self.iconSize), \
+                              QImage(":icons/icons/stock-eye-20-gray.png"))
+
+        if self.layer.direct:
+            painter.save()
+            painter.setBrush(palette.text())
+            painter.drawEllipse(self.iconXOffset+self.iconSize/2-2, self.iconSize+3, 4,4 )
+            painter.restore()
+
+        #layer name text
+        if mode != 'ReadOnly':
+            painter.setBrush(palette.highlightedText())
+        else:
+            painter.setBrush(palette.text())
+
+        #layer name
+        painter.drawText(QPoint(textOffsetX, textOffsetY), "%s" % self.layer.name)
+        #opacity
+        text = u"\u03B1=%0.1f%%" % (100.0*(self.layer.opacity))
+        painter.drawText(QPoint(textOffsetX+self._progressWidth-self.alphaTextWidth, textOffsetY), text)
+
+
+        if mode != 'ReadOnly':
+            #frame around percentage indicator
+            painter.setBrush(palette.dark())
+            painter.save()
+            #no fill color
+            b = painter.brush(); b.setStyle(Qt.NoBrush); painter.setBrush(b)
+            painter.drawRect(QRect(QPoint(self.progressXOffset, self.progressYOffset), \
+                                          QSize(self._progressWidth, self.progressHeight)))
+            painter.restore()
+
+            #percentage indicator
+            painter.drawRect(QRect(QPoint(self.progressXOffset, self.progressYOffset), \
+                                          QSize(self._progressWidth*self.layer.opacity, self.progressHeight)))
+
+        painter.restore()
+
 class FractionSelectionBar( QWidget ):
-    fractionChanged = pyqtSignal(float)
+    fractionChanged = pyqtSignal(float, float)
 
     def __init__( self, initial_fraction=1., parent=None ):
         QWidget.__init__( self, parent=parent )
@@ -32,9 +151,10 @@ class FractionSelectionBar( QWidget ):
         if(value > 1.):
             value = 1.
             warnings.warn("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 1." % str(value))
+        old = self._fraction
         self._fraction = float(value)
         self.update()
-        self.fractionChanged.emit(self._fraction)
+        self.fractionChanged.emit(old, self._fraction)
 
     def mouseMoveEvent(self, event):
         if self._lmbDown:
@@ -73,16 +193,16 @@ class FractionSelectionBar( QWidget ):
                   QSize(self._barWidth()*self._fraction, self._barHeight())))
 
     def sizeHint( self ):
-        return QSize(100, 10)
+        return QSize(100, self._barHeight())
 
     def minimumSizeHint( self ):
-        return QSize(1, 3)
+        return QSize(1, self._barHeight())
 
     def _barWidth( self ):
         return self.width()-1
 
     def _barHeight( self ):
-        return self.height()-1
+        return 10
 
     def _fractionFromPosition( self, pointf ):
         frac = pointf.x() / self.width()
@@ -93,96 +213,47 @@ class FractionSelectionBar( QWidget ):
             frac = 1.
         return frac
 
-class ToggleEye( QLabel ):
-    activeChanged = pyqtSignal( bool )
-
+class BarContainer( QWidget ):
     def __init__( self, parent=None ):
         QWidget.__init__( self, parent=parent )
-        self._active = True
-        self.setActive(self._active)
+        self.bar = FractionSelectionBar()
 
-    def active( self ):
-        return self._active
+        self._layout = QVBoxLayout()
+        self._layout.addWidget( self.bar )
 
-    def setActive( self, b ):
-        self._active = b
-        if b:
-            self.setPixmap(QPixmap(":icons/icons/stock-eye-20.png"))
-            self.activeChanged.emit(True)
-        else:
-            self.setPixmap(QPixmap(":icons/icons/stock-eye-20-gray.png"))
-            self.activeChanged.emit(False)
-
-    def toggle( self ):
-        if self.active():
-            self.setActive( False )
-        else:
-            self.setActive( True )
-
-    def mousePressEvent( self, ev ):
-        self.toggle()
+        self.setLayout( self._layout )
 
 class LayerItemWidget( QWidget ):
-    @property
-    def layer(self):
-        return self._layer
-    @layer.setter
-    def layer(self, layer):
-        if self._layer:
-            self._layer.changed.disconnect()
-        self._layer = layer
-        self._updateState()
-        self._layer.changed.connect(self._updateState)
-
     def __init__( self, parent=None ):
         QWidget.__init__( self, parent=parent )
-        self._layer = None
-
         self._font = QFont(QFont().defaultFamily(), 9)
         self._fm = QFontMetrics( self._font )
-        self._bar = FractionSelectionBar( initial_fraction = 0. )
-        self._bar.setFixedHeight(10)
-        self._nameLabel = QLabel()
+        self._bar = FractionSelectionBar()
+        self._bar.setFixedHeight(15)
+        self._nameLabel = QLabel( "NAME" )
         self._nameLabel.setFont( self._font )
-        self._nameLabel.setText( "None" )
-        self._opacityLabel = QLabel()
+        self._nameLabel.setFixedHeight(self._fm.boundingRect("NAME").height())
+        text = u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction()))
+        self._opacityLabel = QLabel( text )
         self._opacityLabel.setAlignment(Qt.AlignRight)
         self._opacityLabel.setFont( self._font )
-        self._opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction())))
-        self._toggleEye = ToggleEye()
-        self._toggleEye.setActive(False)
-        self._toggleEye.setFixedWidth(25)
+        self._opacityLabel.setFixedHeight(self._fm.boundingRect("NAME").height()) 
+        self._visibleLabel = QLabel()
+        self._visibleLabel.setPixmap(QPixmap(":icons/icons/stock-eye-20.png"))
+        self._visibleLabel.setFixedWidth(25)
 
         self._layout = QGridLayout()
-        self._layout.addWidget( self._toggleEye, 0, 0, 2, 1 )
+        self._layout.addWidget( self._visibleLabel, 0, 0, 2, 1 )
         self._layout.addWidget( self._nameLabel, 0, 1 )
         self._layout.addWidget( self._opacityLabel, 0, 2 )
         self._layout.addWidget( self._bar, 1, 1, 1, 2 )
 
         self._layout.setColumnMinimumWidth( 0, 25 )
-        self._layout.setSpacing(0)
-        self._layout.setContentsMargins(5,2,5,2)
+        # self._layout.setRowMinimumHeight( 0, 20 )
+        # self._layout.setRowMinimumHeight( 1, 20 )
 
         self.setLayout( self._layout)
-
-        self._bar.fractionChanged.connect( self._onFractionChanged )
-        self._toggleEye.activeChanged.connect( self._onEyeToggle )
-
-    def _onFractionChanged( self, fraction ):
-        if self._layer:
-            self._layer.opacity = fraction
-
-    def _onEyeToggle( self, active ):
-        self._layer.visible = active
-
-    def _updateState( self ):
-        if self._layer:
-            self._toggleEye.setActive(self._layer.visible)
-            self._bar.setFraction( self._layer.opacity )
-            self._opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction())))
-            self._nameLabel.setText( self._layer.name )
-
-            self.update()
+        
 
 class LayerDelegate(QStyledItemDelegate):
     def __init__(self, layersView, listModel, parent = None):
@@ -191,6 +262,10 @@ class LayerDelegate(QStyledItemDelegate):
         self._view = layersView
         self._editors = {}
         self._listModel = listModel
+
+        #whether to draw all layers expanded
+        self.expandAll = True
+
         self._listModel.rowsAboutToBeRemoved.connect(self.handleRemovedRows)
 
     def updateEditorGeometry(self, editor, option, index):
@@ -206,14 +281,18 @@ class LayerDelegate(QStyledItemDelegate):
 
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            pic = QPixmap( option.rect.width(), option.rect.height() )
             w = LayerItemWidget()
-            w.layer = layer
-            w.setGeometry( option.rect )
-            w.setAutoFillBackground(True)
-            w.setPalette( option.palette )
-            w.render(pic)            
-            painter.drawPixmap( option.rect, pic )
+            w.setFixedSize( option.rect.width(), option.rect.height() )
+            w.render(painter, targetOffset=QPoint( option.rect.x()+10, option.rect.y()+10 ))
+            # layerPainter = LayerPainter()
+            # layerPainter.layer = layer
+            # isSelected = option.state & QStyle.State_Selected
+            # if isSelected:
+            #     painter.fillRect(option.rect, QColor(0,255,0,10))
+            # if self.expandAll or option.state & QStyle.State_Selected:
+            #     layerPainter.paint(painter, option.rect, option.palette, 'Expanded', isSelected)
+            # else:
+            #     layerPainter.paint(painter, option.rect, option.palette, 'ReadOnly', False)
         else:
             QStyledItemDelegate.paint(self, painter, option, index)
 
@@ -221,18 +300,20 @@ class LayerDelegate(QStyledItemDelegate):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
             w = LayerItemWidget()
+            #w.setFixedSize( option.rect.width(), option.rect.height() )
             return w.sizeHint()
+            # layerPainter = LayerPainter()
+            # layerPainter.layer = layer
+            # mode = "Expanded" if self.expandAll or self._view.currentIndex() == index else 'ReadOnly'
+            # return layerPainter.sizeHint( mode )
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
 
     def createEditor(self, parent, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            editor = LayerItemWidget(parent=parent)
-            editor.setAutoFillBackground(True)
-            editor.setPalette( option.palette )
-            editor.setBackgroundRole(QPalette.Highlight)
-            editor.layer = layer
+            editor = LayerItemWidget(parent=parent)#LayerEditor(parent)
+            #editor.setFixedSize( option.rect.width(), option.rect.height() )
             self._editors[layer] = editor
             return editor
         else:
@@ -264,6 +345,67 @@ class LayerDelegate(QStyledItemDelegate):
         editor = sender()
         self.commitData.emit(editor)
         self.closeEditor.emit(editor)
+
+class LayerEditor(QWidget):
+    editingFinished = pyqtSignal()
+
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
+        self.lmbDown = False
+        self.setMouseTracking(True)
+        self.setAutoFillBackground(True)
+        self._layerPainter = LayerPainter()
+        self._layer = None
+
+    @property
+    def layer(self):
+        return self._layer
+    @layer.setter
+    def layer(self, layer):
+        if self._layer:
+            self._layer.changed.disconnect()
+        self._layer = layer
+        self._layer.changed.connect(self.repaint)
+        self._layerPainter.layer = layer
+
+    def minimumSize(self):
+        return self.sizeHint()
+
+    def maximumSize(self):
+        return self.sizeHint()
+
+    def paintEvent(self, e):
+        painter = QPainter(self)
+        self._layerPainter.paint(painter, self.rect(), self.palette(), 'Editable', True)
+
+    def mouseMoveEvent(self, event):
+        if self.lmbDown:
+            opacity = self._layerPainter.percentForPosition(event.x(), event.y(), self.rect().width(), checkBoundaries=False)
+            if opacity >= 0:
+                self.layer.opacity = opacity
+                self.update()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.RightButton:
+            return
+
+        self.lmbDown = True
+
+        if self._layerPainter.overEyeIcon(event.x(), event.y()):
+            self._layer.visible = not self._layer.visible
+            self.update()
+
+        opacity = self._layerPainter.percentForPosition(event.x(), event.y(), self.rect().width())
+        if opacity >= 0:
+            self._layer.opacity = opacity
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        self.lmbDown = False
+
+#*******************************************************************************
+# L a y e r W i d g e t                                                        *
+#*******************************************************************************
 
 class LayerWidget(QListView):
     def __init__(self, parent = None, model=None):
@@ -425,6 +567,7 @@ if __name__ == "__main__":
     lv.addWidget(down)
     lv.addWidget(delete)
     lv.addWidget(add)
+    lv.addWidget(LayerItemWidget())
 
     w.setGeometry(100, 100, 800,600)
     w.show()
