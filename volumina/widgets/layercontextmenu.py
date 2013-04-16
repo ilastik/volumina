@@ -25,25 +25,7 @@ except ImportError as e:
 
 def _add_actions_grayscalelayer( layer, menu ):
     def adjust_thresholds_callback():
-        dlg = GrayscaleLayerDialog(menu.parent())
-        dlg.setLayername(layer.name)
-        def dbgPrint(a, b):
-            layer.set_normalize(0, (a,b))
-            print "normalization changed to [%d, %d]" % (a,b)
-
-        def autoRange(state):
-            if state == 2:
-                dlg.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1]) #update gui
-                layer.set_normalize(0,None)
-                dlg.grayChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                dlg.grayChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(0,layer.normalize[0])
-        dlg.grayChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
-        dlg.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])
-        dlg.grayChannelThresholdingWidget.valueChanged.connect(dbgPrint)
-        dlg.grayAutoRange.stateChanged.connect(autoRange)
-        dlg.grayAutoRange.setCheckState(layer._autoMinMax[0]*2)
+        dlg = GrayscaleLayerDialog(layer, menu.parent())
         dlg.show()
         
     adjThresholdAction = QAction("Adjust thresholds", menu)
@@ -52,78 +34,7 @@ def _add_actions_grayscalelayer( layer, menu ):
 
 def _add_actions_rgbalayer( layer, menu ): 
     def adjust_thresholds_callback():
-        dlg = RGBALayerDialog(menu.parent())
-        dlg.setLayername(layer.name)
-        if layer.datasources[0] == None:
-            dlg.showRedThresholds(False)
-        if layer.datasources[1] == None:
-            dlg.showGreenThresholds(False)
-        if layer.datasources[2] == None:
-            dlg.showBlueThresholds(False)
-        if layer.datasources[3] == None:
-            dlg.showAlphaThresholds(False)
-
-        def dbgPrint(layerIdx, a, b):
-            layer.set_normalize(layerIdx, (a, b))
-            print "normalization changed for channel=%d to [%d, %d]" % (layerIdx, a,b)
-
-        dlg.redChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
-        dlg.greenChannelThresholdingWidget.setRange(layer.range[1][0], layer.range[1][1])
-        dlg.blueChannelThresholdingWidget.setRange(layer.range[2][0], layer.range[2][1])
-        dlg.alphaChannelThresholdingWidget.setRange(layer.range[3][0], layer.range[3][1])
-
-        dlg.redChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])
-        dlg.greenChannelThresholdingWidget.setValue(layer.normalize[1][0], layer.normalize[1][1])
-        dlg.blueChannelThresholdingWidget.setValue(layer.normalize[2][0], layer.normalize[2][1])
-        dlg.alphaChannelThresholdingWidget.setValue(layer.normalize[3][0], layer.normalize[3][1])
-
-        dlg.redChannelThresholdingWidget.valueChanged.connect(  partial(dbgPrint, 0))
-        dlg.greenChannelThresholdingWidget.valueChanged.connect(partial(dbgPrint, 1))
-        dlg.blueChannelThresholdingWidget.valueChanged.connect( partial(dbgPrint, 2))
-        dlg.alphaChannelThresholdingWidget.valueChanged.connect(partial(dbgPrint, 3))
-
-        def redAutoRange(state):
-            if state == 2:
-                dlg.redChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1]) #update gui
-                layer.set_normalize(0, None) # set to auto
-                dlg.redChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                dlg.redChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(0,layer.normalize[0])
-        def greenAutoRange(state):
-            if state == 2:
-                dlg.greenChannelThresholdingWidget.setValue(layer.normalize[1][0], layer.normalize[1][1]) #update gui
-                layer.set_normalize(1, None) # set to auto
-                dlg.greenChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                dlg.greenChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(1,layer.normalize[1])
-        def blueAutoRange(state):
-            if state == 2:
-                dlg.blueChannelThresholdingWidget.setValue(layer.normalize[2][0], layer.normalize[2][1]) #update gui
-                layer.set_normalize(2, None) # set to auto
-                dlg.blueChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                dlg.blueChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(2,layer.normalize[2])
-        def alphaAutoRange(state):
-            if state == 2:
-                dlg.alphaChannelThresholdingWidget.setValue(layer.normalize[3][0], layer.normalize[3][1]) #update gui
-                layer.set_normalize(3, None) # set to auto
-                dlg.alphaChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                dlg.alphaChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(3,layer.normalize[3])
-        dlg.redAutoRange.stateChanged.connect(redAutoRange)
-        dlg.redAutoRange.setCheckState(layer._autoMinMax[0]*2)
-        dlg.greenAutoRange.stateChanged.connect(greenAutoRange)
-        dlg.greenAutoRange.setCheckState(layer._autoMinMax[1]*2)
-        dlg.blueAutoRange.stateChanged.connect(blueAutoRange)
-        dlg.blueAutoRange.setCheckState(layer._autoMinMax[2]*2)
-        dlg.alphaAutoRange.stateChanged.connect(alphaAutoRange)
-        dlg.alphaAutoRange.setCheckState(layer._autoMinMax[3]*2)
-
-        dlg.resize(dlg.minimumSize())
+        dlg = RGBALayerDialog(layer, menu.parent())
         dlg.show()
 
     adjThresholdAction = QAction("Adjust thresholds", menu)
