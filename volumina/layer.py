@@ -158,9 +158,9 @@ def dtype_to_default_normalize(dsource, normalize):
         elif dtype == numpy.uint32:
             normalize = (0,2**32-1)
         elif dtype == numpy.float32:
-            normalize = (0,1)
+            normalize = (0,255)
         elif dtype == numpy.float64:
-            normalize = (0,1)
+            normalize = (0,255)
     return normalize
     
 class NormalizableLayer( Layer ):
@@ -200,6 +200,9 @@ class NormalizableLayer( Layer ):
         '''
         if value is None:
             value = self._datasources[datasourceIdx]._bounds
+            self._autoMinMax[datasourceIdx] = True
+        else:
+            self._autoMinMax[datasourceIdx] = False
         self._normalize[datasourceIdx] = value 
         self.normalizeChanged.emit(datasourceIdx, value[0], value[1])
 
@@ -208,7 +211,7 @@ class NormalizableLayer( Layer ):
         self._normalize = []
         self._range = []
         self._datasources = datasources
-        self._autoMinMax = True
+        self._autoMinMax = []
 
         for i,datasource in enumerate(datasources):
             if datasource is not None:
@@ -218,17 +221,19 @@ class NormalizableLayer( Layer ):
                 self._normalize.append(range)
                 self._range.append(range)
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
+                self._autoMinMax.append(True)
             else:
                 self._normalize.append((0,1))
                 self._range.append((0,1))
+                self._autoMinMax.append(True)
                 
 
         self.rangeChanged.connect(self.changed)
         self.normalizeChanged.connect(self.changed)
 
     def _bounds_changed(self, datasourceIdx, range):
-        if self._autoMinMax:
-            self.set_normalize(datasourceIdx, range)
+        if self._autoMinMax[datasourceIdx]:
+            self.set_normalize(datasourceIdx, None)
 
 
 #*******************************************************************************
