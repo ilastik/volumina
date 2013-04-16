@@ -393,13 +393,6 @@ class QuadStatusBar(QHBoxLayout):
 
         self.addSpacing(20)
 
-        self.channelLabel = QLabel("Channel:")
-        self.addWidget(self.channelLabel)
-
-        self.channelSpinBox = QSpinBox()
-        self.addWidget(self.channelSpinBox)
-        self.addSpacing(20)
-
         self.timeLabel = QLabel("Time:")
         self.addWidget(self.timeLabel)
 

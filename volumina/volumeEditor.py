@@ -1,5 +1,6 @@
 #Python
 import copy
+from functools import partial
 
 #SciPy
 import numpy
@@ -110,7 +111,7 @@ class VolumeEditor( QObject ):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
 
-    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True, syncAlongAxes=(0,1,2)):
+    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True, syncAlongAxes=(0,1)):
         super(VolumeEditor, self).__init__(parent=parent)
         self._sync_along = tuple(syncAlongAxes)
 
@@ -177,12 +178,13 @@ class VolumeEditor( QObject ):
         ##
         ## connect
         ##
-        self.posModel.channelChanged.connect(self.navCtrl.changeChannel)
         self.posModel.timeChanged.connect(self.navCtrl.changeTime)
         self.posModel.slicingPositionChanged.connect(self.navCtrl.moveSlicingPosition)
         if crosshair:
             self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
+
+        self.layerStack.layerAdded.connect( self._onLayerAdded )
 
     def _reset(self):
         for s in self.imageScenes:
@@ -206,14 +208,6 @@ class VolumeEditor( QObject ):
 
     def closeEvent(self, event):
         event.accept()
-
-    def nextChannel(self):
-        assert(False)
-        self.posModel.channel = self.posModel.channel+1
-
-    def previousChannel(self):
-        assert(False)
-        self.posModel.channel = self.posModel.channel-1
 
     def setLabelSink(self, labelsink):
         self.brushingControler.setDataSink(labelsink)
@@ -240,3 +234,7 @@ class VolumeEditor( QObject ):
             self.posModel.slicingPos = newPos
         view3d.changedSlice.connect(onSliceDragged)
         return view3d
+
+    def _onLayerAdded( self, layer, row ):
+        self.navCtrl.layerChangeChannel( layer)
+        layer.channelChanged.connect( partial(self.navCtrl.layerChangeChannel, layer=layer) )

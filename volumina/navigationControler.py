@@ -361,7 +361,7 @@ class NavigationControler(QObject):
         for i in range(3):
             self._imagePumps[i].syncedSliceSources.setThrough(2, newChannel)
 
-    def layerChangeChannel( self, layer, newChannel):
+    def layerChangeChannel( self, layer ):
         '''Change the channel for a single layer.
 
         This function can be used when the layers are not synced along
@@ -370,7 +370,7 @@ class NavigationControler(QObject):
         '''
         for pump in self._imagePumps:
             for src in pump.layerToSliceSources( layer ):
-                src.setThrough(2, newChannel)
+                src.setThrough(2, layer.channel)
         # Note: we update the slice sources of a layer
         # sequentially. This could cause flickering if there are
         # two or more slice sources per layer (like a RGBA layer). 
