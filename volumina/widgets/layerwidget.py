@@ -142,7 +142,6 @@ class LayerItemWidget( QWidget ):
 
     def __init__( self, parent=None ):
         QWidget.__init__( self, parent=parent )
-        print "CREATION"
         self._layer = None
 
         self._font = QFont(QFont().defaultFamily(), 9)
@@ -206,7 +205,7 @@ class LayerItemWidget( QWidget ):
 
 class LayerDelegate(QStyledItemDelegate):
     def __init__(self, layersView, listModel, parent = None):
-        QStyledItemDelegate.__init__(self, parent)
+        QStyledItemDelegate.__init__(self, parent=parent)
         self.currentIndex = -1
         self._view = layersView
         self._editors = {}
@@ -241,8 +240,7 @@ class LayerDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
-            w = LayerItemWidget()
-            return w.sizeHint()
+            return self._w.sizeHint()
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
 
@@ -297,7 +295,7 @@ class LayerWidget(QListView):
 
     def init(self, listModel):
         self.setModel(listModel)
-        self._itemDelegate = LayerDelegate( self, listModel )
+        self._itemDelegate = LayerDelegate( self, listModel, parent=self )
         self.setItemDelegate(self._itemDelegate)
         self.setSelectionModel(listModel.selectionModel)
         #self.setDragDropMode(self.InternalMove)
