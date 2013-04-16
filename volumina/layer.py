@@ -21,6 +21,7 @@ class Layer( QObject ):
     visible -- boolean
     opacity -- float; range 0.0 - 1.0
     name -- string
+    numberOfChannels -- int
     layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
     '''
 
@@ -31,6 +32,8 @@ class Layer( QObject ):
     visibleChanged = pyqtSignal(bool) 
     opacityChanged = pyqtSignal(float) 
     nameChanged = pyqtSignal(object)
+    channelChanged = pyqtSignal(int)
+    numberOfChannelsChanged = pyqtSignal(int)
 
     @property
     def visible( self ):
@@ -62,6 +65,34 @@ class Layer( QObject ):
         if self._name != n:
             self._name = n
             self.nameChanged.emit(n)
+
+    @property
+    def numberOfChannels( self ):
+        return self._numberOfChannels
+    @numberOfChannels.setter
+    def numberOfChannels( self, n ):
+        if self._numberOfChannels == n:
+            return
+        if self._channel >= n and n > 0:
+            self.channel = n - 1
+        elif n < 1:
+            raise ValueError("Layer.numberOfChannels(): should be greater or equal 1")
+        self._numberOfChannels = n
+        self.numberOfChannelsChanged.emit(n)
+
+    @property
+    def channel( self ):
+        return self._channel
+    
+    @channel.setter
+    def channel( self, n ):
+        if self._channel == n:
+            return
+        if n < self.numberOfChannels:
+            self._channel = n
+        else:
+            raise ValueError("Layer.channel.setter: channel value has to be less than number of channels")
+        self.channelChanged.emit( self._channel ) 
 
     @property
     def datasources( self ):
@@ -106,6 +137,8 @@ class Layer( QObject ):
         self._opacity = 1.0
         self._datasources = []
         self._layerId = None
+        self._numberOfChannels = 1
+        self._channel = 0
         self.direct = direct
         self._toolTip = ""
 
@@ -118,6 +151,8 @@ class Layer( QObject ):
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
         self.nameChanged.connect(self.changed)
+        self.numberOfChannelsChanged.connect(self.changed)
+        self.channelChanged.connect(self.changed)
 
         self.contexts = []
 

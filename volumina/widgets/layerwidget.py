@@ -12,6 +12,7 @@ from layercontextmenu import layercontextmenu
 
 from os import path
 from volumina.layerstack import LayerStackModel
+from volumina.positionModel import PositionModel
 import volumina.icons_rc
 
 class FractionSelectionBar( QWidget ):
@@ -182,6 +183,7 @@ class LayerItemWidget( QWidget ):
 
         self._bar.fractionChanged.connect( self._onFractionChanged )
         self._toggleEye.activeChanged.connect( self._onEyeToggle )
+        self._channelSelector.valueChanged.connect( self._onChannelChanged )
 
     def _onFractionChanged( self, fraction ):
         if self._layer and (fraction != self._layer.opacity):
@@ -191,6 +193,10 @@ class LayerItemWidget( QWidget ):
         if self._layer and (active != self._layer.visible):
             self._layer.visible = active
 
+    def _onChannelChanged( self, channel ):
+        if self._layer and (channel != self._layer.channel):
+            self._layer.channel = channel
+
     def _updateState( self ):
         if self._layer:
             self._toggleEye.setActive(self._layer.visible)
@@ -199,8 +205,13 @@ class LayerItemWidget( QWidget ):
             self._nameLabel.setText( self._layer.name )
             
             if self._layer.numberOfChannels > 1:
-                self._channelSelector.setVisible(True)
-                self._channelSelector.setMaximum(self._layer.numberOfChannels)
+                self._channelSelector.setVisible( True )
+                self._channelSelector.setMaximum( self._layer.numberOfChannels - 1 )
+                self._channelSelector.setValue( self._layer.channel )
+            else:
+                self._channelSelector.setVisible( False )
+                self._channelSelector.setMaximum( self._layer.numberOfChannels - 1)
+                self._channelSelector.setValue( self._layer.channel )
             self.update()
 
 class LayerDelegate(QStyledItemDelegate):
@@ -286,7 +297,6 @@ class LayerDelegate(QStyledItemDelegate):
 
 class LayerWidget(QListView):
     def __init__(self, parent = None, model=None):
-
         QListView.__init__(self, parent)
 
         if model is None:

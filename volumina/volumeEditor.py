@@ -1,5 +1,6 @@
 #Python
 import copy
+from functools import partial
 
 #SciPy
 import numpy
@@ -110,7 +111,7 @@ class VolumeEditor( QObject ):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
 
-    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True, syncAlongAxes=(0,1,2)):
+    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True, syncAlongAxes=(0,1)):
         super(VolumeEditor, self).__init__(parent=parent)
         self._sync_along = tuple(syncAlongAxes)
 
@@ -184,6 +185,8 @@ class VolumeEditor( QObject ):
             self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
 
+        self.layerStack.layerAdded.connect( self._onLayerAdded )
+
     def _reset(self):
         for s in self.imageScenes:
             s.reset()
@@ -240,3 +243,7 @@ class VolumeEditor( QObject ):
             self.posModel.slicingPos = newPos
         view3d.changedSlice.connect(onSliceDragged)
         return view3d
+
+    def _onLayerAdded( self, layer, row ):
+        self.navCtrl.layerChangeChannel( layer)
+        layer.channelChanged.connect( partial(self.navCtrl.layerChangeChannel, layer=layer) )
