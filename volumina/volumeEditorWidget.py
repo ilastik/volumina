@@ -72,12 +72,6 @@ class VolumeEditorWidget(QWidget):
         Position/coordinate information is read from the volumeEditor's positionModel.
 
         '''
-        maxChannel = self.editor.posModel.shape5D[-1] - 1
-        self.quadview.statusBar.channelLabel.setHidden(maxChannel == 0)
-        self.quadview.statusBar.channelSpinBox.setHidden(maxChannel == 0)
-        self.quadview.statusBar.channelSpinBox.setRange(0,maxChannel)
-        self.quadview.statusBar.channelSpinBox.setSuffix("/{}".format( maxChannel ) )
-
         maxTime = self.editor.posModel.shape5D[0] - 1
         self.quadview.statusBar.timeLabel.setHidden(maxTime == 0)
         self.quadview.statusBar.timeSpinBox.setHidden(maxTime == 0)
@@ -144,17 +138,8 @@ class VolumeEditorWidget(QWidget):
         # http://lists.trolltech.com/qt-interest/2002-04/thread00137-0.html
         # http://www.qtcentre.org/threads/43078-QSpinBox-Timer-Issue
         # http://qt.gitorious.org/qt/qt/blobs/4.8/src/gui/widgets/qabstractspinbox.cpp#line1195
-        self.quadview.statusBar.channelSpinBox.installEventFilter( _timerEater )
         self.quadview.statusBar.timeSpinBox.installEventFilter( _timerEater )
 
-        def setChannel(c):
-            if c == self.editor.posModel.channel:
-                return
-            self.editor.posModel.channel = c
-        self.quadview.statusBar.channelSpinBox.valueChanged.connect(setChannel)
-        def getChannel(newC):
-            self.quadview.statusBar.channelSpinBox.setValue(newC)
-        self.editor.posModel.channelChanged.connect(getChannel)
         def setTime(t):
             if t == self.editor.posModel.time:
                 return

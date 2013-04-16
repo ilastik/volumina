@@ -178,7 +178,6 @@ class VolumeEditor( QObject ):
         ##
         ## connect
         ##
-        self.posModel.channelChanged.connect(self.navCtrl.changeChannel)
         self.posModel.timeChanged.connect(self.navCtrl.changeTime)
         self.posModel.slicingPositionChanged.connect(self.navCtrl.moveSlicingPosition)
         if crosshair:
@@ -209,14 +208,6 @@ class VolumeEditor( QObject ):
 
     def closeEvent(self, event):
         event.accept()
-
-    def nextChannel(self):
-        assert(False)
-        self.posModel.channel = self.posModel.channel+1
-
-    def previousChannel(self):
-        assert(False)
-        self.posModel.channel = self.posModel.channel-1
 
     def setLabelSink(self, labelsink):
         self.brushingControler.setDataSink(labelsink)
