@@ -2,7 +2,7 @@ import unittest as ut
 import os
 from abc import ABCMeta, abstractmethod
 import volumina._testing
-from volumina.pixelpipeline.datasources import ArraySource, RelabelingArraySource, NormalizingSource
+from volumina.pixelpipeline.datasources import ArraySource, RelabelingArraySource
 import numpy as np
 from volumina.slicingtools import sl, slicing2shape
 try:
@@ -116,113 +116,5 @@ class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         del self.signal_emitted
         del self.slicing
 
-class TestNormalizingSource( ut.TestCase, GenericArraySourceTest ):
-    def setUp( self ):
-        GenericArraySourceTest.setUp(self)
-        self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
-        self.unNormalized = np.zeros((1,512,512,1,1))
-        self.unNormalized[0,:,:,0,0] = self.lena
-        arraySource = ArraySource( self.unNormalized )
-
-        self.source = NormalizingSource( arraySource, (0,100) )
-
-        # Normalize the data for the checks against self.raw (in base class)
-        raw = self.unNormalized[...]
-        amin, amax = (0,100)
-        raw = raw.astype(np.float32)
-        raw = 255. * (raw - amin) / (amax-amin)
-        raw[raw > 255] = 255
-        raw[raw < 0] = 0        
-        self.raw = raw
-        
-        self.samesource = NormalizingSource( arraySource, (0,100) )
-        self.othersource = NormalizingSource( arraySource, (0,10) ) # Different bounds
-
-class TestAutoNormalizingSource_MinMax( ut.TestCase, GenericArraySourceTest ):
-    def setUp( self ):
-        GenericArraySourceTest.setUp(self)
-        self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
-        self.unNormalized = np.zeros((1,512,512,1,1))
-        self.unNormalized[0,:,:,0,0] = self.lena
-        arraySource = ArraySource( self.unNormalized )
-
-        self.source = NormalizingSource( arraySource, 'autoMinMax' )
-
-        # Normalize the data for the checks against self.raw (in base class)
-        raw = self.unNormalized[...]
-        slicedData = raw[self.slicing]
-        amin, amax = slicedData.min(), slicedData.max()
-        raw = raw.astype(np.float32)
-        raw = 255. * (raw - amin) / (amax-amin)
-        raw[raw > 255] = 255
-        raw[raw < 0] = 0        
-        self.raw = raw
-        
-        self.samesource = NormalizingSource( arraySource, 'autoMinMax' )
-        self.othersource = NormalizingSource( arraySource, (0,10) ) # Different bounds
-
-class TestAutoNormalizingSource_Percentiles( ut.TestCase, GenericArraySourceTest ):
-    def setUp( self ):
-        GenericArraySourceTest.setUp(self)
-        self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
-        self.unNormalized = np.zeros((1,512,512,1,1))
-        self.unNormalized[0,:,:,0,0] = self.lena
-        arraySource = ArraySource( self.unNormalized )
-
-        self.source = NormalizingSource( arraySource, 'autoPercentiles' )
-
-        # Normalize the data for the checks against self.raw (in base class)
-        raw = self.unNormalized[...]
-        slicedData = raw[self.slicing]
-        amin, amax = np.percentile(slicedData, [1,99])
-        raw = raw.astype(np.float32)
-        raw = 255. * (raw - amin) / (amax-amin)
-        raw[raw > 255] = 255
-        raw[raw < 0] = 0        
-        self.raw = raw
-        
-        self.samesource = NormalizingSource( arraySource, 'autoPercentiles' )
-        self.othersource = NormalizingSource( arraySource, (0,10) ) # Different bounds
-
-if has_lazyflow:
-    class LazyflowSourceTest( ut.TestCase, GenericArraySourceTest ):
-        def setUp( self ):
-            GenericArraySourceTest.setUp(self)
-            self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
-            self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
-            self.raw[0,:,:,0,0] = self.lena
-
-            g = Graph()
-            op = OpDataProvider(self.raw, graph=g)
-            self.source = LazyflowSource( op.Data )
-
-            self.samesource = LazyflowSource( op.Data )
-            opOtherData = OpDataProvider(self.raw, graph=g)
-            self.othersource = LazyflowSource( opOtherData.Data )
-        
-    class LazyflowSinkSourceTest( ut.TestCase, GenericArraySourceTest ):
-        def setUp( self ):
-            GenericArraySourceTest.setUp(self)
-            self.lena = np.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
-            self.raw = np.zeros((1,512,512,1,1), dtype=np.uint8)
-            self.raw[0,:,:,0,0] = self.lena
-
-            g = Graph()
-            self.op = OpDataProvider(self.raw, graph=g)
-            self.source = LazyflowSinkSource(self.op.Data, self.op.Changedata)
-
-            self.samesource = LazyflowSinkSource(self.op.Data, self.op.Changedata)
-            opOtherData = OpDataProvider(self.raw, graph=g)
-            self.othersource = LazyflowSinkSource(opOtherData.Data, self.op.Changedata)
-        
-        def testPut(self):
-            slicing = sl[0:1, 0:100, 0:100, 0:1, 0:1]
-            inData = (255*np.random.random( slicing2shape(slicing) )).astype(np.uint8)
-
-            # Put some data into the source and get it back out again
-            self.source.put(slicing, inData)
-            req = self.source.request(slicing)
-            assert (req.wait() == inData).all()
-            
 if __name__ == '__main__':
     ut.main()
