@@ -35,8 +35,9 @@ def _add_actions_grayscalelayer( layer, menu ):
             if state == 2:
                 layer.set_normalize(0, None) # set to auto
                 dlg.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1]) #update gui
+                dlg.grayChannelThresholdingWidget.setEnabled(False)
             if state == 0:
-                pass
+                dlg.grayChannelThresholdingWidget.setEnabled(True)
         dlg.grayChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
         dlg.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])
         dlg.grayChannelThresholdingWidget.valueChanged.connect(dbgPrint)
@@ -83,26 +84,30 @@ def _add_actions_rgbalayer( layer, menu ):
             if state == 2:
                 layer.set_normalize(0, None) # set to auto
                 dlg.redChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1]) #update gui
+                dlg.redChannelThresholdingWidget.setEnabled(False)
             if state == 0:
-                pass
+                dlg.redChannelThresholdingWidget.setEnabled(True)
         def greenAutoRange(state):
             if state == 2:
                 layer.set_normalize(1, None) # set to auto
                 dlg.greenChannelThresholdingWidget.setValue(layer.normalize[1][0], layer.normalize[1][1]) #update gui
+                dlg.greenChannelThresholdingWidget.setEnabled(False)
             if state == 0:
-                pass
+                dlg.greenChannelThresholdingWidget.setEnabled(True)
         def blueAutoRange(state):
             if state == 2:
                 layer.set_normalize(2, None) # set to auto
-                dlg.redChannelThresholdingWidget.setValue(layer.normalize[2][0], layer.normalize[2][1]) #update gui
+                dlg.blueChannelThresholdingWidget.setValue(layer.normalize[2][0], layer.normalize[2][1]) #update gui
+                dlg.blueChannelThresholdingWidget.setEnabled(False)
             if state == 0:
-                pass
+                dlg.blueChannelThresholdingWidget.setEnabled(True)
         def alphaAutoRange(state):
             if state == 2:
                 layer.set_normalize(3, None) # set to auto
-                dlg.redChannelThresholdingWidget.setValue(layer.normalize[3][0], layer.normalize[3][1]) #update gui
+                dlg.alphaChannelThresholdingWidget.setValue(layer.normalize[3][0], layer.normalize[3][1]) #update gui
+                dlg.alphaChannelThresholdingWidget.setEnabled(False)
             if state == 0:
-                pass
+                dlg.alphaChannelThresholdingWidget.setEnabled(True)
         dlg.redAutoRange.stateChanged.connect(redAutoRange)
         dlg.greenAutoRange.stateChanged.connect(greenAutoRange)
         dlg.blueAutoRange.stateChanged.connect(blueAutoRange)
