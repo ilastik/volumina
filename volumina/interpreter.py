@@ -69,6 +69,8 @@ class ClickInterpreter(QObject):
             handle = True
         if etype == QEvent.MouseButtonDblClick and self.double and event.button() == self.button:
             handle = True
+        if etype == QEvent.MouseButtonPress and event.modifiers() == Qt.ShiftModifier:
+            handle = False #dragging
         if handle:
             pos = self.posModel.cursorPos
             pos = [int(i) for i in pos]
