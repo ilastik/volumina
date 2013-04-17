@@ -605,6 +605,31 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>radioButtonH5</tabstop>
+  <tabstop>radioButtonStack</tabstop>
+  <tabstop>normalizationComboBox</tabstop>
+  <tabstop>inputValueRange</tabstop>
+  <tabstop>outputValueRange</tabstop>
+  <tabstop>lineEditStackPath</tabstop>
+  <tabstop>pushButtonStackPath</tabstop>
+  <tabstop>lineEditStackFileName</tabstop>
+  <tabstop>comboBoxStackFileType</tabstop>
+  <tabstop>axesComboBox1</tabstop>
+  <tabstop>axesComboBox2</tabstop>
+  <tabstop>axesComboBox3</tabstop>
+  <tabstop>stackFilePatternPreview</tabstop>
+  <tabstop>lineEditH5FilePath</tabstop>
+  <tabstop>pushButtonPath</tabstop>
+  <tabstop>lineEditH5DataPath</tabstop>
+  <tabstop>comboBoxHdf5DataType</tabstop>
+  <tabstop>lineEditOutputShapeT</tabstop>
+  <tabstop>lineEditOutputShapeX</tabstop>
+  <tabstop>lineEditOutputShapeY</tabstop>
+  <tabstop>lineEditOutputShapeZ</tabstop>
+  <tabstop>lineEditOutputShapeC</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
