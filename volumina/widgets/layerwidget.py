@@ -285,11 +285,11 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             QStyledItemDelegate.setModelData(self, editor, model, index)
 
-    # def handleRemovedRows(self, parent, start, end):
-    #     for row in range(start, end):
-    #         itemData = self._listModel.itemData( self._listModel.index(row) )
-    #         layer = itemData[Qt.EditRole].toPyObject()
-    #         assert isinstance(layer, Layer)
+    def handleRemovedRows(self, parent, start, end):
+        for row in range(start, end):
+            itemData = self._listModel.itemData( self._listModel.index(row) )
+            layer = itemData[Qt.EditRole].toPyObject()
+            assert isinstance(layer, Layer)
 
     def commitAndCloseEditor(self):
         editor = sender()
