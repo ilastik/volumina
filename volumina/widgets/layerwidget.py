@@ -3,7 +3,7 @@ from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
                         QAbstractItemView, QPainter, QItemSelectionModel, \
                         QColor, QMenu, QAction, QFontMetrics, QFont, QImage, \
                         QBrush, QPalette, QMouseEvent, QVBoxLayout, QLabel, QGridLayout, QPixmap, \
-                        QPushButton, QSpinBox
+                        QPushButton, QSpinBox, QApplication
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, \
                          QPoint
 
