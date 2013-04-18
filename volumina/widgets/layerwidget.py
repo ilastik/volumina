@@ -185,6 +185,10 @@ class LayerItemWidget( QWidget ):
         self.toggleEye.activeChanged.connect( self._onEyeToggle )
         self.channelSelector.valueChanged.connect( self._onChannelChanged )
 
+    def mousePressEvent( self, ev ):
+        print "plonk", ev.pos(), ev.globalPos()
+        QWidget.mousePressEvent( self, ev )
+
     def _onFractionChanged( self, fraction ):
         if self._layer and (fraction != self._layer.opacity):
             self._layer.opacity = fraction
@@ -219,7 +223,6 @@ class LayerDelegate(QStyledItemDelegate):
         QStyledItemDelegate.__init__(self, parent=parent)
         self.currentIndex = -1
         self._view = layersView
-        self._editors = {}
         self._w = LayerItemWidget()
         self._listModel = listModel
         self._listModel.rowsAboutToBeRemoved.connect(self.handleRemovedRows)
@@ -264,7 +267,6 @@ class LayerDelegate(QStyledItemDelegate):
             editor.setPalette( option.palette )
             editor.setBackgroundRole(QPalette.Highlight)
             editor.layer = layer
-            self._editors[layer] = editor
             return editor
         else:
             QStyledItemDelegate.createEditor(self, parent, option, index)
@@ -283,13 +285,11 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             QStyledItemDelegate.setModelData(self, editor, model, index)
 
-    def handleRemovedRows(self, parent, start, end):
-        for row in range(start, end):
-            itemData = self._listModel.itemData( self._listModel.index(row) )
-            layer = itemData[Qt.EditRole].toPyObject()
-            assert isinstance(layer, Layer)
-            if layer in self._editors:
-                del self._editors[layer]
+    # def handleRemovedRows(self, parent, start, end):
+    #     for row in range(start, end):
+    #         itemData = self._listModel.itemData( self._listModel.index(row) )
+    #         layer = itemData[Qt.EditRole].toPyObject()
+    #         assert isinstance(layer, Layer)
 
     def commitAndCloseEditor(self):
         editor = sender()
@@ -366,22 +366,22 @@ class LayerWidget(QListView):
     def onOrderChanged(self):
         self.updateGUI()
 
-    # def mousePressEvent(self, event):
-    #     prevIndex = self.model().selectedIndex()
-    #     newIndex = self.indexAt( event.pos() )
-    #     super(LayerWidget, self).mousePressEvent(event)
+    def mousePressEvent(self, event):
+        prevIndex = self.model().selectedIndex()
+        newIndex = self.indexAt( event.pos() )
+        super(LayerWidget, self).mousePressEvent(event)
 
-    #     # HACK: The first click merely gives focus to the list item without actually passing the event to it.
-    #     # We'll simulate a mouse click on the item by calling mousePressEvent() and mouseReleaseEvent on the appropriate editor
-    #     if prevIndex != newIndex and newIndex.row() != -1:
-    #         layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
-    #         assert isinstance(layer, Layer)
-    #         editor = self._itemDelegate._editors[layer]
-    #         editorPos = event.pos() - editor.geometry().topLeft()
-    #         editorPress = QMouseEvent( QMouseEvent.MouseButtonPress, editorPos, event.button(), event.buttons(), event.modifiers() )
-    #         editor.mousePressEvent(editorPress)
-    #         editorRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, editorPos, event.button(), event.buttons(), event.modifiers() )
-    #         editor.mouseReleaseEvent(editorRelease)
+        # HACK: The first click merely gives focus to the list item without actually passing the event to it.
+        # We'll simulate a mouse click on the item by calling mousePressEvent() and mouseReleaseEvent on the appropriate editor
+        if prevIndex != newIndex and newIndex.row() != -1:
+            layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
+            assert isinstance(layer, Layer)
+            hitWidget = QApplication.widgetAt(event.globalPos())
+            hitWidgetPos = event.pos() - hitWidget.geometry().topLeft()
+            hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, hitWidgetPos, event.button(), event.buttons(), event.modifiers() )
+            hitWidget.mousePressEvent(hitWidgetPress)
+            hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, hitWidgetPos, event.button(), event.buttons(), event.modifiers() )
+            hitWidget.mouseReleaseEvent(hitWidgetRelease)
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
