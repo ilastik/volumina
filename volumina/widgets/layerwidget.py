@@ -147,33 +147,33 @@ class LayerItemWidget( QWidget ):
 
         self._font = QFont(QFont().defaultFamily(), 9)
         self._fm = QFontMetrics( self._font )
-        self._bar = FractionSelectionBar( initial_fraction = 0. )
-        self._bar.setFixedHeight(10)
-        self._nameLabel = QLabel()
-        self._nameLabel.setFont( self._font )
-        self._nameLabel.setText( "None" )
-        self._opacityLabel = QLabel()
-        self._opacityLabel.setAlignment(Qt.AlignRight)
-        self._opacityLabel.setFont( self._font )
-        self._opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction())))
-        self._toggleEye = ToggleEye()
-        self._toggleEye.setActive(False)
-        self._toggleEye.setFixedWidth(35)
-        self._toggleEye.setToolTip("Visibility")
-        self._channelSelector = QSpinBox()
-        self._channelSelector.setFrame( False )
-        self._channelSelector.setFont( self._font )
-        self._channelSelector.setMaximumWidth( 35 )
-        self._channelSelector.setAlignment(Qt.AlignRight)
-        self._channelSelector.setToolTip("Channel")
-        self._channelSelector.setVisible(False)
+        self.bar = FractionSelectionBar( initial_fraction = 0. )
+        self.bar.setFixedHeight(10)
+        self.nameLabel = QLabel()
+        self.nameLabel.setFont( self._font )
+        self.nameLabel.setText( "None" )
+        self.opacityLabel = QLabel()
+        self.opacityLabel.setAlignment(Qt.AlignRight)
+        self.opacityLabel.setFont( self._font )
+        self.opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self.bar.fraction())))
+        self.toggleEye = ToggleEye()
+        self.toggleEye.setActive(False)
+        self.toggleEye.setFixedWidth(35)
+        self.toggleEye.setToolTip("Visibility")
+        self.channelSelector = QSpinBox()
+        self.channelSelector.setFrame( False )
+        self.channelSelector.setFont( self._font )
+        self.channelSelector.setMaximumWidth( 35 )
+        self.channelSelector.setAlignment(Qt.AlignRight)
+        self.channelSelector.setToolTip("Channel")
+        self.channelSelector.setVisible(False)
 
         self._layout = QGridLayout()
-        self._layout.addWidget( self._toggleEye, 0, 0 )
-        self._layout.addWidget( self._nameLabel, 0, 1 )
-        self._layout.addWidget( self._opacityLabel, 0, 2 )
-        self._layout.addWidget( self._channelSelector, 1, 0)
-        self._layout.addWidget( self._bar, 1, 1, 1, 2 )
+        self._layout.addWidget( self.toggleEye, 0, 0 )
+        self._layout.addWidget( self.nameLabel, 0, 1 )
+        self._layout.addWidget( self.opacityLabel, 0, 2 )
+        self._layout.addWidget( self.channelSelector, 1, 0)
+        self._layout.addWidget( self.bar, 1, 1, 1, 2 )
 
         self._layout.setColumnMinimumWidth( 0, 35 )
         self._layout.setSpacing(0)
@@ -181,9 +181,9 @@ class LayerItemWidget( QWidget ):
 
         self.setLayout( self._layout)
 
-        self._bar.fractionChanged.connect( self._onFractionChanged )
-        self._toggleEye.activeChanged.connect( self._onEyeToggle )
-        self._channelSelector.valueChanged.connect( self._onChannelChanged )
+        self.bar.fractionChanged.connect( self._onFractionChanged )
+        self.toggleEye.activeChanged.connect( self._onEyeToggle )
+        self.channelSelector.valueChanged.connect( self._onChannelChanged )
 
     def _onFractionChanged( self, fraction ):
         if self._layer and (fraction != self._layer.opacity):
@@ -199,19 +199,19 @@ class LayerItemWidget( QWidget ):
 
     def _updateState( self ):
         if self._layer:
-            self._toggleEye.setActive(self._layer.visible)
-            self._bar.setFraction( self._layer.opacity )
-            self._opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self._bar.fraction())))
-            self._nameLabel.setText( self._layer.name )
+            self.toggleEye.setActive(self._layer.visible)
+            self.bar.setFraction( self._layer.opacity )
+            self.opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self.bar.fraction())))
+            self.nameLabel.setText( self._layer.name )
             
             if self._layer.numberOfChannels > 1:
-                self._channelSelector.setVisible( True )
-                self._channelSelector.setMaximum( self._layer.numberOfChannels - 1 )
-                self._channelSelector.setValue( self._layer.channel )
+                self.channelSelector.setVisible( True )
+                self.channelSelector.setMaximum( self._layer.numberOfChannels - 1 )
+                self.channelSelector.setValue( self._layer.channel )
             else:
-                self._channelSelector.setVisible( False )
-                self._channelSelector.setMaximum( self._layer.numberOfChannels - 1)
-                self._channelSelector.setValue( self._layer.channel )
+                self.channelSelector.setVisible( False )
+                self.channelSelector.setMaximum( self._layer.numberOfChannels - 1)
+                self.channelSelector.setValue( self._layer.channel )
             self.update()
 
 class LayerDelegate(QStyledItemDelegate):
@@ -241,7 +241,6 @@ class LayerDelegate(QStyledItemDelegate):
             w = self._w
             w.layer = layer
             w.setGeometry( option.rect )
-            w.setAutoFillBackground(True)
             w.setPalette( option.palette )
             w.render(pic)            
             painter.drawPixmap( option.rect, pic )
@@ -251,6 +250,8 @@ class LayerDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
+            self._w.layer = layer
+            self._w.channelSelector.setVisible(True)
             return self._w.sizeHint()
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
