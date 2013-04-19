@@ -55,6 +55,7 @@ class ShortcutManager(object):
 
     def __init__(self):
         self._shortcuts = collections.OrderedDict()
+        self.shortcutCollisions = set()
     
     def register(self, group, description, shortcut, objectWithToolTip=None):
         """
@@ -79,7 +80,27 @@ class ShortcutManager(object):
             shortcut.setKey( keyseq )
         
         self.updateToolTip( shortcut )
-
+        
+        self.findDuplicates(shortcut.key(),group,description)
+    
+    def findDuplicates(self,key,groupdup,description):
+        '''warn user when finding keyboard shortcut collisions'''
+        for group, shortcutDict in self._shortcuts.items():
+            if group == groupdup:
+                continue
+            for obj,desc in shortcutDict.items():
+                if obj is None:continue
+                if obj.key()==key:
+                    if (description,desc[0],group,groupdup) in self.shortcutCollisions:
+                        continue
+                    self.shortcutCollisions.add((description,desc[0],group,groupdup))
+                    from warnings import warn
+                    msg =  "\n~~~~~~~~~~~~\n"
+                    msg+="Keyboard Shortcut Match Found: key "+str(key.toString())+"\n"
+                    msg+=group+" : "+desc[0]+"\n"
+                    msg+=groupdup+" : "+description+"\n"
+                    warn(msg)
+                
     def unregister(self, shortcut):
         """
         Remove the shortcut from the manager.
@@ -161,14 +182,15 @@ class ShortcutManagerDlg(QDialog):
         shortcutEdits = dict()
         for group, shortcutDict in mgr.shortcuts.items():
             groupItem = QTreeWidgetItem( treeWidget, QStringList( group ) )
-            
+            ListOfActions = set()
             for i, (shortcut, (desc, obj)) in enumerate(shortcutDict.items()):
-                #label = QLabel(desc)
+                if desc in ListOfActions:
+                    continue
                 edit = QLineEdit(str(shortcut.key().toString()))
                 shortcutEdits[shortcut] = edit
                 item = QTreeWidgetItem( groupItem, QStringList( desc ) )
                 item.setText(0, desc)
-                #treeWidget.setItemWidget( item, 0, label )
+                ListOfActions.add(desc)
                 treeWidget.setItemWidget( item, 1, edit )
 
         tempLayout.addWidget( treeWidget )
@@ -209,7 +231,6 @@ class ShortcutManagerDlg(QDialog):
                 
                 # Make sure the tooltips get updated.
                 mgr.updateToolTip(shortcut)
-                
             mgr.storeToPreferences()
                 
 
