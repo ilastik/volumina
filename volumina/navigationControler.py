@@ -97,6 +97,16 @@ class NavigationInterpreter(QObject):
         event.ignore()
         return False
 
+    def mousePositionValid( self, imageview, event):
+        dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
+        axis = self._navCtrl._model.activeView
+        dataCoord2D = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
+        newPos = [dataCoord2D.x(), dataCoord2D.y()]
+        newPos.insert(axis, self._navCtrl._model.slicingPos[axis])
+        if not self._navCtrl._positionValid(newPos):
+            return False
+        return True
+
     ###
     ### Default Mode
     ###
@@ -454,36 +464,13 @@ class NavigationControler(QObject):
 
         return True
 
-    #def positionCursor(self, scenePoint, axis):
-    #    """
-    #    Change position of the crosshair cursor.
-
-    #    axis -- perpendicular axis [0,1,2]
-    #    """
-    #
-    #    #we get the 2D coordinates x,y from the view that
-    #    #shows the projection perpendicular to axis
-    #    #set this view as active
-    #    self._model.activeView = axis
-    #
-    #    dataPoint = self._views[axis].scene().scene2data.map(scenePoint)
-
-    #    newPos = [dataPoint.x(), dataPoint.y()]
-    #    newPos.insert(axis, self._model.slicingPos[axis])
-
-    #    if newPos == self._model.cursorPos:
-    #        return
-    #    if not self._positionValid(newPos):
-    #        return
-
-    #    self._model.cursorPos = newPos
-
     #private functions ########################################################
 
     def _updateCrossHairCursor(self):
         dataX, dataY = posView2D(self._model.cursorPos, axis=self._model.activeView)
 
         self._views[self._model.activeView]._crossHairCursor.showXYPosition(dataX, dataY)
+        
         for i, v in enumerate(self._views):
             v._crossHairCursor.setVisible( self._model.activeView == i )
 

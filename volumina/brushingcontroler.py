@@ -30,9 +30,12 @@ class CrosshairControler(QObject):
 
 class BrushingInterpreter( QObject ):
     # states
-    FINAL = 0
-    DEFAULT_MODE = 1
-    DRAW_MODE = 2
+    FINAL           = 0
+    DEFAULT_MODE    = 1
+    MAYBE_DRAW_MODE = 2 #received a single left-click; however, the next event
+                        #might be a double-click event; therefore the state has
+                        #not been decided yet
+    DRAW_MODE       = 3
 
     @property
     def state( self ):
@@ -50,6 +53,8 @@ class BrushingInterpreter( QObject ):
 
         self._lineItems = [] # list of line items that have been
                             # added to the qgraphicsscene for drawing indication
+                            
+        self._lastEvent = None
 
         # clear the temporary line items once they
         # have been pushed to the sink
@@ -71,37 +76,55 @@ class BrushingInterpreter( QObject ):
 
     def eventFilter( self, watched, event ):
         etype = event.type()
-        ### the following implements a simple state machine
+        self._lastEvent = event
+        
         if self._current_state == self.DEFAULT_MODE:
-            ### default mode -> draw mode
-            if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton and event.modifiers() == Qt.NoModifier:
+            if etype == QEvent.MouseButtonPress \
+                and event.button() == Qt.LeftButton \
+                and event.modifiers() == Qt.NoModifier \
+                and self._navIntr.mousePositionValid(watched, event):
+                
+                ### default mode -> maybe draw mode
+                self._current_state = self.MAYBE_DRAW_MODE
+                
+        elif self._current_state == self.MAYBE_DRAW_MODE:
+            if etype == QEvent.MouseMove:
                 # navigation interpreter also has to be in
                 # default mode to avoid inconsistencies
                 if self._navIntr.state == self._navIntr.DEFAULT_MODE:
+                    ### maybe draw mode -> maybe draw mode
                     self._current_state = self.DRAW_MODE
-                    self.onEntry_draw( watched, event )
+                    self.onEntry_draw( watched, self._lastEvent )
+                    self.onMouseMove_draw( watched, event )
                     return True
                 else:
+                    return self._navIntr.eventFilter( watched, self._lastEvent )
                     return self._navIntr.eventFilter( watched, event )
-
-            ### actions in default mode
-            # let the navigation interpreter handle common events
-            return self._navIntr.eventFilter( watched, event )
+            elif etype == QEvent.MouseButtonDblClick:
+                ### maybe draw mode -> default mode
+                self._current_state = self.DEFAULT_MODE
+                return self._navIntr.eventFilter( watched, event )
 
         elif self._current_state == self.DRAW_MODE:
-            ### draw mode -> default mode
             if etype == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
                 self.onExit_draw( watched, event )
+                ### draw mode -> default mode
                 self._current_state = self.DEFAULT_MODE
                 self.onEntry_default( watched, event )
                 return True
 
-            ### actions in draw mode
-            elif etype == QEvent.MouseMove:
-                self.onMouseMove_draw( watched, event )
-                return True
+            elif etype == QEvent.MouseMove and event.buttons() & Qt.LeftButton:
+                if self._navIntr.mousePositionValid(watched, event):
+                    self.onMouseMove_draw( watched, event )
+                    return True
+                else:
+                    self.onExit_draw( watched, event )
+                    ### draw mode -> default mode
+                    self._current_state = self.DEFAULT_MODE
+                    self.onEntry_default( watched, event )
 
-        return False
+        # let the navigation interpreter handle common events
+        return self._navIntr.eventFilter( watched, event )
 
     ###
     ### Default Mode
