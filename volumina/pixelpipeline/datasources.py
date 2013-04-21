@@ -486,7 +486,6 @@ class MinMaxSource( QObject ):
         if dirty:
             self._bounds[0] = min(self._bounds[0], dmin)
             self._bounds[1] = max(self._bounds[0], dmax)
-            print self._bounds
             self.boundsChanged.emit(self._bounds)
             self.setDirty( sl[:,:,:,:,:] )
 
