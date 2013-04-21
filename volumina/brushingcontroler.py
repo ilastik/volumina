@@ -104,6 +104,13 @@ class BrushingInterpreter( QObject ):
                 ### maybe draw mode -> default mode
                 self._current_state = self.DEFAULT_MODE
                 return self._navIntr.eventFilter( watched, event )
+            elif etype == QEvent.MouseButtonRelease:
+                self._current_state = self.DRAW_MODE
+                self.onEntry_draw( watched, self._lastEvent )
+                self.onExit_draw( watched, event )
+                self._current_state = self.DEFAULT_MODE
+                self.onEntry_default( watched, event )
+                return True
 
         elif self._current_state == self.DRAW_MODE:
             if etype == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
