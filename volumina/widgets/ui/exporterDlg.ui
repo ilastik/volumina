@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>691</width>
-    <height>697</height>
+    <height>493</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -350,198 +350,8 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
-      <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_27">
-         <property name="text">
-          <string>t:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_24">
-         <property name="text">
-          <string>x:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_25">
-         <property name="text">
-          <string>y:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_26">
-         <property name="text">
-          <string>z:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="lineEditOutputShapeC">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_28">
-         <property name="text">
-          <string>c:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEditOutputShapeY">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEditOutputShapeX">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEditOutputShapeT">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEditOutputShapeZ">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="3">
-        <spacer name="horizontalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-     <item row="9" column="0">
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>Region of Interest</string>
-       </property>
-      </widget>
-     </item>
      <item row="5" column="1">
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="QLabel" name="label_8">
-           <property name="font">
-            <font>
-             <weight>50</weight>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="inputValueRange"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_9">
-           <property name="font">
-            <font>
-             <weight>50</weight>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>to</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="outputValueRange"/>
-         </item>
-        </layout>
-       </item>
        <item row="0" column="2">
         <spacer name="horizontalSpacer">
          <property name="orientation">
@@ -569,7 +379,42 @@
          </item>
         </widget>
        </item>
+       <item row="0" column="1">
+        <widget class="QWidget" name="inputOutputValueRanges" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="ValueRangeWidget" name="inputValueRange" native="true"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_9">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>to</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="ValueRangeWidget" name="outputValueRange" native="true"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
       </layout>
+     </item>
+     <item row="9" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Region of Interest</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="1">
+      <layout class="QGridLayout" name="roiLayout"/>
      </item>
     </layout>
    </item>
@@ -605,31 +450,14 @@
    </item>
   </layout>
  </widget>
- <tabstops>
-  <tabstop>radioButtonH5</tabstop>
-  <tabstop>radioButtonStack</tabstop>
-  <tabstop>normalizationComboBox</tabstop>
-  <tabstop>inputValueRange</tabstop>
-  <tabstop>outputValueRange</tabstop>
-  <tabstop>lineEditStackPath</tabstop>
-  <tabstop>pushButtonStackPath</tabstop>
-  <tabstop>lineEditStackFileName</tabstop>
-  <tabstop>comboBoxStackFileType</tabstop>
-  <tabstop>axesComboBox1</tabstop>
-  <tabstop>axesComboBox2</tabstop>
-  <tabstop>axesComboBox3</tabstop>
-  <tabstop>stackFilePatternPreview</tabstop>
-  <tabstop>lineEditH5FilePath</tabstop>
-  <tabstop>pushButtonPath</tabstop>
-  <tabstop>lineEditH5DataPath</tabstop>
-  <tabstop>comboBoxHdf5DataType</tabstop>
-  <tabstop>lineEditOutputShapeT</tabstop>
-  <tabstop>lineEditOutputShapeX</tabstop>
-  <tabstop>lineEditOutputShapeY</tabstop>
-  <tabstop>lineEditOutputShapeZ</tabstop>
-  <tabstop>lineEditOutputShapeC</tabstop>
-  <tabstop>buttonBox</tabstop>
- </tabstops>
+ <customwidgets>
+  <customwidget>
+   <class>ValueRangeWidget</class>
+   <extends>QWidget</extends>
+   <header>volumina.widgets.valueRangeWidget</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

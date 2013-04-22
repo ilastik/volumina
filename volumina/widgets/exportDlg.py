@@ -9,8 +9,9 @@ import logging
 
 #PyQt
 from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
-                        QDialogButtonBox, QMessageBox, QProgressDialog, QLabel
-from PyQt4.QtCore import QRegExp, Qt, QTimer, pyqtSignal
+                        QDialogButtonBox, QMessageBox, QProgressDialog, QLabel,\
+QHBoxLayout, QSpacerItem, QSizePolicy, QCheckBox
+from PyQt4.QtCore import QRegExp, Qt, QTimer, QObject, pyqtSignal
 from PyQt4 import uic
 
 #numpy
@@ -49,35 +50,162 @@ from lazyflow.graph import Operator
 import vigra
 from collections import deque
 
+from valueRangeWidget import ValueRangeWidget
 
 
+class Writer(QObject):
+    progressSignal = pyqtSignal(float)
+    finishedStepSignal = pyqtSignal()
+
+    def __init__(self):
+        QObject.__init__(self)
+        self.graph = Graph()
+        self.stackWriter = OpStackWriter(graph=self.graph)
+        self.h5Writer = OpH5WriterBigDataset(graph=self.graph)
+        self.h5f = None
+
+    def setupH5Writer(self, h5Group, h5Path):
+        self.h5Writer.hdf5Path.setValue(h5Path)
+        self.h5f = h5py.File(h5Group, 'a')
+        self.h5Writer.hdf5File.setValue(self.h5f)
+        
+
+    def setupStackWriter(self, filePath, fileName, fileType, imageAxesNames):
+    
+        self.stackWriter.Filepath.setValue(filePath)
+        self.stackWriter.Filename.setValue(fileName)
+        self.stackWriter.Filetype.setValue(fileType)
+        self.stackWriter.ImageAxesNames.setValue(imageAxesNames)
+
+    def getStackWriterPreview(self, inputData):
+        self.stackWriter.Image.connect(inputData)
+        if self.stackWriter.FilePattern.ready():
+            return self.stackWriter.FilePattern[:].wait()
+        else:
+            return ""
+
+
+    def write(self, inputData, slicing, ranges, outputDType, fileWriter = "h5"):
+        dlg = MultiStepProgressDialog()
+        #thunkEventHandler = ThunkEventHandler(dlg)
+        dlg.setNumberOfSteps(2)
+        #Step1: 
+        
+        roi = sliceToRoi(slicing,inputData.meta.shape)
+
+        subRegion = OpSubRegion(graph = self.graph)
+
+        subRegion.Start.setValue(tuple([k for k in roi[0]]))
+        subRegion.Stop.setValue(tuple([k for k in roi[1]]))
+        subRegion.Input.connect(inputData)
+
+        inputVolume = subRegion
+
+        #handle different outputTypes
+
+        if ranges is not None:
+
+            normalizer = OpPixelOperator(graph = self.graph)
+            normalizer.Input.connect(inputVolume.Output)
+            minVal, maxVal = numpy.nan, numpy.nan
+
+            inputVolume = normalizer.Output
+            minVal,maxVal = ranges[0]
+            outputMinVal, outputMaxVal = ranges[1]
+                
+            def normalize(val):
+                invVal = 1./(maxVal - minVal)
+                return outputMinVal + (val - minVal)  * (outputMaxVal - outputMinVal) * invVal 
+            
+            normalizer.Function.setValue(normalize)
+            inputVolume = normalizer
+
+
+        if outputDType != inputData.meta.dtype:
+            converter = OpPixelOperator(graph = self.graph)
+            converter.Input.connect(inputVolume.Output)
+            
+            def convertToType(val):
+                return outputDType(val)
+            converter.Function.setValue(convertToType)
+            inputVolume = converter
+
+        dlg.finishStep()
+        #step 2
+        writer = None
+        if fileWriter == "h5":
+            writer = self.h5Writer
+        elif fileWriter == "stack":
+            writer = self.stackWriter
+
+        writer.Image.connect(inputVolume.Output)
+        self._storageRequest = writer.WriteImage[:]
+        
+
+        def handleFinish(result):
+            self.finishedStepSignal.emit()
+        def handleCancel():
+            print "Full volume prediction save CANCELLED."
+        def cancelRequest():
+            print "Cancelling request"
+            self._storageRequest.cancel()
+        def onProgressGUI(x):
+            print "xxx",x
+            dlg.setStepProgress(x)
+        def onProgressLazyflow(x):
+            self.progressSignal.emit(x)
+        
+        self.progressSignal.connect(onProgressGUI)
+        self.finishedStepSignal.connect(dlg.finishStep)
+       
+       # Trigger the write and wait for it to complete or cancel.
+        self._storageRequest.notify_finished(handleFinish)
+        self._storageRequest.notify_cancelled(handleCancel)
+        
+        dlg.rejected.connect(cancelRequest)
+        writer.progressSignal.subscribe( onProgressLazyflow )
+        self._storageRequest.submit() 
+        
+        dlg.exec_()
+        
+        writer.cleanUp()
+        if self.h5f is not None:
+            self.h5f.close()
+            self.h5f = None
+        
+        return 0 
+    
 
 class ExportDialog(QDialog):
     
-    progressSignal = pyqtSignal(float)
-    finishedStepSignal = pyqtSignal()
     
     def __init__(self, parent=None, layername = "Untitled"):
         QDialog.__init__(self, parent)
         if not _has_lazyflow:
             QDialog.setEnabled(self,False)
-        self.validRoi = True
-        self.validInputOutputRange = True
+        #self.validRoi = True
+        #self.validInputOutputRange = True
         self.validAxesComboBoxes = True
         self.layername = layername
         self.initUic()
+        p = os.path.split(__file__)[0]+'/'
+        if p == "/": p = "."+p
+        self.writer = Writer()
+        #self.valueRangeDialog = uic.loadUi(p+"ui/valueRangeDialog.ui", self)
+        #self.valueRangeDialog.show()
+
 
     def initUic(self):
         p = os.path.split(__file__)[0]+'/'
         if p == "/": p = "."+p
         uic.loadUi(p+"ui/exporterDlg.ui", self)
         
-        self.line_outputShape = OrderedDict()
-        self.line_outputShape['t'] = self.lineEditOutputShapeT
-        self.line_outputShape['x'] = self.lineEditOutputShapeX
-        self.line_outputShape['y'] = self.lineEditOutputShapeY
-        self.line_outputShape['z'] = self.lineEditOutputShapeZ
-        self.line_outputShape['c'] = self.lineEditOutputShapeC
+        #self.line_outputShape = OrderedDict()
+        #self.line_outputShape['t'] = self.lineEditOutputShapeT
+        #self.line_outputShape['x'] = self.lineEditOutputShapeX
+        #self.line_outputShape['y'] = self.lineEditOutputShapeY
+        #self.line_outputShape['z'] = self.lineEditOutputShapeZ
+        #self.line_outputShape['c'] = self.lineEditOutputShapeC
         
         #=======================================================================
         # connections
@@ -88,15 +216,15 @@ class ExportDialog(QDialog):
         self.radioButtonStack.clicked.connect(self.on_radioButtonStackClicked)
         self.comboBoxStackFileType.currentIndexChanged.connect(self.comboBoxStackFileTypeChanged)
         self.comboBoxHdf5DataType.currentIndexChanged.connect(self.setLayerValueRangeInfo)
-        self.lineEditOutputShapeX.textEdited.connect(self.validateRoi)
-        self.lineEditOutputShapeY.textEdited.connect(self.validateRoi)
-        self.lineEditOutputShapeZ.textEdited.connect(self.validateRoi)
-        self.lineEditOutputShapeT.textEdited.connect(self.validateRoi)
-        self.lineEditOutputShapeC.textEdited.connect(self.validateRoi)
+        #self.lineEditOutputShapeX.textEdited.connect(self.validateRoi)
+        #self.lineEditOutputShapeY.textEdited.connect(self.validateRoi)
+        #self.lineEditOutputShapeZ.textEdited.connect(self.validateRoi)
+        #self.lineEditOutputShapeT.textEdited.connect(self.validateRoi)
+        #self.lineEditOutputShapeC.textEdited.connect(self.validateRoi)
         self.normalizationComboBox.currentIndexChanged.connect(self.on_normalizationComboBoxChanged)
         
-        self.inputValueRange.textEdited.connect(self.validateInputOutputRange)
-        self.outputValueRange.textEdited.connect(self.validateInputOutputRange)
+        #self.inputValueRange.textEdited.connect(self.validateInputOutputRange)
+        #self.outputValueRange.textEdited.connect(self.validateInputOutputRange)
         self.axesComboBox1.currentIndexChanged.connect(self.validateAxesComboBoxes)
         self.axesComboBox2.currentIndexChanged.connect(self.validateAxesComboBoxes)
         self.axesComboBox3.currentIndexChanged.connect(self.validateAxesComboBoxes)
@@ -121,39 +249,28 @@ class ExportDialog(QDialog):
     def setInput(self, inputSlot):
         self.input = inputSlot
         self.setVolumeShapeInfo()
+        self.setRoiWidgets()
         self.setAvailableImageAxes()
-        self.setRegExToLineEditOutputShape()
+        #self.setRegExToLineEditOutputShape()
         self.setDefaultComboBoxHdf5DataType()
-        self.validateRoi()
+        #self.validateRoi()
         
     def setupWriters(self):
 
-        if not hasattr(self, "stackWriter"):
-            self.stackWriter = OpStackWriter(self.input.getRealOperator())
-        if not hasattr(self, "h5Writer"):
-            self.h5Writer = OpH5WriterBigDataset(self.input.getRealOperator())
-        
-        if self.radioButtonStack.isChecked():
-        
-            self.stackWriter.Filepath.setValue(str(self.lineEditStackPath.displayText()))
-            self.stackWriter.Filename.setValue(str(self.lineEditStackFileName.displayText()))
-            self.stackWriter.Filetype.setValue(str(self.comboBoxStackFileType.currentText()))
-            imageAxesNames = [str(value.currentText()) for value in self.comboBoxes]
-            self.stackWriter.ImageAxesNames.setValue(imageAxesNames)
-            
+        filePath = str(self.lineEditStackPath.displayText())
+        fileName = str(self.lineEditStackFileName.displayText())
+        fileType = str(self.comboBoxStackFileType.currentText())
+        imageAxesNames = [str(value.currentText()) for value in self.comboBoxes]
 
-        elif self.radioButtonH5.isChecked():
-            hdf5path = str(self.lineEditH5DataPath.displayText())
-            self.h5Writer.hdf5Path.setValue(hdf5path)
+        self.writer.setupStackWriter(filePath, fileName, fileType,
+                                     imageAxesNames)
 
 
     def updateStackWriter(self):
         pattern = [""]
         if hasattr(self, "input"):
             self.setupWriters()
-            self.stackWriter.Image.connect(self.input)
-            if self.stackWriter.FilePattern.ready():
-                pattern = self.stackWriter.FilePattern[:].wait()
+            pattern = self.writer.getStackWriterPreview(self.input)
         #self.stackWriter.Input.disconnect()
         placeholders = re.findall("%04d", pattern[0])
         insertedPattern = pattern[0] % tuple([0 for i in xrange(len(placeholders))])
@@ -163,26 +280,70 @@ class ExportDialog(QDialog):
         v = "shape = {"
         for i, (axis, extent) in enumerate(zip(slot.meta.axistags, slot.meta.shape)):
             v += axis.key + ": " + str(extent)
-            assert axis.key in self.line_outputShape.keys()
+            #assert axis.key in self.line_outputShape.keys()
             if i < len(slot.meta.shape)-1:
                 v += " "
         v += "}, dtype = " + str(slot.meta.dtype)
         return v
         
     def setVolumeShapeInfo(self):
-        for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
-            self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
-        for key in "txyzc":
-            if key not in self.input.meta.getAxisKeys():
-                self.line_outputShape[key].setEnabled(False)
+        #for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
+        #    self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
+        #for key in "txyzc":
+        #    if key not in self.input.meta.getAxisKeys():
+        #        self.line_outputShape[key].setEnabled(False)
         self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
     
+        
+    def setRoiWidgets(self):
+        self.roiWidgets = []
+        hbox = QHBoxLayout()
+        hbox.addWidget(QLabel("min"),0,Qt.Alignment(Qt.AlignLeft))
+        hbox.addWidget(QLabel("max"),0,Qt.Alignment(Qt.AlignLeft))
+        self.roiLayout.addLayout(hbox, 0,1)
+        self.roiLayout.addWidget(QLabel("Export Full Range"), 0, 2)
+
+        self.roiLayout.addItem(QSpacerItem(0,0,QSizePolicy.Expanding,
+                                           QSizePolicy.Minimum),0,3)
+        self.roiCheckBoxes = []
+
+        for key, extent in zip(self.input.meta.getAxisKeys(),
+                               self.input.meta.shape):
+            w = ValueRangeWidget()
+            w.setDType(numpy.uint32)
+            w.setValues(0,extent)
+            w.setLimits(0,extent)
+            #w.setLabels("min:","max:")
+            self.roiWidgets.append(w)
+            row = self.roiLayout.rowCount()
+            align = Qt.Alignment(Qt.AlignLeft)
+            check = QCheckBox()
+            self.roiCheckBoxes.append(check)
+            check.setChecked(True)
+            check.setFocusPolicy(Qt.ClickFocus)
+            w.changedSignal.connect(partial(check.setChecked,False))
+            if extent == 1: 
+                w.setEnabled(False)
+                check.toggled.connect(partial(check.setChecked, True))
+                #w.setBackgroundColor("gray", [0,1])
+            self.roiLayout.addWidget(QLabel(key + ": "),row, 0, align)
+            self.roiLayout.addWidget(self.roiWidgets[-1],row, 1, align)
+            self.roiLayout.addWidget(check,row, 2, align)
+        #for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
+            #self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
+        #for key in "txyzc":
+        #    if key not in self.input.meta.getAxisKeys():
+        #        self.line_outputShape[key].setEnabled(False)
+        self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
+
     def setAvailableImageAxes(self):
         axisTags = self.input.meta.axistags
         extents  = self.input.meta.shape
         self.comboBoxes = [self.axesComboBox1, self.axesComboBox2, self.axesComboBox3]
         
         for index, tag in enumerate(axisTags):
+            if extents[index] == 1:
+                continue
             for box in self.comboBoxes[:-1]:
                 box.addItem(tag.key, index)
             if extents[index] <= 4:
@@ -203,32 +364,26 @@ class ExportDialog(QDialog):
 
 
     def setLayerValueRangeInfo(self):
-        inputDRange = [0,1]
-        dtype = numpy.uint8
-        if hasattr(self, "input"):
-            dtype = self.input.meta.dtype 
-            if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
-                inputDRange = self.input.meta.drange
-            if hasattr(dtype, "type"):
-                dtype = dtype.type
-        stringifiedInputDRange = [str(dtype(i)) for i in inputDRange]
+        if not hasattr(self, "inputType"):
+            inputDRange = [0,1]
+            dtype = numpy.uint8
+            if hasattr(self, "input"):
+                dtype = self.input.meta.dtype 
+                if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
+                    inputDRange = self.input.meta.drange
+                if hasattr(dtype, "type"):
+                    dtype = dtype.type
             
-        self.inputValueRange.setText("%s - %s" % tuple(stringifiedInputDRange))
+            self.inputValueRange.setDType(dtype)
+            self.inputValueRange.setValues(inputDRange[0], inputDRange[1])
+            self.inputType = dtype
         
-        outputType = self.getOutputDtype()
-        typeLimits = []
-        try:
-            typeLimits.append(numpy.iinfo(outputType).min)
-            typeLimits.append(numpy.iinfo(outputType).max)
-        except:
-            typeLimits = inputDRange
+        outputType = self.getOutputDType()
 
-
-        self.inputType = dtype
         self.outputType = outputType
 
-        stringifiedOutputDRange = [str(outputType(i)) for i in typeLimits]
-        self.outputValueRange.setText("%s - %s" % tuple(stringifiedOutputDRange))
+        self.outputValueRange.setDType(outputType)
+        #self.outputValueRange.setValues(0,1)
 
         self.checkTypeConversionNecessary()
             
@@ -279,7 +434,7 @@ class ExportDialog(QDialog):
         folderDlg = QFileDialog() 
         suffix = str(self.comboBoxStackFileType.currentText())
         path = str(folderDlg.getSaveFileName(self, "Save File",
-                                              str(self.lineEditStackFileName.displayText()
+                                              str(self.lineEditStackPath.displayText()) + str(self.lineEditStackFileName.displayText()
                                                  + "." + suffix)))
         self.updateStackPaths(path)
 
@@ -293,12 +448,22 @@ class ExportDialog(QDialog):
 
 
     def updateStackPaths(self, path):
+        oldPath = self.lineEditStackPath.displayText()
+        oldFilename = self.lineEditStackFileName.displayText()
+
         suffix = str(self.comboBoxStackFileType.currentText())
         newPath, newFilename = self.fixFilePath(path, separateFile = True, suffix =
                                       suffix)
         newSuffix = newFilename.split(".")[-1]
+        newFilename = ".".join(newFilename.split(".")[:-1])
+
+        if newPath == "":
+            newPath = oldPath
+        
+        if newFilename == "":
+            newFilename = oldFilename
         self.lineEditStackPath.setText(newPath)
-        self.lineEditStackFileName.setText(".".join(newFilename.split(".")[:-1]))
+        self.lineEditStackFileName.setText(newFilename)
         self.comboBoxStackFileType.setCurrentIndex(self.comboBoxStackFileType.findText(newSuffix))
         self.updateStackWriter()
 
@@ -310,15 +475,16 @@ class ExportDialog(QDialog):
     def on_radioButtonH5Clicked(self):
         self.widgetOptionsHDF5.setVisible(True)
         self.widgetOptionsStack.setVisible(False)
-        #self.correctFilePathSuffix()
+        self.checkTypeConversionNecessary()
 
     def on_radioButtonStackClicked(self):
         self.widgetOptionsHDF5.setVisible(False)
         self.widgetOptionsStack.setVisible(True)
+        self.checkTypeConversionNecessary()
         #self.correctFilePathSuffix()
         self.updateStackWriter()
     
-    def getOutputDtype(self):
+    def getOutputDType(self):
         if self.radioButtonH5.isChecked():
             h5type = str(self.comboBoxHdf5DataType.currentText())
             return numpy.dtype(h5type).type
@@ -329,12 +495,13 @@ class ExportDialog(QDialog):
             return self.convertFiletypeToDtype(stacktype)
             
     def comboBoxStackFileTypeChanged(self, int):
+        self.setLayerValueRangeInfo()
         self.checkTypeConversionNecessary()
         self.updateStackWriter()
 
 
     def checkTypeConversionNecessary(self):
-        if hasattr(self, "inputType") and hasattr(self, "outputType"):
+        if hasattr(self, "inputType"):
             t = self.inputType
             limits = []
             try:
@@ -345,7 +512,7 @@ class ExportDialog(QDialog):
                 limits.append(numpy.finfo(t).max)
 
             try:
-                if not numpy.all(numpy.array(limits, dtype = self.outputType) == limits):
+                if not numpy.all(numpy.array(limits, dtype = self.getOutputDType()) == limits):
                     self.normalizationComboBox.setCurrentIndex(1)
             except:
                 self.normalizationComboBox.setCurrentIndex(1)
@@ -356,147 +523,48 @@ class ExportDialog(QDialog):
 # options
 #===============================================================================
     def on_normalizationComboBoxChanged(self):
-        selection = str(self.normalizationComboBox.currentText())
-        if selection == "No Normalization":
-            self.normalizationMethod = 0
-        elif selection == "Change range from":
-            self.normalizationMethod = 1
-        elif selection == "Auto Normalization":
-            self.normalizationMethod = 2 #Currently not implemented
+        self.normalizationMethod = self.normalizationComboBox.currentIndex()
         
-        p = QPalette()
         if self.normalizationMethod == 0:
-            p.setColor(QPalette.Base,Qt.gray)
-            p.setColor(QPalette.Text,Qt.gray)
-            
-            self.inputValueRange.setPalette(p)
-            self.inputValueRange.setEnabled(False)
-            self.outputValueRange.setPalette(p)
-            self.outputValueRange.setEnabled(False)
+            self.inputOutputValueRanges.hide()
 
         else:
             self.setLayerValueRangeInfo()
-            p.setColor(QPalette.Base,Qt.white)
-            p.setColor(QPalette.Text,Qt.black)
-            self.inputValueRange.setPalette(p)
-            self.inputValueRange.setEnabled(True)
-            self.outputValueRange.setPalette(p)
-            self.outputValueRange.setEnabled(True)
+            self.inputOutputValueRanges.show()
 
         
-        self.validateInputOutputRange()
+        #self.validateInputOutputRange()
 
 
 
     #===========================================================================
     # lineEditOutputShape    
     #===========================================================================
+    
+    def getSlicing(self):
+        slicing = []
+        for check, roi in zip(self.roiCheckBoxes, self.roiWidgets):
+            if check.isChecked():
+                slicing.append(slice(None))
+            else:
+                minVal, maxVal = roi.getValues()
+                slicing.append(slice(minVal, maxVal))
+    
+        return tuple(slicing)
+    
+    
     def validateOptions(self):
         allValid = True
-        allValid = self.validRoi and allValid
+        #allValid = self.validRoi and allValid
         okButton = self.buttonBox.button(QDialogButtonBox.Ok)
         if self.radioButtonStack.isChecked():
             allValid = self.validAxesComboBoxes and allValid
-        if self.normalizationMethod > 0:
-            allValid = self.validInputOutputRange and allValid
         if allValid:
             okButton.setEnabled(True)
         else:
             okButton.setEnabled(False)
         
         return allValid
-    
-    def validateRoi(self):
-
-        lineEditOutputShapeList = []
-        isValidDict = OrderedDict()
-        volumeShape = self.input.meta.getTaggedShape()
-        for key,value in self.line_outputShape.items():
-            if key not in volumeShape:
-                isValidDict[key] = "Disabled" 
-                continue
-            limits = [int(token) for token in str(value.text()).split() if token.isdigit()]
-
-            isValidDict[key] = False
-            if len(limits) != 2:
-                continue
-            elif limits[0] >= volumeShape[key] or limits[1] >= volumeShape[key]:
-                continue
-            elif limits[1] < limits[0]:
-                continue
-            lineEditOutputShapeList.append(slice(limits[0],limits[1] + 1))
-            isValidDict[key] = True
-
-        isValid = True
-        for key,value in isValidDict.items():
-            p = QPalette()
-            if value == True:
-                p.setColor(QPalette.Base,Qt.white)
-                p.setColor(QPalette.Text,Qt.black)
-            elif value == False:
-                isValid = False
-                p.setColor(QPalette.Base,Qt.red)
-                p.setColor(QPalette.Text,Qt.white)
-            elif value == "Disabled":
-                p.setColor(QPalette.Base, Qt.gray)
-                p.setColor(QPalette.Text,Qt.gray)
-                
-            self.line_outputShape[key].setPalette(p)
-
-        self.roi = tuple(lineEditOutputShapeList)
-
-        self.validRoi = isValid
-        self.validateOptions()
-
-        
-    def lineEditOutputShapeChanged(self):
-        self.lineEditOutputShapeListValidation()
-
-    def validateInputOutputRange(self):
-        allValid = True
-        if self.normalizationMethod > 0:
-            #validate input range:
-            dtypes = [self.input.meta.dtype, self.getOutputDtype()]
-            self.normalizationValues = [[] for dtype in dtypes]
-            for i, valueRange in enumerate([self.inputValueRange,
-                                            self.outputValueRange]):
-                limits = []
-                dtype = dtypes[i]
-                if hasattr(dtype, 'type'):
-                    dtype = dtype.type
-                for token in str(valueRange.text()).split():
-                    try:
-                        num = dtype(token)
-                        limits.append(num)
-                    except:
-                        pass
-            
-                p = QPalette()
-
-                isValid = True
-                if len(limits) != 2:
-                    isValid = False
-                elif not limits[1] > limits[0]:
-                    isValid = False
-                else:
-                    self.normalizationValues[i] = limits
-                
-                if isValid:
-                    p.setColor(QPalette.Base,Qt.white)
-                    p.setColor(QPalette.Text,Qt.black)
-                else:
-                    logger.debug("range is invalid" +  str(limits))
-                    p.setColor(QPalette.Base,Qt.red)
-                    p.setColor(QPalette.Text,Qt.white)
-                
-                valueRange.setPalette(p) 
-
-                allValid = allValid and isValid
-        
-        self.validInputOutputRange = allValid
-
-        self.validateOptions()
-        
     
     def validateAxesComboBoxes(self):
         axes = [str(axis.currentText()) for axis in self.comboBoxes]
@@ -522,99 +590,40 @@ class ExportDialog(QDialog):
 # create values
 #===============================================================================
     
+    
+
+
+
+
+
+
+
+
     def accept(self, *args, **kwargs):
         dlg = MultiStepProgressDialog(self)
         #thunkEventHandler = ThunkEventHandler(dlg)
         dlg.setNumberOfSteps(2)
         #Step1: 
         
-        roi = sliceToRoi(self.roi,self.input.meta.shape)
-        subRegion = OpSubRegion(self.input.getRealOperator())
-
-        subRegion.Start.setValue(tuple([k for k in roi[0]]))
-        subRegion.Stop.setValue(tuple([k for k in roi[1]]))
-        subRegion.Input.connect(self.input)
-
-        inputVolume = subRegion
-
-        #handle different outputTypes
+        slicing = self.getSlicing()
+        ranges = [self.inputValueRange.getValues(),
+                  self.outputValueRange.getValues()]
+        outputDType = self.getOutputDType()
 
 
-        if self.normalizationMethod in [1,2]:
-            normalizer = OpPixelOperator(self.input.getRealOperator())
-            normalizer.Input.connect(inputVolume.Output)
-            minVal, maxVal = numpy.nan, numpy.nan
-
-            if self.normalizationMethod == 1:
-                inputVolume = normalizer.Output
-                minVal,maxVal = self.normalizationValues[0]
-                outputMinVal, outputMaxVal = self.normalizationValues[1]
-            elif self.normalizationMethod == 2:
-                raise Exception("Not Implemented yet")
-                
-            def normalize(val):
-                invVal = 1./(maxVal - minVal)
-                return outputMinVal + (val - minVal)  * (outputMaxVal - outputMinVal) * invVal 
-            
-            normalizer.Function.setValue(normalize)
-            inputVolume = normalizer
-
-        outputDtype = self.getOutputDtype()
-        if outputDtype is not self.input.meta.dtype:
-            converter = OpPixelOperator(self.input.getRealOperator())
-            converter.Input.connect(inputVolume.Output)
-            
-            def convertToType(val):
-                return outputDtype(val)
-            converter.Function.setValue(convertToType)
-            inputVolume = converter
-
-        dlg.finishStep()
-        #step 2
-        writer = None
-        h5f = None
+        fileWriter = "h5"
         if self.radioButtonStack.isChecked():
-            writer = self.stackWriter
+            fileWriter = "stack"
+
         elif self.radioButtonH5.isChecked():
-            writer = self.h5Writer
-            h5f = h5py.File(str(self.lineEditH5FilePath.displayText()), 'a')
-            writer.hdf5File.setValue(h5f)
+            fileWriter = "h5"
+            self.writer.setupH5Writer(str(self.lineEditH5FilePath.displayText()),
+                                     str(self.lineEditH5DataPath.displayText()))
 
-        writer.Image.connect(inputVolume.Output)
-        self._storageRequest = writer.WriteImage[:]
-        
-
-        def handleFinish(result):
-            self.finishedStepSignal.emit()
-        def handleCancel():
-            print "Full volume prediction save CANCELLED."
-        def cancelRequest():
-            print "Cancelling request"
-            self._storageRequest.cancel()
-        def onProgressGUI(x):
-            print "xxx",x
-            dlg.setStepProgress(x)
-        def onProgressLazyflow(x):
-            self.progressSignal.emit(x)
-        
-        self.progressSignal.connect(onProgressGUI)
-        self.finishedStepSignal.connect(dlg.finishStep)
-       
-       # Trigger the write and wait for it to complete or cancel.
-        self._storageRequest.notify_finished(handleFinish)
-        self._storageRequest.notify_cancelled(handleCancel)
-        
-        dlg.rejected.connect(cancelRequest)
-        writer.progressSignal.subscribe( onProgressLazyflow )
-        self._storageRequest.submit() 
-        
-        dlg.exec_()
-        
-        writer.cleanUp()
-        if h5f is not None:
-            h5f.close()
-        
+        retval = self.writer.write(self.input, slicing, ranges, outputDType,
+                                 fileWriter)
         return QDialog.accept(self, *args, **kwargs)
+
     
     def show(self):
         if not _has_lazyflow:
@@ -630,6 +639,8 @@ class ExportDialog(QDialog):
             return numpy.uint8
         if ftype == "jpeg":
             return numpy.uint8
+        if ftype == "bmp":
+            return numpy.uint8
         if ftype == "tiff":
             return numpy.uint32
 
@@ -641,9 +652,10 @@ if __name__ == '__main__':
     app = QApplication(list())
    
     g = Graph()
-    arr = vigra.Volume((60,80,40), dtype=numpy.float32)
+    arr = vigra.Volume((60,800,400), dtype=numpy.float32)
     arr[:] = numpy.random.random_sample(arr.shape)
     a = OpArrayPiper(graph=g)
+    w = Writer()
     a.Input.setValue(arr)
     
     d = ExportDialog()
