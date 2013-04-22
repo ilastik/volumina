@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>691</width>
-    <height>493</height>
+    <height>501</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,7 +43,7 @@
             <property name="font">
              <font>
               <weight>75</weight>
-              <bold>true</bold>
+              <bold>false</bold>
              </font>
             </property>
             <property name="text">
@@ -205,7 +205,7 @@
              <font>
               <weight>75</weight>
               <italic>false</italic>
-              <bold>true</bold>
+              <bold>false</bold>
              </font>
             </property>
             <property name="text">
@@ -237,7 +237,7 @@
             <property name="font">
              <font>
               <weight>75</weight>
-              <bold>true</bold>
+              <bold>false</bold>
              </font>
             </property>
             <property name="text">
@@ -259,7 +259,7 @@
               <property name="font">
                <font>
                 <weight>75</weight>
-                <bold>true</bold>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -414,7 +414,8 @@
       </widget>
      </item>
      <item row="9" column="1">
-      <layout class="QGridLayout" name="roiLayout"/>
+      <widget class="CombinedValueRangeWidget" name="roiWidget" native="true">
+      </widget>
      </item>
     </layout>
    </item>
@@ -457,7 +458,32 @@
    <header>volumina.widgets.valueRangeWidget</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>CombinedValueRangeWidget</class>
+   <extends>QWidget</extends>
+   <header>volumina.widgets.valueRangeWidget</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>radioButtonH5</tabstop>
+  <tabstop>radioButtonStack</tabstop>
+  <tabstop>normalizationComboBox</tabstop>
+  <tabstop>lineEditStackPath</tabstop>
+  <tabstop>pushButtonStackPath</tabstop>
+  <tabstop>lineEditStackFileName</tabstop>
+  <tabstop>comboBoxStackFileType</tabstop>
+  <tabstop>axesComboBox1</tabstop>
+  <tabstop>axesComboBox2</tabstop>
+  <tabstop>axesComboBox3</tabstop>
+  <tabstop>stackFilePatternPreview</tabstop>
+  <tabstop>lineEditH5FilePath</tabstop>
+  <tabstop>pushButtonPath</tabstop>
+  <tabstop>lineEditH5DataPath</tabstop>
+  <tabstop>comboBoxHdf5DataType</tabstop>
+  <tabstop>roiWidget</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

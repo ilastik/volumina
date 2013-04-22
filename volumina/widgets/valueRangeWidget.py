@@ -1,6 +1,8 @@
 import os
+from functools import partial
 
-from PyQt4.QtGui import QWidget, QDoubleSpinBox
+from PyQt4.QtGui import QWidget, QDoubleSpinBox, QHBoxLayout, QCheckBox,\
+QLabel, QGridLayout, QSpacerItem, QSizePolicy
 from PyQt4.QtCore import QRegExp, Qt, QTimer, pyqtSignal
 from PyQt4 import uic
 import numpy
@@ -37,6 +39,7 @@ class ValueRangeWidget(QWidget):
             for box in self.boxes:
                 box.setDecimals(2)
                 box.setSingleStep(0.01)
+                box.setRange(0,1)
         else:
             typeLimits.append(numpy.iinfo(dtype).min)
             typeLimits.append(numpy.iinfo(dtype).max)
@@ -45,9 +48,8 @@ class ValueRangeWidget(QWidget):
             for box in self.boxes:
                 box.setDecimals(0)
                 box.setSingleStep(1)
+                box.setRange(machineLimits[0],machineLimits[1])
 
-        for box in self.boxes: 
-            box.setRange(machineLimits[0],machineLimits[1])
             #box.setRange(typeLimits[0],typeLimits[1])
         
         self.setLimits(typeLimits[0], typeLimits[1])
@@ -128,6 +130,56 @@ class ValueRangeWidget(QWidget):
         if p == "/": p = "."+p
         uic.loadUi(p+"ui/valueRangeWidget.ui", self)
 
+    def focusInEvent(self, QFocusEvent):
+        self.focusNextChild()
+
+class CombinedValueRangeWidget(QWidget):
+    def __init__(self, parent = None):
+        super(CombinedValueRangeWidget, self).__init__(parent)
+        self.roiWidgets = []
+        self.roiLayout = QGridLayout(self)
+        self.setLayout(self.roiLayout)
+        hbox = QHBoxLayout()
+        hbox.addWidget(QLabel("min"),0,Qt.Alignment(Qt.AlignLeft))
+        hbox.addWidget(QLabel("max"),0,Qt.Alignment(Qt.AlignLeft))
+        self.roiLayout.addLayout(hbox, 0,1)
+        self.roiLayout.addWidget(QLabel("Export Full Range"), 0, 2)
+
+        self.roiLayout.addItem(QSpacerItem(0,0,QSizePolicy.Expanding,
+                                           QSizePolicy.Minimum),0,3)
+        self.roiCheckBoxes = []
+
+        self.setFocusPolicy(Qt.TabFocus)
+
+        self.lastInChain = super(CombinedValueRangeWidget, self).nextInFocusChain()
+
+    def addRanges(self, keys, extents):
+        for key, extent in zip(keys, extents):
+            w = ValueRangeWidget(self)
+            w.setFocusPolicy(Qt.TabFocus)
+            w.setDType(numpy.uint32)
+            w.setValues(0,extent)
+            w.setLimits(0,extent)
+            #w.setLabels("min:","max:")
+            self.roiWidgets.append(w)
+            row = self.roiLayout.rowCount()
+            align = Qt.Alignment(Qt.AlignLeft)
+            check = QCheckBox()
+            self.roiCheckBoxes.append(check)
+            check.setChecked(True)
+            check.setFocusPolicy(Qt.ClickFocus)
+            w.changedSignal.connect(partial(check.setChecked,False))
+            if extent == 1: 
+                w.setEnabled(False)
+                check.toggled.connect(partial(check.setChecked, True))
+                #w.setBackgroundColor("gray", [0,1])
+            self.roiLayout.addWidget(QLabel(key + ": "),row, 0, align)
+            self.roiLayout.addWidget(self.roiWidgets[-1],row, 1, align)
+            self.roiLayout.addWidget(check,row, 2, align)
+
+    def focusInEvent(self, QFocusEvent):
+        if len(self.roiWidgets) > 0:
+            self.roiWidgets[0].setFocus()
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication

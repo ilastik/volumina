@@ -54,6 +54,10 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>minBox</tabstop>
+  <tabstop>maxBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

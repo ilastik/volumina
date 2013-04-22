@@ -2,14 +2,13 @@
 import os
 import threading
 from collections import OrderedDict
-from functools import partial
 from itertools import combinations
 import re
 import logging
 
 #PyQt
 from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
-                        QDialogButtonBox, QMessageBox, QProgressDialog, QLabel,\
+                        QDialogButtonBox, QMessageBox,QProgressDialog,QLabel,QWidget,\
 QHBoxLayout, QSpacerItem, QSizePolicy, QCheckBox
 from PyQt4.QtCore import QRegExp, Qt, QTimer, QObject, pyqtSignal
 from PyQt4 import uic
@@ -200,13 +199,6 @@ class ExportDialog(QDialog):
         if p == "/": p = "."+p
         uic.loadUi(p+"ui/exporterDlg.ui", self)
         
-        #self.line_outputShape = OrderedDict()
-        #self.line_outputShape['t'] = self.lineEditOutputShapeT
-        #self.line_outputShape['x'] = self.lineEditOutputShapeX
-        #self.line_outputShape['y'] = self.lineEditOutputShapeY
-        #self.line_outputShape['z'] = self.lineEditOutputShapeZ
-        #self.line_outputShape['c'] = self.lineEditOutputShapeC
-        
         #=======================================================================
         # connections
         #=======================================================================
@@ -216,15 +208,8 @@ class ExportDialog(QDialog):
         self.radioButtonStack.clicked.connect(self.on_radioButtonStackClicked)
         self.comboBoxStackFileType.currentIndexChanged.connect(self.comboBoxStackFileTypeChanged)
         self.comboBoxHdf5DataType.currentIndexChanged.connect(self.setLayerValueRangeInfo)
-        #self.lineEditOutputShapeX.textEdited.connect(self.validateRoi)
-        #self.lineEditOutputShapeY.textEdited.connect(self.validateRoi)
-        #self.lineEditOutputShapeZ.textEdited.connect(self.validateRoi)
-        #self.lineEditOutputShapeT.textEdited.connect(self.validateRoi)
-        #self.lineEditOutputShapeC.textEdited.connect(self.validateRoi)
         self.normalizationComboBox.currentIndexChanged.connect(self.on_normalizationComboBoxChanged)
         
-        #self.inputValueRange.textEdited.connect(self.validateInputOutputRange)
-        #self.outputValueRange.textEdited.connect(self.validateInputOutputRange)
         self.axesComboBox1.currentIndexChanged.connect(self.validateAxesComboBoxes)
         self.axesComboBox2.currentIndexChanged.connect(self.validateAxesComboBoxes)
         self.axesComboBox3.currentIndexChanged.connect(self.validateAxesComboBoxes)
@@ -287,53 +272,13 @@ class ExportDialog(QDialog):
         return v
         
     def setVolumeShapeInfo(self):
-        #for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
-        #    self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
-        #for key in "txyzc":
-        #    if key not in self.input.meta.getAxisKeys():
-        #        self.line_outputShape[key].setEnabled(False)
         self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
     
         
     def setRoiWidgets(self):
-        self.roiWidgets = []
-        hbox = QHBoxLayout()
-        hbox.addWidget(QLabel("min"),0,Qt.Alignment(Qt.AlignLeft))
-        hbox.addWidget(QLabel("max"),0,Qt.Alignment(Qt.AlignLeft))
-        self.roiLayout.addLayout(hbox, 0,1)
-        self.roiLayout.addWidget(QLabel("Export Full Range"), 0, 2)
+        self.roiWidget.addRanges(self.input.meta.getAxisKeys(),
+                                 self.input.meta.shape)
 
-        self.roiLayout.addItem(QSpacerItem(0,0,QSizePolicy.Expanding,
-                                           QSizePolicy.Minimum),0,3)
-        self.roiCheckBoxes = []
-
-        for key, extent in zip(self.input.meta.getAxisKeys(),
-                               self.input.meta.shape):
-            w = ValueRangeWidget()
-            w.setDType(numpy.uint32)
-            w.setValues(0,extent)
-            w.setLimits(0,extent)
-            #w.setLabels("min:","max:")
-            self.roiWidgets.append(w)
-            row = self.roiLayout.rowCount()
-            align = Qt.Alignment(Qt.AlignLeft)
-            check = QCheckBox()
-            self.roiCheckBoxes.append(check)
-            check.setChecked(True)
-            check.setFocusPolicy(Qt.ClickFocus)
-            w.changedSignal.connect(partial(check.setChecked,False))
-            if extent == 1: 
-                w.setEnabled(False)
-                check.toggled.connect(partial(check.setChecked, True))
-                #w.setBackgroundColor("gray", [0,1])
-            self.roiLayout.addWidget(QLabel(key + ": "),row, 0, align)
-            self.roiLayout.addWidget(self.roiWidgets[-1],row, 1, align)
-            self.roiLayout.addWidget(check,row, 2, align)
-        #for i, (axis, extent) in enumerate(zip(self.input.meta.axistags, self.input.meta.shape)):
-            #self.line_outputShape[axis.key].setText("0 - %d" % (extent-1))
-        #for key in "txyzc":
-        #    if key not in self.input.meta.getAxisKeys():
-        #        self.line_outputShape[key].setEnabled(False)
         self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
 
     def setAvailableImageAxes(self):
@@ -364,19 +309,19 @@ class ExportDialog(QDialog):
 
 
     def setLayerValueRangeInfo(self):
-        if not hasattr(self, "inputType"):
-            inputDRange = [0,1]
-            dtype = numpy.uint8
-            if hasattr(self, "input"):
-                dtype = self.input.meta.dtype 
-                if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
-                    inputDRange = self.input.meta.drange
-                if hasattr(dtype, "type"):
-                    dtype = dtype.type
-            
-            self.inputValueRange.setDType(dtype)
-            self.inputValueRange.setValues(inputDRange[0], inputDRange[1])
-            self.inputType = dtype
+        #if not hasattr(self, "inputType"):
+        inputDRange = [0,1]
+        dtype = numpy.uint8
+        if hasattr(self, "input"):
+            dtype = self.input.meta.dtype 
+            if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
+                inputDRange = self.input.meta.drange
+            if hasattr(dtype, "type"):
+                dtype = dtype.type
+        
+        self.inputValueRange.setDType(dtype)
+        self.inputValueRange.setValues(inputDRange[0], inputDRange[1])
+        self.inputType = dtype
         
         outputType = self.getOutputDType()
 
@@ -475,11 +420,13 @@ class ExportDialog(QDialog):
     def on_radioButtonH5Clicked(self):
         self.widgetOptionsHDF5.setVisible(True)
         self.widgetOptionsStack.setVisible(False)
+        self.setLayerValueRangeInfo()
         self.checkTypeConversionNecessary()
 
     def on_radioButtonStackClicked(self):
         self.widgetOptionsHDF5.setVisible(False)
         self.widgetOptionsStack.setVisible(True)
+        self.setLayerValueRangeInfo()
         self.checkTypeConversionNecessary()
         #self.correctFilePathSuffix()
         self.updateStackWriter()
@@ -543,7 +490,7 @@ class ExportDialog(QDialog):
     
     def getSlicing(self):
         slicing = []
-        for check, roi in zip(self.roiCheckBoxes, self.roiWidgets):
+        for check, roi in zip(self.roiWidget.roiCheckBoxes, self.roiWidget.roiWidgets):
             if check.isChecked():
                 slicing.append(slice(None))
             else:
