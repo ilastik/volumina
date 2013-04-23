@@ -29,6 +29,7 @@ class ValueRangeWidget(QWidget):
         self.maxBox.setPrefix(maxLabel)
 
     def setDType(self, dtype):
+        self.dtype = dtype
         typeLimits = []
         machineLimits = []
         if numpy.issubdtype(dtype, numpy.float):
@@ -119,7 +120,7 @@ class ValueRangeWidget(QWidget):
         self.maxBox.setValue(val2)
 
     def getValues(self):
-        return [self.minBox.value(), self.maxBox.value()]
+        return [self.dtype(self.minBox.value()), self.dtype(self.maxBox.value())]
         
     def makeValid(self):
         if not self.maxBox.value() > self.minBox.value():

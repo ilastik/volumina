@@ -214,6 +214,8 @@ class ExportDialog(QDialog):
         self.axesComboBox2.currentIndexChanged.connect(self.validateAxesComboBoxes)
         self.axesComboBox3.currentIndexChanged.connect(self.validateAxesComboBoxes)
         self.lineEditStackFileName.textEdited.connect(self.updateStackWriter)
+        self.lineEditStackPath.editingFinished.connect(self.validateStackPath)
+        self.lineEditH5FilePath.editingFinished.connect(self.validateH5Path)
         #=======================================================================
         # style
         #=======================================================================
@@ -240,6 +242,20 @@ class ExportDialog(QDialog):
         self.setDefaultComboBoxHdf5DataType()
         #self.validateRoi()
         
+
+    def validateStackPath(self):
+        oldPath = self.lineEditStackPath.displayText()
+        path = oldPath.replace("\\","/")
+        if path[-1] != "/":
+            path.append("/")
+        self.lineEditStackPath.setText(path)
+
+    def validateH5Path(self):
+        oldPath = self.lineEditH5FilePath.displayText()
+        path = oldPath.replace("\\","/")
+        self.lineEditH5FilePath.setText(path)
+
+
     def setupWriters(self):
 
         filePath = str(self.lineEditStackPath.displayText())
@@ -252,6 +268,7 @@ class ExportDialog(QDialog):
 
 
     def updateStackWriter(self):
+
         pattern = [""]
         if hasattr(self, "input"):
             self.setupWriters()
@@ -310,17 +327,16 @@ class ExportDialog(QDialog):
 
     def setLayerValueRangeInfo(self):
         #if not hasattr(self, "inputType"):
-        inputDRange = [0,1]
-        dtype = numpy.uint8
         if hasattr(self, "input"):
             dtype = self.input.meta.dtype 
-            if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
-                inputDRange = self.input.meta.drange
-            if hasattr(dtype, "type"):
-                dtype = dtype.type
-        
+        else:
+            return
+        if hasattr(dtype, "type"):
+            dtype = dtype.type
         self.inputValueRange.setDType(dtype)
-        self.inputValueRange.setValues(inputDRange[0], inputDRange[1])
+        if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
+            inputDRange = self.input.meta.drange
+            self.inputValueRange.setValues(inputDRange[0], inputDRange[1])
         self.inputType = dtype
         
         outputType = self.getOutputDType()
@@ -553,7 +569,10 @@ class ExportDialog(QDialog):
         #Step1: 
         
         slicing = self.getSlicing()
-        ranges = [self.inputValueRange.getValues(),
+        if self.normalizationMethod == 0:
+            ranges = None
+        else:
+            ranges = [self.inputValueRange.getValues(),
                   self.outputValueRange.getValues()]
         outputDType = self.getOutputDType()
 
@@ -589,7 +608,7 @@ class ExportDialog(QDialog):
         if ftype == "bmp":
             return numpy.uint8
         if ftype == "tiff":
-            return numpy.uint32
+            return numpy.uint16
 
 if __name__ == '__main__':
     from PyQt4.QtGui import QApplication
@@ -599,7 +618,7 @@ if __name__ == '__main__':
     app = QApplication(list())
    
     g = Graph()
-    arr = vigra.Volume((60,800,400), dtype=numpy.float32)
+    arr = vigra.Volume((60,800,400, 3), dtype=numpy.uint8)
     arr[:] = numpy.random.random_sample(arr.shape)
     a = OpArrayPiper(graph=g)
     w = Writer()
