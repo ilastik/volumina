@@ -18,7 +18,6 @@ from exportDlg import ExportDialog
 _has_lazyflow = True
 try:
     from lazyflow.graph import Graph
-    from lazyflow.operators.operators import OpArrayPiper
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -89,15 +88,30 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
 
     '''
     def onExport():
-        dataSource = layer.datasources[0]
-        if not hasattr(dataSource, "dataSlot"):
-            raise RuntimeError("can not export from a non-lazyflow data source (layer=%r, datasource=%r)" % (type(layer), type(dataSource)) )
-        expDlg = ExportDialog(parent = menu)
+        sourceTags = [True for l in layer.datasources]
+        for i, source in enumerate(layer.datasources):
+            if not hasattr(source, "dataSlot"):
+                 sourceTags[i] = False
+        if not any(sourceTags):
+            raise RuntimeError("can not export from a non-lazyflow data source (layer=%r, datasource=%r)" % (type(layer), type(layer.datasources[0])) )
+
+
+        expDlg = ExportDialog(parent = menu, layername = layer.name)
+        if not _has_lazyflow:
+            raise RuntimeError("lazyflow not installed") 
         import lazyflow
-        assert isinstance(dataSource.dataSlot, lazyflow.graph.Slot), "slot is of type %r" % (type(dataSource.dataSlot))
-        assert isinstance(dataSource.dataSlot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(dataSource.dataSlot.getRealOperator()))
-        expDlg.setInput(dataSource.dataSlot)
-            
+        dataSlots = [slot.dataSlot for (slot, isSlot) in
+                     zip(layer.datasources, sourceTags) if isSlot is True]
+        op = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator())
+        for slot in dataSlots:
+            assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (type(slot))
+            assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(slot.getRealOperator()))
+        op.AxisFlag.setValue("c")
+        op.Images.resize(len(dataSlots))
+        for i,islot in enumerate(op.Images):
+            islot.connect(dataSlots[i])
+        expDlg.setInput(op.Output)
+
         expDlg.show()
         
     menu = QMenu("Menu", parent)
