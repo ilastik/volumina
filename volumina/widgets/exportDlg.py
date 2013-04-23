@@ -35,6 +35,7 @@ try:
     from lazyflow.operators.ioOperators import OpStackWriter 
     from lazyflow.operators.ioOperators import OpH5WriterBigDataset
     from lazyflow.roi import TinyVector, sliceToRoi
+    from lazyflow.graph import Operator, Graph
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -45,7 +46,6 @@ logger = logging.getLogger(__name__)
 traceLogger = logging.getLogger('TRACE.' + __name__)
 
 #for writer:
-from lazyflow.graph import Operator
 import vigra
 from collections import deque
 

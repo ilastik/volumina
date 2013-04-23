@@ -469,6 +469,8 @@
   <tabstop>radioButtonH5</tabstop>
   <tabstop>radioButtonStack</tabstop>
   <tabstop>normalizationComboBox</tabstop>
+  <tabstop>inputValueRange</tabstop>
+  <tabstop>outputValueRange</tabstop>
   <tabstop>lineEditStackPath</tabstop>
   <tabstop>pushButtonStackPath</tabstop>
   <tabstop>lineEditStackFileName</tabstop>
