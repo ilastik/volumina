@@ -101,34 +101,33 @@ class Writer(QObject):
         inputVolume = subRegion
 
         #handle different outputTypes
-
+        
+                   
         if ranges is not None:
 
             normalizer = OpPixelOperator(graph = self.graph)
             normalizer.Input.connect(inputVolume.Output)
-            minVal, maxVal = numpy.nan, numpy.nan
 
-            inputVolume = normalizer.Output
             minVal,maxVal = ranges[0]
             outputMinVal, outputMaxVal = ranges[1]
+
                 
             def normalize(val):
-                invVal = 1./(maxVal - minVal)
-                return outputMinVal + (val - minVal)  * (outputMaxVal - outputMinVal) * invVal 
+                frac = numpy.float(outputMaxVal - outputMinVal) / numpy.float(maxVal - minVal)
+                return outputDType(outputMinVal + (val - minVal) * frac)
             
             normalizer.Function.setValue(normalize)
             inputVolume = normalizer
-
-
-        if outputDType != inputData.meta.dtype:
+        
+        elif outputDType != inputData.meta.dtype:
             converter = OpPixelOperator(graph = self.graph)
-            converter.Input.connect(inputVolume.Output)
             
             def convertToType(val):
                 return outputDType(val)
             converter.Function.setValue(convertToType)
+            converter.Input.connect(inputVolume.Output)
             inputVolume = converter
-
+        
         dlg.finishStep()
         #step 2
         writer = None
@@ -136,7 +135,8 @@ class Writer(QObject):
             writer = self.h5Writer
         elif fileWriter == "stack":
             writer = self.stackWriter
-
+         
+        writer.Image.disconnect()
         writer.Image.connect(inputVolume.Output)
         self._storageRequest = writer.WriteImage[:]
         
@@ -256,7 +256,7 @@ class ExportDialog(QDialog):
         self.lineEditH5FilePath.setText(path)
 
 
-    def setupWriters(self):
+    def setupStackWriter(self):
 
         filePath = str(self.lineEditStackPath.displayText())
         fileName = str(self.lineEditStackFileName.displayText())
@@ -271,7 +271,7 @@ class ExportDialog(QDialog):
 
         pattern = [""]
         if hasattr(self, "input"):
-            self.setupWriters()
+            self.setupStackWriter()
             pattern = self.writer.getStackWriterPreview(self.input)
         #self.stackWriter.Input.disconnect()
         placeholders = re.findall("%04d", pattern[0])
@@ -334,7 +334,7 @@ class ExportDialog(QDialog):
         if hasattr(dtype, "type"):
             dtype = dtype.type
         self.inputValueRange.setDType(dtype)
-        if hasattr(self.input.meta, "drange") and self.input.meta.drange: 
+        if hasattr(self.input.meta, "drange") and self.input.meta.drange:
             inputDRange = self.input.meta.drange
             self.inputValueRange.setValues(inputDRange[0], inputDRange[1])
         self.inputType = dtype
@@ -463,22 +463,34 @@ class ExportDialog(QDialog):
         self.updateStackWriter()
 
 
-    def checkTypeConversionNecessary(self):
-        if hasattr(self, "inputType"):
-            t = self.inputType
-            limits = []
-            try:
-                limits.append(numpy.iinfo(t).min)
-                limits.append(numpy.iinfo(t).max)
-            except:
-                limits.append(numpy.finfo(t).min)
-                limits.append(numpy.finfo(t).max)
+    def checkTypeConversionNecessary(self, inputType = None, outputType = None):
+        if inputType is None:
+            if hasattr(self, "inputType"):
+                inputType = self.inputType
+            else:
+                return False
+        if outputType is None:
+            outputType = self.getOutputDType()
 
-            try:
-                if not numpy.all(numpy.array(limits, dtype = self.getOutputDType()) == limits):
-                    self.normalizationComboBox.setCurrentIndex(1)
-            except:
+        t = inputType
+        limits = []
+        try:
+            limits.append(numpy.iinfo(t).min)
+            limits.append(numpy.iinfo(t).max)
+        except:
+            limits.append(numpy.finfo(t).min)
+            limits.append(numpy.finfo(t).max)
+
+        try:
+            if not numpy.all(numpy.array(limits, dtype = outputType) == limits):
                 self.normalizationComboBox.setCurrentIndex(1)
+                return True #outputtype is too small to hold the limits,
+                         #renormalization has to be done beforehand
+        except:
+            self.normalizationComboBox.setCurrentIndex(1)
+            return True #outputtype is too small to hold the limits,
+                     #renormalization has to be done beforehand
+        return False
 
 
 
@@ -580,14 +592,25 @@ class ExportDialog(QDialog):
         fileWriter = "h5"
         if self.radioButtonStack.isChecked():
             fileWriter = "stack"
+            self.setupStackWriter()
 
         elif self.radioButtonH5.isChecked():
             fileWriter = "h5"
             self.writer.setupH5Writer(str(self.lineEditH5FilePath.displayText()),
                                      str(self.lineEditH5DataPath.displayText()))
 
+        #if self.checkTypeConversionNecessary(self.inputType,
+        #                                self.getOutputDType()):
+        #    typeConversion = 2
+        #elif self.checkTypeConversionNecessary(self.getOutputDType(),
+        #                                  self.inputType):
+        #    typeConversion = 1
+        #else:
+        #    typeConversion = 0
+        
+
         retval = self.writer.write(self.input, slicing, ranges, outputDType,
-                                 fileWriter)
+                                   fileWriter)
         return QDialog.accept(self, *args, **kwargs)
 
     
