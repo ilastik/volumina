@@ -115,13 +115,17 @@ class ValueRangeWidget(QWidget):
         self.setValues(_min, _max)
         self.validateRange()
 
+
     def setValues(self, val1, val2):
         self.minBox.setValue(val1)
         self.maxBox.setValue(val2)
 
     def getValues(self):
         return [self.dtype(self.minBox.value()), self.dtype(self.maxBox.value())]
-        
+    
+    def getLimits(self):
+        return self.softLimits
+
     def makeValid(self):
         if not self.maxBox.value() > self.minBox.value():
             self.maxBox.setValue(self.minBox.value() + self.maxBox.singleStep())
@@ -169,14 +173,30 @@ class CombinedValueRangeWidget(QWidget):
             self.roiCheckBoxes.append(check)
             check.setChecked(True)
             check.setFocusPolicy(Qt.ClickFocus)
-            w.changedSignal.connect(partial(check.setChecked,False))
             if extent == 1: 
                 w.setEnabled(False)
-                check.toggled.connect(partial(check.setChecked, True))
-                #w.setBackgroundColor("gray", [0,1])
+                
             self.roiLayout.addWidget(QLabel(key + ": "),row, 0, align)
             self.roiLayout.addWidget(self.roiWidgets[-1],row, 1, align)
             self.roiLayout.addWidget(check,row, 2, align)
+
+
+        def onChanged(i):
+            if self.roiWidgets[i].getValues() == self.roiWidgets[i].getLimits():
+                self.roiCheckBoxes[i].setChecked(True)
+            else:
+                self.roiCheckBoxes[i].setChecked(False)
+
+        def onCheck(i, state):
+            if state == 0:
+                return
+            self.roiWidgets[i].setValues(0,extents[i])
+            self.roiCheckBoxes[i].setChecked(True)
+
+        for i, check in enumerate(self.roiCheckBoxes):
+            check.stateChanged.connect(partial(onCheck, i))
+            self.roiWidgets[i].changedSignal.connect(partial(onChanged, i))
+            
 
     def focusInEvent(self, QFocusEvent):
         if len(self.roiWidgets) > 0:
