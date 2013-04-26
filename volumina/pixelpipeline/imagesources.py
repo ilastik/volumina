@@ -266,7 +266,8 @@ class ColortableImageRequest( object ):
 
         # Use vigra if possible (much faster)
         if _has_vigra and hasattr(vigra.colors, 'applyColortable'):
-            img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32) 
+            img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32)
+            assert issubclass( a.dtype.type, np.integer ), "Data for colortable layers cannot be float"
             vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
 
         # Without vigra, do it the slow way 
