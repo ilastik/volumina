@@ -78,7 +78,9 @@ def _add_actions( layer, menu ):
     elif isinstance( layer, RGBALayer ):
         _add_actions_rgbalayer( layer, menu )
     elif isinstance( layer, ColortableLayer ) or isinstance( layer, ClickableColortableLayer ):
-        _add_actions_colortablelayer( layer, menu )
+        pass
+        #This feature is currently not implemented
+        #_add_actions_colortablelayer( layer, menu )
 
 def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
     '''Show a context menu to manipulate properties of layer.
