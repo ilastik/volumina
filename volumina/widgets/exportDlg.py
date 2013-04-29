@@ -1,16 +1,12 @@
 #Python
 import os
-import threading
-from collections import OrderedDict
 from itertools import combinations
 import re
 import logging
 
 #PyQt
-from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QPalette,\
-                        QDialogButtonBox, QMessageBox,QProgressDialog,QLabel,QWidget,\
-QHBoxLayout, QSpacerItem, QSizePolicy, QCheckBox
-from PyQt4.QtCore import QRegExp, Qt, QTimer, QObject, pyqtSignal
+from PyQt4.QtGui import QDialog, QFileDialog, QRegExpValidator, QDialogButtonBox, QMessageBox
+from PyQt4.QtCore import QRegExp, QObject, pyqtSignal
 from PyQt4 import uic
 
 #numpy
@@ -18,13 +14,6 @@ import numpy
 
 #SciPy
 import h5py
-
-#volumina
-from multiStepProgressDialog import MultiStepProgressDialog
-
-#ilastik
-from ilastik.utility.gui.threadRouter import threadRouted
-from ilastik.utility.gui import ThunkEventHandler
 
 ###
 ### lazyflow input
@@ -34,8 +23,8 @@ try:
     from lazyflow.operators import OpSubRegion, OpPixelOperator 
     from lazyflow.operators.ioOperators import OpStackWriter 
     from lazyflow.operators.ioOperators import OpH5WriterBigDataset
-    from lazyflow.roi import TinyVector, sliceToRoi
-    from lazyflow.graph import Operator, Graph
+    from lazyflow.roi import sliceToRoi
+    from lazyflow.graph import Graph
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -44,13 +33,6 @@ from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
 
 logger = logging.getLogger(__name__)
 traceLogger = logging.getLogger('TRACE.' + __name__)
-
-#for writer:
-import vigra
-from collections import deque
-
-from valueRangeWidget import ValueRangeWidget
-
 
 class Writer(QObject):
     progressSignal = pyqtSignal(float)
