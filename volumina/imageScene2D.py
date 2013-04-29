@@ -299,7 +299,6 @@ class ImageScene2D(QGraphicsScene):
         self._allTilesCompleteEvent = threading.Event()
 
     def __del__(self):
-        #print "ImageScene2D.__del__ was called"
         if self._tileProvider:
             self._tileProvider.notifyThreadsToStop()
         self.joinRendering()
@@ -392,24 +391,19 @@ class ImageScene2D(QGraphicsScene):
     def _bowWave(self, n):
         shape5d = self._posModel.shape5D
         sl5d = self._posModel.slicingPos5D
-
-        through = []
-        for i, axis in enumerate(self._along):
-            pos = sl5d[axis]
-            through.append( (i, pos) )
-            
+        through = [sl5d[self._along[i]] for i in xrange(3)]
         t_max = [shape5d[self._along[i]] for i in xrange(3)]
 
-        bow_wave = []
+        BowWave = []
 
         a = self._course[0]
         for d in xrange(1,n+1):
-            m = through[a][1] + d * self._course[1]
+            m = through[a] + d * self._course[1]
             if m < t_max[a] and m >= 0:
                 t = list(through)
-                t[a] = (t[a][0], m)
-                bow_wave.append(tuple(t))
-        return bow_wave
+                t[a] = m
+                BowWave.append(tuple(t))
+        return BowWave
 
     def _onSlicingPositionChanged(self, new, old):
         if (new[self._along[1] - 1] - old[self._along[1] - 1]) < 0:
