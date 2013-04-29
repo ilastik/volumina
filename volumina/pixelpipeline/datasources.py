@@ -9,7 +9,11 @@ from volumina.slicingtools import is_pure_slicing, slicing2shape, \
 from volumina.config import cfg
 import numpy as np
 
-import volumina.adaptors
+_has_lazyflow = True
+try:
+    import lazyflow.operators.adaptors
+except:
+    _has_lazyflow = False
 
 _has_vigra = True
 try:
@@ -235,10 +239,12 @@ class LazyflowSource( QObject ):
     def __init__( self, outslot, priority = 0 ):
         super(LazyflowSource, self).__init__()
 
+        assert _has_lazyflow, "Can't instantiate a LazyflowSource: Wasn't able to import lazyflow."
+
         self._orig_outslot = outslot
 
         # Attach an Op5ifyer to ensure the data will display correctly
-        self._op5 = volumina.adaptors.Op5ifyer( graph=outslot.graph )
+        self._op5 = lazyflow.operators.adaptors.Op5ifyer( graph=outslot.graph )
         self._op5.input.connect( outslot )
 
         self._priority = priority

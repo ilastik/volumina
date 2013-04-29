@@ -18,7 +18,7 @@ import random
 
 _has_lazyflow = True
 try:
-    from volumina.adaptors import Op5ifyer
+    from lazyflow.operators.adaptors import Op5ifyer
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
