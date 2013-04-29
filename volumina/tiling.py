@@ -456,7 +456,7 @@ class TileProvider( QObject ):
 
         '''
         if self._cache_size > 1:
-            stack_id = (self._current_stack_id[0], through)
+            stack_id = (self._current_stack_id[0], enumerate(through))
             if stack_id not in self._cache:
                 self._cache.addStack(stack_id)
                 self._cache.touchStack( self._current_stack_id )
