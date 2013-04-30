@@ -10,7 +10,7 @@ import numpy
 #PyQt
 from PyQt4.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent
 from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, QHBoxLayout, \
-                        QColor, QSizePolicy, QAction, QIcon, QSpinBox
+                        QColor, QSizePolicy, QAction, QIcon, QSpinBox, QMenu, QDialog, QLabel, QLineEdit, QPushButton, QMainWindow
 
 #volumina
 from quadsplitter import QuadView
@@ -36,6 +36,8 @@ class VolumeEditorWidget(QWidget):
         self.editor = None
         if editor!=None:
             self.init(editor)
+
+        self._viewMenu = None
 
         self.allZoomToFit = QAction(QIcon(":/icons/icons/view-fullscreen.png"), "Zoom to &Fit", self)
         self.allZoomToFit.triggered.connect(self._fitToScreen)
@@ -301,6 +303,157 @@ class VolumeEditorWidget(QWidget):
                     view.zoomOut()
             return True
         return False
+    
+    def getViewMenu(self, debug_mode=False):
+        """
+        Return a QMenu with a set of actions for our editor.
+        """
+        if self._viewMenu is None:
+            self._initViewMenu()
+        for action in self._debugActions:
+            action.setEnabled( debug_mode )
+            action.setVisible( debug_mode )
+        return self._viewMenu
+
+    def _initViewMenu(self):
+        self._viewMenu = QMenu("View", parent=self)
+        self._viewMenu.setObjectName( "view_menu" )
+        self._debugActions = []
+        
+        self._viewMenu.addAction( "&Zoom to &fit" ).triggered.connect(self._fitToScreen)
+
+        def toggleHud():
+            hide = not self.editor.imageViews[0]._hud.isVisible()
+            for v in self.editor.imageViews:
+                v.setHudVisible(hide)
+        self._viewMenu.addAction( "Toggle huds" ).triggered.connect(toggleHud)
+
+        def resetAllAxes():
+            for s in self.editor.imageScenes:
+                s.resetAxes()
+        self._viewMenu.addAction( "Reset all axes" ).triggered.connect(resetAllAxes)
+
+        def centerAllImages():
+            for v in self.editor.imageViews:
+                v.centerImage()
+        self._viewMenu.addAction( "Center images" ).triggered.connect(centerAllImages)
+
+        def toggleDebugPatches(show):
+            self.editor.showDebugPatches = show
+        actionShowTiling = self._viewMenu.addAction( "Show Tiling" )
+        actionShowTiling.setCheckable(True)
+        actionShowTiling.toggled.connect(toggleDebugPatches)
+        qsd = QShortcut( QKeySequence("Ctrl+D"), self, member=actionShowTiling.toggle, context=Qt.WidgetShortcut )
+        ShortcutManager().register("Navigation","Show tiling",qsd)
+        self._debugActions.append( actionShowTiling )
+
+        def setCacheSize( cache_size ):
+            dlg = QDialog(self)
+            layout = QHBoxLayout()
+            layout.addWidget( QLabel("Cached Slices Per View:") )
+
+            cache_size = [self.editor.cacheSize]
+            def parseCacheSize( strSize ):
+                # TODO: Use a QValidator to make sure the user always gives a number
+                try:
+                    cache_size[0] = int(strSize)
+                except:
+                    pass
+
+            edit = QLineEdit( str(cache_size[0]), parent=dlg )
+            edit.textChanged.connect( parseCacheSize )
+            layout.addWidget( edit )
+            okButton = QPushButton( "OK", parent=dlg )
+            okButton.clicked.connect( dlg.accept )
+            layout.addWidget( okButton )
+            dlg.setLayout( layout )
+            dlg.setModal(True)
+            dlg.exec_()
+            self.editor.cacheSize = cache_size[0]
+        self._viewMenu.addAction( "Set layer cache size" ).triggered.connect(setCacheSize)
+
+        def enablePrefetching( enable ):
+            for scene in self.editor.imageScenes:
+                scene.setPrefetchingEnabled( enable )
+        actionUsePrefetching = self._viewMenu.addAction( "Use prefetching" )
+        actionUsePrefetching.setCheckable(True)
+        actionUsePrefetching.toggled.connect(enablePrefetching)
+
+        def blockGuiForRendering():
+            for v in self.editor.imageViews:
+                v.scene().joinRenderingAllTiles()
+                v.repaint()
+            QApplication.processEvents()
+        actionBlockGui = self._viewMenu.addAction( "Block for rendering" )
+        actionBlockGui.triggered.connect(blockGuiForRendering)
+        qsw = QShortcut( QKeySequence("Ctrl+B"), self, member=actionBlockGui.trigger, context=Qt.WidgetShortcut )
+        ShortcutManager().register( "Navigation", "Block gui for rendering", qsw )
+        self._debugActions.append( actionBlockGui )
+
+        # ------ Separator ------
+        self._viewMenu.addAction("").setSeparator(True)
+
+        # Text only
+        actionOnlyForSelectedView = self._viewMenu.addAction( "Only for selected view" )
+        actionOnlyForSelectedView.setIconVisibleInMenu(True)
+        font = actionOnlyForSelectedView.font()
+        font.setItalic(True)
+        font.setBold(True)
+        actionOnlyForSelectedView.setFont(font)
+        def setCurrentAxisIcon():
+            """Update the icon that shows the currently selected axis."""
+            actionOnlyForSelectedView.setIcon(QIcon(self.editor.imageViews[self.editor._lastImageViewFocus]._hud.axisLabel.pixmap()))
+        self.editor.newImageView2DFocus.connect(setCurrentAxisIcon)
+        setCurrentAxisIcon()
+        
+        actionFitImage = self._viewMenu.addAction( "Fit image" )
+        actionFitImage.triggered.connect(self._fitImage)
+        qsa = QShortcut( QKeySequence("K"), self, member=actionFitImage.trigger, context=Qt.WidgetShortcut )
+        ShortcutManager().register( "Navigation", "Fit image on screen", qsa)
+
+        def toggleSelectedHud():
+            self.editor.imageViews[self.editor._lastImageViewFocus].toggleHud()
+        self._viewMenu.addAction( "Toggle hud" ).triggered.connect(toggleSelectedHud)
+
+        def resetAxes():
+            self.editor.imageScenes[self.editor._lastImageViewFocus].resetAxes()
+        self._viewMenu.addAction( "Reset axes" ).triggered.connect(resetAxes)
+
+        def centerImage():
+            self.editor.imageViews[self.editor._lastImageViewFocus].centerImage()
+        actionCenterImage = self._viewMenu.addAction( "Center image" )
+        actionCenterImage.triggered.connect(centerImage)
+        qsc = QShortcut( QKeySequence("C"), self, member=actionCenterImage.trigger, context=Qt.WidgetShortcut )
+        ShortcutManager().register("Navigation","Center image",qsc)
+
+        def restoreImageToOriginalSize():
+            self.editor.imageViews[self.editor._lastImageViewFocus].doScaleTo()
+        actionResetZoom = self._viewMenu.addAction( "Reset zoom" )
+        actionResetZoom.triggered.connect(restoreImageToOriginalSize)
+        qsw = QShortcut( QKeySequence("W"), self, member=actionResetZoom.trigger, context=Qt.WidgetShortcut )
+        ShortcutManager().register("Navigation","Reset zoom",qsw)        
+
+        def updateHudActions():
+            dataShape = self.editor.dataShape
+            # if the image is 2D, do not show the HUD action (issue #190)
+            is2D = numpy.sum(numpy.asarray(dataShape[1:4]) == 1) == 1
+            self.menuGui.actionToggleSelectedHud.setVisible(not is2D)
+            self.menuGui.actionToggleAllHuds.setVisible(not is2D)
+        self.editor.shapeChanged.connect( updateHudActions )
+
+        # FIXME: this needs bug fixing
+        #def rubberBandZoom():
+        #    if hasattr(self.editor, '_lastImageViewFocus'):
+        #        if not self.editor.imageViews[self.editor._lastImageViewFocus]._isRubberBandZoom:
+        #            self.editor.imageViews[self.editor._lastImageViewFocus]._isRubberBandZoom = True
+        #            self.editor.imageViews[self.editor._lastImageViewFocus]._cursorBackup = self.editor.imageViews[self.editor._lastImageViewFocus].cursor()
+        #            self.editor.imageViews[self.editor._lastImageViewFocus].setCursor(Qt.CrossCursor)
+        #        else:
+        #            self.editor.imageViews[self.editor._lastImageViewFocus]._isRubberBandZoom = False
+        #            self.editor.imageViews[self.editor._lastImageViewFocus].setCursor(self.editor.imageViews[self.editor._lastImageViewFocus]._cursorBackup)
+        #self._viewMenu.addAction( "RubberBand zoom" ).triggered.connect(rubberBandZoom)
+        
+
                      
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *

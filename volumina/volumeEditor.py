@@ -120,7 +120,6 @@ class VolumeEditor( QObject ):
         ##
         self._showDebugPatches   = False
         self._showTileProgress   = True
-        self._lastImageViewFocus = None
 
         ##
         ## base components
@@ -136,6 +135,7 @@ class VolumeEditor( QObject ):
         self.imageViews[0].focusChanged.connect(lambda arg=0 : self.lastImageViewFocus(arg))
         self.imageViews[1].focusChanged.connect(lambda arg=1 : self.lastImageViewFocus(arg))
         self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg))
+        self._lastImageViewFocus = 0
 
         if not crosshair:
             for view in self.imageViews:
