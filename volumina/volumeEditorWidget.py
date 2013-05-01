@@ -320,13 +320,17 @@ class VolumeEditorWidget(QWidget):
         self._viewMenu.setObjectName( "view_menu" )
         self._debugActions = []
         
-        self._viewMenu.addAction( "&Zoom to &fit" ).triggered.connect(self._fitToScreen)
+        # This action is saved as a member so it can be triggered from tests
+        self._viewMenu.actionFitToScreen = self._viewMenu.addAction( "&Zoom to &fit" )
+        self._viewMenu.actionFitToScreen.triggered.connect(self._fitToScreen)
 
         def toggleHud():
             hide = not self.editor.imageViews[0]._hud.isVisible()
             for v in self.editor.imageViews:
                 v.setHudVisible(hide)
-        self._viewMenu.addAction( "Toggle huds" ).triggered.connect(toggleHud)
+        # This action is saved as a member so it can be triggered from tests
+        self._viewMenu.actionToggleAllHuds = self._viewMenu.addAction( "Toggle huds" )
+        self._viewMenu.actionToggleAllHuds.triggered.connect(toggleHud)
 
         def resetAllAxes():
             for s in self.editor.imageScenes:
