@@ -241,7 +241,7 @@ class NormalizableLayer( Layer ):
         self._normalize[datasourceIdx] = value 
         self.normalizeChanged.emit(datasourceIdx, value[0], value[1])
 
-    def __init__( self, datasources, direct=False ):
+    def __init__( self, datasources, range=None, normalize=None, direct=False ):
         super(NormalizableLayer, self).__init__(direct=direct)
         self._normalize = []
         self._range = []
@@ -252,8 +252,9 @@ class NormalizableLayer( Layer ):
             if datasource is not None:
                 mmSource = MinMaxSource(datasource)
                 self._datasources[i] = mmSource
-                range = dtype_to_default_normalize(datasource, None)
-                self._normalize.append(range)
+                range = dtype_to_default_normalize(datasource, range)
+                normalize = dtype_to_default_normalize(datasource, normalize)
+                self._normalize.append(normalize)
                 self._range.append(range)
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
                 self._autoMinMax.append(True)
@@ -278,7 +279,7 @@ class NormalizableLayer( Layer ):
 class GrayscaleLayer( NormalizableLayer ):
     def __init__( self, datasource, range = None, normalize = None, direct=False ):
         assert isinstance(datasource, SourceABC)
-        super(GrayscaleLayer, self).__init__([datasource],direct=direct)
+        super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
 
 #*******************************************************************************
 # A l p h a M o d u l a t e d L a y e r                                        *
@@ -298,9 +299,7 @@ class AlphaModulatedLayer( NormalizableLayer ):
     
     def __init__( self, datasource, tintColor = QColor(255,0,0), range = (0,255), normalize = None ):
         assert isinstance(datasource, SourceABC)
-        super(AlphaModulatedLayer, self).__init__([datasource])
-        range = dtype_to_default_normalize(datasource, range)
-        normalize = dtype_to_default_normalize(datasource, normalize)
+        super(AlphaModulatedLayer, self).__init__([datasource], range, normalize)
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
         
