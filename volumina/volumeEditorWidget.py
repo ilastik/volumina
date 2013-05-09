@@ -263,6 +263,8 @@ class VolumeEditorWidget(QWidget):
             def sliceDelta(axis, delta):
                 newPos = copy.copy(self.editor.posModel.slicingPos)
                 newPos[axis] += delta
+                newPos[axis] = max(0, newPos[axis]) 
+                newPos[axis] = min(self.editor.posModel.shape[axis]-1, newPos[axis]) 
                 self.editor.posModel.slicingPos = newPos
 
             def jumpToFirstSlice(axis):
