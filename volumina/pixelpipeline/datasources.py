@@ -429,20 +429,13 @@ assert issubclass(MinMaxUpdateRequest, RequestABC)
 class MinMaxSource( QObject ):
     """
     A datasource that serves as a normalizing decorator for other datasources.
-    All data from the original (raw) data source is normalized to the range (0,255) before it is provided to the caller.
     """
     isDirty = pyqtSignal( object )
-    boundsChanged = pyqtSignal(object)
+    boundsChanged = pyqtSignal(object) # When a new min/max is discovered in the result of a request, this signal is fired with the new (dmin, dmax)
     
     def __init__( self, rawSource, parent=None ):
         """
         rawSource: The original datasource whose data will be normalized
-        
-        bounds: The range of the original source's data, given as a tuple of (min,max)
-                Alternatively, the following strings can be provided instead of a bounds tuple:
-                    'autoMinMax' - Track the min and max values observed from all requests and normalize to that range
-                    'autoPercentiles' - Track the 1 and 99 percentiles and normalize all data to that range
-                Note: When an incoming request causes the lower or upper bound to change, the entire source is marked dirty.
         """
         super(MinMaxSource, self).__init__(parent)
         

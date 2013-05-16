@@ -180,22 +180,19 @@ class ClickableLayer( Layer ):
 # N o r m a l i z a b l e L a y e r                                            *
 #*******************************************************************************
 
-def dtype_to_default_normalize(dsource, normalize):
+def dtype_to_default_normalize(dsource):
     if dsource is not None:
         dtype = dsource.dtype()
     else:
         dtype = numpy.uint8
-    if normalize is None:
-        if dtype == numpy.uint8:
-            normalize = (0,2**8-1)
-        elif dtype == numpy.uint16:
-            normalize = (0,2**16-1)
-        elif dtype == numpy.uint32:
-            normalize = (0,2**32-1)
-        elif dtype == numpy.float32:
-            normalize = (0,255)
-        elif dtype == numpy.float64:
-            normalize = (0,255)
+    if isinstance(dtype, numpy.dtype):
+        dtype = dtype.type
+    if issubclass(dtype, numpy.integer):
+        normalize = (0, numpy.iinfo(dtype).max)
+    elif dtype == numpy.float32:
+        normalize = (0,255)
+    elif dtype == numpy.float64:
+        normalize = (0,255)
     return normalize
     
 class NormalizableLayer( Layer ):
@@ -242,6 +239,14 @@ class NormalizableLayer( Layer ):
         self.normalizeChanged.emit(datasourceIdx, value[0], value[1])
 
     def __init__( self, datasources, range=None, normalize=None, direct=False ):
+        """
+        datasources - a list of raw data sources
+        range - Not sure.  I think this parameter should be removed.
+        normalize - If normalize is a tuple (dmin, dmax), the data is normalized from (dmin, dmax) to (0,255) before it is displayed.
+                    If normalize=None, then (dmin, dmax) is automatically determined before normalization.
+                    If normalize=False, then no normalization is applied before displaying the data.
+        
+        """
         super(NormalizableLayer, self).__init__(direct=direct)
         self._normalize = []
         self._range = []
@@ -250,14 +255,15 @@ class NormalizableLayer( Layer ):
 
         for i,datasource in enumerate(datasources):
             if datasource is not None:
+                self._autoMinMax.append(normalize is None) # Don't auto-set normalization if the caller provided one.
                 mmSource = MinMaxSource(datasource)
                 self._datasources[i] = mmSource
-                range = dtype_to_default_normalize(datasource, range)
-                normalize = dtype_to_default_normalize(datasource, normalize)
+                range = range or dtype_to_default_normalize(datasource)
+                if normalize is None:
+                    normalize = dtype_to_default_normalize(datasource)
                 self._normalize.append(normalize)
                 self._range.append(range)
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
-                self._autoMinMax.append(True)
             else:
                 self._normalize.append((0,1))
                 self._range.append((0,1))
@@ -334,7 +340,7 @@ def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=
     else:
         raise RuntimeError("unknown color model '%s'" % colormodel)
 
-class ColortableLayer( Layer ):
+class ColortableLayer( NormalizableLayer ):
     colorTableChanged = pyqtSignal()
 
     @property
@@ -349,10 +355,13 @@ class ColortableLayer( Layer ):
     def randomizeColors(self):
         self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
 
-    def __init__( self, datasource , colorTable, direct=False ):
+    def __init__( self, datasource , colorTable, normalize=False, direct=False ):
         assert isinstance(datasource, SourceABC)
-        super(ColortableLayer, self).__init__(direct=direct)
-        self._datasources = [datasource]
+        if normalize is 'auto':
+            normalize = None
+        else:
+            assert len(normalize) == 2
+        super(ColortableLayer, self).__init__([datasource], normalize=normalize, direct=direct)
         self.data = datasource
         self._colorTable = colorTable
         
