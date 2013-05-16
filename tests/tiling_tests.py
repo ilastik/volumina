@@ -123,12 +123,12 @@ class DirtyPropagationTest( ut.TestCase ):
 
     def setUp( self ):
         dataShape = (1, 900, 400, 10, 1) # t,x,y,z,c
-        data = np.indices(dataShape)[3] # Data is labeled according to z-index
+        data = np.indices(dataShape)[3].astype(np.uint8) # Data is labeled according to z-index
         self.ds1 = ArraySource( data )
         self.CONSTANT = 13
         self.ds2 = ConstantSource( self.CONSTANT )
 
-        self.layer1 = GrayscaleLayer( self.ds1 )
+        self.layer1 = GrayscaleLayer( self.ds1, normalize=False )
         self.layer1.visible = True
         self.layer1.opacity = 1.0
 
