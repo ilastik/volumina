@@ -359,8 +359,6 @@ class ColortableLayer( NormalizableLayer ):
         assert isinstance(datasource, SourceABC)
         if normalize is 'auto':
             normalize = None
-        else:
-            assert len(normalize) == 2
         super(ColortableLayer, self).__init__([datasource], normalize=normalize, direct=direct)
         self.data = datasource
         self._colorTable = colorTable
