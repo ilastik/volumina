@@ -357,6 +357,16 @@ class ColortableLayer( NormalizableLayer ):
 
     def __init__( self, datasource , colorTable, normalize=False, direct=False ):
         assert isinstance(datasource, SourceABC)
+        
+        """
+        By default, no normalization is performed on ColortableLayers.  
+        If the normalize parameter is set to 'auto', 
+        your data will be automatically normalized to the length of your colorable.  
+        If a tuple (dmin, dmax) is passed, this specifies the range of your data, 
+        which is used to normalize the data before the colorable is applied.
+        """
+
+
         if normalize is 'auto':
             normalize = None
         super(ColortableLayer, self).__init__([datasource], normalize=normalize, direct=direct)

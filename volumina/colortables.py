@@ -352,3 +352,29 @@ def create_random_16bit():
     Repeatedly applies a pseudo-random colortable to the whole 16bit range'''
     return [color for color in itertools.islice(itertools.cycle(random256), 0, 2**16)]
 
+
+
+if __name__=="__main__":
+      from volumina.api import *
+      from PyQt4.QtGui import QApplication
+      import numpy
+      from volumina.pixelpipeline.datasourcefactories import *
+      app = QApplication(sys.argv)
+      v = Viewer()
+      v.show()
+      a = np.zeros((256,256))
+      for i in range(256):
+            a[i]=i
+
+      source,sh = createDataSource(a,True)
+      
+
+      layer = ColortableLayer(source, jet(256))
+      #layer = GrayscaleLayer(source)
+      
+      v.layerstack.append(layer)
+      v.dataShape=sh
+
+
+      v.show()
+      app.exec_()
