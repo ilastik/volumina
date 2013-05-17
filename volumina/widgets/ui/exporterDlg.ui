@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>691</width>
-    <height>501</height>
+    <width>490</width>
+    <height>401</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
@@ -42,7 +48,7 @@
            <widget class="QLabel" name="label_15">
             <property name="font">
              <font>
-              <weight>75</weight>
+              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -203,7 +209,7 @@
            <widget class="QPushButton" name="pushButtonPath">
             <property name="font">
              <font>
-              <weight>75</weight>
+              <weight>50</weight>
               <italic>false</italic>
               <bold>false</bold>
              </font>
@@ -236,7 +242,7 @@
             </property>
             <property name="font">
              <font>
-              <weight>75</weight>
+              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -258,7 +264,7 @@
              <widget class="QLabel" name="label_18">
               <property name="font">
                <font>
-                <weight>75</weight>
+                <weight>50</weight>
                 <bold>false</bold>
                </font>
               </property>
@@ -414,8 +420,7 @@
       </widget>
      </item>
      <item row="9" column="1">
-      <widget class="CombinedValueRangeWidget" name="roiWidget" native="true">
-      </widget>
+      <widget class="CombinedValueRangeWidget" name="roiWidget" native="true"/>
      </item>
     </layout>
    </item>

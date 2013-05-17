@@ -66,10 +66,11 @@ class Writer(QObject):
             return ""
 
 
-    def write(self, inputData, slicing, ranges, outputDType, fileWriter = "h5"):
-        dlg = MultiStepProgressDialog()
+    def write(self, inputData, slicing, ranges, outputDType, fileWriter = "h5", parent = None):
+        dlg = MultiStepProgressDialog(parent = parent)
         #thunkEventHandler = ThunkEventHandler(dlg)
         dlg.setNumberOfSteps(2)
+        dlg.show()
         #Step1: 
         
         roi = sliceToRoi(slicing,inputData.meta.shape)
@@ -277,9 +278,10 @@ class ExportDialog(QDialog):
     def setRoiWidgets(self):
         self.roiWidget.addRanges(self.input.meta.getAxisKeys(),
                                  self.input.meta.shape)
-
+        for w in self.roiWidget.roiWidgets:
+            w.changedSignal.connect(self.validateOptions)
         self.inputVolumeDescription.setText(self._volumeMetaString(self.input))
-
+    
     def setAvailableImageAxes(self):
         axisTags = self.input.meta.axistags
         extents  = self.input.meta.shape
@@ -511,7 +513,7 @@ class ExportDialog(QDialog):
     
     
     def validateOptions(self):
-        allValid = True
+        allValid = all(w.allValid for w in self.roiWidget.roiWidgets)
         #allValid = self.validRoi and allValid
         okButton = self.buttonBox.button(QDialogButtonBox.Ok)
         if self.radioButtonStack.isChecked():
@@ -557,10 +559,6 @@ class ExportDialog(QDialog):
 
 
     def accept(self, *args, **kwargs):
-        dlg = MultiStepProgressDialog(self)
-        #thunkEventHandler = ThunkEventHandler(dlg)
-        dlg.setNumberOfSteps(2)
-        #Step1: 
         
         slicing = self.getSlicing()
         if self.normalizationMethod == 0:
@@ -581,18 +579,8 @@ class ExportDialog(QDialog):
             self.writer.setupH5Writer(str(self.lineEditH5FilePath.displayText()),
                                      str(self.lineEditH5DataPath.displayText()))
 
-        #if self.checkTypeConversionNecessary(self.inputType,
-        #                                self.getOutputDType()):
-        #    typeConversion = 2
-        #elif self.checkTypeConversionNecessary(self.getOutputDType(),
-        #                                  self.inputType):
-        #    typeConversion = 1
-        #else:
-        #    typeConversion = 0
-        
-
         retval = self.writer.write(self.input, slicing, ranges, outputDType,
-                                   fileWriter)
+                                   fileWriter, parent = self)
         return QDialog.accept(self, *args, **kwargs)
 
     

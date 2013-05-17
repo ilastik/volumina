@@ -66,8 +66,8 @@ class ValueRangeWidget(QWidget):
         self.changedSignal.emit()
 
     def onChangedMaxBox(self,val):
-        if val > self.softLimits[1]:
-            self.maxBox.setValue(self.softLimits[1])
+        if val >= self.softLimits[1]:
+            self.maxBox.setValue(self.softLimits[1]-1)
         if self.maxBox.value() <= self.minBox.value():
             self.minBox.setValue(self.maxBox.value() - self.minBox.singleStep())
         self.validateRange()
@@ -85,7 +85,7 @@ class ValueRangeWidget(QWidget):
             validCheck[1] = False
         if self.minBox.value() >= self.softLimits[1]:
             validCheck[0] = False
-        if self.maxBox.value() > self.softLimits[1]:
+        if self.maxBox.value() >= self.softLimits[1]:
             validCheck[1] = False
         #if not self.maxBox.value() > self.minBox.value():
         #    validCheck[1] = False
@@ -112,7 +112,7 @@ class ValueRangeWidget(QWidget):
         if _min + self.minBox.singleStep() >  _max:
             raise RuntimeError("limits have to differ")
         self.softLimits = [_min, _max]
-        self.setValues(_min, _max)
+        self.setValues(_min, _max-1)
         self.validateRange()
 
 
@@ -182,7 +182,10 @@ class CombinedValueRangeWidget(QWidget):
 
 
         def onChanged(i):
-            if self.roiWidgets[i].getValues() == self.roiWidgets[i].getLimits():
+            val1,val2 = self.roiWidgets[i].getValues()
+            lim1,lim2 = self.roiWidgets[i].getLimits()
+            #limits are stored as ranges
+            if val1==lim1 and val2==lim2-1:
                 self.roiCheckBoxes[i].setChecked(True)
             else:
                 self.roiCheckBoxes[i].setChecked(False)
@@ -190,7 +193,7 @@ class CombinedValueRangeWidget(QWidget):
         def onCheck(i, state):
             if state == 0:
                 return
-            self.roiWidgets[i].setValues(0,extents[i])
+            self.roiWidgets[i].setValues(0,extents[i]-1)
             self.roiCheckBoxes[i].setChecked(True)
 
         for i, check in enumerate(self.roiCheckBoxes):
