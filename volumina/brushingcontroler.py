@@ -1,5 +1,5 @@
 from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QRectF
-from PyQt4.QtGui import QPainter, QPen, QBrush, QApplication, QGraphicsView
+from PyQt4.QtGui import QPainter, QPen, QBrush, QApplication, QGraphicsView, QMouseEvent
 
 from eventswitch import InterpreterABC
 from navigationControler import NavigationInterpreter
@@ -76,7 +76,6 @@ class BrushingInterpreter( QObject ):
 
     def eventFilter( self, watched, event ):
         etype = event.type()
-        self._lastEvent = event
         
         if self._current_state == self.DEFAULT_MODE:
             if etype == QEvent.MouseButtonPress \
@@ -86,6 +85,10 @@ class BrushingInterpreter( QObject ):
                 
                 ### default mode -> maybe draw mode
                 self._current_state = self.MAYBE_DRAW_MODE
+
+                # event will not be valid to use after this function exits,
+                # so we must make a copy of it instead of just saving the pointer
+                self._lastEvent = QMouseEvent( event.type(), event.pos(), event.button(), event.buttons(), event.modifiers() )
                 
         elif self._current_state == self.MAYBE_DRAW_MODE:
             if etype == QEvent.MouseMove:
@@ -98,7 +101,7 @@ class BrushingInterpreter( QObject ):
                     self.onMouseMove_draw( watched, event )
                     return True
                 else:
-                    return self._navIntr.eventFilter( watched, self._lastEvent )
+                    self._navIntr.eventFilter( watched, self._lastEvent )
                     return self._navIntr.eventFilter( watched, event )
             elif etype == QEvent.MouseButtonDblClick:
                 ### maybe draw mode -> default mode

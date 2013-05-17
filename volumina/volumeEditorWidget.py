@@ -263,6 +263,8 @@ class VolumeEditorWidget(QWidget):
             def sliceDelta(axis, delta):
                 newPos = copy.copy(self.editor.posModel.slicingPos)
                 newPos[axis] += delta
+                newPos[axis] = max(0, newPos[axis]) 
+                newPos[axis] = min(self.editor.posModel.shape[axis]-1, newPos[axis]) 
                 self.editor.posModel.slicingPos = newPos
 
             def jumpToFirstSlice(axis):
@@ -417,7 +419,8 @@ class VolumeEditorWidget(QWidget):
 
         def toggleSelectedHud():
             self.editor.imageViews[self.editor._lastImageViewFocus].toggleHud()
-        self._viewMenu.addAction( "Toggle hud" ).triggered.connect(toggleSelectedHud)
+        actionToggleSelectedHud = self._viewMenu.addAction( "Toggle hud" )
+        actionToggleSelectedHud.triggered.connect(toggleSelectedHud)
 
         def resetAxes():
             self.editor.imageScenes[self.editor._lastImageViewFocus].resetAxes()
@@ -441,8 +444,8 @@ class VolumeEditorWidget(QWidget):
             dataShape = self.editor.dataShape
             # if the image is 2D, do not show the HUD action (issue #190)
             is2D = numpy.sum(numpy.asarray(dataShape[1:4]) == 1) == 1
-            self.menuGui.actionToggleSelectedHud.setVisible(not is2D)
-            self.menuGui.actionToggleAllHuds.setVisible(not is2D)
+            actionToggleSelectedHud.setVisible(not is2D)
+            self._viewMenu.actionToggleAllHuds.setVisible(not is2D)
         self.editor.shapeChanged.connect( updateHudActions )
 
         # FIXME: this needs bug fixing

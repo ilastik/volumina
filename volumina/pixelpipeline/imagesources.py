@@ -213,9 +213,10 @@ class ColortableImageSource( ImageSource ):
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
 
-        self._layer = layer        
+        self._layer = layer
         self.updateColorTable()
         self._layer.colorTableChanged.connect(self.updateColorTable)
+        self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
 
     def updateColorTable(self):
         layerColorTable = self._layer.colorTable
@@ -246,15 +247,16 @@ class ColortableImageSource( ImageSource ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s, along_through)
-        return ColortableImageRequest( req, self._colorTable, self.direct )
+        return ColortableImageRequest( req, self._colorTable, self._layer.normalize[0], self.direct )
 assert issubclass(ColortableImageSource, SourceABC)
 
 class ColortableImageRequest( object ):
-    def __init__( self, arrayrequest, colorTable, direct=False ):
+    def __init__( self, arrayrequest, colorTable, normalize, direct=False ):
         self._mutex = QMutex()
         self._arrayreq = arrayrequest
         self._colorTable = colorTable
         self.direct = direct
+        self._normalize = normalize
 
     def wait(self):
         self._arrayreq.wait()
@@ -263,6 +265,20 @@ class ColortableImageRequest( object ):
     def toImage( self ):
         a = self._arrayreq.getResult()
         assert a.ndim == 2
+
+        if self._normalize:
+            nmin, nmax = self._normalize
+            if nmin:
+                a = a - nmin
+            scale = (len(self._colorTable)-1) / float(nmax - nmin)
+            if scale != 1.0:
+                a = a * scale
+            if len(self._colorTable) <= 2**8:
+                a = np.asarray( a, dtype=np.uint8 )
+            elif len(self._colorTable) <= 2**16:
+                a = np.asarray( a, dtype=np.uint16 )
+            elif len(self._colorTable) <= 2**32:
+                a = np.asarray( a, dtype=np.uint32 )
 
         # Use vigra if possible (much faster)
         if _has_vigra and hasattr(vigra.colors, 'applyColortable'):
