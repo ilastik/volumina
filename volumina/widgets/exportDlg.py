@@ -612,7 +612,7 @@ if __name__ == '__main__':
     app = QApplication(list())
    
     g = Graph()
-    arr = vigra.Volume((60,800,400, 3), dtype=numpy.uint8)
+    arr = vigra.Volume((600,800,400, 3), dtype=numpy.uint8)
     arr[:] = numpy.random.random_sample(arr.shape)
     a = OpArrayPiper(graph=g)
     w = Writer()
