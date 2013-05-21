@@ -530,16 +530,17 @@ class ExportDialog(QDialog):
          
         self.validAxesComboBoxes = True
         
-        def changeComboBoxes(box1, box2):
+        def changeComboBox(box2):
             if box2.count() > 0:
                 box2.setCurrentIndex((box2.currentIndex() + 1) % box2.count())
 
         for c in combinations(range(len(axes)), 2):
             if axes[c[0]] == axes[c[1]]:
-                changeComboBoxes(self.comboBoxes[c[0]], self.comboBoxes[c[1]])
-            
+                changeComboBox(self.comboBoxes[c[1]])
+        axes = [str(axis.currentText()) for axis in self.comboBoxes]
         if len(list(set(axes))) != len(axes): #if all entries are unique
             self.validAxesComboBoxes = False
+            logger.error("The selected axes are invalid for an image")
         if self.validAxesComboBoxes:
             self.updateStackWriter()
         self.validateOptions()
