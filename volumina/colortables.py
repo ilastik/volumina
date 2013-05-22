@@ -15,6 +15,41 @@ will be displayed red and 1s black.
 import itertools
 from PyQt4.QtGui import QColor
 
+
+
+
+from PyQt4.QtGui import QColor
+import warnings
+    
+import numpy as np
+
+
+def matplotlib_to_qt4_colortable(cmap_name,N):
+    """
+    get a colortable of desired N in Qt4 format as required from the colortable Layer
+    cmap_name can be any matplotlib colortable
+    """
+    try:
+        import matplotlib.cm as cm
+    except:
+        raise RuntimeError("this function requires matplotlib")
+
+    
+    cmap = cm.get_cmap(cmap_name, N)
+    cmap=cmap(np.arange(N))[:,:-1]    
+    colortable = []
+    for el in cmap:
+        r,g,b = el*255
+        colortable.append(QColor(r,g,b).rgba())
+    return colortable
+
+def jet(N=256):
+    ###This makes a jet colormap with 256 spaces
+    return matplotlib_to_qt4_colortable("jet",N=N)
+
+
+
+
 default16 = [QColor(0, 0, 255).rgba(),
             QColor(255, 255, 0).rgba(),
             QColor(255, 0, 0).rgba(),
@@ -318,3 +353,30 @@ def create_random_16bit():
     
     Repeatedly applies a pseudo-random colortable to the whole 16bit range'''
     return [color for color in itertools.islice(itertools.cycle(random256), 0, 2**16)]
+
+
+
+if __name__=="__main__":
+      from volumina.api import *
+      from PyQt4.QtGui import QApplication
+      import numpy
+      from volumina.pixelpipeline.datasourcefactories import *
+      app = QApplication(sys.argv)
+      v = Viewer()
+      v.show()
+      a = np.zeros((256,256))
+      for i in range(256):
+            a[i]=i
+
+      source,sh = createDataSource(a,True)
+      
+
+      layer = ColortableLayer(source, jet(256))
+      #layer = GrayscaleLayer(source)
+      
+      v.layerstack.append(layer)
+      v.dataShape=sh
+
+
+      v.show()
+      app.exec_()
