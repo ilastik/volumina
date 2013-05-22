@@ -25,8 +25,10 @@ import numpy as np
 
 
 def matplotlib_to_qt4_colortable(cmap_name,N):
-    #get a colortable of desired N in Qt4 format as required from the colortable Layer
-    #cmap_name can be any matplotlib colortable
+    """
+    get a colortable of desired N in Qt4 format as required from the colortable Layer
+    cmap_name can be any matplotlib colortable
+    """
     try:
         import matplotlib.cm as cm
     except:
