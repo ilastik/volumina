@@ -50,6 +50,8 @@ class ImageView2D(QGraphicsView):
         self.layout().addStretch()
 
         scene = self.scene()
+        hud.zoomToFitButtonClicked.connect(self.fitImage)
+        hud.resetZoomButtonClicked.connect(self.doScaleTo)
         hud.rotLeftButtonClicked.connect(scene._onRotateLeft)
         hud.rotRightButtonClicked.connect(scene._onRotateRight)
         hud.swapAxesButtonClicked.connect(scene._onSwapAxes)
@@ -66,7 +68,6 @@ class ImageView2D(QGraphicsView):
 
         QGraphicsView.__init__(self)
         self.setScene(imagescene2d)
-
         self.mousePos = QPointF(0,0)
         # FIXME: These int members shadow QWidget.x() and QWidget.y(), which can lead to confusion when debugging...
         self.x, self.y = (0,0)
@@ -139,6 +140,11 @@ class ImageView2D(QGraphicsView):
         self._ticker.stop()
         del self._ticker
 
+    def setZoomFactor(self,zoom):
+        if self._hud is not None:
+            self._hud.zoomLevelIndicator.updateLevel(zoom)
+        self._zoomFactor = zoom
+
     def indicateSlicingPositionSettled(self, settled):
         self.scene().indicateSlicingPositionSettled(settled)
 
@@ -209,7 +215,7 @@ class ImageView2D(QGraphicsView):
         else:
             self._deltaPan = self._deaccelerate(self._deltaPan)
             self._panning()
-
+        
     def zoomOut(self):
         self.doScale(0.9)
 
@@ -219,7 +225,8 @@ class ImageView2D(QGraphicsView):
     def fitImage(self):
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         width, height = self.size().width() / self.sceneRect().width(), self.height() / self.sceneRect().height()
-        self._zoomFactor = min(width, height)
+        self.setZoomFactor(min(width, height))
+        
 
     def centerImage(self):
         self.centerOn(self.sceneRect().width()/2 + self.sceneRect().x(), self.sceneRect().height()/2 + self.sceneRect().y())
@@ -245,15 +252,15 @@ class ImageView2D(QGraphicsView):
     def changeViewPort(self,qRectf):
         self.fitInView(qRectf,mode = Qt.KeepAspectRatio)
         width, height = self.size().width() / qRectf.width(), self.height() / qRectf.height()
-        self._zoomFactor = min(width, height)
+        self.setZoomFactor(min(width, height))
 
     def doScale(self, factor):
-        self._zoomFactor = self._zoomFactor * factor
+        self.setZoomFactor(self._zoomFactor * factor)
         self.scale(factor, factor)
 
     def doScaleTo(self, zoom=1):
         factor = ( 1 / self._zoomFactor ) * zoom
-        self._zoomFactor = zoom
+        self.setZoomFactor(zoom)
         self.scale(factor, factor)
 
 

@@ -46,6 +46,8 @@ class LabelButtons(QLabel):
     icons = {
         'undock' : (':icons/icons/undock.png', "Undock"),
         'dock' : (':icons/icons/dock.png', "Dock"),
+        'zoom-to-fit' : (':icons/icons/spin-up.png', "Zoom to fit"),
+        'reset-zoom' : (':icons/icons/spin-down.png', "Reset zoom"),
         'maximize' : (':icons/icons/maximize.png', "Maximize"),
         'minimize' : (':icons/icons/minimize.png', "Minimize"),
         'spin-up' : (':icons/icons/spin-up.png', "+ 1"),
@@ -172,9 +174,31 @@ def setupFrameStyle( frame ):
     frame.setFrameShadow( QFrame.Raised )
     frame.setLineWidth( 2 )
 
-
+class ZoomLevelIndicator(QLabel):
+    def __init__(self,parent,backgroundColor,foregroundColor,font,height):
+        QLabel.__init__(self,parent)
+        p = self.palette()
+        p.setColor(self.backgroundRole(),backgroundColor)
+        p.setColor(self.foregroundRole(),foregroundColor)
+        self.setPalette(p)
+        self.setFont(font)
+        self.setAutoFillBackground(True)
+        self.setFixedHeight(height)
+        self.setFrameShape( QFrame.Box )
+        self.setFrameShadow( QFrame.Raised )
+        #self.setLineWidth( 2 )
+        self.setText(" 100 %")
+        self.setToolTip("Zoom Level")
+    
+    def updateLevel(self,level):
+        level = int(level*100)
+        self.setText(" {} %".format(level))
+        
+    
 class ImageView2DHud(QWidget):
     dockButtonClicked = pyqtSignal()
+    zoomToFitButtonClicked = pyqtSignal()
+    resetZoomButtonClicked = pyqtSignal()
     maximizeButtonClicked = pyqtSignal()
     rotLeftButtonClicked = pyqtSignal()
     rotRightButtonClicked = pyqtSignal()
@@ -212,13 +236,14 @@ class ImageView2DHud(QWidget):
         self.labelsheight = 20
 
         self.layout.addSpacing(4)
+        fontsize = 12
 
         self.axisLabel = self.createAxisLabel()
         self.sliceSelector = SpinBoxImageView(self.parent(),
                                               backgroundColor,
                                               foregroundColor,
                                               value,
-                                              self.labelsheight, 12)
+                                              self.labelsheight, fontsize)
 
         self.buttons['slice'] = self.sliceSelector
 
@@ -245,11 +270,23 @@ class ImageView2DHud(QWidget):
             self._add_button(name, handler)
 
         self.layout.addStretch()
+        
+        self.zoomLevelIndicator = ZoomLevelIndicator(self.parent(),
+                                backgroundColor,
+                                foregroundColor,
+                                self.sliceSelector.spinBox.font(),
+                                self.buttons["rotate-left"].sizeHint().height())
 
-        for name, handler in [('undock', self.on_dockButton),
+        self.buttons["zoomlevel"] = self.zoomLevelIndicator
+        self.layout.addWidget(self.zoomLevelIndicator)
+        self.layout.addSpacing(4)
+        
+        for name, handler in [('zoom-to-fit', self.on_zoomToFit),
+                              ('reset-zoom', self.on_resetZoom),
+                              ('undock', self.on_dockButton),
                               ('maximize', self.on_maxButton)]:
             self._add_button(name, handler)
-
+        
         # some other classes access these members directly.
         self.sliceSelector = self.buttons['slice']
         self.dockButton = self.buttons['undock']
@@ -260,7 +297,13 @@ class ImageView2DHud(QWidget):
 
     def on_dockButton(self):
         self.dockButtonClicked.emit()
-
+    
+    def on_zoomToFit(self):
+        self.zoomToFitButtonClicked.emit()
+    
+    def on_resetZoom(self):
+        self.resetZoomButtonClicked.emit()
+    
     def on_maxButton(self):
         self.maximizeButtonClicked.emit()
 
