@@ -30,7 +30,8 @@ class ClickReportingInterpreter(QObject):
         # Event is always forwarded to the navigation interpreter.
         return self.baseInterpret.eventFilter(watched, event)
 
-
+    def updateCursorPosition(self, *args, **kwargs):
+        self.baseInterpret.updateCursorPosition(*args, **kwargs)
 
 class ClickInterpreter(QObject):
     """Intercepts mouse clicks (right clicks by default) and double
@@ -66,12 +67,16 @@ class ClickInterpreter(QObject):
         etype = event.type()
         handle = False
         if etype == QEvent.MouseButtonPress and event.button() == self.button:
+            #print "Clicked {} / {}".format( event.pos(), event.globalPos() )
             handle = True
         if etype == QEvent.MouseButtonDblClick and self.double and event.button() == self.button:
             handle = True
         if etype == QEvent.MouseButtonPress and event.modifiers() == Qt.ShiftModifier:
             handle = False #dragging
         if handle:
+            # Ensure that the data cursor position is in the right place
+            # (Don't assume that the last mouse-move put it there for us.)
+            self.baseInterpret.updateCursorPosition(watched, event)
             pos = self.posModel.cursorPos
             pos = [int(i) for i in pos]
             pos = [self.posModel.time] + pos + [self.posModel.channel]

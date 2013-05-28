@@ -162,16 +162,19 @@ class NavigationInterpreter(QObject):
             event.ignore()
             return False
 
+        self.updateCursorPosition(imageview, event)
+        #do not accept event
+        event.ignore()
+        return False
+
+    def updateCursorPosition(self, imageview, event):
+        """Update the position model's cursor position according to the given event position."""
         imageview.mousePos = mousePos = imageview.mapMouseCoordinates2Data(event.pos())
         imageview.oldX, imageview.oldY = imageview.x, imageview.y
         dataX = imageview.x = mousePos.x()
         dataY = imageview.y = mousePos.y()
 
         self._navCtrl.positionDataCursor(QPointF(dataX, dataY), self._navCtrl._views.index(imageview))
-
-        #do not accept event
-        event.ignore()
-        return False
 
     def onMousePressRight_default( self, imageview, event ):
         #make sure that we have the cursor at the correct position
