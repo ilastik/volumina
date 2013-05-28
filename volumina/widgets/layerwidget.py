@@ -378,9 +378,9 @@ class LayerWidget(QListView):
             assert isinstance(layer, Layer)
             hitWidget = QApplication.widgetAt(event.globalPos())
             hitWidgetPos = event.pos() - hitWidget.geometry().topLeft()
-            hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, hitWidgetPos, event.button(), event.buttons(), event.modifiers() )
+            hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, hitWidgetPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
             hitWidget.mousePressEvent(hitWidgetPress)
-            hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, hitWidgetPos, event.button(), event.buttons(), event.modifiers() )
+            hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, hitWidgetPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
             hitWidget.mouseReleaseEvent(hitWidgetRelease)
 
 #*******************************************************************************

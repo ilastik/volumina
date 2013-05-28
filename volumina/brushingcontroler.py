@@ -88,7 +88,7 @@ class BrushingInterpreter( QObject ):
 
                 # event will not be valid to use after this function exits,
                 # so we must make a copy of it instead of just saving the pointer
-                self._lastEvent = QMouseEvent( event.type(), event.pos(), event.button(), event.buttons(), event.modifiers() )
+                self._lastEvent = QMouseEvent( event.type(), event.pos(), event.globalPos(), event.button(), event.buttons(), event.modifiers() )
                 
         elif self._current_state == self.MAYBE_DRAW_MODE:
             if etype == QEvent.MouseMove:
