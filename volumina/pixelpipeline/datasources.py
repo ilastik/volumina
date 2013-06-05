@@ -165,27 +165,8 @@ class RelabelingArraySource( ArraySource ):
 #*******************************************************************************
 
 class LazyflowRequest( object ):
-    ## Lazyflow requests are starting to do work at the time of their
-    ## creation whereas Volumina requests are idling as long as no
-    ## method like wait() or notify() is called. Therefore we have to
-    ## delay the creation of the lazyflow request until one of these
-    ## Volumina request methods is actually called
-    class _req_on_demand(dict):
-        def __init__( self, op, slicing, prio ):
-            self.p = (op, slicing, prio)
-    
-        def __missing__(self, key):
-            if self.p[0].output.meta.shape is not None:
-                assert(self.p[0].output.ready())
-                reqobj = self.p[0].output[self.p[1]]
-            else:
-                reqobj = ArrayRequest( np.zeros(slicing2shape(self.p[1]), dtype=np.uint8 ), (slice(None),) * len(self.p[1]) )
-
-            self[0] = reqobj
-            return reqobj
-
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
-        self._req = LazyflowRequest._req_on_demand(op, slicing, prio) 
+        self._req = op.output[slicing]
         self._slicing = slicing
         shape = op.output.meta.shape
         if shape is not None:
@@ -194,28 +175,25 @@ class LazyflowRequest( object ):
         self._objectName = objectName
         
     def wait( self ):
-        a = self._req[0].wait()
+        a = self._req.wait()
         assert(isinstance(a, np.ndarray))
         assert(a.shape == self._shape), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
         return a
         
     def getResult(self):
-        a = self._req[0].getResult()
+        a = self._req.result
         assert(isinstance(a, np.ndarray))
         assert(a.shape == self._shape), "LazyflowRequest.getResult() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
         return a
 
-    def adjustPriority(self,delta):
-        self._req[0].adjustPriority(delta)
-        
     def cancel( self ):
-        self._req[0].cancel()
+        self._req.cancel()
 
     def submit( self ):
-        self._req[0].submit()
+        self._req.submit()
 
     def notify( self, callback, **kwargs ):
-        self._req[0].notify_finished( partial(callback, (), **kwargs) )
+        self._req.notify_finished( partial(callback, (), **kwargs) )
 assert issubclass(LazyflowRequest, RequestABC)
 
 #*******************************************************************************
