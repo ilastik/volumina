@@ -235,7 +235,9 @@ class LazyflowSource( QObject ):
             self._op5.cleanUp()
             
     def dtype(self):
-        return self._orig_outslot.meta.dtype
+        dtype = self._orig_outslot.meta.dtype
+        assert dtype is not None, "Your LazyflowSource doesn't have a dtype! Is your lazyflow slot properly configured in setupOutputs()?"
+        return dtype
     
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
