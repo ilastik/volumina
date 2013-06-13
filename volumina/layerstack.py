@@ -126,6 +126,13 @@ class LayerStackModel(QAbstractListModel):
             newRow = self.rowCount() - 1
             self._moveToRow(oldRow, newRow)
 
+    def moveSelectedToRow(self, newRow):
+        assert len(self.selectionModel.selectedRows()) == 1
+        row = self.selectionModel.selectedRows()[0]
+        if row.row() != newRow:
+            oldRow = row.row()
+            self._moveToRow(oldRow, newRow)
+
     def _moveToRow(self, oldRow, newRow):
         d = self._layerStack[oldRow]
         self.removeRow(oldRow)
