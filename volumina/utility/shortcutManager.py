@@ -61,6 +61,10 @@ class ShortcutManager(object):
         """
         Register a shortcut with the shortcut manager.
         
+        Note: If the new shortcut uses the same key sequence as a shortcut that 
+              already exists, the original shortcut is disabled, and this new 
+              shortcut takes it's place.
+        
         group - The GUI category of this shortcut
         description - A description of the shortcut action (shows up as default tooltip text)
         shortcut - A QShortcut
@@ -71,7 +75,6 @@ class ShortcutManager(object):
 
         if not group in self._shortcuts:
             self._shortcuts[group] = collections.OrderedDict()
-        self._shortcuts[group][shortcut] = (description, objectWithToolTip)
         
         # If we've got user preferences for this shortcut, apply them now.
         groupKeys = PreferencesManager().get( self.PreferencesGroup, group )
@@ -79,28 +82,23 @@ class ShortcutManager(object):
             keyseq = groupKeys[description]
             shortcut.setKey( keyseq )
         
-        self.updateToolTip( shortcut )
+        # Before we add this shortcut to our dict, disable any other shortcuts it replaces
+        conflicting_shortcuts = self._findExistingShortcuts( shortcut.key().toString() )
+        for conflicted in conflicting_shortcuts:
+            conflicted.setKey( QKeySequence("") )
+            self.updateToolTip( conflicted )
         
-        self.findDuplicates(shortcut.key(),group,description)
-    
-    def findDuplicates(self,key,groupdup,description):
-        '''warn user when finding keyboard shortcut collisions'''
+        self._shortcuts[group][shortcut] = (description, objectWithToolTip)
+        self.updateToolTip( shortcut )
+
+    def _findExistingShortcuts(self, keyseq):
+        existing_shortcuts = []
         for group, shortcutDict in self._shortcuts.items():
-            if group == groupdup:
-                continue
-            for obj,desc in shortcutDict.items():
-                if obj is None:continue
-                if obj.key()==key:
-                    if (description,desc[0],group,groupdup) in self.shortcutCollisions:
-                        continue
-                    self.shortcutCollisions.add((description,desc[0],group,groupdup))
-                    from warnings import warn
-                    msg =  "\n~~~~~~~~~~~~\n"
-                    msg+="Keyboard Shortcut Match Found: key "+str(key.toString())+"\n"
-                    msg+=group+" : "+desc[0]+"\n"
-                    msg+=groupdup+" : "+description+"\n"
-                    warn(msg)
-                
+            for (shortcut, (desc, obj)) in shortcutDict.items():
+                if shortcut.key().toString() == keyseq:
+                    existing_shortcuts.append( shortcut )
+        return existing_shortcuts
+    
     def unregister(self, shortcut):
         """
         Remove the shortcut from the manager.
@@ -117,6 +115,12 @@ class ShortcutManager(object):
                 (oldDescription, objectWithToolTip) = self._shortcuts[group][shortcut]
                 self._shortcuts[group][shortcut] = (description, objectWithToolTip)
                 self.updateToolTip(shortcut)
+
+            # If we've got user preferences for this shortcut, apply now.
+            groupKeys = PreferencesManager().get( self.PreferencesGroup, group )
+            if groupKeys is not None and description in groupKeys:
+                keyseq = groupKeys[description]
+                shortcut.setKey( keyseq )
 
     def updateToolTip(self, shortcut):
         """
@@ -137,7 +141,10 @@ class ShortcutManager(object):
             return
 
         oldText = str(objectWithToolTip.toolTip())
-        newKeyText = str('[' + shortcut.key().toString() + ']')
+        newKey = str(shortcut.key().toString())
+        if newKey == "":
+            newKey = "<no key>"
+        newKeyText = '[' + newKey + ']'
         
         if oldText == "":
             oldText = description
