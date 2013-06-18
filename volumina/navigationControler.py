@@ -98,7 +98,6 @@ class NavigationInterpreter(QObject):
         return False
 
     def mousePositionValid( self, imageview, event):
-        dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
         axis = self._navCtrl._model.activeView
         dataCoord2D = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
         newPos = [dataCoord2D.x(), dataCoord2D.y()]
@@ -124,30 +123,26 @@ class NavigationInterpreter(QObject):
         sceneMousePos = imageview.mapToScene(event.pos())
         grviewCenter = imageview.mapToScene(imageview.viewport().rect().center())
 
+        sign = 1
         if event.delta() < 0:
-            if k_shift_alt:
-                navCtrl.changeTimeRelative(-10)
-            elif k_alt:
-                navCtrl.changeSliceRelative(-10, navCtrl._views.index(imageview))
-            elif k_ctrl:
-                scaleFactor = 0.9
-                imageview.doScale(scaleFactor)
-            elif k_shift:
-                navCtrl.changeTimeRelative(-1)
-            else:
-                navCtrl.changeSliceRelative(-1, navCtrl._views.index(imageview))
+            sign = -1
+
+        if k_shift_alt:
+            navCtrl.changeTimeRelative(sign*10)
+        elif k_alt:
+            navCtrl.changeSliceRelative(sign*10, navCtrl._views.index(imageview))
+        elif k_ctrl:
+            mult = max(1, (event.delta() / 120))
+            scaleFactor = 1.0 + sign*0.1*mult
+            imageview.doScale(scaleFactor)
+        elif k_shift:
+            navCtrl.changeTimeRelative(sign*1)
         else:
-            if k_shift_alt:
-                navCtrl.changeTimeRelative(10)
-            elif k_alt:
-                navCtrl.changeSliceRelative(10, navCtrl._views.index(imageview))
-            elif k_ctrl:
-                scaleFactor = 1.1
-                imageview.doScale(scaleFactor)
-            elif k_shift:
-                navCtrl.changeTimeRelative(1)
-            else:
-                navCtrl.changeSliceRelative(1, navCtrl._views.index(imageview))
+            # A single 'step' of a scroll wheel is typically 15 degrees, which Qt represents with delta=120
+            # We'll give a little boost so that 1 step is 1 plane, but 3 steps is 4 planes.
+            planes = max( 1, ( sign*event.delta() / (120*3/4) ) )
+            navCtrl.changeSliceRelative(sign*planes, navCtrl._views.index(imageview))
+
         if k_ctrl:
             mousePosAfterScale = imageview.mapToScene(event.pos())
             offset = sceneMousePos - mousePosAfterScale
