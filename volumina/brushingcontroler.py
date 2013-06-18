@@ -1,4 +1,5 @@
-from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QRectF
+from functools import partial
+from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QRectF, QTimer
 from PyQt4.QtGui import QPainter, QPen, QBrush, QApplication, QGraphicsView, QMouseEvent
 
 from eventswitch import InterpreterABC
@@ -32,6 +33,9 @@ class BrushingInterpreter( QObject ):
     # states
     FINAL           = 0
     DEFAULT_MODE    = 1
+
+    # FIXME: This state isn't really needed, now that we use a QTimer to manage the double-click case.
+    #        (The state machine should be rewritten.)
     MAYBE_DRAW_MODE = 2 #received a single left-click; however, the next event
                         #might be a double-click event; therefore the state has
                         #not been decided yet
@@ -55,6 +59,7 @@ class BrushingInterpreter( QObject ):
                             # added to the qgraphicsscene for drawing indication
                             
         self._lastEvent = None
+        self._doubleClickTimer = None
 
         # clear the temporary line items once they
         # have been pushed to the sink
@@ -76,6 +81,13 @@ class BrushingInterpreter( QObject ):
 
     def eventFilter( self, watched, event ):
         etype = event.type()
+        
+        if etype == QEvent.MouseButtonDblClick and self._doubleClickTimer is not None:
+            # On doubleclick, cancel release handler that normally draws the stroke.
+            self._doubleClickTimer.stop()
+            self._doubleClickTimer = None
+            self._current_state = self.DEFAULT_MODE
+            self.onEntry_default( watched, event )
         
         if self._current_state == self.DEFAULT_MODE:
             if etype == QEvent.MouseButtonPress \
@@ -108,11 +120,26 @@ class BrushingInterpreter( QObject ):
                 self._current_state = self.DEFAULT_MODE
                 return self._navIntr.eventFilter( watched, event )
             elif etype == QEvent.MouseButtonRelease:
-                self._current_state = self.DRAW_MODE
-                self.onEntry_draw( watched, self._lastEvent )
-                self.onExit_draw( watched, event )
-                self._current_state = self.DEFAULT_MODE
-                self.onEntry_default( watched, event )
+                def handleRelease(releaseEvent):
+                    self._current_state = self.DRAW_MODE
+                    self.onEntry_draw( watched, self._lastEvent )
+                    self.onExit_draw( watched, releaseEvent)
+                    self._current_state = self.DEFAULT_MODE
+                    self.onEntry_default( watched, releaseEvent )
+
+                # If this event is part of a double-click, we don't really want to handle it.
+                # Typical event sequence is press, release, double-click (not two presses).
+                # Instead of handling this right away, set a timer to do the work.
+                # We'll cancel the timer if we see a double-click event (see above).
+                self._doubleClickTimer = QTimer(self)
+                self._doubleClickTimer.setInterval(200)
+                self._doubleClickTimer.setSingleShot(True)
+                # event will not be valid to use after this function exits,
+                # so we must make a copy of it instead of just saving the pointer
+                eventCopy = QMouseEvent( event.type(), event.pos(), event.button(), event.buttons(), event.modifiers() )
+                self._doubleClickTimer.timeout.connect( partial(handleRelease, eventCopy ) )
+                self._doubleClickTimer.start()
+
                 return True
 
         elif self._current_state == self.DRAW_MODE:
