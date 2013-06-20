@@ -95,7 +95,7 @@ class ShortcutManager(object):
         existing_shortcuts = []
         for group, shortcutDict in self._shortcuts.items():
             for (shortcut, (desc, obj)) in shortcutDict.items():
-                if shortcut.key().toString() == keyseq:
+                if str(shortcut.key().toString()).lower() == str(keyseq).lower():
                     existing_shortcuts.append( shortcut )
         return existing_shortcuts
     
@@ -186,7 +186,7 @@ class ShortcutManagerDlg(QDialog):
 
         # Create a LineEdit for each shortcut,
         # and keep track of them in a dict
-        shortcutEdits = dict()
+        shortcutEdits = collections.OrderedDict()
         for group, shortcutDict in mgr.shortcuts.items():
             groupItem = QTreeWidgetItem( treeWidget, QStringList( group ) )
             ListOfActions = set()
@@ -228,13 +228,16 @@ class ShortcutManagerDlg(QDialog):
         # If the user didn't hit "cancel", apply his changes to the manager's shortcuts
         if result == QDialog.Accepted:
             for shortcut, edit in shortcutEdits.items():
-                oldKey = shortcut.key()
-                newKey = str(edit.text())
-                shortcut.setKey( QKeySequence(newKey) )
+                oldKey = str(shortcut.key().toString()).lower()
+                newKey = str(edit.text()).lower()
                 
-                # If the user typed an invalid shortcut, then keep the old value
-                if shortcut.key().isEmpty():
-                    shortcut.setKey(oldKey)
+                if oldKey != newKey and newKey != "":
+                    # Before we add this shortcut to our dict, disable any other shortcuts it replaces
+                    conflicting_shortcuts = mgr._findExistingShortcuts( newKey )
+                    for conflicted in conflicting_shortcuts:
+                        conflicted.setKey( QKeySequence("") )
+                        shortcutEdits[conflicted].setText( "" )
+                    shortcut.setKey( QKeySequence(newKey) )
                 
                 # Make sure the tooltips get updated.
                 mgr.updateToolTip(shortcut)
