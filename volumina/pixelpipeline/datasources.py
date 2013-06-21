@@ -11,7 +11,7 @@ import numpy as np
 
 _has_lazyflow = True
 try:
-    import lazyflow.operators.adaptors
+    import lazyflow.operators.opReorderAxes
 except:
     _has_lazyflow = False
 
@@ -166,9 +166,9 @@ class RelabelingArraySource( ArraySource ):
 
 class LazyflowRequest( object ):
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
-        self._req = op.output[slicing]
+        self._req = op.Output[slicing]
         self._slicing = slicing
-        shape = op.output.meta.shape
+        shape = op.Output.meta.shape
         if shape is not None:
             slicing = make_bounded(slicing, shape)
         self._shape = slicing2shape(slicing)
@@ -221,13 +221,13 @@ class LazyflowSource( QObject ):
 
         self._orig_outslot = outslot
 
-        # Attach an Op5ifyer to ensure the data will display correctly
-        self._op5 = lazyflow.operators.adaptors.Op5ifyer( graph=outslot.graph )
-        self._op5.input.connect( outslot )
+        # Attach an OpReorderAxes to ensure the data will display correctly
+        self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( graph=outslot.graph )
+        self._op5.Input.connect( outslot )
 
         self._priority = priority
         self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
-        self._op5.output.notifyDirty( self._dirtyCallback )
+        self._op5.Output.notifyDirty( self._dirtyCallback )
         self._op5.externally_managed = True
 
     def __del__(self):
