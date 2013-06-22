@@ -492,6 +492,9 @@ class MinMaxSource( QObject ):
             # Now, that said, we can still give a slightly more snappy response to the OTHER tiles (not this one)
             # if we immediately tell the TileProvider we are dirty.  This duplicates some requests, but that shouldn't be a big deal.
             self.setDirty( sl[:,:,:,:,:] )
+    
+    def resetBounds(self):
+        self._bounds = [1e9,-1e9]
 
 
 assert issubclass(MinMaxSource, SourceABC)

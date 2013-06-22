@@ -252,6 +252,7 @@ class NormalizableLayer( Layer ):
         self._range = []
         self._datasources = datasources
         self._autoMinMax = []
+        self._mmSources = []
 
         for i,datasource in enumerate(datasources):
             if datasource is not None:
@@ -264,6 +265,7 @@ class NormalizableLayer( Layer ):
                 self._normalize.append(normalize)
                 self._range.append(range)
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
+                self._mmSources.append(mmSource)
             else:
                 self._normalize.append((0,1))
                 self._range.append((0,1))
@@ -276,6 +278,10 @@ class NormalizableLayer( Layer ):
     def _bounds_changed(self, datasourceIdx, range):
         if self._autoMinMax[datasourceIdx]:
             self.set_normalize(datasourceIdx, None)
+
+    def resetBounds(self):
+        for mm in self._mmSources:
+            mm.resetBounds()
 
 
 #*******************************************************************************
