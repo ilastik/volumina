@@ -24,7 +24,7 @@ import warnings
 import numpy as np
 
 
-def matplotlib_to_qt4_colortable(cmap_name,N):
+def matplotlib_to_qt4_colortable(cmap_name,N, asLong=True):
     """
     get a colortable of desired N in Qt4 format as required from the colortable Layer
     cmap_name can be any matplotlib colortable
@@ -40,12 +40,24 @@ def matplotlib_to_qt4_colortable(cmap_name,N):
     colortable = []
     for el in cmap:
         r,g,b = el*255
-        colortable.append(QColor(r,g,b).rgba())
+        color = QColor(r,g,b)
+        if asLong:
+            color = color.rgba()
+        colortable.append(color)
     return colortable
 
 def jet(N=256):
     ###This makes a jet colormap with 256 spaces
     return matplotlib_to_qt4_colortable("jet",N=N)
+def jetTransparent(N=256):
+    ###This makes a jet colormap with 256 spaces
+    colortable = matplotlib_to_qt4_colortable("jet", N=N, asLong = False)
+    #colortable[0] = QColor(0,0,0,0)
+    for i,color in enumerate(colortable):
+        color = colortable[i]
+        color.setAlpha(i)
+        colortable[i] = color.rgba()
+    return colortable
 
 
 
