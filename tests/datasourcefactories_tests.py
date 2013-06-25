@@ -42,7 +42,7 @@ class Test_DatasourceFactories(TestCase):
             import vigra
             def test_source( src, array ):
                 self.assertEqual(type(src), LazyflowSource)
-                self.assertEqual(squeeze(ndarray(src._op5.output.meta.shape)).shape, array.shape)
+                self.assertEqual(squeeze(ndarray(src._op5.Output.meta.shape)).shape, array.shape)
 
             for i in range(2,6):
                 array = rand(*self.dim[:i]).view(vigra.VigraArray)
