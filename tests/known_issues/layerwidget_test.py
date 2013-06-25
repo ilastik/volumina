@@ -1,3 +1,4 @@
+import time
 import unittest as ut
 from PyQt4.QtCore import QTimer
 from PyQt4.QtGui import qApp, QApplication, QWidget, QHBoxLayout, QPixmap
@@ -31,8 +32,13 @@ class TestLayerWidget( ut.TestCase ):
             # Change the visibility of the *selected* layer
             self.o2.visible = False
             
+            self.w.repaint()
+            
             # Make sure the GUI is caught up on paint events
             QApplication.processEvents()
+            
+            # We must sleep for the screenshot to be right.
+            time.sleep(0.1) 
 
             # Capture the window now that we've changed a layer.
             afterImg = QPixmap.grabWindow( self.w.winId() ).toImage()
