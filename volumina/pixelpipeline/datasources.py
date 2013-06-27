@@ -1,7 +1,7 @@
 import threading
 import weakref
 from functools import partial
-from PyQt4.QtCore import QObject, pyqtSignal
+from PyQt4.QtCore import QObject, pyqtSignal, QTimer
 from asyncabcs import RequestABC, SourceABC
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, \
@@ -422,6 +422,11 @@ class MinMaxSource( QObject ):
         self._rawSource = rawSource
         self._rawSource.isDirty.connect( self.isDirty )
         self._bounds = [1e9,-1e9]
+        
+        self._delayedDirtySignal = QTimer()
+        self._delayedDirtySignal.setSingleShot(True)
+        self._delayedDirtySignal.setInterval(10)
+        self._delayedDirtySignal.timeout.connect( partial(self.setDirty, sl[:,:,:,:,:]) )
             
     @property
     def dataSlot(self):
@@ -438,7 +443,7 @@ class MinMaxSource( QObject ):
         return MinMaxUpdateRequest( rawRequest, self._getMinMax )
 
     def setDirty( self, slicing ):
-        self._rawSource.setDirty( slicing )
+        self.isDirty.emit(slicing)
 
     def __eq__( self, other ):
         equal = True
@@ -457,15 +462,35 @@ class MinMaxSource( QObject ):
         dmin = min(self._bounds[0], dmin)
         dmax = max(self._bounds[1], dmax)
         dirty = False
-        if self._bounds[0]-dmin > 1e-2:
+        if (self._bounds[0]-dmin) > 1e-2:
             dirty = True
-        if dmax-self._bounds[1] > 1e-2:
+        if (dmax-self._bounds[1]) > 1e-2:
             dirty = True
 
         if dirty:
             self._bounds[0] = min(self._bounds[0], dmin)
             self._bounds[1] = max(self._bounds[0], dmax)
             self.boundsChanged.emit(self._bounds)
+
+            # Our min/max have changed, which means we must force the TileProvider to re-request all tiles.
+            # If we simply mark everything dirty now, then nothing changes for the tile we just rendered.
+            # (It was already dirty.  That's why we are rendering it right now.)
+            # And when this data gets back to the TileProvider that requested it, the TileProvider will mark this tile clean again.
+            # To ENSURE that the current tile is marked dirty AFTER the TileProvider has stored this data (and marked the tile clean),
+            #  we'll use a timer to set everything dirty.
+            # This fixes ilastik issue #418
+
+            # Finally, note that before this timer was added, the problem described above occurred at random due to a race condition:
+            # Sometimes the 'dirty' signal was processed BEFORE the data (bad) and sometimes it was processed after the data (good),
+            # due to the fact that the Qt signals are always delivered in the main thread.
+            # Perhaps a better way to fix this would be to store a timestamp in the TileProvider for dirty notifications, which 
+            # could be compared with the request timestamp before clearing the dirty state for each tile.
+
+            # Signal everything dirty with a timer, as described above.            
+            self._delayedDirtySignal.start()
+
+            # Now, that said, we can still give a slightly more snappy response to the OTHER tiles (not this one)
+            # if we immediately tell the TileProvider we are dirty.  This duplicates some requests, but that shouldn't be a big deal.
             self.setDirty( sl[:,:,:,:,:] )
 
 
