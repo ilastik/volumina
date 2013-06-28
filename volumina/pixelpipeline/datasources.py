@@ -1,7 +1,7 @@
 import threading
 import weakref
 from functools import partial
-from PyQt4.QtCore import QObject, pyqtSignal
+from PyQt4.QtCore import QObject, pyqtSignal, QTimer
 from asyncabcs import RequestABC, SourceABC
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, \
@@ -11,7 +11,7 @@ import numpy as np
 
 _has_lazyflow = True
 try:
-    import lazyflow.operators.adaptors
+    import lazyflow.operators.opReorderAxes
 except:
     _has_lazyflow = False
 
@@ -165,57 +165,35 @@ class RelabelingArraySource( ArraySource ):
 #*******************************************************************************
 
 class LazyflowRequest( object ):
-    ## Lazyflow requests are starting to do work at the time of their
-    ## creation whereas Volumina requests are idling as long as no
-    ## method like wait() or notify() is called. Therefore we have to
-    ## delay the creation of the lazyflow request until one of these
-    ## Volumina request methods is actually called
-    class _req_on_demand(dict):
-        def __init__( self, op, slicing, prio ):
-            self.p = (op, slicing, prio)
-    
-        def __missing__(self, key):
-            if self.p[0].output.meta.shape is not None:
-                assert(self.p[0].output.ready())
-                reqobj = self.p[0].output[self.p[1]]
-            else:
-                reqobj = ArrayRequest( np.zeros(slicing2shape(self.p[1]), dtype=np.uint8 ), (slice(None),) * len(self.p[1]) )
-
-            self[0] = reqobj
-            return reqobj
-
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
-        self._req = LazyflowRequest._req_on_demand(op, slicing, prio) 
+        self._req = op.Output[slicing]
         self._slicing = slicing
-        shape = op.output.meta.shape
+        shape = op.Output.meta.shape
         if shape is not None:
             slicing = make_bounded(slicing, shape)
         self._shape = slicing2shape(slicing)
         self._objectName = objectName
         
     def wait( self ):
-        a = self._req[0].wait()
+        a = self._req.wait()
         assert(isinstance(a, np.ndarray))
         assert(a.shape == self._shape), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
         return a
         
     def getResult(self):
-        a = self._req[0].getResult()
+        a = self._req.result
         assert(isinstance(a, np.ndarray))
         assert(a.shape == self._shape), "LazyflowRequest.getResult() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
         return a
 
-    def adjustPriority(self,delta):
-        self._req[0].adjustPriority(delta)
-        
     def cancel( self ):
-        self._req[0].cancel()
+        self._req.cancel()
 
     def submit( self ):
-        self._req[0].submit()
+        self._req.submit()
 
     def notify( self, callback, **kwargs ):
-        self._req[0].notify_finished( partial(callback, (), **kwargs) )
+        self._req.notify_finished( partial(callback, (), **kwargs) )
 assert issubclass(LazyflowRequest, RequestABC)
 
 #*******************************************************************************
@@ -243,13 +221,13 @@ class LazyflowSource( QObject ):
 
         self._orig_outslot = outslot
 
-        # Attach an Op5ifyer to ensure the data will display correctly
-        self._op5 = lazyflow.operators.adaptors.Op5ifyer( graph=outslot.graph )
-        self._op5.input.connect( outslot )
+        # Attach an OpReorderAxes to ensure the data will display correctly
+        self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( graph=outslot.graph )
+        self._op5.Input.connect( outslot )
 
         self._priority = priority
         self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
-        self._op5.output.notifyDirty( self._dirtyCallback )
+        self._op5.Output.notifyDirty( self._dirtyCallback )
         self._op5.externally_managed = True
 
     def __del__(self):
@@ -257,7 +235,9 @@ class LazyflowSource( QObject ):
             self._op5.cleanUp()
             
     def dtype(self):
-        return self._orig_outslot.meta.dtype
+        dtype = self._orig_outslot.meta.dtype
+        assert dtype is not None, "Your LazyflowSource doesn't have a dtype! Is your lazyflow slot properly configured in setupOutputs()?"
+        return dtype
     
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
@@ -442,6 +422,11 @@ class MinMaxSource( QObject ):
         self._rawSource = rawSource
         self._rawSource.isDirty.connect( self.isDirty )
         self._bounds = [1e9,-1e9]
+        
+        self._delayedDirtySignal = QTimer()
+        self._delayedDirtySignal.setSingleShot(True)
+        self._delayedDirtySignal.setInterval(10)
+        self._delayedDirtySignal.timeout.connect( partial(self.setDirty, sl[:,:,:,:,:]) )
             
     @property
     def dataSlot(self):
@@ -458,7 +443,7 @@ class MinMaxSource( QObject ):
         return MinMaxUpdateRequest( rawRequest, self._getMinMax )
 
     def setDirty( self, slicing ):
-        self._rawSource.setDirty( slicing )
+        self.isDirty.emit(slicing)
 
     def __eq__( self, other ):
         equal = True
@@ -477,15 +462,35 @@ class MinMaxSource( QObject ):
         dmin = min(self._bounds[0], dmin)
         dmax = max(self._bounds[1], dmax)
         dirty = False
-        if self._bounds[0]-dmin > 1e-2:
+        if (self._bounds[0]-dmin) > 1e-2:
             dirty = True
-        if dmax-self._bounds[1] > 1e-2:
+        if (dmax-self._bounds[1]) > 1e-2:
             dirty = True
 
         if dirty:
             self._bounds[0] = min(self._bounds[0], dmin)
             self._bounds[1] = max(self._bounds[0], dmax)
             self.boundsChanged.emit(self._bounds)
+
+            # Our min/max have changed, which means we must force the TileProvider to re-request all tiles.
+            # If we simply mark everything dirty now, then nothing changes for the tile we just rendered.
+            # (It was already dirty.  That's why we are rendering it right now.)
+            # And when this data gets back to the TileProvider that requested it, the TileProvider will mark this tile clean again.
+            # To ENSURE that the current tile is marked dirty AFTER the TileProvider has stored this data (and marked the tile clean),
+            #  we'll use a timer to set everything dirty.
+            # This fixes ilastik issue #418
+
+            # Finally, note that before this timer was added, the problem described above occurred at random due to a race condition:
+            # Sometimes the 'dirty' signal was processed BEFORE the data (bad) and sometimes it was processed after the data (good),
+            # due to the fact that the Qt signals are always delivered in the main thread.
+            # Perhaps a better way to fix this would be to store a timestamp in the TileProvider for dirty notifications, which 
+            # could be compared with the request timestamp before clearing the dirty state for each tile.
+
+            # Signal everything dirty with a timer, as described above.            
+            self._delayedDirtySignal.start()
+
+            # Now, that said, we can still give a slightly more snappy response to the OTHER tiles (not this one)
+            # if we immediately tell the TileProvider we are dirty.  This duplicates some requests, but that shouldn't be a big deal.
             self.setDirty( sl[:,:,:,:,:] )
 
 

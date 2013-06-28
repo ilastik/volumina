@@ -245,6 +245,15 @@ class LayerDelegate(QStyledItemDelegate):
             w.layer = layer
             w.setGeometry( option.rect )
             w.setPalette( option.palette )
+            
+            # Manually set alternating background colors for the rows
+            if index.row() % 2 == 0:
+                itemBackgroundColor = self.parent().palette().color(QPalette.Base)
+            else:
+                itemBackgroundColor = self.parent().palette().color(QPalette.AlternateBase)
+            pallete = w.palette()
+            pallete.setColor( QPalette.Window, itemBackgroundColor )
+            w.setPalette(pallete)
             w.render(pic)            
             painter.drawPixmap( option.rect, pic )
         else:
@@ -291,11 +300,6 @@ class LayerDelegate(QStyledItemDelegate):
             layer = itemData[Qt.EditRole].toPyObject()
             assert isinstance(layer, Layer)
 
-    def commitAndCloseEditor(self):
-        editor = sender()
-        self.commitData.emit(editor)
-        self.closeEditor.emit(editor)
-
 class LayerWidget(QListView):
     def __init__(self, parent = None, model=None):
         QListView.__init__(self, parent)
@@ -314,6 +318,7 @@ class LayerWidget(QListView):
         #self.setDragDropOverwriteMode(False)
         self.model().selectionModel.selectionChanged.connect(self.onSelectionChanged)
         QTimer.singleShot(0, self.selectFirstEntry)
+
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Up or event.key() == Qt.Key_Down:

@@ -3,6 +3,7 @@ import vtk
 import numpy
 import colorsys
 # http://www.scipy.org/Cookbook/vtkVolumeRendering
+import threading
 
 NOBJECTS = 256
 
@@ -102,6 +103,8 @@ class RenderingManager(object):
         self.ready = True
 
     def update(self):
+        assert threading.current_thread().name == 'MainThread', \
+            "RenderingManager.update() must be called from the main thread to avoid segfaults."
         for label, color in self._cmap.iteritems():
             self._colorFunc.AddRGBPoint(label, *color)
         self._dataImporter.Modified()
@@ -114,12 +117,14 @@ class RenderingManager(object):
 
     @property
     def volume(self):
-        return self._volume
+        # We store the volume in reverse-transposed form, so un-transpose it when it is accessed.
+        return numpy.transpose(self._volume)
 
     @volume.setter
     def volume(self, value):
-        # transpose to match the wireframe axes
-        self.volume[:] = numpy.transpose(value, range(value.ndim)[::-1])
+        # Must copy here because a reference to self._volume was stored in the pipeline (see setup())
+        # store in reversed-transpose order to match the wireframe axes
+        self._volume[:] = numpy.transpose(value)
 
     def addObject(self, color=None):
         label = self.labelmgr.request()

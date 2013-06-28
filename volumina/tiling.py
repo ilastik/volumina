@@ -592,7 +592,7 @@ class TileProvider( QObject ):
                         rect = self.tiling.imageRects[tile_no]
                         dataRect = self.tiling.scene2data.mapRect(rect)
                         ims_req = ims.request(dataRect, stack_id[1])
-                        if ims.direct:
+                        if ims.direct and not prefetch:
                             # The ImageSource 'ims' is fast (it has the
                             # direct flag set to true) so we process
                             # the request synchronously here. This

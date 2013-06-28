@@ -12,7 +12,7 @@ if hasLazyflow:
     def _createDataSourceLazyflow( slot, withShape ):
         #has to handle Lazyflow source
         src = LazyflowSource(slot)
-        shape = src._op5.output.meta.shape
+        shape = src._op5.Output.meta.shape
         if withShape:
             return src,shape
         else:
