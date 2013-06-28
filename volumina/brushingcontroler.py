@@ -223,8 +223,10 @@ class BrushingControler(QObject):
         newshape.insert(activeView, 1)
         newshape.insert(0, 1)
         newshape.append(1)
-
+        
+        
         #newlabels = numpy.zeros
-
-        self._dataSink.put(slicing, labels.reshape(tuple(newshape)))
-        self.wroteToSink.emit()
+        if self._dataSink!=None:
+            self._dataSink.put(slicing, labels.reshape(tuple(newshape)))
+            self.wroteToSink.emit()
+        
