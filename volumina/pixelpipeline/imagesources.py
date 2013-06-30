@@ -270,7 +270,7 @@ class ColortableImageRequest( object ):
             nmin, nmax = self._normalize
             if nmin:
                 a = a - nmin
-            scale = (len(self._colorTable)-1) / float(nmax - nmin)
+            scale = (len(self._colorTable)-1) / float(nmax - nmin + 1e-35) #if max==min
             if scale != 1.0:
                 a = a * scale
             if len(self._colorTable) <= 2**8:
