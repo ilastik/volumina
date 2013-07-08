@@ -225,7 +225,8 @@ class LazyflowSource( QObject ):
         self._orig_outslot = outslot
 
         # Attach an OpReorderAxes to ensure the data will display correctly
-        self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( parent=outslot.getRealOperator().parent )
+        # (We include the graph parameter, too, since tests sometimes provide an operator with no parent.)
+        self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( parent=outslot.getRealOperator().parent, graph=outslot.getRealOperator().graph )
         self._op5.Input.connect( outslot )
 
         self._priority = priority
