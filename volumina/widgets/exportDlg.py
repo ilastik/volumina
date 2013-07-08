@@ -38,12 +38,19 @@ class Writer(QObject):
     progressSignal = pyqtSignal(float)
     finishedStepSignal = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, inputslot):
         QObject.__init__(self)
         self.graph = Graph()
-        self.stackWriter = OpStackWriter(graph=self.graph)
-        self.h5Writer = OpH5WriterBigDataset(graph=self.graph)
+        # Create our operators as siblings to the slot we are pulling from
+        # (Provide graph, too, in case parent is None for testing purposes.)
+        op_parent = parent=inputslot.getRealOperator().parent
+        op_graph = inputslot.getRealOperator().graph
+        self._op_parent = op_parent
+        self._op_graph = op_graph
+        self.stackWriter = OpStackWriter(parent=inputslot.getRealOperator().parent, graph=op_graph)
+        self.h5Writer = OpH5WriterBigDataset(parent=inputslot.getRealOperator().parent, graph=op_graph)
         self.h5f = None
+        self.inputslot = inputslot
 
     def setupH5Writer(self, h5Group, h5Path):
         self.h5Writer.hdf5Path.setValue(h5Path)
@@ -58,28 +65,28 @@ class Writer(QObject):
         self.stackWriter.Filetype.setValue(fileType)
         self.stackWriter.ImageAxesNames.setValue(imageAxesNames)
 
-    def getStackWriterPreview(self, inputData):
-        self.stackWriter.Image.connect(inputData)
+    def getStackWriterPreview(self):
+        self.stackWriter.Image.connect(self.inputslot)
         if self.stackWriter.FilePattern.ready():
             return self.stackWriter.FilePattern[:].wait()
         else:
             return ""
 
 
-    def write(self, inputData, slicing, ranges, outputDType, fileWriter = "h5", parent = None):
+    def write(self, slicing, ranges, outputDType, fileWriter = "h5", parent = None):
         dlg = MultiStepProgressDialog(parent = parent)
         #thunkEventHandler = ThunkEventHandler(dlg)
         dlg.setNumberOfSteps(2)
         dlg.show()
         #Step1: 
         
-        roi = sliceToRoi(slicing,inputData.meta.shape)
+        roi = sliceToRoi(slicing,self.inputslot.meta.shape)
 
-        subRegion = OpSubRegion(graph = self.graph)
+        subRegion = OpSubRegion(parent=self._op_parent, graph=self._op_graph)
 
         subRegion.Start.setValue(tuple([k for k in roi[0]]))
         subRegion.Stop.setValue(tuple([k for k in roi[1]]))
-        subRegion.Input.connect(inputData)
+        subRegion.Input.connect(self.inputslot)
 
         inputVolume = subRegion
 
@@ -88,7 +95,7 @@ class Writer(QObject):
                    
         if ranges is not None:
 
-            normalizer = OpPixelOperator(graph = self.graph)
+            normalizer = OpPixelOperator(parent=self._op_parent, graph=self._op_graph)
             normalizer.Input.connect(inputVolume.Output)
 
             minVal,maxVal = ranges[0]
@@ -102,8 +109,8 @@ class Writer(QObject):
             normalizer.Function.setValue(normalize)
             inputVolume = normalizer
         
-        elif outputDType != inputData.meta.dtype:
-            converter = OpPixelOperator(graph = self.graph)
+        elif outputDType != self.inputslot.meta.dtype:
+            converter = OpPixelOperator(parent=self._op_parent, graph=self._op_graph)
             
             def convertToType(val):
                 return outputDType(val)
@@ -161,7 +168,7 @@ class Writer(QObject):
 class ExportDialog(QDialog):
     
     
-    def __init__(self, parent=None, layername = "Untitled"):
+    def __init__(self, parent, inputslot, layername = "Untitled"):
         QDialog.__init__(self, parent)
         if not _has_lazyflow:
             QDialog.setEnabled(self,False)
@@ -172,10 +179,17 @@ class ExportDialog(QDialog):
         self.initUic()
         p = os.path.split(__file__)[0]+'/'
         if p == "/": p = "."+p
-        self.writer = Writer()
+        self.writer = Writer(inputslot)
         #self.valueRangeDialog = uic.loadUi(p+"ui/valueRangeDialog.ui", self)
         #self.valueRangeDialog.show()
 
+        self.input = inputslot
+        self.setVolumeShapeInfo()
+        self.setRoiWidgets()
+        self.setAvailableImageAxes()
+        #self.setRegExToLineEditOutputShape()
+        self.setDefaultComboBoxHdf5DataType()
+        #self.validateRoi()
 
     def initUic(self):
         p = os.path.split(__file__)[0]+'/'
@@ -216,15 +230,6 @@ class ExportDialog(QDialog):
 #===============================================================================
 # set input data informations
 #===============================================================================
-    def setInput(self, inputSlot):
-        self.input = inputSlot
-        self.setVolumeShapeInfo()
-        self.setRoiWidgets()
-        self.setAvailableImageAxes()
-        #self.setRegExToLineEditOutputShape()
-        self.setDefaultComboBoxHdf5DataType()
-        #self.validateRoi()
-        
 
     def validateStackPath(self):
         oldPath = self.lineEditStackPath.displayText()
@@ -255,7 +260,7 @@ class ExportDialog(QDialog):
         pattern = [""]
         if hasattr(self, "input"):
             self.setupStackWriter()
-            pattern = self.writer.getStackWriterPreview(self.input)
+            pattern = self.writer.getStackWriterPreview()
         #self.stackWriter.Input.disconnect()
         placeholders = re.findall("%04d", pattern[0])
         insertedPattern = pattern[0] % tuple([0 for i in xrange(len(placeholders))])
@@ -580,7 +585,7 @@ class ExportDialog(QDialog):
             self.writer.setupH5Writer(str(self.lineEditH5FilePath.displayText()),
                                      str(self.lineEditH5DataPath.displayText()))
 
-        retval = self.writer.write(self.input, slicing, ranges, outputDType,
+        retval = self.writer.write(slicing, ranges, outputDType,
                                    fileWriter, parent = self)
         return QDialog.accept(self, *args, **kwargs)
 
@@ -615,11 +620,9 @@ if __name__ == '__main__':
     arr = vigra.Volume((600,800,400, 3), dtype=numpy.uint8)
     arr[:] = numpy.random.random_sample(arr.shape)
     a = OpArrayPiper(graph=g)
-    w = Writer()
     a.Input.setValue(arr)
     
-    d = ExportDialog()
-    d.setInput(a.Output)
+    d = ExportDialog(None, inputslot=a.Output)
     
     d.show()
     app.exec_()

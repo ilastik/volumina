@@ -98,7 +98,6 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
             raise RuntimeError("can not export from a non-lazyflow data source (layer=%r, datasource=%r)" % (type(layer), type(layer.datasources[0])) )
 
 
-        expDlg = ExportDialog(parent = menu, layername = layer.name)
         if not _has_lazyflow:
             raise RuntimeError("lazyflow not installed") 
         import lazyflow
@@ -112,8 +111,7 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         op.Images.resize(len(dataSlots))
         for i,islot in enumerate(op.Images):
             islot.connect(dataSlots[i])
-        expDlg.setInput(op.Output)
-
+        expDlg = ExportDialog(parent=menu, inputslot=op.Output, layername=layer.name)
         expDlg.show()
         
     menu = QMenu("Menu", parent)
