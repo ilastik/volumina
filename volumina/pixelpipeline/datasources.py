@@ -66,6 +66,9 @@ class ArraySource( QObject ):
         super(ArraySource, self).__init__()
         self._array = array
         
+    def clean_up(self):
+        self._array = None
+
     def dtype(self):
         return self._array.dtype
 
@@ -222,13 +225,17 @@ class LazyflowSource( QObject ):
         self._orig_outslot = outslot
 
         # Attach an OpReorderAxes to ensure the data will display correctly
-        self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( graph=outslot.graph )
+        self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( parent=outslot.getRealOperator().parent )
         self._op5.Input.connect( outslot )
 
         self._priority = priority
         self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
         self._op5.Output.notifyDirty( self._dirtyCallback )
         self._op5.externally_managed = True
+
+    def clean_up(self):
+        self._op5.cleanUp()
+        self._op5 = None
 
     def __del__(self):
         if self._op5 is not None:
@@ -246,6 +253,7 @@ class LazyflowSource( QObject ):
             volumina.printLock.release()
         if not is_pure_slicing(slicing):
             raise Exception('LazyflowSource: slicing is not pure')
+        assert self._op5 is not None, "Underlying operator is None.  Are you requesting from a datasource that has been cleaned up already?"
         return LazyflowRequest( self._op5, slicing, self._priority, objectName=self.objectName() )
 
     def _setDirtyLF(self, slot, roi):
@@ -306,7 +314,7 @@ class LazyflowSinkSource( LazyflowSource ):
 class ConstantRequest( object ):
     def __init__( self, result ):
         self._result = result
-
+        
     def wait( self ):
         return self._result
     
@@ -348,6 +356,9 @@ class ConstantSource( QObject ):
         super(ConstantSource, self).__init__(parent=parent)
         self._constant = constant
         self._dtype = dtype
+
+    def clean_up(self):
+        pass
 
     def id( self ):
         return id(self)
@@ -428,6 +439,9 @@ class MinMaxSource( QObject ):
         self._delayedDirtySignal.setInterval(10)
         self._delayedDirtySignal.timeout.connect( partial(self.setDirty, sl[:,:,:,:,:]) )
             
+    def clean_up(self):
+        self._rawSource.clean_up()
+
     @property
     def dataSlot(self):
         if hasattr(self._rawSource, "_orig_outslot"):

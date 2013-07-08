@@ -63,6 +63,10 @@ class LayerStackModel(QAbstractListModel):
             self.stackCleared.emit()
 
     def insert(self, index, data):
+        """
+        Insert a layer into this layer stack, which *takes ownership* of the layer.
+        """
+        assert isinstance(data, Layer), "Only Layers can be added to a LayerStackModel"
         self.insertRow(index)
         self.setData(self.index(index), data)
         if self.selectedRow() >= 0:
@@ -88,6 +92,10 @@ class LayerStackModel(QAbstractListModel):
             self.selectionModel.select(self.index(0), QItemSelectionModel.Select)
         self.layerRemoved.emit( layer, row.row() )
         self.updateGUI()
+        
+        # Layerstacks *own* the layers they hold, and thus are 
+        #  responsible for cleaning them up when they are removed:
+        layer.clean_up()
 
     @pyqtSignature("moveSelectedUp()")
     def moveSelectedUp(self):

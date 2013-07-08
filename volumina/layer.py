@@ -141,6 +141,7 @@ class Layer( QObject ):
         self._channel = 0
         self.direct = direct
         self._toolTip = ""
+        self._cleaned_up = False
 
         if self.direct:
             #in direct mode, we calculate the average time per tile for debug purposes
@@ -155,6 +156,16 @@ class Layer( QObject ):
         self.channelChanged.connect(self.changed)
 
         self.contexts = []
+
+    def clean_up(self):
+        """
+        Cleans up resources in this layer's datasources.
+        Must not be called more than once.
+        """
+        for src in self.datasources:
+            if src is not None:
+                src.clean_up()
+        self._cleaned_up = True
 
         
 #*******************************************************************************

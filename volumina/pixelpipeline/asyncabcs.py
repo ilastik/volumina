@@ -60,3 +60,6 @@ class SourceABC:
     def __ne__( self, other ):
         raise NotImplementedError
     
+    @abstractmethod
+    def clean_up(self):
+        pass
