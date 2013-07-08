@@ -377,16 +377,16 @@ class LayerWidget(QListView):
         super(LayerWidget, self).mousePressEvent(event)
 
         # HACK: The first click merely gives focus to the list item without actually passing the event to it.
-        # We'll simulate a mouse click on the item by calling mousePressEvent() and mouseReleaseEvent on the appropriate editor
+        # We'll simulate a mouse click on the item by sending a duplicate pair of QMouseEvent press/release events to the appropriate widget.
         if prevIndex != newIndex and newIndex.row() != -1:
             layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
             assert isinstance(layer, Layer)
             hitWidget = QApplication.widgetAt(event.globalPos())
             hitWidgetPos = event.pos() - hitWidget.geometry().topLeft()
             hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, hitWidgetPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
-            hitWidget.mousePressEvent(hitWidgetPress)
+            QApplication.instance().sendEvent(hitWidget, hitWidgetPress)
             hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, hitWidgetPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
-            hitWidget.mouseReleaseEvent(hitWidgetRelease)
+            QApplication.instance().sendEvent(hitWidget, hitWidgetRelease)
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
