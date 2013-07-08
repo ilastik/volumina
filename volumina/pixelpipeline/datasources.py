@@ -416,14 +416,15 @@ class MinMaxUpdateRequest( object ):
 assert issubclass(MinMaxUpdateRequest, RequestABC)
 
 
-
-
 class MinMaxSource( QObject ):
     """
     A datasource that serves as a normalizing decorator for other datasources.
     """
     isDirty = pyqtSignal( object )
     boundsChanged = pyqtSignal(object) # When a new min/max is discovered in the result of a request, this signal is fired with the new (dmin, dmax)
+    
+    _delayedBoundsChange = pyqtSignal() # Internal use only.  Allows non-main threads to start the delayedDirtySignal timer.
+    
     
     def __init__( self, rawSource, parent=None ):
         """
@@ -439,10 +440,11 @@ class MinMaxSource( QObject ):
         self._delayedDirtySignal.setSingleShot(True)
         self._delayedDirtySignal.setInterval(10)
         self._delayedDirtySignal.timeout.connect( partial(self.setDirty, sl[:,:,:,:,:]) )
-            
+        self._delayedBoundsChange.connect(self._delayedDirtySignal.start)
+
     def clean_up(self):
         self._rawSource.clean_up()
-
+            
     @property
     def dataSlot(self):
         if hasattr(self._rawSource, "_orig_outslot"):
@@ -502,14 +504,11 @@ class MinMaxSource( QObject ):
             # could be compared with the request timestamp before clearing the dirty state for each tile.
 
             # Signal everything dirty with a timer, as described above.            
-            self._delayedDirtySignal.start()
+            self._delayedBoundsChange.emit()
 
             # Now, that said, we can still give a slightly more snappy response to the OTHER tiles (not this one)
             # if we immediately tell the TileProvider we are dirty.  This duplicates some requests, but that shouldn't be a big deal.
             self.setDirty( sl[:,:,:,:,:] )
-    
-    def resetBounds(self):
-        self._bounds = [1e9,-1e9]
 
 
 assert issubclass(MinMaxSource, SourceABC)
