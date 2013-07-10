@@ -82,7 +82,7 @@ if has_dependencies:
 
             self.ss = SliceSource( self.ds, projectionAlongTZC )
 
-            self.layer = GrayscaleLayer(self.ds)
+            self.layer = GrayscaleLayer(self.ds, normalize = False)
             self.layerstack.append(self.layer)
             self.ims = imsfac.createImageSource( self.layer, [self.ss] )
             self.sims.register(self.layer, self.ims)

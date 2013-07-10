@@ -57,6 +57,7 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         self.GRAY = 201
         self.ds = ConstantSource(self.GRAY)
         self.layer = GrayscaleLayer( self.ds )
+        self.layer.set_normalize(0, False)
         self.layerstack.append(self.layer)
         self.ims = imsfac.createImageSource( self.layer, [self.ds] )
         self.sims.register(self.layer, self.ims)

@@ -56,15 +56,15 @@ class TileProviderTest( ut.TestCase ):
         self.GRAY3 = 190
         self.ds3 = ConstantSource( self.GRAY3 )
 
-        self.layer1 = GrayscaleLayer( self.ds1 )
+        self.layer1 = GrayscaleLayer( self.ds1, normalize = False )
         self.layer1.visible = False
         self.layer1.opacity = 0.1
         self.ims1 = GrayscaleImageSource( self.ds1, self.layer1 )
-        self.layer2 = GrayscaleLayer( self.ds2 )
+        self.layer2 = GrayscaleLayer( self.ds2, normalize = False )
         self.layer2.visible = True
         self.layer2.opacity = 0.3
         self.ims2 = GrayscaleImageSource( self.ds2, self.layer2 )
-        self.layer3 = GrayscaleLayer( self.ds3 )
+        self.layer3 = GrayscaleLayer( self.ds3, normalize = False )
         self.layer3.visible = True
         self.layer3.opacity = 1.0
         self.ims3 = GrayscaleImageSource( self.ds3, self.layer3 )
@@ -132,7 +132,7 @@ class DirtyPropagationTest( ut.TestCase ):
         self.layer1.visible = True
         self.layer1.opacity = 1.0
 
-        self.layer2 = GrayscaleLayer( self.ds2 )
+        self.layer2 = GrayscaleLayer( self.ds2, normalize=False )
 
         self.lsm = LayerStackModel()
         self.pump = ImagePump( self.lsm, SliceProjection(), sync_along=(0,1,2) )
