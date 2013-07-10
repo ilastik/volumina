@@ -229,7 +229,10 @@ class NormalizableLayer( Layer ):
         '''
         value -- (rmin, rmax)
         '''
-        self._range[datasourceIdx] = value
+        if value is not None:
+            self._range[datasourceIdx] = value
+        else:
+            value = self._range[datasourceIdx] = dtype_to_default_normalize(self._datasources[datasourceIdx])
         self.rangeChanged.emit(datasourceIdx, value[0], value[1])
     
     @property
@@ -241,9 +244,15 @@ class NormalizableLayer( Layer ):
         value -- (nmin, nmax)
         value -- None : grabs (min, max) from the MinMaxSource
         '''
+        if self._datasources[datasourceIdx] is None:
+            return
+        
         if value is None:
             value = self._datasources[datasourceIdx]._bounds
             self._autoMinMax[datasourceIdx] = True
+        if value is False:
+            value = self._range[datasourceIdx]
+            self._autoMinMax[datasourceIdx] = False
         else:
             self._autoMinMax[datasourceIdx] = False
         self._normalize[datasourceIdx] = value 
@@ -270,13 +279,12 @@ class NormalizableLayer( Layer ):
                 self._autoMinMax.append(normalize is None) # Don't auto-set normalization if the caller provided one.
                 mmSource = MinMaxSource(datasource)
                 self._datasources[i] = mmSource
-                range = range or dtype_to_default_normalize(datasource)
-                if normalize is None:
-                    normalize = dtype_to_default_normalize(datasource)
-                self._normalize.append(normalize)
-                self._range.append(range)
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
                 self._mmSources.append(mmSource)
+                self._normalize.append(normalize)
+                self._range.append(range)
+                self.set_range(i, range)
+                self.set_normalize(i, normalize)
             else:
                 self._normalize.append((0,1))
                 self._range.append((0,1))
@@ -386,7 +394,8 @@ class ColortableLayer( NormalizableLayer ):
 
         if normalize is 'auto':
             normalize = None
-        super(ColortableLayer, self).__init__([datasource], normalize=normalize, direct=direct)
+        range = (0,len(colorTable)-1)
+        super(ColortableLayer, self).__init__([datasource], range = range, normalize=normalize, direct=direct)
         self.data = datasource
         self._colorTable = colorTable
         
