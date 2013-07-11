@@ -26,6 +26,7 @@ class DirtyIndicator(QGraphicsItem):
     def __init__(self, tiling, delay=datetime.timedelta( milliseconds=1000 ) ):
         QGraphicsItem.__init__(self, parent=None)
         self.delay = delay
+        self.setFlags(QGraphicsItem.ItemUsesExtendedStyleOption)
 
         self._tiling = tiling
         self._indicate = numpy.zeros(len(tiling))
@@ -41,17 +42,25 @@ class DirtyIndicator(QGraphicsItem):
         painter.setOpacity(0.5)
         painter.setBrush(QBrush(dirtyColor, Qt.SolidPattern))
         painter.setPen(dirtyColor)
+        
+        intersected = self._tiling.intersected(option.exposedRect)
+        
+        #print "pies are painting at ", option.exposedRect
 
-        for i,p in enumerate(self._tiling.tileRectFs):
+        progress = 0.0
+        for i in intersected:
+            progress += self._indicate[i]
+            
             if not(self._indicate[i] < 1.0): # only paint for less than 100% progress
                 continue
-
+            
             # Don't show unless a delay time has passed since the tile progress was reset.
             delta = datetime.datetime.now() - self._zeroProgressTimestamp[i]
             if delta < self.delay:
                 t = QTimer.singleShot(int(delta.total_seconds()*1000.0), self.update)
                 continue
 
+            p = self._tiling.tileRectFs[i]
             w,h = p.width(), p.height()
             r = min(w,h)
             rectangle = QRectF(p.center()-QPointF(r/4,r/4), QSizeF(r/2, r/2));
@@ -60,6 +69,8 @@ class DirtyIndicator(QGraphicsItem):
             painter.drawPie(rectangle, startAngle, spanAngle)
 
         painter.restore()
+        
+        #print "progress of %d tiles " % len(intersected), progress/float(len(intersected))
 
     def setTileProgress(self, tileId, progress):
         self._indicate[tileId] = progress
@@ -69,7 +80,7 @@ class DirtyIndicator(QGraphicsItem):
                 self._last_zero = True
         else:
             self._last_zero = False
-        self.update()
+        self.update(self._tiling.tileRectFs[tileId])
 
 #*******************************************************************************
 # I m a g e S c e n e 2 D                                                      *
