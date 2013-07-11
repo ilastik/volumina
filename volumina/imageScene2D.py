@@ -29,25 +29,24 @@ class DirtyIndicator(QGraphicsItem):
 
         self._tiling = tiling
         self._indicate = numpy.zeros(len(tiling))
-        self._zeroProgressTimestamp = [None] * len(tiling)
+        self._zeroProgressTimestamp = [datetime.datetime.now()] * len(tiling)
 
     def boundingRect(self):
         return self._tiling.boundingRectF()
 
     def paint(self, painter, option, widget):
+        painter.save()
         dirtyColor = QColor(255,0,0)
         painter.setOpacity(0.5)
-        painter.save()
         painter.setBrush(QBrush(dirtyColor, Qt.SolidPattern))
         painter.setPen(dirtyColor)
 
         for i,p in enumerate(self._tiling.tileRectFs):
-            if self._indicate[i] == 1.0:
+            if not(self._indicate[i] < 1.0): # only paint for less than 100% progress
                 continue
 
-            # Don't show unless 1000 millisecs have passed since the tile progress was reset.
-            startTime = self._zeroProgressTimestamp[i]
-            if startTime is not None and datetime.datetime.now() - startTime < self.delay:
+            # Don't show unless a delay time has passed since the tile progress was reset.
+            if (datetime.datetime.now() - self._zeroProgressTimestamp[i]) < self.delay:
                 continue
 
             w,h = p.width(), p.height()
@@ -61,9 +60,7 @@ class DirtyIndicator(QGraphicsItem):
 
     def setTileProgress(self, tileId, progress):
         self._indicate[tileId] = progress
-        if progress > 0.0:
-            self._zeroProgressTimestamp[tileId] = None
-        elif self._zeroProgressTimestamp[tileId] is None:
+        if not (progress > 0.0):
             self._zeroProgressTimestamp[tileId] = datetime.datetime.now()
         self.update()
 

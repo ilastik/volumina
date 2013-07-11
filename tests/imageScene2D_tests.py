@@ -1,18 +1,93 @@
 import unittest as ut
 import os
+import time, datetime
 
-from PyQt4.QtGui import QImage, QPainter, QApplication
+from PyQt4.QtGui import QImage, QPainter, QApplication, QPicture
 
 from qimage2ndarray import byte_view
 import numpy as np
 
-from volumina.imageScene2D import ImageScene2D
+from volumina.imageScene2D import ImageScene2D, DirtyIndicator
 from volumina.positionModel import PositionModel
 from volumina.pixelpipeline.datasources import ConstantSource
 from volumina.pixelpipeline.imagepump import StackedImageSources
+from volumina.tiling import Tiling
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 import volumina.pixelpipeline.imagesourcefactories as imsfac
+
+class DirtyIndicatorTest( ut.TestCase ):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = None
+        if QApplication.instance():
+            cls.app = QApplication.instance()
+        else:
+            cls.app = QApplication([], False)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.app
+
+    def testPaintDelay( self ):
+        t = Tiling((100, 100))
+        assert( len(t.tileRectFs) == 1 )
+
+        delay=datetime.timedelta(milliseconds=300)
+        # fudge should prevent hitting the delay time exactly
+        # during the while loops below;
+        # if your computer is verrry slow and the fudge too small
+        # the test will fail...
+        fudge=datetime.timedelta(milliseconds=50)
+        d = DirtyIndicator( t, delay=delay )
+
+        # make the image a little bit larger to accomodate the tile overlap
+        img = QImage(110,110,QImage.Format_ARGB32_Premultiplied)
+        img.fill(0)
+        img_saved = QImage(img)
+
+        painter = QPainter()
+
+        start = datetime.datetime.now()
+        d.setTileProgress( 0, 0 ) # resets delay timer
+
+        # 1. do not update the progress during the delay time
+        actually_checked = False
+        while( datetime.datetime.now() - start < delay - fudge ):
+            # nothing should be painted
+            self.assertEqual( img, img_saved )
+            actually_checked = True
+        self.assertTrue(actually_checked)
+        time.sleep(fudge.total_seconds()*2)
+        # after the delay, the pie chart is painted
+        painter.begin(img)
+        d.paint( painter, None, None )
+        self.assertNotEqual( img, img_saved )
+        painter.end()
+
+        # 2. update the progress during delay (this exposed a bug:
+        #    the delay was ignored in that case and the pie chart
+        #    painted nevertheless)
+        img.fill(0)
+        start = datetime.datetime.now()
+        d.setTileProgress( 0, 0 ) # resets delay timer
+
+        actually_checked = False
+        while( datetime.datetime.now() - start < delay - fudge ):
+            # the painted during the delay time should have no effect
+            painter.begin(img)
+            d.setTileProgress( 0, 0.5 )
+            d.paint( painter, None, None )
+            painter.end()
+            self.assertEqual( img, img_saved )
+            actually_checked = True
+        self.assertTrue(actually_checked)
+        time.sleep(fudge.total_seconds()*2)
+        # now the pie should be painted
+        painter.begin(img)
+        d.paint( painter, None, None )
+        self.assertNotEqual( img, img_saved )
+        painter.end()
 
 class ImageScene2DTest( ut.TestCase ):
 
