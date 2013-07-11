@@ -68,11 +68,13 @@ class DirtyIndicatorTest( ut.TestCase ):
         # 2. update the progress during delay (this exposed a bug:
         #    the delay was ignored in that case and the pie chart
         #    painted nevertheless)
+        d = DirtyIndicator( t, delay=delay )
         img.fill(0)
         start = datetime.datetime.now()
         d.setTileProgress( 0, 0 ) # resets delay timer
 
         actually_checked = False
+        self.assertEqual(img, img_saved) # precondition
         while( datetime.datetime.now() - start < delay - fudge ):
             # the painted during the delay time should have no effect
             painter.begin(img)
