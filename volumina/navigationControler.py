@@ -307,7 +307,8 @@ class NavigationControler(QObject):
         if not self._positionValid(newPos):
             return
 
-        self._model.slicingPos = newPos
+        # pos must not be float.
+        self._model.slicingPos = map(int, newPos)
         self.panSlicingViews( newPos, filter( lambda a: a != axis, [0,1,2] ) )
 
     def panSlicingViews(self, point3d, axes):

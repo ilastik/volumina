@@ -84,7 +84,8 @@ class LayerStackModel(QAbstractListModel):
 
     @pyqtSignature("deleteSelected()")
     def deleteSelected(self):
-        assert len(self.selectionModel.selectedRows()) == 1
+        num_rows = len(self.selectionModel.selectedRows())
+        assert num_rows == 1, "Can't delete selected row: {} layers are currently selected.".format( num_rows )
         row = self.selectionModel.selectedRows()[0]
         layer = self._layerStack[row.row()]
         self.removeRow(row.row())

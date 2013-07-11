@@ -62,18 +62,21 @@ class ImageView2DDockWidget(QWidget):
         
     def undockView(self):
         self._isDocked = False
-        self.graphicsView._hud.dockButton.setIcon('dock')
-        self.graphicsView._hud.maxButton.setEnabled(False)
+        if hasattr(self.graphicsView, '_hud'):
+            self.graphicsView._hud.dockButton.setIcon('dock')
+            self.graphicsView._hud.maxButton.setEnabled(False)
         
         self.removeGraphicsView()
         self.windowForGraphicsView.layout.addWidget(self.graphicsView)
-        self.windowForGraphicsView.show()
+        self.windowForGraphicsView.showMaximized() #supersize me
+        self.windowForGraphicsView.setWindowTitle("ilastik")
         self.windowForGraphicsView.raise_()
     
     def dockView(self):
         self._isDocked = True
-        self.graphicsView._hud.dockButton.setIcon('undock')
-        self.graphicsView._hud.maxButton.setEnabled(True)
+        if hasattr(self.graphicsView, '_hud'):
+            self.graphicsView._hud.dockButton.setIcon('undock')
+            self.graphicsView._hud.maxButton.setEnabled(True)
         
         self.windowForGraphicsView.layout.removeWidget(self.graphicsView)
         self.windowForGraphicsView.hide()
@@ -81,11 +84,13 @@ class ImageView2DDockWidget(QWidget):
         
     def maximizeView(self):
         self._isMaximized = True
-        self.graphicsView._hud.maxButton.setIcon('minimize')
+        if hasattr(self.graphicsView, '_hud'):
+            self.graphicsView._hud.maxButton.setIcon('minimize')
         
     def minimizeView(self):
         self._isMaximized = False
-        self.graphicsView._hud.maxButton.setIcon('maximize')
+        if hasattr(self.graphicsView, '_hud'):
+            self.graphicsView._hud.maxButton.setIcon('maximize')
 
 class QuadView(QWidget):
     def __init__(self, parent, view1, view2, view3, view4 = None):
@@ -179,9 +184,8 @@ class QuadView(QWidget):
             self.splitHorizontal2.setSizes([wLeft, wRight])
         
     def eventFilter(self, obj, event):
-        if(event.type()==QEvent.WindowActivate):
+        if(event.type() in [QEvent.WindowActivate, QEvent.Show]):
             self._synchronizeSplitter()
-            return True
         return False
 
     def _synchronizeSplitter(self):

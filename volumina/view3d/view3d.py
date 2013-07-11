@@ -310,6 +310,10 @@ class OverviewScene(QWidget):
         bAnaglyph.setIcon(QIcon(':icons/icons/3d_glasses.png'))
         bAnaglyph.setToolTip("Show in anaglyph 3D")
         bAnaglyph.setCheckable(True); bAnaglyph.setChecked(False)
+        
+        self.bUndock = QToolButton()
+        self.bUndock.setIcon(QIcon(":/icons/icons/arrow_up.png"))
+        self.bUndock.setToolTip("Dock/undock this view")
        
         '''
         bCutter = QToolButton()
@@ -325,6 +329,7 @@ class OverviewScene(QWidget):
         hbox.addWidget(b2)
         hbox.addWidget(b3)
         hbox.addWidget(bAnaglyph)
+        hbox.addWidget(self.bUndock)
         #hbox.addWidget(bCutter)
         hbox.addStretch()
         #hbox.addWidget(bExportMesh)
