@@ -22,8 +22,11 @@ class DirtyIndicator(QGraphicsItem):
     not yet computed/up to date. The number of layer tiles still missing is
     indicated by a 'pie' chart.
     """
-    def __init__(self, tiling):
+
+    def __init__(self, tiling, delay=datetime.timedelta( milliseconds=1000 ) ):
         QGraphicsItem.__init__(self, parent=None)
+        self.delay = delay
+
         self._tiling = tiling
         self._indicate = numpy.zeros(len(tiling))
         self._zeroProgressTimestamp = [None] * len(tiling)
@@ -44,7 +47,7 @@ class DirtyIndicator(QGraphicsItem):
 
             # Don't show unless 1000 millisecs have passed since the tile progress was reset.
             startTime = self._zeroProgressTimestamp[i]
-            if startTime is not None and datetime.datetime.now() - startTime < datetime.timedelta(milliseconds=1000):
+            if startTime is not None and datetime.datetime.now() - startTime < self.delay:
                 continue
 
             w,h = p.width(), p.height()
