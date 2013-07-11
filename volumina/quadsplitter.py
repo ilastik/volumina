@@ -179,9 +179,8 @@ class QuadView(QWidget):
             self.splitHorizontal2.setSizes([wLeft, wRight])
         
     def eventFilter(self, obj, event):
-        if(event.type()==QEvent.WindowActivate):
+        if(event.type() in [QEvent.WindowActivate, QEvent.Show]):
             self._synchronizeSplitter()
-            return True
         return False
 
     def _synchronizeSplitter(self):
