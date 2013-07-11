@@ -1,6 +1,6 @@
 import numpy, math
 
-from PyQt4.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, SIGNAL
+from PyQt4.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, SIGNAL, QTimer
 from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QGraphicsItem, \
                         QGraphicsItemGroup, QGraphicsLineItem, QGraphicsTextItem, QGraphicsPolygonItem, \
                         QGraphicsRectItem
@@ -30,6 +30,7 @@ class DirtyIndicator(QGraphicsItem):
         self._tiling = tiling
         self._indicate = numpy.zeros(len(tiling))
         self._zeroProgressTimestamp = [datetime.datetime.now()] * len(tiling)
+        self._last_zero = False
 
     def boundingRect(self):
         return self._tiling.boundingRectF()
@@ -46,7 +47,9 @@ class DirtyIndicator(QGraphicsItem):
                 continue
 
             # Don't show unless a delay time has passed since the tile progress was reset.
-            if (datetime.datetime.now() - self._zeroProgressTimestamp[i]) < self.delay:
+            delta = datetime.datetime.now() - self._zeroProgressTimestamp[i]
+            if delta < self.delay:
+                t = QTimer.singleShot(int(delta.total_seconds()*1000.0), self.update)
                 continue
 
             w,h = p.width(), p.height()
@@ -61,7 +64,11 @@ class DirtyIndicator(QGraphicsItem):
     def setTileProgress(self, tileId, progress):
         self._indicate[tileId] = progress
         if not (progress > 0.0):
-            self._zeroProgressTimestamp[tileId] = datetime.datetime.now()
+            if not self._last_zero:
+                self._zeroProgressTimestamp[tileId] = datetime.datetime.now()
+                self._last_zero = True
+        else:
+            self._last_zero = False
         self.update()
 
 #*******************************************************************************
