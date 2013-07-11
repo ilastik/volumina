@@ -240,8 +240,8 @@ class BrushingControler(QObject):
         slicingPos = self._positionModel.slicingPos
         t, c       = self._positionModel.time, self._positionModel.channel
 
-        slicing = [slice(brushStrokeOffset.x(), brushStrokeOffset.x()+labels.shape[0]), \
-                   slice(brushStrokeOffset.y(), brushStrokeOffset.y()+labels.shape[1])]
+        slicing = [slice(int(brushStrokeOffset.x()), int(brushStrokeOffset.x())+labels.shape[0]), \
+                   slice(int(brushStrokeOffset.y()), int(brushStrokeOffset.y())+labels.shape[1])]
         slicing.insert(activeView, slice(slicingPos[activeView], slicingPos[activeView]+1))
         slicing = (slice(t,t+1),) + tuple(slicing) + (slice(c,c+1),)
 
