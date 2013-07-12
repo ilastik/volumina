@@ -2,7 +2,7 @@ import unittest as ut
 import os
 import time, datetime
 
-from PyQt4.QtGui import QImage, QPainter, QApplication, QPicture
+from PyQt4.QtGui import QImage, QPainter, QApplication, QPicture, QStyleOptionGraphicsItem
 
 from qimage2ndarray import byte_view
 import numpy as np
@@ -47,6 +47,8 @@ class DirtyIndicatorTest( ut.TestCase ):
         img_saved = QImage(img)
 
         painter = QPainter()
+        style = QStyleOptionGraphicsItem()
+        style.exposedRect = t.tileRectFs[0]
 
         start = datetime.datetime.now()
         d.setTileProgress( 0, 0 ) # resets delay timer
@@ -61,7 +63,7 @@ class DirtyIndicatorTest( ut.TestCase ):
         time.sleep(fudge.total_seconds()*2)
         # after the delay, the pie chart is painted
         painter.begin(img)
-        d.paint( painter, None, None )
+        d.paint( painter, style, None )
         self.assertNotEqual( img, img_saved )
         painter.end()
 
@@ -79,7 +81,7 @@ class DirtyIndicatorTest( ut.TestCase ):
             # the painted during the delay time should have no effect
             painter.begin(img)
             d.setTileProgress( 0, 0.5 )
-            d.paint( painter, None, None )
+            d.paint( painter, style, None )
             painter.end()
             self.assertEqual( img, img_saved )
             actually_checked = True
@@ -87,7 +89,7 @@ class DirtyIndicatorTest( ut.TestCase ):
         time.sleep(fudge.total_seconds()*2)
         # now the pie should be painted
         painter.begin(img)
-        d.paint( painter, None, None )
+        d.paint( painter, style, None )
         self.assertNotEqual( img, img_saved )
         painter.end()
 
