@@ -175,8 +175,8 @@ class ImageScene2D_RenderTest( ut.TestCase ):
 
         self.layer.visible = False
         aimg = self.renderScene(self.scene)
-        self.assertTrue(np.all(aimg[:,:,0:3] == 0)) # all white
-        self.assertTrue(np.all(aimg[:,:,3] == 0))
+        self.assertTrue(np.all(aimg[:,:,0:3] == 255)) # all white
+        self.assertTrue(np.all(aimg[:,:,3] == 255))
 
         self.layer.visible = True
         aimg = self.renderScene(self.scene)

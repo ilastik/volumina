@@ -371,6 +371,9 @@ class ImageScene2D(QGraphicsScene):
             #See also ilastik issue #132 and tests/lazy_test.py
             if tile.qimg is not None:
                 painter.drawImage(tile.rectF, tile.qimg)
+            else:
+                painter.fillRect(tile.rectF, QColor(255,255,255,255))
+
             if tile.progress < 1.0:
                 allComplete = False
             if self._showTileProgress:
