@@ -195,7 +195,11 @@ class LayerItemWidget( QWidget ):
 
     def _onEyeToggle( self, active ):
         if self._layer and (active != self._layer.visible):
-            self._layer.visible = active
+            
+            if self._layer._allowToggleVisible:
+                self._layer.visible = active
+            else:
+                self.toggleEye.setActive(True)
 
     def _onChannelChanged( self, channel ):
         if self._layer and (channel != self._layer.channel):

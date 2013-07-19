@@ -40,13 +40,14 @@ class Layer( QObject ):
         return self._visible
     @visible.setter
     def visible( self, value ):
-        if value != self._visible:
+        if value != self._visible and self._allowToggleVisible:
             self._visible = value
             self.visibleChanged.emit( value )
-
+    
     def toggleVisible(self):
         """Convenience function."""
-        self.visible = not self._visible
+        if self._allowToggleVisible:
+            self.visible = not self._visible
 
     @property
     def opacity( self ):
@@ -138,6 +139,7 @@ class Layer( QObject ):
         self._datasources = []
         self._layerId = None
         self._numberOfChannels = 1
+        self._allowToggleVisible = True
         self._channel = 0
         self.direct = direct
         self._toolTip = ""
