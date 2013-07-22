@@ -208,7 +208,7 @@ def dtype_to_default_normalize(dsource):
         dtype = numpy.uint8
     if isinstance(dtype, numpy.dtype):
         dtype = dtype.type
-    if dtype is int or issubclass(dtype, numpy.integer):
+    if issubclass(dtype, (int, long, numpy.integer)):
         normalize = (0, numpy.iinfo(dtype).max)
     elif dtype == numpy.float32:
         normalize = (0,255)
