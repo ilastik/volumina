@@ -59,6 +59,19 @@ def jetTransparent(N=256):
         colortable[i] = color.rgba()
     return colortable
 
+#A jet colortable for the first half, only increasing in opacity for the second
+def partlyJetTransparent(N=256, ratio = 2./3):
+    colortable = matplotlib_to_qt4_colortable("jet", N=int(ratio * N), asLong = False)
+    #colortable[0] = QColor(0,0,0,0)
+    maxCol = colortable[-1]
+    for i in range(int(ratio * N), 2 * N):
+        colortable.append(maxCol)
+    for i,color in enumerate(colortable):
+        color = colortable[i]
+        color.setAlpha(min(int(i/ ratio),255))
+        colortable[i] = color.rgba()
+    return colortable
+
 
 
 
