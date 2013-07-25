@@ -19,9 +19,13 @@ class SlotMetaInfoDisplayWidget(QWidget):
             self._refresh()
     
     def _refresh(self, *args):
-        shape = tuple( self._slot.meta.shape )
-        axes = "".join( self._slot.meta.getAxisKeys() )
-        dtype = self._slot.meta.dtype.__name__
+        if self._slot.ready():
+            shape = tuple( self._slot.meta.shape )
+            axes = "".join( self._slot.meta.getAxisKeys() )
+            dtype = self._slot.meta.dtype.__name__
+        else:
+            shape = axes = dtype = ""
+
         self.shapeEdit.setText( str(shape) )
         self.axisOrderEdit.setText( axes )
         self.dtypeEdit.setText( dtype )
