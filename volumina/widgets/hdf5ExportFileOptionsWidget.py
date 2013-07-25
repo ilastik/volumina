@@ -56,7 +56,7 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         if self._filepathSlot.ready():
             starting_dir = os.path.split(self._filepathSlot.value)[0]
         
-        dlg = QFileDialog( self, "Export Location", starting_dir, "HDF5 Files (*.h5, *.hdf5)" )
+        dlg = QFileDialog( self, "Export Location", starting_dir, "HDF5 Files (*.h5 *.hdf5)" )
         
         dlg.setDefaultSuffix("h5")
         dlg.setAcceptMode(QFileDialog.AcceptSave)
