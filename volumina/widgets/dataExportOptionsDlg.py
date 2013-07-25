@@ -38,6 +38,7 @@ class ExportOperatorABC(Operator):
     OutputInternalPath = InputSlot(value='exported_data')
     OutputFormat = InputSlot(value='hdf5')
 
+    ConvertedImage = OutputSlot() # Preprocessed image, BEFORE axis reordering
     ImageToExport = OutputSlot() # Preview of the pre-processed image that will be exported
     ExportPath = OutputSlot() # Location of the saved file after export is complete.
 
@@ -63,6 +64,14 @@ class ExportOperatorABC(Operator):
 class DataExportOptionsDlg(QDialog):
     
     def __init__(self, parent, opExportSlot):
+        """
+        Constructor.
+        
+        :param parent: The parent widget
+        :param opExportSlot: The operator to configure.  The operator is manipulated LIVE, so supply a 
+                             temporary operator that can be discarded in case the user clicked 'cancel'.
+                             If the user clicks 'OK', then copy the slot settings from the temporary op to your real one.
+        """
         super( DataExportOptionsDlg, self ).__init__(parent)
         assert isinstance( opExportSlot, ExportOperatorABC ), \
             "Cannot use {} as an export operator.  "\
@@ -87,15 +96,30 @@ class DataExportOptionsDlg(QDialog):
 
     def _initSubregionWidget(self):
         opExportSlot = self._opExportSlot
-        ## Subregion ROI widget
         inputAxes = opExportSlot.Input.meta.getAxisKeys()
-        self.roiWidget.addRanges( inputAxes,
-                                  opExportSlot.Input.meta.shape )
-
-        def _handleRoiChange(index):
+        self.roiWidget.initWithExtents( inputAxes, opExportSlot.Input.meta.shape )
         
-        for key, widget, checkbox in zip(inputAxes, self.roiWidget.roiWidgets, self.roiWidget.roiCheckboxes):
-            w.changedSignal.connect( partial(_handleRoiChange,  )
+        def _handleRoiChange(start, stop):
+            # Unfortunately, we have to handle a special case here:
+            # If the user's previous subregion produced a singleton axis,
+            #  then he may have dropped that axis using the 'transpose' edit box.
+            # However, if the user is now manipulating the roi again, we need to check to see if that singleton axis was expanded.
+            # If it was, then we need to reset the axis order again.  It's no longer valid to drop the axis (it's not a singleton any more.)
+            tagged_input_shape = opExportSlot.Input.meta.getTaggedShape()
+            tagged_output_shape = opExportSlot.ImageToExport.meta.getTaggedShape()
+            missing_axes = set( tagged_input_shape.keys() ) - set( tagged_output_shape.keys() )
+            for axis in missing_axes:
+                index = tagged_input_shape.keys().index( axis )
+                if (stop[index] is None and tagged_input_shape[axis] > 1) \
+                or (stop[index] is not None and stop[index] - start[index] > 1):
+                    self.axisOrderCheckbox.setChecked(False)
+                    break
+
+            # Configure the operator for the new subregion.            
+            opExportSlot.RegionStart.setValue( start )
+            opExportSlot.RegionStop.setValue( stop )
+
+        self.roiWidget.roiChanged.connect( _handleRoiChange )
 
     def _initDtypeConversionWidgets(self):
         self.convertDtypeCheckbox.toggled.connect( self._handleConvertDtypeChecked )
@@ -179,15 +203,15 @@ class DataExportOptionsDlg(QDialog):
 
         def _handleAxisOrderChecked( checked ):
             self.outputAxisOrderEdit.setEnabled( checked )
+            default_order = "".join( self._opExportSlot.Input.meta.getAxisKeys() )
+            self.outputAxisOrderEdit.setText( default_order )
             if checked:
-                default_order = "".join( self._opExportSlot.ImageToExport.meta.getAxisKeys() )
-                self.outputAxisOrderEdit.setText( default_order )
                 _handleNewAxisOrder()
             else:
                 self._opExportSlot.OutputAxisOrder.disconnect()
                 self._updateAxisOrderColor(False)
-            
-        self.outputAxisOrderEdit.setValidator( AxisOrderValidator( self, self._opExportSlot.ImageToExport ) )
+        
+        self.outputAxisOrderEdit.setValidator( AxisOrderValidator( self, self._opExportSlot.ConvertedImage ) )
         self.outputAxisOrderEdit.editingFinished.connect( _handleNewAxisOrder )
         self.outputAxisOrderEdit.textChanged.connect( partial(self._updateAxisOrderColor, True) )
         self.outputAxisOrderEdit.installEventFilter(self)
@@ -292,7 +316,7 @@ class AxisOrderValidator(QValidator):
 if __name__ == "__main__":
     import numpy
     import vigra
-    from PyQt4.QtGui import QApplication
+    from PyQt4.QtGui import QApplication, QSpinBox
     from lazyflow.graph import Graph, Operator, InputSlot
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 
@@ -305,28 +329,6 @@ if __name__ == "__main__":
     app = QApplication([])
     w = DataExportOptionsDlg(None, op)
     w.show()
-
-#    # Experiment: Would the subregion controls look better as a QTableWidget?
-#    # Answer: Yes.    
-#    from PyQt4.QtGui import QVBoxLayout, QWidget, QTableWidget, QTableWidgetItem, QBrush, QColor    
-#    w = QWidget()
-#    tw = QTableWidget(3, 3, w)
-#    item = QTableWidgetItem("Full")
-#    tw.setHorizontalHeaderLabels(["", "[min,", "max)"])
-#    tw.setItem(0,0,item)
-#    item.setCheckState( Qt.Checked )
-#    item.setFlags( Qt.ItemFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled) )
-#    tw.resizeColumnToContents(0)    
-#
-#    item2 = QTableWidgetItem("hello")
-#    item2.setFlags( Qt.NoItemFlags )
-#    item2.setBackground( QBrush( QColor(Qt.red) ) )
-#    tw.setItem(0,1, item2)
-#    
-#    layout = QVBoxLayout()
-#    layout.addWidget( tw )
-#    w.setLayout( layout )
-#    w.show()
     
     app.exec_()
 

@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>701</width>
-    <height>634</height>
+    <width>692</width>
+    <height>698</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -55,16 +55,81 @@
      <property name="checkable">
       <bool>false</bool>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="CombinedValueRangeWidget" name="roiWidget" native="true">
+       <widget class="SubregionRoiWidget" name="roiWidget">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="rowCount">
+         <number>5</number>
+        </property>
+        <property name="columnCount">
+         <number>3</number>
+        </property>
+        <attribute name="verticalHeaderCascadingSectionResizes">
+         <bool>false</bool>
+        </attribute>
+        <row>
+         <property name="text">
+          <string>t</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>x</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>y</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>z</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>c</string>
+         </property>
+        </row>
+        <column>
+         <property name="text">
+          <string>range</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>[start,</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>stop)</string>
+         </property>
+        </column>
        </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Expanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>
@@ -238,7 +303,14 @@
        <number>6</number>
       </property>
       <item>
-       <widget class="MultiformatSlotExportFileOptionsWidget" name="exportFileOptionsWidget" native="true"/>
+       <widget class="MultiformatSlotExportFileOptionsWidget" name="exportFileOptionsWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -263,12 +335,6 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>CombinedValueRangeWidget</class>
-   <extends>QWidget</extends>
-   <header>volumina.widgets.valueRangeWidget</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>SlotMetaInfoDisplayWidget</class>
    <extends>QWidget</extends>
    <header>volumina.widgets.slotMetaInfoDisplayWidget</header>
@@ -279,6 +345,11 @@
    <extends>QWidget</extends>
    <header>volumina.widgets.multiformatSlotExportFileOptionsWidget</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SubregionRoiWidget</class>
+   <extends>QTableWidget</extends>
+   <header>volumina.widgets.subregionRoiWidget</header>
   </customwidget>
  </customwidgets>
  <resources/>
