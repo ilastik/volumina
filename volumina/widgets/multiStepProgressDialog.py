@@ -30,10 +30,15 @@ class MultiStepProgressDialog(QDialog):
         self._update()
         if self._currentStep == self._numberOfSteps:
             self.buttonBox.button(QDialogButtonBox.Ok).setText("Finished!")
+            self.buttonBox.button(QDialogButtonBox.Ok).show()
             self.buttonBox.button(QDialogButtonBox.Cancel).hide()
             self.currentStepProgress.setValue(100)
 
-    
+    def setFailed(self):
+        self.failedLabel.show()
+        self.buttonBox.button(QDialogButtonBox.Cancel).show()
+        self.buttonBox.button(QDialogButtonBox.Cancel).setText("Bummer")
+
     def _update(self):
         self.currentStepProgress.setValue(0)
         self.overallProgress.setMinimum(0)
@@ -65,6 +70,8 @@ class MultiStepProgressDialog(QDialog):
         p = os.path.split(__file__)[0]+'/'
         if p == "/": p = "."+p
         uic.loadUi(p+"ui/multiStepProgressDialog.ui", self)
+        self.buttonBox.button(QDialogButtonBox.Ok).hide()
+        self.failedLabel.hide()
         
 
 if __name__ == "__main__":
