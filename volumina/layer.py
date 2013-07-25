@@ -130,6 +130,12 @@ class Layer( QObject ):
 
     def setToolTip(self, tip):
         self._toolTip = tip
+        
+    def isDifferentEnough(self, other_layer):
+        """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
+        if other_layer.datasources != self.datasources:
+            return True
+        return False
 
     def __init__( self, direct=False ):
         super(Layer, self).__init__()
@@ -381,6 +387,15 @@ class ColortableLayer( NormalizableLayer ):
 
     def randomizeColors(self):
         self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
+        
+    def isDifferentEnough(self, other_layer):
+            
+        if other_layer._colorTable != self._colorTable:
+            return True
+        if other_layer.datasources != self.datasources:
+            return True
+        return False
+        
 
     def __init__( self, datasource , colorTable, normalize=False, direct=False ):
         assert isinstance(datasource, SourceABC)

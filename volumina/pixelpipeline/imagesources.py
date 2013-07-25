@@ -234,6 +234,7 @@ class ColortableImageSource( ImageSource ):
             self._colorTable[i,1] = color.green()
             self._colorTable[i,2] = color.red()
             self._colorTable[i,3] = color.alpha() 
+        
         self.isDirty.emit(QRect()) # empty rect == everything is dirty
         
     def request( self, qrect, along_through=None ):
