@@ -2,7 +2,6 @@ import os
 import collections
 
 from PyQt4 import uic
-from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QWidget
 
 from npyExportFileOptionsWidget import NpyExportFileOptionsWidget
@@ -42,14 +41,16 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         
         self.formatCombo.currentIndexChanged.connect( self._handleFormatChange )
 
-        self.formatCombo.setCurrentIndex(0)
-        self._handleFormatChange(0)
+        # Determine starting format
+        index = self.formatCombo.findText(opExportSlot.OutputFormat.value)
+        self.formatCombo.setCurrentIndex(index)
+        self._handleFormatChange(index)
         
     def _handleFormatChange(self, index):
         file_format = str( self.formatCombo.currentText() )
         option_widget = self._format_option_editors[file_format]
         self.stackedWidget.setCurrentWidget( option_widget )
-    
+        self._opExportSlot.OutputFormat.setValue( file_format )
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication
