@@ -20,6 +20,7 @@ class RoiSpinBox(QSpinBox):
 
     def setPartner(self, partner):
         self._partner = partner
+        self._handleNewValue( self.value() )
 
     def _handleNewValue(self, value):
         # Adjust our partner's allowed range to ensure it never crosses our value.
@@ -66,8 +67,10 @@ class SubregionRoiWidget( QTableWidget ):
         
         self._handling_click = False
     
-    def initWithExtents(self, axes, shape):
+    def initWithExtents(self, axes, shape, start, stop):
         tagged_shape = collections.OrderedDict( zip(axes, shape) )
+        tagged_start = collections.OrderedDict( zip(axes, start) )
+        tagged_stop = collections.OrderedDict( zip(axes, stop) )
         self._tagged_shape = tagged_shape
         self.setRowCount( len(tagged_shape) )
         self.setVerticalHeaderLabels( tagged_shape.keys() )
@@ -75,20 +78,30 @@ class SubregionRoiWidget( QTableWidget ):
         for row, (axis_key, extent) in enumerate(tagged_shape.items()):
             # Init 'full' checkbox
             checkbox_item = QTableWidgetItem("All")
-            checkbox_item.setCheckState( Qt.Checked )
+            if tagged_start[axis_key] is None:
+                checkbox_item.setCheckState( Qt.Checked )
+            else:
+                checkbox_item.setCheckState( Qt.Unchecked )
+                
             checkbox_item.setFlags( Qt.ItemFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled) )
             self.setItem(row, 0, checkbox_item)
 
             # Init min/max spinboxes
-            startBox = RoiSpinBox(self, 0, extent-1, 0 )
-            stopBox = RoiSpinBox(self, 1, extent, extent )
-            
+            default_start = tagged_start[axis_key] or 0
+            default_stop = tagged_stop[axis_key] or extent
+
+            startBox = RoiSpinBox(self, 0, extent-1, default_start )
+            stopBox = RoiSpinBox(self, 1, extent, default_stop )            
+
             startBox.setPartner( stopBox )
             stopBox.setPartner( startBox )
 
+            startBox.setEnabled( tagged_start[axis_key] is not None )
+            stopBox.setEnabled( tagged_stop[axis_key] is not None )
+ 
             startBox.valueChanged.connect( self._updateRoi )
             stopBox.valueChanged.connect( self._updateRoi )
-
+            
             self.setCellWidget( row, 1, startBox )
             self.setCellWidget( row, 2, stopBox )
             
