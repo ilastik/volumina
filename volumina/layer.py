@@ -135,6 +135,8 @@ class Layer( QObject ):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
         if other_layer.datasources != self.datasources:
             return True
+        if other_layer.numberOfChannels != self.numberOfChannels:
+            return True
         return False
 
     def __init__( self, direct=False ):
