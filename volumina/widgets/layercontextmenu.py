@@ -106,19 +106,19 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         dataSlots = [slot.dataSlot for (slot, isSlot) in
                      zip(layer.datasources, sourceTags) if isSlot is True]
 
-        op = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator())
+        opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
         for slot in dataSlots:
             assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (type(slot))
             assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(slot.getRealOperator()))
-        op.AxisFlag.setValue("c")
-        op.Images.resize(len(dataSlots))
-        for i,islot in enumerate(op.Images):
+        opStackChannels.AxisFlag.setValue("c")
+        opStackChannels.Images.resize(len(dataSlots))
+        for i,islot in enumerate(opStackChannels.Images):
             islot.connect(dataSlots[i])
 
         # Create an operator to do the work
         from lazyflow.operators.ioOperators import OpFormattedDataExport
-        opExport = OpFormattedDataExport( parent=op.parent )
-        opExport.Input.connect( op.Output )
+        opExport = OpFormattedDataExport( parent=opStackChannels.parent )
+        opExport.Input.connect( opStackChannels.Output )
         
         # Use this dialog to populate the operator's slot settings
         settingsDlg = DataExportOptionsDlg( menu, opExport )
@@ -126,7 +126,11 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         # Kick of the export and return immediately.        
         if ( settingsDlg.exec_() == DataExportOptionsDlg.Accepted ):
             helper = ExportHelper( menu )
-            helper.start(opExport)
+            helper.run(opExport)
+            
+            # Clean up our temporary operators
+            opExport.cleanUp()
+            opStackChannels.cleanUp()
 
     menu = QMenu("Menu", parent)
     title = QAction("%s" % layer.name, menu)
@@ -165,7 +169,7 @@ class ExportHelper(QObject):
         super( ExportHelper, self ).__init__(parent)
         self._forwardingSignal.connect( self._handleForwardedCall )
 
-    def start(self, opExport):
+    def run(self, opExport):
         """
         Start the export and return immediately (after showing the progress dialog).
         
@@ -176,9 +180,6 @@ class ExportHelper(QObject):
         progressDlg.setNumberOfSteps(1)
         
         def _forwardProgressToGui(progress):
-            import time
-            time.sleep(2)
-            assert False
             self._forwardingSignal.emit( partial( progressDlg.setStepProgress, progress ) )
         opExport.progressSignal.subscribe( _forwardProgressToGui )
     
@@ -206,4 +207,3 @@ class ExportHelper(QObject):
 
         # Execute the progress dialog
         progressDlg.exec_()
-
