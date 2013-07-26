@@ -123,7 +123,13 @@ class ValueRangeWidget(QWidget):
         self.maxBox.setValue(val2)
 
     def getValues(self):
-        return [self.dtype(self.minBox.value()), self.dtype(self.maxBox.value())]
+        try:
+            return [self.dtype(self.minBox.value()), self.dtype(self.maxBox.value())]
+        except OverflowError:
+            # If the user is changing the dtype and the current value is too big,
+            #  ignore the overflow.
+            # (Presumably, the value will be set to something within the correct range in a moment.)
+            return [self.dtype(0), self.dtype(1)]
     
     def getLimits(self):
         return self.softLimits
