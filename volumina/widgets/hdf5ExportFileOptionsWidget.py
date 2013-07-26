@@ -15,6 +15,7 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         self._datasetNameSlot = datasetNameSlot
         self.fileSelectButton.clicked.connect( self._browseForFilepath )
 
+        self.filepathEdit.installEventFilter(self)
         self.datasetEdit.installEventFilter( self )
 
     def showEvent(self, event):
@@ -22,18 +23,24 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         self.updateFromSlots()
         
     def eventFilter(self, watched, event):
-        # Apply the new dataset name if the user presses 
-        #  'enter' or clicks outside the dataset edit.
-        if watched == self.datasetEdit:
-            if event.type() == QEvent.FocusOut or \
-               ( event.type() == QEvent.KeyPress and \
-                 ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return) ):
-                self._applyDataset()                
+        # Apply the new path/dataset if the user presses 'enter' 
+        #  or clicks outside the path/dataset edit box.
+        if event.type() == QEvent.FocusOut or \
+           ( event.type() == QEvent.KeyPress and \
+             ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return) ):
+            if watched == self.datasetEdit:
+                self._applyDataset()
+            if watched == self.filepathEdit:
+                self._applyFilepath()
         return False
 
     def _applyDataset(self):
         datasetName = self.datasetEdit.text()
         self._datasetNameSlot.setValue( str(datasetName) )
+
+    def _applyFilepath(self):
+        filepath = self.filepathEdit.text()
+        self._filepathSlot.setValue( str(filepath) )
 
     def updateFromSlots(self):
         if self._datasetNameSlot.ready():

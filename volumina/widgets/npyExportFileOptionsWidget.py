@@ -1,6 +1,7 @@
 import os
 
 from PyQt4 import uic
+from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
 class NpyExportFileOptionsWidget(QWidget):
@@ -8,6 +9,19 @@ class NpyExportFileOptionsWidget(QWidget):
     def __init__(self, parent):
         super( NpyExportFileOptionsWidget, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
+
+        self.filepathEdit.installEventFilter(self)
+
+    def eventFilter(self, watched, event):
+        # Apply the new path if the user presses 
+        #  'enter' or clicks outside the filepathe editbox
+        if watched == self.filepathEdit:
+            if event.type() == QEvent.FocusOut or \
+               ( event.type() == QEvent.KeyPress and \
+                 ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return) ):
+                newpath = self.filepathEdit.text()
+                self._filepathSlot.setValue( str(newpath) )
+        return False
 
     def initSlot(self, filepathSlot):        
         self._filepathSlot = filepathSlot
