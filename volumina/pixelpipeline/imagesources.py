@@ -1,3 +1,8 @@
+#Python
+import logging
+import time
+import warnings
+
 try:
     import volumina
     from volumina.colorama import Fore, Back, Style
@@ -12,7 +17,6 @@ from asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import cfg
 import numpy as np
-import warnings
 
 _has_vigra = True
 try:
@@ -81,6 +85,9 @@ assert issubclass(ImageSource, SourceABC)
 #*******************************************************************************
 
 class GrayscaleImageSource( ImageSource ):
+    loggingName = __name__ + ".GrayscaleImageSource"
+    logger = logging.getLogger(loggingName)
+    
     def __init__( self, arraySource2D, layer ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
         super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True, direct=layer.direct )
@@ -106,20 +113,28 @@ class GrayscaleImageSource( ImageSource ):
 assert issubclass(GrayscaleImageSource, SourceABC)
 
 class GrayscaleImageRequest( object ):
+    loggingName = __name__ + ".GrayscaleImageRequest"
+    logger = logging.getLogger(loggingName)
+    
     def __init__( self, arrayrequest, normalize=None, direct=False ):
         self._mutex = QMutex()
         self._arrayreq = arrayrequest
         self._normalize = normalize
         self.direct = direct
-
+        
     def wait(self):
-        self._arrayreq.wait()
         return self.toImage()
         
     def toImage( self ):
-        a = self._arrayreq.getResult()
-        assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
+        t = time.time()
         
+        tAR = time.time()
+        self._arrayreq.wait()
+        a = self._arrayreq.getResult()
+        tAR = 1000.0*(time.time()-tAR)
+        
+        assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
+       
         normalize = self._normalize 
         if normalize:
             #clipping has been implemented in this commit,
@@ -127,7 +142,13 @@ class GrayscaleImageRequest( object ):
             #http://www.informatik.uni-hamburg.de/~meine/hg/qimage2ndarray/diff/fcddc70a6dea/qimage2ndarray/__init__.py
             a = np.clip(a, *normalize)
         img = gray2qimage(a, normalize)
-        return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+        ret = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+        
+        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+            tTOT = 1000.0*(time.time()-t)
+            self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (incl. %f msec. for array request)" % (img.width(), img.height(), normalize, tTOT, tAR))
+            
+        return ret
             
     def notify( self, callback, **kwargs ):
         self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
