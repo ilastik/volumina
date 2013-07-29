@@ -4,11 +4,14 @@ from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
-class NpyExportFileOptionsWidget(QWidget):
+class SingleFileExportOptionsWidget(QWidget):
     
-    def __init__(self, parent):
-        super( NpyExportFileOptionsWidget, self ).__init__(parent)
+    def __init__(self, parent, extension, file_filter):
+        super( SingleFileExportOptionsWidget, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
+
+        self._extension = extension
+        self._file_filter = file_filter
 
         self.filepathEdit.installEventFilter(self)
 
@@ -28,13 +31,13 @@ class NpyExportFileOptionsWidget(QWidget):
         self.fileSelectButton.clicked.connect( self._browseForFilepath )
 
     def showEvent(self, event):
-        super(NpyExportFileOptionsWidget, self).showEvent(event)
+        super(SingleFileExportOptionsWidget, self).showEvent(event)
         self.updateFromSlot()
         
     def updateFromSlot(self):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
-            file_path = os.path.splitext(file_path)[0] + ".npy"
+            file_path = os.path.splitext(file_path)[0] + "." + self._extension
             self.filepathEdit.setText( file_path )
             
             # Re-configure the slot in case we changed the extension
@@ -45,8 +48,8 @@ class NpyExportFileOptionsWidget(QWidget):
         if self._filepathSlot.ready():
             starting_dir = os.path.split(self._filepathSlot.value)[0]
         
-        dlg = QFileDialog( self, "Export Location", starting_dir, "numpy files (*.npy)" )
-        dlg.setDefaultSuffix("npy")
+        dlg = QFileDialog( self, "Export Location", starting_dir, self._file_filter )
+        dlg.setDefaultSuffix(self._extension)
         dlg.setAcceptMode(QFileDialog.AcceptSave)
         if not dlg.exec_():
             return
@@ -63,7 +66,7 @@ if __name__ == "__main__":
     op = OpNpyWriter(graph=Graph())
 
     app = QApplication([])
-    w = NpyExportFileOptionsWidget(None)
+    w = SingleFileExportOptionsWidget(None, "npy", "numpy files (*.npy)")
     w.initSlot(op.Filepath)
     w.show()
     app.exec_()

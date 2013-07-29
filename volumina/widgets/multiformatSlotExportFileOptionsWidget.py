@@ -4,7 +4,7 @@ import collections
 from PyQt4 import uic
 from PyQt4.QtGui import QWidget
 
-from npyExportFileOptionsWidget import NpyExportFileOptionsWidget
+from singleFileExportOptionsWidget import SingleFileExportOptionsWidget
 from hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
 
 class MultiformatSlotExportFileOptionsWidget(QWidget):
@@ -19,15 +19,19 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self.hdf5OptionsWidget.initSlots( opExportSlot.OutputFilenameFormat,
                                           opExportSlot.OutputInternalPath )
 
-        self.npyOptionsWidget = NpyExportFileOptionsWidget( self )
+        self.npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )
         self.npyOptionsWidget.initSlot( opExportSlot.OutputFilenameFormat )
+
+        self.pngOptionsWidget = SingleFileExportOptionsWidget( self, "png", "PNG files (*.png)" )
+        self.pngOptionsWidget.initSlot( opExportSlot.OutputFilenameFormat )
 
         # Specify our supported formats and their associated property widgets
         # TODO: Explicitly reconcile this with the OpExportSlot.FORMATS
         # TODO: Only include formats that can export the current dataset (e.g. don't include 2D formats for a 3D image)
         self._format_option_editors = \
             collections.OrderedDict([ ('hdf5', self.hdf5OptionsWidget),
-                                      ('npy', self.npyOptionsWidget) ])
+                                      ('npy', self.npyOptionsWidget),
+                                      ('png', self.pngOptionsWidget) ])
 
         # Populate the format combo
         for file_format, widget in self._format_option_editors.items():
@@ -59,6 +63,7 @@ if __name__ == "__main__":
     class OpMock(Operator):
         OutputFilenameFormat = InputSlot(value='~/something.h5')
         OutputInternalPath = InputSlot(value='volume/data')
+        OutputFormat = InputSlot(value='hdf5')
         
         def setupOutputs(self): pass
         def execute(self, *args): pass
