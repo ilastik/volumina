@@ -127,28 +127,50 @@ class GrayscaleImageRequest( object ):
         
     def toImage( self ):
         t = time.time()
+       
+        tWAIT = time.time()
+        self._arrayreq.wait()
+        tWAIT = 1000.0*(time.time()-tWAIT)
         
         tAR = time.time()
-        self._arrayreq.wait()
         a = self._arrayreq.getResult()
         tAR = 1000.0*(time.time()-tAR)
         
         assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
        
         normalize = self._normalize 
-        if normalize:
-            #clipping has been implemented in this commit,
-            #but it is not yet available in the packages obtained via easy_install
-            #http://www.informatik.uni-hamburg.de/~meine/hg/qimage2ndarray/diff/fcddc70a6dea/qimage2ndarray/__init__.py
-            a = np.clip(a, *normalize)
-        img = gray2qimage(a, normalize)
-        ret = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+        if not normalize:
+            normalize = [0,255]
+            
+        aCopy = a.copy()
+        
+        #
+        # new conversion
+        #
+        tImg = None
+        if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+            tImg = time.time()
+            img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
+            n = np.asarray(self._normalize, dtype=a.dtype)
+            vigra.colors.gray2qimage_ARGB32Premultiplied(a, byte_view(img), np.asarray(self._normalize, dtype=a.dtype))
+            tImg = 1000.0*(time.time()-tImg)
+        else:
+            self.logger.warning("using slow image creation function")
+            tImg = time.time()
+            if self._normalize:
+                #clipping has been implemented in this commit,
+                #but it is not yet available in the packages obtained via easy_install
+                #http://www.informatik.uni-hamburg.de/~meine/hg/qimage2ndarray/diff/fcddc70a6dea/qimage2ndarray/__init__.py
+                a = np.clip(aCopy, *self._normalize)
+            img = gray2qimage(a, self._normalize)
+            ret = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
+            tImg = 1000.0*(time.time()-tImg)
         
         if self.logger.getEffectiveLevel() >= logging.DEBUG:
             tTOT = 1000.0*(time.time()-t)
-            self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (incl. %f msec. for array request)" % (img.width(), img.height(), normalize, tTOT, tAR))
+            self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
             
-        return ret
+        return img
             
     def notify( self, callback, **kwargs ):
         self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
@@ -188,6 +210,9 @@ class AlphaModulatedImageSource( ImageSource ):
 assert issubclass(AlphaModulatedImageSource, SourceABC)
 
 class AlphaModulatedImageRequest( object ):
+    loggingName = __name__ + ".AlphaModulatedImageRequest"
+    logger = logging.getLogger(loggingName)
+    
     def __init__( self, arrayrequest, tintColor, normalize=(0,255)):
         self._mutex = QMutex()
         self._arrayreq = arrayrequest
@@ -195,21 +220,48 @@ class AlphaModulatedImageRequest( object ):
         self._tintColor = tintColor
 
     def wait(self):
-        self._arrayreq.wait()
         return self.toImage()
 
     def toImage( self ):
+        t = time.time()
+       
+        tWAIT = time.time()
+        self._arrayreq.wait()
+        tWAIT = 1000.0*time.time()-tWAIT
+        
+        tAR = time.time()
         a = self._arrayreq.getResult()
-        shape = a.shape + (4,)
-        d = np.empty(shape, dtype=np.float32)
-        d[:,:,0] = a[:,:]*self._tintColor.redF()
-        d[:,:,1] = a[:,:]*self._tintColor.greenF()
-        d[:,:,2] = a[:,:]*self._tintColor.blueF()
-        d[:,:,3] = a[:,:]
+        tAR = 1000.0*(time.time()-tAR)
 
-        normalize = self._normalize
-        img = array2qimage(d, normalize)
-        return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
+        tImg = None
+        if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+            tImg = time.time()
+            img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
+            tintColor = np.asarray([self._tintColor.redF(), self._tintColor.greenF(), self._tintColor.blueF()], dtype=np.float32);
+            normalize = np.asarray(self._normalize, dtype=a.dtype)
+            vigra.colors.alphamodulated2qimage_ARGB32Premultiplied(a, byte_view(img), tintColor, normalize) 
+            tImg = 1000.0*(time.time()-tImg)
+        else:
+            self.logger.warning("using unoptimized conversion functions")
+            tImg = time.time()
+            shape = a.shape + (4,)
+            d = np.empty(shape, dtype=np.float32)
+            d[:,:,0] = a[:,:]*self._tintColor.redF()
+            d[:,:,1] = a[:,:]*self._tintColor.greenF()
+            d[:,:,2] = a[:,:]*self._tintColor.blueF()
+            d[:,:,3] = a[:,:]
+            normalize = self._normalize
+            img = array2qimage(d, normalize)
+            img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
+            tImg = 1000.0*(time.time()-tImg)
+       
+        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+            tTOT = 1000.0*(time.time()-t)
+            self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
+            
+        return img
+        
+        return img
             
     def notify( self, callback, **kwargs ):
         self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
