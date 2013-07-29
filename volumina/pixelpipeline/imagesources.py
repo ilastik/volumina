@@ -149,10 +149,15 @@ class GrayscaleImageRequest( object ):
         #
         tImg = None
         if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+            if not a.flags.contiguous:
+                a = a.copy()
+            if self._normalize is None or self._normalize == [0, 0]: #FIXME: fix volumina conventions
+                n = np.asarray([0, 255], dtype=a.dtype)
+            else:
+                n = np.asarray(self._normalize, dtype=a.dtype)
             tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
-            n = np.asarray(self._normalize, dtype=a.dtype)
-            vigra.colors.gray2qimage_ARGB32Premultiplied(a, byte_view(img), np.asarray(self._normalize, dtype=a.dtype))
+            vigra.colors.gray2qimage_ARGB32Premultiplied(a, byte_view(img), n)
             tImg = 1000.0*(time.time()-tImg)
         else:
             self.logger.warning("using slow image creation function")
@@ -235,6 +240,8 @@ class AlphaModulatedImageRequest( object ):
 
         tImg = None
         if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+            if not a.flags.contiguous:
+                a = a.copy()
             tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
             tintColor = np.asarray([self._tintColor.redF(), self._tintColor.greenF(), self._tintColor.blueF()], dtype=np.float32);
