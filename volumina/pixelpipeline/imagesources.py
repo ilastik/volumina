@@ -227,7 +227,7 @@ class AlphaModulatedImageRequest( object ):
        
         tWAIT = time.time()
         self._arrayreq.wait()
-        tWAIT = 1000.0*time.time()-tWAIT
+        tWAIT = 1000.0*(time.time()-tWAIT)
         
         tAR = time.time()
         a = self._arrayreq.getResult()
@@ -278,6 +278,9 @@ assert issubclass(AlphaModulatedImageRequest, RequestABC)
 #*******************************************************************************
 
 class ColortableImageSource( ImageSource ):
+    loggingName = __name__ + ".ColortableImageSource"
+    logger = logging.getLogger(loggingName)
+    
     def __init__( self, arraySource2D, layer ):
         """ colorTable: a list of QRgba values """
 
@@ -325,6 +328,9 @@ class ColortableImageSource( ImageSource ):
 assert issubclass(ColortableImageSource, SourceABC)
 
 class ColortableImageRequest( object ):
+    loggingName = __name__ + ".ColortableImageRequest"
+    logger = logging.getLogger(loggingName)
+    
     def __init__( self, arrayrequest, colorTable, normalize, direct=False ):
         self._mutex = QMutex()
         self._arrayreq = arrayrequest
@@ -333,11 +339,19 @@ class ColortableImageRequest( object ):
         self._normalize = normalize
 
     def wait(self):
-        self._arrayreq.wait()
         return self.toImage()
         
     def toImage( self ):
+        t = time.time()
+        
+        tWAIT = time.time()
+        self._arrayreq.wait()
+        tWAIT = 1000.0*(time.time()-tWAIT)
+        
+        tAR = time.time()
         a = self._arrayreq.getResult()
+        tAR = 1000.0*(time.time()-tAR)
+        
         assert a.ndim == 2
 
         if self._normalize:
@@ -355,18 +369,23 @@ class ColortableImageRequest( object ):
                 a = np.asarray( a, dtype=np.uint32 )
 
         # Use vigra if possible (much faster)
+        tImg = None
         if _has_vigra and hasattr(vigra.colors, 'applyColortable'):
+            tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32)
             if not issubclass( a.dtype.type, np.integer ):
+                raise NotImplementedError()
                 #FIXME: maybe this should be done in a better way using an operator before the colortable request which properly handles 
                 #this problem 
                 import warnings
                 warnings.warn("Data for colortable layers cannot be float, casting",RuntimeWarning)
                 a=a.astype(np.int32)
             vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
+            tImg = 1000.0*(time.time()-tImg)
 
         # Without vigra, do it the slow way 
         else:
+            raise NotImplementedError()
             if _has_vigra:
                 # If this warning is annoying you, try this:
                 # warnings.filterwarnings("once")
@@ -378,6 +397,10 @@ class ColortableImageRequest( object ):
             colortable = np.roll(np.fliplr(self._colorTable), -1, 1) # self._colorTable is BGRA, but array2qimage wants RGBA
             img = colortable[a]
             img = array2qimage(img)
+            
+        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+            tTOT = 1000.0*(time.time()-t)
+            self.logger.debug("toImage (%dx%d) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), tTOT, tAR, tWAIT, tImg))
 
         return img 
             
