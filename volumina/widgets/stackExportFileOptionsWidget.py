@@ -5,8 +5,6 @@ from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
-from lazyflow.utility import format_known_keys
-
 class StackExportFileOptionsWidget(QWidget):
     
     def __init__(self, parent, extension):

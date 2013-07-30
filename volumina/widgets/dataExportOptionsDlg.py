@@ -63,28 +63,28 @@ class ExportOperatorABC(Operator):
 #**************************************************************************
 class DataExportOptionsDlg(QDialog):
     
-    def __init__(self, parent, opExportSlot):
+    def __init__(self, parent, opDataExport):
         """
         Constructor.
         
         :param parent: The parent widget
-        :param opExportSlot: The operator to configure.  The operator is manipulated LIVE, so supply a 
+        :param opDataExport: The operator to configure.  The operator is manipulated LIVE, so supply a 
                              temporary operator that can be discarded in case the user clicked 'cancel'.
                              If the user clicks 'OK', then copy the slot settings from the temporary op to your real one.
         """
         super( DataExportOptionsDlg, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
 
-        self._opExportSlot = opExportSlot
-        assert isinstance( opExportSlot, ExportOperatorABC ), \
+        self._opDataExport = opDataExport
+        assert isinstance( opDataExport, ExportOperatorABC ), \
             "Cannot use {} as an export operator.  "\
-            "It doesn't match the required interface".format( type(opExportSlot) )
+            "It doesn't match the required interface".format( type(opDataExport) )
 
         self._okay_conditions = {}
 
         # Connect the 'transaction slot'.
         # All slot changes will occur immediately
-        opExportSlot.TransactionSlot.setValue(True)
+        opDataExport.TransactionSlot.setValue(True)
 
         # Init child widgets
         self._initMetaInfoWidgets()
@@ -116,25 +116,25 @@ class DataExportOptionsDlg(QDialog):
     #**************************************************************************
     def _initMetaInfoWidgets(self):
         ## Input/output meta-info display widgets
-        opExportSlot = self._opExportSlot
-        self.inputMetaInfoWidget.initSlot( opExportSlot.Input )
-        self.outputMetaInfoWidget.initSlot( opExportSlot.ImageToExport )
+        opDataExport = self._opDataExport
+        self.inputMetaInfoWidget.initSlot( opDataExport.Input )
+        self.outputMetaInfoWidget.initSlot( opDataExport.ImageToExport )
 
     #**************************************************************************
     # Subregion roi
     #**************************************************************************
     def _initSubregionWidget(self):
-        opExportSlot = self._opExportSlot
-        inputAxes = opExportSlot.Input.meta.getAxisKeys()
+        opDataExport = self._opDataExport
+        inputAxes = opDataExport.Input.meta.getAxisKeys()
 
-        shape = opExportSlot.Input.meta.shape
+        shape = opDataExport.Input.meta.shape
         start = (None,) * len( shape )
         stop = (None,) * len( shape )
 
-        if opExportSlot.RegionStart.ready():
-            start = opExportSlot.RegionStart.value
-        if opExportSlot.RegionStop.ready():
-            stop = opExportSlot.RegionStop.value
+        if opDataExport.RegionStart.ready():
+            start = opDataExport.RegionStart.value
+        if opDataExport.RegionStop.ready():
+            stop = opDataExport.RegionStop.value
 
         self.roiWidget.initWithExtents( inputAxes, shape, start, stop )
         
@@ -144,11 +144,11 @@ class DataExportOptionsDlg(QDialog):
             #  then he may have dropped that axis using the 'transpose' edit box.
             # However, if the user is now manipulating the roi again, we need to check to see if that singleton axis was expanded.
             # If it was, then we need to reset the axis order again.  It's no longer valid to drop the axis (it's not a singleton any more.)
-            if not opExportSlot.Input.ready():
+            if not opDataExport.Input.ready():
                 # Can happen if we're still listening to slot changes after we've been closed.
                 return
-            tagged_input_shape = opExportSlot.Input.meta.getTaggedShape()
-            tagged_output_shape = opExportSlot.ImageToExport.meta.getTaggedShape()
+            tagged_input_shape = opDataExport.Input.meta.getTaggedShape()
+            tagged_output_shape = opDataExport.ImageToExport.meta.getTaggedShape()
             missing_axes = set( tagged_input_shape.keys() ) - set( tagged_output_shape.keys() )
             for axis in missing_axes:
                 index = tagged_input_shape.keys().index( axis )
@@ -158,8 +158,8 @@ class DataExportOptionsDlg(QDialog):
                     break
 
             # Configure the operator for the new subregion.
-            opExportSlot.RegionStart.setValue( newstart )
-            opExportSlot.RegionStop.setValue( newstop )
+            opDataExport.RegionStart.setValue( newstart )
+            opDataExport.RegionStop.setValue( newstop )
 
         self.roiWidget.roiChanged.connect( _handleRoiChange )
 
@@ -168,7 +168,7 @@ class DataExportOptionsDlg(QDialog):
     #**************************************************************************
     def _initDtypeConversionWidgets(self):
         def _selectDefaultDtype():
-            dtype = self._opExportSlot.ImageToExport.meta.dtype
+            dtype = self._opDataExport.ImageToExport.meta.dtype
             index = self.dtypeCombo.findData( dtype.__name__ )
             self.dtypeCombo.setCurrentIndex( index )
     
@@ -195,15 +195,15 @@ class DataExportOptionsDlg(QDialog):
             index = self.dtypeCombo.currentIndex()
             dtype_string = str( self.dtypeCombo.itemData(index).toString() )
             dtype = numpy.dtype(dtype_string).type
-            self._opExportSlot.ExportDtype.setValue( dtype )
+            self._opDataExport.ExportDtype.setValue( dtype )
     
         self.dtypeCombo.currentIndexChanged.connect( _handleDtypeSelected )
         self.dtypeCombo.setEnabled( False )
 
         # Set the starting setting according to the operator.
         _selectDefaultDtype()
-        dtype = self._opExportSlot.ImageToExport.meta.dtype
-        if dtype != self._opExportSlot.Input.meta.dtype:
+        dtype = self._opDataExport.ImageToExport.meta.dtype
+        if dtype != self._opDataExport.Input.meta.dtype:
             self.convertDtypeCheckbox.setChecked(True)
             self.dtypeCombo.setEnabled( True )
 
@@ -211,23 +211,23 @@ class DataExportOptionsDlg(QDialog):
     # Renormalization
     #**************************************************************************
     def _initRenormalizationWidgets(self):
-        opExportSlot = self._opExportSlot
-        dtype = opExportSlot.Input.meta.dtype
-        if opExportSlot.InputMax.ready():
-            drange = ( opExportSlot.InputMin.value, opExportSlot.InputMax.value )
+        opDataExport = self._opDataExport
+        dtype = opDataExport.Input.meta.dtype
+        if opDataExport.InputMax.ready():
+            drange = ( opDataExport.InputMin.value, opDataExport.InputMax.value )
         else:
-            drange = opExportSlot.Input.meta.drange or default_drange( dtype )
+            drange = opDataExport.Input.meta.drange or default_drange( dtype )
 
         def _handleRangeChange():
-            if not self.renormalizeCheckbox.isChecked() or not opExportSlot.Input.ready():
+            if not self.renormalizeCheckbox.isChecked() or not opDataExport.Input.ready():
                 return
             # Update the operator with the new settings
             input_drange = self.inputValueRange.getValues()
             output_drange = self.outputValueRange.getValues()
-            opExportSlot.InputMin.setValue( input_drange[0] )
-            opExportSlot.InputMax.setValue( input_drange[1] )
-            opExportSlot.ExportMin.setValue( output_drange[0] )
-            opExportSlot.ExportMax.setValue( output_drange[1] )
+            opDataExport.InputMin.setValue( input_drange[0] )
+            opDataExport.InputMax.setValue( input_drange[1] )
+            opDataExport.ExportMin.setValue( output_drange[0] )
+            opDataExport.ExportMax.setValue( output_drange[1] )
 
         def _setDefaultInputRange():
             self.inputValueRange.setDType( dtype )
@@ -243,7 +243,7 @@ class DataExportOptionsDlg(QDialog):
             self.inputValueRange.setEnabled( checked )
             self.outputValueRange.setEnabled( checked )
             if checked:
-                output_dtype = opExportSlot.ImageToExport.meta.dtype
+                output_dtype = opDataExport.ImageToExport.meta.dtype
                 _setDefaultInputRange()
                 _updateOutputRangeForNewDtype(output_dtype)
                 _handleRangeChange()
@@ -252,16 +252,16 @@ class DataExportOptionsDlg(QDialog):
                 self.inputValueRange.setBlank()
                 self.outputValueRange.setBlank()
                 # Clear the operator slots
-                opExportSlot.InputMin.disconnect()
-                opExportSlot.InputMax.disconnect()
-                opExportSlot.ExportMin.disconnect()
-                opExportSlot.ExportMax.disconnect()
+                opDataExport.InputMin.disconnect()
+                opDataExport.InputMax.disconnect()
+                opDataExport.ExportMin.disconnect()
+                opDataExport.ExportMax.disconnect()
 
         # Init gui with default values
-        _updateOutputRangeForNewDtype( opExportSlot.ImageToExport.meta.dtype )
+        _updateOutputRangeForNewDtype( opDataExport.ImageToExport.meta.dtype )
             
         # Update gui with settings from the operator (if any)
-        if opExportSlot.InputMax.ready():
+        if opDataExport.InputMax.ready():
             self.renormalizeCheckbox.setChecked( True )
             self.inputValueRange.setEnabled( True )
             self.outputValueRange.setEnabled( True )
@@ -271,8 +271,8 @@ class DataExportOptionsDlg(QDialog):
             self.inputValueRange.setEnabled( False )
             self.outputValueRange.setEnabled( False )
         
-        if opExportSlot.ExportMax.ready():
-            self.outputValueRange.setValues( opExportSlot.ExportMin.value, opExportSlot.ExportMax.value )
+        if opDataExport.ExportMax.ready():
+            self.outputValueRange.setValues( opDataExport.ExportMin.value, opDataExport.ExportMax.value )
 
         # Subscribe to user changes
         self.inputValueRange.changedSignal.connect( _handleRangeChange )
@@ -284,40 +284,40 @@ class DataExportOptionsDlg(QDialog):
             The output slot dtype changed.
             Update the normalization gui controls with the appropriate limits.
             """
-            output_dtype = self._opExportSlot.ImageToExport.meta.dtype
+            output_dtype = self._opDataExport.ImageToExport.meta.dtype
             if output_dtype != self.outputValueRange.dtype and self.renormalizeCheckbox.isChecked():
                 _updateOutputRangeForNewDtype(output_dtype)
 
         # Update the output range widget whenever the output dtype changes.
-        opExportSlot.ImageToExport.notifyMetaChanged( _handleOutputDtypeChange )
+        opDataExport.ImageToExport.notifyMetaChanged( _handleOutputDtypeChange )
 
     #**************************************************************************
     # Axis order
     #**************************************************************************
     def _initAxisOrderWidgets(self):
-        if self._opExportSlot.OutputAxisOrder.ready():
+        if self._opDataExport.OutputAxisOrder.ready():
             self.axisOrderCheckbox.setChecked( Qt.Checked )
-            self.outputAxisOrderEdit.setText( self._opExportSlot.OutputAxisOrder.value )
+            self.outputAxisOrderEdit.setText( self._opDataExport.OutputAxisOrder.value )
             
         def _handleNewAxisOrder():
             new_order = str( self.outputAxisOrderEdit.text() )
             validator_state, _ = self.outputAxisOrderEdit.validator().validate( new_order, 0 )
             if validator_state == QValidator.Acceptable:
-                self._opExportSlot.OutputAxisOrder.setValue( new_order )
+                self._opDataExport.OutputAxisOrder.setValue( new_order )
 
         def _handleAxisOrderChecked( checked ):
             self.outputAxisOrderEdit.setEnabled( checked )
-            default_order = "".join( self._opExportSlot.Input.meta.getAxisKeys() )
+            default_order = "".join( self._opDataExport.Input.meta.getAxisKeys() )
             self.outputAxisOrderEdit.setText( default_order )
             if checked:
                 _handleNewAxisOrder()
             else:
-                self._opExportSlot.OutputAxisOrder.disconnect()
+                self._opDataExport.OutputAxisOrder.disconnect()
                 self._updateAxisOrderColor(False)
         
         self.outputAxisOrderEdit.editingFinished.connect( _handleNewAxisOrder )
         self.outputAxisOrderEdit.textChanged.connect( partial(self._updateAxisOrderColor, True) )
-        self.outputAxisOrderEdit.setValidator( DataExportOptionsDlg._AxisOrderValidator( self, self._opExportSlot.ConvertedImage ) )
+        self.outputAxisOrderEdit.setValidator( DataExportOptionsDlg._AxisOrderValidator( self, self._opDataExport.ConvertedImage ) )
         self.outputAxisOrderEdit.installEventFilter( DataExportOptionsDlg._AxisOrderEventFilter(self) )
         self.axisOrderCheckbox.toggled.connect( _handleAxisOrderChecked )
 
@@ -375,8 +375,8 @@ class DataExportOptionsDlg(QDialog):
     # File format and options
     #**************************************************************************
     def _initFileOptionsWidget(self):
-        opExportSlot = self._opExportSlot
-        self.exportFileOptionsWidget.initExportOp( opExportSlot )
+        opDataExport = self._opDataExport
+        self.exportFileOptionsWidget.initExportOp( opDataExport )
         self.exportFileOptionsWidget.formatValidityChange.connect( partial(self._set_okay_condition, 'file format') )
         
 #**************************************************************************
