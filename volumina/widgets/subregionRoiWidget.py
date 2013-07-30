@@ -123,7 +123,7 @@ class SubregionRoiWidget( QTableWidget ):
             self.roiChanged.emit( *roi )
     
     def _handleItemChanged(self, item):
-        if not self._handling_click:
+        if not self._handling_click: # infinite recursion guard
             if len(self._boxes) == 0:
                 return
             checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
@@ -151,6 +151,7 @@ class SubregionRoiWidget( QTableWidget ):
             item.setCheckState( new_state )
             min_boxes[row].setEnabled( item.checkState() == Qt.Unchecked )
             max_boxes[row].setEnabled( item.checkState() == Qt.Unchecked )
+            self._updateRoi()
             self._handling_click = False
 
 if __name__ == "__main__":
