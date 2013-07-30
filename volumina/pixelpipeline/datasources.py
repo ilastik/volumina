@@ -234,9 +234,13 @@ class LazyflowSource( QObject ):
         self._op5.Output.notifyDirty( self._dirtyCallback )
         self._op5.externally_managed = True
 
+        self.additional_owned_ops = [] 
+
     def clean_up(self):
         self._op5.cleanUp()
         self._op5 = None
+        for op in reversed(self.additional_owned_ops):
+            op.cleanUp()
 
     def __del__(self):
         if self._op5 is not None:

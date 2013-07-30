@@ -25,6 +25,12 @@ class LayerStackModel(QAbstractListModel):
         self.selectionModel.selectionChanged.connect(self._onSelectionChanged)
         self._movingRows = False
         QTimer.singleShot(0, self.updateGUI)
+        
+        def _handleRemovedLayer(layer):
+            # Layerstacks *own* the layers they hold, and thus are 
+            #  responsible for cleaning them up when they are removed:
+            layer.clean_up()
+        self.layerRemoved.connect( _handleRemovedLayer )
 
     ####
     ## High level API to manipulate the layerstack
@@ -94,10 +100,6 @@ class LayerStackModel(QAbstractListModel):
         self.layerRemoved.emit( layer, row.row() )
         self.updateGUI()
         
-        # Layerstacks *own* the layers they hold, and thus are 
-        #  responsible for cleaning them up when they are removed:
-        layer.clean_up()
-
     @pyqtSignature("moveSelectedUp()")
     def moveSelectedUp(self):
         assert len(self.selectionModel.selectedRows()) == 1

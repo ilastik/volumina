@@ -2,13 +2,14 @@
 from functools import partial
 
 #Qt
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem, QColor
+from PyQt4.QtCore import pyqtSignal, Qt, QObject
+from PyQt4.QtGui import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem, QColor, QMessageBox
 
 #volumina
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
 from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
-from exportDlg import ExportDialog
+from dataExportOptionsDlg import DataExportOptionsDlg
+from multiStepProgressDialog import MultiStepProgressDialog
 
 #===----------------------------------------------------------------------------------------------------------------===
 
@@ -18,6 +19,7 @@ from exportDlg import ExportDialog
 _has_lazyflow = True
 try:
     from lazyflow.graph import Graph
+    from lazyflow.request import Request
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -103,17 +105,34 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         import lazyflow
         dataSlots = [slot.dataSlot for (slot, isSlot) in
                      zip(layer.datasources, sourceTags) if isSlot is True]
-        op = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator())
+
+        opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
         for slot in dataSlots:
             assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (type(slot))
             assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(slot.getRealOperator()))
-        op.AxisFlag.setValue("c")
-        op.Images.resize(len(dataSlots))
-        for i,islot in enumerate(op.Images):
+        opStackChannels.AxisFlag.setValue("c")
+        opStackChannels.Images.resize(len(dataSlots))
+        for i,islot in enumerate(opStackChannels.Images):
             islot.connect(dataSlots[i])
-        expDlg = ExportDialog(parent=menu, inputslot=op.Output, layername=layer.name)
-        expDlg.show()
+
+        # Create an operator to do the work
+        from lazyflow.operators.ioOperators import OpFormattedDataExport
+        opExport = OpFormattedDataExport( parent=opStackChannels.parent )
+        opExport.OutputFilenameFormat.setValue( layer.name )
+        opExport.Input.connect( opStackChannels.Output )
         
+        # Use this dialog to populate the operator's slot settings
+        settingsDlg = DataExportOptionsDlg( menu, opExport )
+
+        # Kick of the export and return immediately.        
+        if ( settingsDlg.exec_() == DataExportOptionsDlg.Accepted ):
+            helper = ExportHelper( menu )
+            helper.run(opExport)
+            
+            # Clean up our temporary operators
+            opExport.cleanUp()
+            opStackChannels.cleanUp()
+
     menu = QMenu("Menu", parent)
     title = QAction("%s" % layer.name, menu)
     title.setEnabled(False)
@@ -134,3 +153,58 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         menu.addAction(action)
 
     menu.exec_(pos)    
+
+class ExportHelper(QObject):
+    """
+    Executes a layer export in the background, shows a progress dialog, and displays errors (if any).
+    """
+    # This signal is used to ensure that request 
+    #  callbacks are executed in the gui thread
+    _forwardingSignal = pyqtSignal( object )
+
+    def _handleForwardedCall(self, fn):
+        # Execute the callback
+        fn()
+    
+    def __init__(self, parent):
+        super( ExportHelper, self ).__init__(parent)
+        self._forwardingSignal.connect( self._handleForwardedCall )
+
+    def run(self, opExport):
+        """
+        Start the export and return immediately (after showing the progress dialog).
+        
+        :param opExport: The export object to execute.
+                         It must have a 'run_export()' method and a 'progressSignal' member.
+        """
+        progressDlg = MultiStepProgressDialog(parent=self.parent())
+        progressDlg.setNumberOfSteps(1)
+        
+        def _forwardProgressToGui(progress):
+            self._forwardingSignal.emit( partial( progressDlg.setStepProgress, progress ) )
+        opExport.progressSignal.subscribe( _forwardProgressToGui )
+    
+        def _onFinishExport( *args ): # Also called on cancel
+            self._forwardingSignal.emit( progressDlg.finishStep )
+    
+        def _onFail( exc, exc_info ):
+            import traceback
+            traceback.print_tb(exc_info[2])
+            msg = "Failed to export layer due to the following error:\n{}".format( exc )
+            self._forwardingSignal.emit( partial(QMessageBox.critical, self.parent(), "Export Failed", msg) )
+            self._forwardingSignal.emit( progressDlg.setFailed )
+
+        # Use a request to execute in the background    
+        req = Request( opExport.run_export )
+        req.notify_cancelled( _onFinishExport )
+        req.notify_finished( _onFinishExport )
+        req.notify_failed( _onFail )
+
+        # Allow cancel.
+        progressDlg.rejected.connect( req.cancel )
+
+        # Start the export
+        req.submit()
+
+        # Execute the progress dialog
+        progressDlg.exec_()
