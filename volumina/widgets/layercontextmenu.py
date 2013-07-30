@@ -118,6 +118,7 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         # Create an operator to do the work
         from lazyflow.operators.ioOperators import OpFormattedDataExport
         opExport = OpFormattedDataExport( parent=opStackChannels.parent )
+        opExport.OutputFilenameFormat.setValue( layer.name )
         opExport.Input.connect( opStackChannels.Output )
         
         # Use this dialog to populate the operator's slot settings
