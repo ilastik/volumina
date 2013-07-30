@@ -43,6 +43,7 @@ class ExportOperatorABC(Operator):
     ConvertedImage = OutputSlot() # Preprocessed image, BEFORE axis reordering
     ImageToExport = OutputSlot() # Preview of the pre-processed image that will be exported
     ExportPath = OutputSlot() # Location of the saved file after export is complete.
+    FormatSelectionIsValid = OutputSlot()
 
     @classmethod
     def __subclasshook__(cls, C):
@@ -79,6 +80,12 @@ class DataExportOptionsDlg(QDialog):
             "Cannot use {} as an export operator.  "\
             "It doesn't match the required interface".format( type(opExportSlot) )
 
+        self._okay_conditions = {}
+
+        # Connect the 'transaction slot'.
+        # All slot changes will occur immediately
+        opExportSlot.TransactionSlot.setValue(True)
+
         # Init child widgets
         self._initMetaInfoWidgets()
         self._initSubregionWidget()
@@ -98,6 +105,11 @@ class DataExportOptionsDlg(QDialog):
            ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
             return True
         return False
+
+    def _set_okay_condition(self, name, status):
+        self._okay_conditions[name] = status
+        all_okay = all( self._okay_conditions.values() )
+        self.buttonBox.button(QDialogButtonBox.Ok).setEnabled( all_okay )
 
     #**************************************************************************
     # Input/Output Meta-info (display only)
@@ -314,7 +326,7 @@ class DataExportOptionsDlg(QDialog):
         text = self.outputAxisOrderEdit.text()
         state, _ = self.outputAxisOrderEdit.validator().validate( text, 0 )
         invalidAxes = (checked and state != QValidator.Acceptable and not allow_intermediate)
-        self.buttonBox.button(QDialogButtonBox.Ok).setEnabled( not invalidAxes )
+        self._set_okay_condition('axis order', not invalidAxes)
         if invalidAxes:
             self.outputAxisOrderEdit.setStyleSheet("QLineEdit {background-color: red}" )
         else:
@@ -365,6 +377,7 @@ class DataExportOptionsDlg(QDialog):
     def _initFileOptionsWidget(self):
         opExportSlot = self._opExportSlot
         self.exportFileOptionsWidget.initExportOp( opExportSlot )
+        self.exportFileOptionsWidget.formatValidityChange.connect( partial(self._set_okay_condition, 'file format') )
         
 #**************************************************************************
 # Helper functions
