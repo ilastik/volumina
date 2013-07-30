@@ -36,7 +36,7 @@
    <item row="0" column="1">
     <widget class="QComboBox" name="formatCombo"/>
    </item>
-   <item row="0" column="2">
+   <item row="0" column="3">
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -49,8 +49,15 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="0" colspan="3">
+   <item row="1" column="0" colspan="4">
     <widget class="QStackedWidget" name="stackedWidget"/>
+   </item>
+   <item row="0" column="2">
+    <widget class="QLabel" name="formatErrorLabel">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Invalid format for current export shape.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

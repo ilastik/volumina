@@ -1,20 +1,37 @@
+import re
 import os
 import collections
 
 from PyQt4 import uic
+from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QWidget
 
 from singleFileExportOptionsWidget import SingleFileExportOptionsWidget
 from hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
+from stackExportFileOptionsWidget import StackExportFileOptionsWidget
+
+try:
+    from lazyflow.operators.ioOperators import OpExportSlot
+    _has_lazyflow = True
+except:
+    _has_lazyflow = False
 
 class MultiformatSlotExportFileOptionsWidget(QWidget):
+    formatValidityChange = pyqtSignal(bool)
     
     def __init__(self, parent):
+        global _has_lazyflow
+        assert _has_lazyflow, "This widget can't be used unless you have lazyflow installed."
         super( MultiformatSlotExportFileOptionsWidget, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
+        self._valid_selection = True
+        self.formatErrorLabel.setVisible(False)
 
     def initExportOp(self, opExportSlot):
         self._opExportSlot = opExportSlot
+
+        opExportSlot.FormatSelectionIsValid.notifyDirty( self._handleFormatValidChange )
+        
         self.hdf5OptionsWidget = Hdf5ExportFileOptionsWidget( self )
         self.hdf5OptionsWidget.initSlots( opExportSlot.OutputFilenameFormat,
                                           opExportSlot.OutputInternalPath )
@@ -22,16 +39,21 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self.npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )
         self.npyOptionsWidget.initSlot( opExportSlot.OutputFilenameFormat )
 
-        self.pngOptionsWidget = SingleFileExportOptionsWidget( self, "png", "PNG files (*.png)" )
-        self.pngOptionsWidget.initSlot( opExportSlot.OutputFilenameFormat )
-
         # Specify our supported formats and their associated property widgets
         # TODO: Explicitly reconcile this with the OpExportSlot.FORMATS
-        # TODO: Only include formats that can export the current dataset (e.g. don't include 2D formats for a 3D image)
         self._format_option_editors = \
             collections.OrderedDict([ ('hdf5', self.hdf5OptionsWidget),
-                                      ('npy', self.npyOptionsWidget),
-                                      ('png', self.pngOptionsWidget) ])
+                                      ('npy', self.npyOptionsWidget) ])
+
+        for fmt in OpExportSlot._2d_formats:
+            widget = SingleFileExportOptionsWidget( self, fmt.extension, "{ext} files (*.{ext})".format( ext=fmt.extension ))
+            widget.initSlot( opExportSlot.OutputFilenameFormat )
+            self._format_option_editors[fmt.name] = widget
+
+        for fmt in OpExportSlot._3d_sequence_formats:
+            widget = StackExportFileOptionsWidget( self, fmt.extension )
+            widget.initSlot( opExportSlot.OutputFilenameFormat )
+            self._format_option_editors[fmt.name] = widget
 
         # Populate the format combo
         for file_format, widget in self._format_option_editors.items():
@@ -53,8 +75,34 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
     def _handleFormatChange(self, index):
         file_format = str( self.formatCombo.currentText() )
         option_widget = self._format_option_editors[file_format]
-        self.stackedWidget.setCurrentWidget( option_widget )
         self._opExportSlot.OutputFormat.setValue( file_format )
+
+        # Auto-remove any instance of 'slice_index' from the 
+        #  dataset path if the user switches to a non-sequence type
+        # TODO: This is a little hacky.  Could be fixed by defining an ABC for 
+        #       file option widgets with a 'repair path' method or something 
+        #       similar, but that seems like overkill for now.
+        export_path = str( self._opExportSlot.OutputFilenameFormat.value )
+        if not isinstance(option_widget, StackExportFileOptionsWidget) \
+           and re.search('{slice_index.*}', export_path):
+            try:
+                from lazyflow.utility import format_known_keys
+                export_path = format_known_keys(export_path, { 'slice_index':1234567890 } )
+                export_path = export_path.replace('1234567890', '')
+            except:
+                pass
+            else:
+                self._opExportSlot.OutputFilenameFormat.setValue( export_path )
+
+        # Show the new option widget
+        self.stackedWidget.setCurrentWidget( option_widget )
+    
+    def _handleFormatValidChange(self, *args):
+        old_valid = self._valid_selection
+        self._valid_selection = self._opExportSlot.FormatSelectionIsValid.value
+        self.formatErrorLabel.setVisible(not self._valid_selection)
+        if self._valid_selection != old_valid:
+            self.formatValidityChange.emit(self._valid_selection)
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication
@@ -64,6 +112,7 @@ if __name__ == "__main__":
         OutputFilenameFormat = InputSlot(value='~/something.h5')
         OutputInternalPath = InputSlot(value='volume/data')
         OutputFormat = InputSlot(value='hdf5')
+        FormatSelectionIsValid = InputSlot(value=True) # Normally an output slot
         
         def setupOutputs(self): pass
         def execute(self, *args): pass
