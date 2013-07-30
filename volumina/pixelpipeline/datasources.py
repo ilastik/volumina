@@ -32,7 +32,7 @@ class ArrayRequest( object ):
         self._result = None
 
     def wait( self ):
-        if not self._result:
+        if self._result is None:
             self._result = self._array[self._slicing]
         return self._result
     
