@@ -28,22 +28,6 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>164</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="2">
-    <widget class="QLineEdit" name="directoryEdit"/>
-   </item>
    <item row="0" column="1">
     <widget class="QLabel" name="label">
      <property name="text">
@@ -51,8 +35,38 @@
      </property>
     </widget>
    </item>
+   <item row="3" column="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>137</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="2">
+    <widget class="QLineEdit" name="directoryEdit"/>
+   </item>
    <item row="1" column="2" colspan="2">
     <widget class="QLineEdit" name="filePatternEdit"/>
+   </item>
+   <item row="2" column="2">
+    <widget class="QLabel" name="descriptionLabel">
+     <property name="text">
+      <string>20 XYC Images (Stacked across Z)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Description:</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

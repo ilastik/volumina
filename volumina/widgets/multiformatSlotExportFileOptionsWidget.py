@@ -52,7 +52,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         for fmt in OpExportSlot._3d_sequence_formats:
             widget = StackExportFileOptionsWidget( self, fmt.extension )
-            widget.initSlot( opDataExport.OutputFilenameFormat )
+            widget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport )
             self._format_option_editors[fmt.name] = widget
 
         # Populate the format combo

@@ -5,9 +5,17 @@ from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
+try:
+    from lazyflow.operators.ioOperators import OpStackWriter
+    _has_lazyflow = True
+except:
+    _has_lazyflow = False
+
 class StackExportFileOptionsWidget(QWidget):
     
     def __init__(self, parent, extension):
+        global _has_lazyflow
+        assert _has_lazyflow, "This widget requires lazyflow to be installed."
         super( StackExportFileOptionsWidget, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
 
@@ -26,15 +34,17 @@ class StackExportFileOptionsWidget(QWidget):
                 self._updateFromGui()
         return False
 
-    def initSlot(self, filepathSlot):
+    def initSlots(self, filepathSlot, imageSlot):
         self._filepathSlot = filepathSlot
+        self._imageSlot = imageSlot
         self.selectDirectoryButton.clicked.connect( self._browseForFilepath )
+        imageSlot.notifyMetaChanged( self._updateDescription )
 
     def showEvent(self, event):
         super(StackExportFileOptionsWidget, self).showEvent(event)
-        self._updateFromSlot()
+        self._updatePathsFromSlot()
     
-    def _updateFromSlot(self):
+    def _updatePathsFromSlot(self):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             directory, filename_pattern = os.path.split( file_path )
@@ -50,7 +60,18 @@ class StackExportFileOptionsWidget(QWidget):
             # Re-configure the slot in case we changed the extension
             file_path = os.path.join( directory, filename_pattern ) + '.' + self._extension            
             self._filepathSlot.setValue( str(file_path) )
-    
+
+    def _updateDescription(self, *args):
+        if not self._imageSlot.ready():
+            self.descriptionLabel.setText("")
+            return
+        tagged_shape = self._imageSlot.meta.getTaggedShape()
+        axes = OpStackWriter.get_nonsingleton_axes_for_tagged_shape(tagged_shape)
+        step_axis = axes[0].upper()
+        image_axes = "".join(axes[1:]).upper()
+        description = "{} {} Images (Stacked across {})".format( tagged_shape[axes[0]], image_axes, step_axis )
+        self.descriptionLabel.setText( description )
+
     def _browseForFilepath(self):
         starting_dir = os.path.expanduser("~")
         if self._filepathSlot.ready():
