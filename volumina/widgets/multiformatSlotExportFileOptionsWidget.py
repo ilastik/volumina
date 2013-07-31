@@ -34,29 +34,43 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         opDataExport.FormatSelectionIsValid.notifyDirty( self._handleFormatValidChange )
         
-        self.hdf5OptionsWidget = Hdf5ExportFileOptionsWidget( self )
-        self.hdf5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat,
-                                          opDataExport.OutputInternalPath )
-
-        self.npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )
-        self.npyOptionsWidget.initSlot( opDataExport.OutputFilenameFormat )
-
         # Specify our supported formats and their associated property widgets
-        # TODO: Explicitly reconcile this with the opDataExport.FORMATS
-        self._format_option_editors = \
-            collections.OrderedDict([ ('hdf5', self.hdf5OptionsWidget),
-                                      ('npy', self.npyOptionsWidget) ])
+        self._format_option_editors = collections.OrderedDict()
 
+        # HDF5
+        hdf5OptionsWidget = Hdf5ExportFileOptionsWidget( self )
+        hdf5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat,
+                                     opDataExport.OutputInternalPath )
+        self._format_option_editors['hdf5'] = hdf5OptionsWidget
+
+        # Numpy
+        npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )
+        npyOptionsWidget.initSlot( opDataExport.OutputFilenameFormat )
+        self._format_option_editors['npy'] = npyOptionsWidget
+
+        # All 2D image formats
         for fmt in OpExportSlot._2d_formats:
             widget = SingleFileExportOptionsWidget( self, fmt.extension, "{ext} files (*.{ext})".format( ext=fmt.extension ))
             widget.initSlot( opDataExport.OutputFilenameFormat )
             self._format_option_editors[fmt.name] = widget
 
+        # Sequences of 2D images
         for fmt in OpExportSlot._3d_sequence_formats:
             widget = StackExportFileOptionsWidget( self, fmt.extension )
             widget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport )
             widget.pathValidityChange.connect( self._handlePathValidityChange )
             self._format_option_editors[fmt.name] = widget
+
+        # Multipage TIFF
+        multipageTiffWidget = SingleFileExportOptionsWidget( self, "tiff", "TIFF files (*.tif *tiff)" )
+        multipageTiffWidget.initSlot( opDataExport.OutputFilenameFormat )
+        self._format_option_editors["multipage tiff"] = multipageTiffWidget
+        
+        # Sequence of Multipage TIFF
+        multipageTiffSequenceWidget = StackExportFileOptionsWidget( self, "tiff" )
+        multipageTiffSequenceWidget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport )
+        multipageTiffSequenceWidget.pathValidityChange.connect( self._handlePathValidityChange )
+        self._format_option_editors["multipage tiff sequence"] = multipageTiffSequenceWidget
 
         # Populate the format combo
         for file_format, widget in self._format_option_editors.items():
