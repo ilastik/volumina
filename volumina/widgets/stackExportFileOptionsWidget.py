@@ -108,14 +108,14 @@ class StackExportFileOptionsWidget(QWidget):
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication
     from lazyflow.graph import Graph
-    from lazyflow.operators.ioOperators import OpExportSlot
+    from lazyflow.operators.ioOperators import OpFormattedDataExport
 
-    opExportSlot = OpExportSlot(graph=Graph())
-    opExportSlot.OutputFilenameFormat.setValue( '/home/bergs/hello.png' )
+    opDataExport = OpFormattedDataExport(graph=Graph())
+    opDataExport.OutputFilenameFormat.setValue( '/home/bergs/hello.png' )
 
     app = QApplication([])
     w = StackExportFileOptionsWidget(None, 'png')
-    w.initSlot(opExportSlot.OutputFilenameFormat)
+    w.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport )
     w.show()
     app.exec_()
 
