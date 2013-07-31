@@ -8,55 +8,60 @@ from PyQt4 import uic
 from PyQt4.QtCore import Qt, QObject, QEvent
 from PyQt4.QtGui import QDialog, QValidator, QDialogButtonBox
 
-from lazyflow.graph import Operator, InputSlot, OutputSlot
+try:
+    from lazyflow.graph import Operator, InputSlot, OutputSlot
+    _has_lazyflow = True
+except:
+    _has_lazyflow = False
 
 #**************************************************************************
 # Model operator interface ABC
 #**************************************************************************
-class ExportOperatorABC(Operator):
-    """
-    The export dialog is designed to work with any operator that satisfies this ABC interface.
-    """
-    # Operator.__metaclass__ already inherits ABCMeta
-    # __metaclass__ = ABCMeta
+if _has_lazyflow:
+    class ExportOperatorABC(Operator):
+        """
+        The export dialog is designed to work with any operator that satisfies this ABC interface.
+        """
+        # Operator.__metaclass__ already inherits ABCMeta
+        # __metaclass__ = ABCMeta
+        
+        Input = InputSlot()
     
-    Input = InputSlot()
-
-    # Subregion params
-    RegionStart = InputSlot(optional=True)
-    RegionStop = InputSlot(optional=True)
-
-    # Normalization params    
-    InputMin = InputSlot(optional=True)
-    InputMax = InputSlot(optional=True)
-    ExportMin = InputSlot(optional=True)
-    ExportMax = InputSlot(optional=True)
-
-    ExportDtype = InputSlot(optional=True)
-    OutputAxisOrder = InputSlot(optional=True)
+        # Subregion params
+        RegionStart = InputSlot(optional=True)
+        RegionStop = InputSlot(optional=True)
     
-    # File settings
-    OutputFilenameFormat = InputSlot(value='RESULTS_{roi}') # A format string allowing {roi}, {x_start}, {x_stop}, etc.
-    OutputInternalPath = InputSlot(value='exported_data')
-    OutputFormat = InputSlot(value='hdf5')
-
-    ConvertedImage = OutputSlot() # Preprocessed image, BEFORE axis reordering
-    ImageToExport = OutputSlot() # Preview of the pre-processed image that will be exported
-    ExportPath = OutputSlot() # Location of the saved file after export is complete.
-    FormatSelectionIsValid = OutputSlot()
-
-    @classmethod
-    def __subclasshook__(cls, C):
-        # Must have all the required input and output slots.
-        if cls is ExportOperatorABC:
-            for slot in cls.inputSlots:
-                if not hasattr(C, slot.name) or not isinstance(getattr(C, slot.name), InputSlot):
-                    return False
-            for slot in cls.outputSlots:
-                if not hasattr(C, slot.name) or not isinstance(getattr(C, slot.name), OutputSlot):
-                    return False
-            return True
-        return NotImplemented
+        # Normalization params    
+        InputMin = InputSlot(optional=True)
+        InputMax = InputSlot(optional=True)
+        ExportMin = InputSlot(optional=True)
+        ExportMax = InputSlot(optional=True)
+    
+        ExportDtype = InputSlot(optional=True)
+        OutputAxisOrder = InputSlot(optional=True)
+        
+        # File settings
+        OutputFilenameFormat = InputSlot(value='RESULTS_{roi}') # A format string allowing {roi}, {x_start}, {x_stop}, etc.
+        OutputInternalPath = InputSlot(value='exported_data')
+        OutputFormat = InputSlot(value='hdf5')
+    
+        ConvertedImage = OutputSlot() # Preprocessed image, BEFORE axis reordering
+        ImageToExport = OutputSlot() # Preview of the pre-processed image that will be exported
+        ExportPath = OutputSlot() # Location of the saved file after export is complete.
+        FormatSelectionIsValid = OutputSlot()
+    
+        @classmethod
+        def __subclasshook__(cls, C):
+            # Must have all the required input and output slots.
+            if cls is ExportOperatorABC:
+                for slot in cls.inputSlots:
+                    if not hasattr(C, slot.name) or not isinstance(getattr(C, slot.name), InputSlot):
+                        return False
+                for slot in cls.outputSlots:
+                    if not hasattr(C, slot.name) or not isinstance(getattr(C, slot.name), OutputSlot):
+                        return False
+                return True
+            return NotImplemented
 
 #**************************************************************************
 # DataExportOptionsDlg
@@ -72,6 +77,8 @@ class DataExportOptionsDlg(QDialog):
                              temporary operator that can be discarded in case the user clicked 'cancel'.
                              If the user clicks 'OK', then copy the slot settings from the temporary op to your real one.
         """
+        global _has_lazyflow
+        assert _has_lazyflow, "This widget requires lazyflow."
         super( DataExportOptionsDlg, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
 
