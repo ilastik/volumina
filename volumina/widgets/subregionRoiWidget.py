@@ -159,7 +159,7 @@ if __name__ == "__main__":
     
     app = QApplication([])
     w = SubregionRoiWidget(None)
-    w.initWithExtents( 'xyz', (10,20,30) )
+    w.initWithExtents( 'xyz', (10,20,30), (0, None, 10), (5, None, 11) )
     w.show()
 
     app.exec_()
