@@ -2,7 +2,7 @@ import os
 import re
 
 from PyQt4 import uic
-from PyQt4.QtCore import Qt, QEvent
+from PyQt4.QtCore import pyqtSignal, Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
 try:
@@ -12,6 +12,7 @@ except:
     _has_lazyflow = False
 
 class StackExportFileOptionsWidget(QWidget):
+    pathValidityChange = pyqtSignal(bool)
     
     def __init__(self, parent, extension):
         global _has_lazyflow
@@ -23,6 +24,8 @@ class StackExportFileOptionsWidget(QWidget):
 
         self.directoryEdit.installEventFilter(self)
         self.filePatternEdit.installEventFilter(self)
+
+        self.settings_are_valid = True
 
     def eventFilter(self, watched, event):
         # Apply the new path if the user presses 
@@ -51,7 +54,7 @@ class StackExportFileOptionsWidget(QWidget):
             filename_pattern = os.path.splitext(filename_pattern)[0]
 
             # Auto-insert the {slice_index} field
-            if 'slice_index' not in filename_pattern:
+            if re.search("{slice_index(:.*)?}", filename_pattern) is None:
                 filename_pattern += '{slice_index}'
 
             self.directoryEdit.setText( directory )
@@ -90,10 +93,17 @@ class StackExportFileOptionsWidget(QWidget):
         export_path = os.path.join( str(export_dir), filename_pattern )
         self._filepathSlot.setValue( str(export_path) )
         
-        if re.search('{slice_index.*}', export_path):
+        old_valid_state = self.settings_are_valid
+
+        if re.search("{slice_index(:.*)?}", export_path):
+            self.settings_are_valid = True
             self.filePatternEdit.setStyleSheet("QLineEdit {background-color: white}" )
         else:
+            self.settings_are_valid = False
             self.filePatternEdit.setStyleSheet("QLineEdit {background-color: red}" )
+
+        if old_valid_state != self.settings_are_valid:
+            self.pathValidityChange.emit( self.settings_are_valid )
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication

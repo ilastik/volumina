@@ -378,6 +378,7 @@ class DataExportOptionsDlg(QDialog):
         opDataExport = self._opDataExport
         self.exportFileOptionsWidget.initExportOp( opDataExport )
         self.exportFileOptionsWidget.formatValidityChange.connect( partial(self._set_okay_condition, 'file format') )
+        self.exportFileOptionsWidget.pathValidityChange.connect( partial(self._set_okay_condition, 'file path') )
         
 #**************************************************************************
 # Helper functions

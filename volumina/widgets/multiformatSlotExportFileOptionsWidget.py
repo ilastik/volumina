@@ -18,6 +18,7 @@ except:
 
 class MultiformatSlotExportFileOptionsWidget(QWidget):
     formatValidityChange = pyqtSignal(bool)
+    pathValidityChange = pyqtSignal(bool)
     
     def __init__(self, parent):
         global _has_lazyflow
@@ -25,6 +26,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         super( MultiformatSlotExportFileOptionsWidget, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
         self._valid_selection = True
+        self._valid_path = True
         self.formatErrorLabel.setVisible(False)
 
     def initExportOp(self, opDataExport):
@@ -53,6 +55,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         for fmt in OpExportSlot._3d_sequence_formats:
             widget = StackExportFileOptionsWidget( self, fmt.extension )
             widget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport )
+            widget.pathValidityChange.connect( self._handlePathValidityChange )
             self._format_option_editors[fmt.name] = widget
 
         # Populate the format combo
@@ -96,13 +99,26 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # Show the new option widget
         self.stackedWidget.setCurrentWidget( option_widget )
+        
+        self._handlePathValidityChange()
     
     def _handleFormatValidChange(self, *args):
         old_valid = self._valid_selection
         self._valid_selection = self._opDataExport.FormatSelectionIsValid.value
         self.formatErrorLabel.setVisible(not self._valid_selection)
+
         if self._valid_selection != old_valid:
-            self.formatValidityChange.emit(self._valid_selection)
+            self.formatValidityChange.emit( self._valid_selection )
+
+    def _handlePathValidityChange(self):
+        old_valid = self._valid_path
+        if hasattr( self.stackedWidget.currentWidget(), 'settings_are_valid' ):
+            self._valid_path = self.stackedWidget.currentWidget().settings_are_valid
+        else:
+            self._valid_path = True
+
+        if old_valid != self._valid_path:
+            self.pathValidityChange.emit( self._valid_path )
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication
