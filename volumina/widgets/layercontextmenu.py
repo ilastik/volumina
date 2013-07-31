@@ -124,7 +124,7 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         # Use this dialog to populate the operator's slot settings
         settingsDlg = DataExportOptionsDlg( menu, opExport )
 
-        # Kick of the export and return immediately.        
+        # If user didn't cancel, run the export now.
         if ( settingsDlg.exec_() == DataExportOptionsDlg.Accepted ):
             helper = ExportHelper( menu )
             helper.run(opExport)
@@ -207,4 +207,5 @@ class ExportHelper(QObject):
         req.submit()
 
         # Execute the progress dialog
+        # (We can block the thread here because the QDialog spins up its own event loop.)
         progressDlg.exec_()
