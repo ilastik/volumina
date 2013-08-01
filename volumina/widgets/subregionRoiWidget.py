@@ -95,6 +95,9 @@ class SubregionRoiWidget( QTableWidget ):
 
             startBox.setPartner( stopBox )
             stopBox.setPartner( startBox )
+            
+            startBox.setValue( default_start )
+            stopBox.setValue( default_stop )
 
             startBox.setEnabled( tagged_start[axis_key] is not None )
             stopBox.setEnabled( tagged_stop[axis_key] is not None )
