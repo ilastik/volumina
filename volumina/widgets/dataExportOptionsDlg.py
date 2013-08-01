@@ -316,6 +316,20 @@ class DataExportOptionsDlg(QDialog):
     # Axis order
     #**************************************************************************
     def _initAxisOrderWidgets(self):
+        if not self._opDataExport.OutputAxisOrder.ready():
+            # Special behavior: If it looks like the data is in a dumb order (e.g. xyz),
+            # auto-set the transpose order to something reasonable.
+            axiskeys = self._opDataExport.Input.meta.getAxisKeys()
+            need_reorder = False
+            need_reorder |= 'y' in axiskeys and 'x' in axiskeys and axiskeys.index('y') > axiskeys.index('x')
+            need_reorder |= 'z' in axiskeys and 'x' in axiskeys and axiskeys.index('z') > axiskeys.index('x')
+            need_reorder |= 'z' in axiskeys and 'y' in axiskeys and axiskeys.index('z') > axiskeys.index('y')
+
+            if need_reorder:
+                # Assume the ideal order is 'tzyxc', but omit the ones we don't need
+                ideal_order = filter( lambda k: k in axiskeys, 'tzyxc' )
+                self._opDataExport.OutputAxisOrder.setValue( "".join( ideal_order ) )
+
         if self._opDataExport.OutputAxisOrder.ready():
             self.axisOrderCheckbox.setChecked( Qt.Checked )
             self.outputAxisOrderEdit.setText( self._opDataExport.OutputAxisOrder.value )
@@ -341,7 +355,7 @@ class DataExportOptionsDlg(QDialog):
         self.outputAxisOrderEdit.setValidator( DataExportOptionsDlg._AxisOrderValidator( self, self._opDataExport.ConvertedImage ) )
         self.outputAxisOrderEdit.installEventFilter( DataExportOptionsDlg._AxisOrderEventFilter(self) )
         self.axisOrderCheckbox.toggled.connect( _handleAxisOrderChecked )
-
+        
     def _updateAxisOrderColor(self, allow_intermediate):
         checked = self.axisOrderCheckbox.isChecked()
         text = self.outputAxisOrderEdit.text()
@@ -428,7 +442,7 @@ if __name__ == "__main__":
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 
     data = numpy.zeros( (10,20,30,3), dtype=numpy.float32 )
-    data = vigra.taggedView(data, 'zyxc')
+    data = vigra.taggedView(data, 'xyzc')
 
     op = OpFormattedDataExport( graph=Graph() )
     op.Input.setValue( data )
