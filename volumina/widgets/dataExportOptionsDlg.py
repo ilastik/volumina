@@ -25,7 +25,11 @@ if _has_lazyflow:
         # Operator.__metaclass__ already inherits ABCMeta
         # __metaclass__ = ABCMeta
         
+        # The original image, which we'll transform and export.
         Input = InputSlot()
+    
+        # See OpFormattedDataExport for details
+        TransactionSlot = InputSlot()
     
         # Subregion params
         RegionStart = InputSlot(optional=True)
@@ -231,10 +235,14 @@ class DataExportOptionsDlg(QDialog):
             # Update the operator with the new settings
             input_drange = self.inputValueRange.getValues()
             output_drange = self.outputValueRange.getValues()
+            
+            # Use transaction slot to ensure atomicity of these settings
+            opDataExport.TransactionSlot.disconnect()
             opDataExport.InputMin.setValue( input_drange[0] )
             opDataExport.InputMax.setValue( input_drange[1] )
             opDataExport.ExportMin.setValue( output_drange[0] )
             opDataExport.ExportMax.setValue( output_drange[1] )
+            opDataExport.TransactionSlot.setValue(True)
 
         def _setDefaultInputRange():
             self.inputValueRange.setDType( dtype )
@@ -259,10 +267,13 @@ class DataExportOptionsDlg(QDialog):
                 self.inputValueRange.setBlank()
                 self.outputValueRange.setBlank()
                 # Clear the operator slots
+                # Use transaction slot to ensure atomicity of these settings
+                opDataExport.TransactionSlot.disconnect()
                 opDataExport.InputMin.disconnect()
                 opDataExport.InputMax.disconnect()
                 opDataExport.ExportMin.disconnect()
                 opDataExport.ExportMax.disconnect()
+                opDataExport.TransactionSlot.setValue(True)
 
         # Init gui with default values
         _updateOutputRangeForNewDtype( opDataExport.ImageToExport.meta.dtype )
@@ -420,6 +431,7 @@ if __name__ == "__main__":
 
     op = OpFormattedDataExport( graph=Graph() )
     op.Input.setValue( data )
+    op.TransactionSlot.setValue(True)
 
     app = QApplication([])
     w = DataExportOptionsDlg(None, op)

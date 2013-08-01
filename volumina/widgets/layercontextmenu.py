@@ -120,6 +120,7 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         opExport = OpFormattedDataExport( parent=opStackChannels.parent )
         opExport.OutputFilenameFormat.setValue( layer.name )
         opExport.Input.connect( opStackChannels.Output )
+        opExport.TransactionSlot.setValue(True)
         
         # Use this dialog to populate the operator's slot settings
         settingsDlg = DataExportOptionsDlg( menu, opExport )
