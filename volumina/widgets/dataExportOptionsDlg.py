@@ -187,6 +187,7 @@ class DataExportOptionsDlg(QDialog):
             checked = self.convertDtypeCheckbox.isChecked()
             self.dtypeCombo.setEnabled( checked )
             if not checked:
+                self._opDataExport.ExportDtype.disconnect()
                 _selectDefaultDtype()
 
         self.convertDtypeCheckbox.toggled.connect( _handleConvertDtypeChecked )
