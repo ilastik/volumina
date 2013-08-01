@@ -11,6 +11,7 @@ packages=['volumina',
           'volumina._testing']
 
 package_data={'volumina.widgets.ui': ['*.ui'],
+              'volumina.widgets': ['*.ui'],
               'volumina': ['*.ui'],
               'volumina._testing': ['*.tif',
                                     '*.png', 
