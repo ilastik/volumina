@@ -58,7 +58,7 @@ class SubregionRoiWidget( QTableWidget ):
         super( SubregionRoiWidget, self ).__init__(parent)
         self.setColumnCount( 3 )
         self.setHorizontalHeaderLabels(["range", "[start,", "stop)"])
-        #self.resizeColumnToContents(0)
+        self.resizeColumnToContents(0)
         self._roi = None
         self._boxes = collections.OrderedDict()
 
