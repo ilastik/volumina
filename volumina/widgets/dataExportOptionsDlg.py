@@ -277,7 +277,9 @@ class DataExportOptionsDlg(QDialog):
             self.renormalizeCheckbox.setChecked( False )
             self.inputValueRange.setEnabled( False )
             self.outputValueRange.setEnabled( False )
-        
+            self.inputValueRange.setBlank()
+            self.outputValueRange.setBlank()
+
         if opDataExport.ExportMax.ready():
             self.outputValueRange.setValues( opDataExport.ExportMin.value, opDataExport.ExportMax.value )
 
