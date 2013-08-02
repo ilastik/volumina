@@ -151,7 +151,9 @@ class GrayscaleImageRequest( object ):
         if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
             if not a.flags.contiguous:
                 a = a.copy()
-            if self._normalize is None or self._normalize == [0, 0]: #FIXME: fix volumina conventions
+            if self._normalize is None or \
+               self._normalize[0] > self._normalize[1] or \
+               self._normalize == [0, 0]: #FIXME: fix volumina conventions
                 n = np.asarray([0, 255], dtype=a.dtype)
             else:
                 n = np.asarray(self._normalize, dtype=a.dtype)
@@ -246,6 +248,8 @@ class AlphaModulatedImageRequest( object ):
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
             tintColor = np.asarray([self._tintColor.redF(), self._tintColor.greenF(), self._tintColor.blueF()], dtype=np.float32);
             normalize = np.asarray(self._normalize, dtype=a.dtype)
+            if normalize[0] > normalize[1]:
+                normalize = None
             vigra.colors.alphamodulated2qimage_ARGB32Premultiplied(a, byte_view(img), tintColor, normalize) 
             tImg = 1000.0*(time.time()-tImg)
         else:
@@ -361,7 +365,7 @@ class ColortableImageRequest( object ):
         
         assert a.ndim == 2
 
-        if self._normalize:
+        if self._normalize and self._normalize[0] < self._normalize[1]:
             nmin, nmax = self._normalize
             if nmin:
                 a = a - nmin
@@ -482,10 +486,10 @@ class RGBAImageRequest( object ):
 
     def toImage( self ):
         for i, req in enumerate(self._requests):
-            a = self._requests[i].getResult()
-            if self._normalize[i] is not None:
-
-                normalize = self._normalize[i]
+            a = req.getResult()
+            normalize = self._normalize[i]
+            if normalize is not None and \
+               normalize[0] < normalize[1]:
                 a = a.astype(np.float32)
                 a = (a - normalize[0])*255.0 / (normalize[1]-normalize[0])
                 a[a > 255] = 255
