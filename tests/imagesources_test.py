@@ -18,17 +18,70 @@ from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageS
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer
 
+import threading
+imagesources_thread_failures = 0
+def install_thread_excepthook():
+    # This function was copied from: http://bugs.python.org/issue1230540
+    # It is necessary because sys.excepthook doesn't work for unhandled exceptions in other threads.
+    """
+    Workaround for sys.excepthook thread bug
+    (https://sourceforge.net/tracker/?func=detail&atid=105470&aid=1230540&group_id=5470).
+    Call once from __main__ before creating any threads.
+    If using psyco, call psycho.cannotcompile(threading.Thread.run)
+    since this replaces a new-style class method.
+    """
+    run_old = threading.Thread.run
+    def run(*args, **kwargs):
+        try:
+            run_old(*args, **kwargs)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            sys.excepthook(*sys.exc_info())
+            
+            # Remember that this exception occurred.
+            global imagesources_thread_failures
+            imagesources_thread_failures += 1
+            
+    threading.Thread.run = run
+
+install_thread_excepthook()
+
 class _ArraySource2d( ArraySource ):
     def request( self, slicing, through=None):
         return super(_ArraySource2d, self).request( slicing )
+
+class ImageSourcesTestBase( ut.TestCase ):
+    """
+    A common base class for all ImageSource tests.
+    Implements a tearDown() method that checks for exceptions in non-main threads.
+    """
+    def setUp(self):
+        global imagesources_thread_failures
+        imagesources_thread_failures = 0
+        self._my_thread = threading.current_thread()
+    
+    def tearDown(self):
+        # Block for all other (non-daemon) threads to complete so we 
+        #  catch any exceptions they caught before we exit.
+        for thread in threading.enumerate():
+            if thread != threading.current_thread() and not thread.daemon:
+                thread.join()
+        
+        # Check to see if this test caused any exceptions in other threads.
+        global imagesources_thread_failures
+        if imagesources_thread_failures != 0:
+            sys.stderr.write( "\nFAILURE: Uncaught exception in non-main thread during test: {}\n".format( self.id() ) )
+        self.assertTrue( imagesources_thread_failures == 0 ) # Check for exceptions in other threads.
 
 #*******************************************************************************
 # G r a y s c a l e I m a g e S o u r c e T e s t 
 #*******************************************************************************
         
-class GrayscaleImageSourceTest( ut.TestCase ):
+class GrayscaleImageSourceTest( ImageSourcesTestBase ):
     def setUp( self ):
-        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], 'lena.npy'))
+        super( GrayscaleImageSourceTest, self ).setUp()
+        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], 'lena.npy')).astype( numpy.uint32 )
         self.ars = _ArraySource2d(self.raw)
         self.ims = GrayscaleImageSource( self.ars, GrayscaleLayer( self.ars ))
 
@@ -64,8 +117,9 @@ class GrayscaleImageSourceTest( ut.TestCase ):
 # C o l o r t a b l e I m a g e S o u r c e T e s t 
 #*******************************************************************************
         
-class ColortableImageSourceTest( ut.TestCase ):
+class ColortableImageSourceTest( ImageSourcesTestBase ):
     def setUp( self ):
+        super( ColortableImageSourceTest, self ).setUp()
         self.seg = numpy.zeros((6,7), dtype=numpy.uint32) 
         self.seg[0:2,:] = 0
         self.seg[2:4,:] = 1
@@ -119,8 +173,9 @@ class ColortableImageSourceTest( ut.TestCase ):
 # R G B A I m a g e S o u r c e T e s t                                        *
 #*******************************************************************************
 
-class RGBAImageSourceTest( ut.TestCase ):
+class RGBAImageSourceTest( ImageSourcesTestBase ):
     def setUp( self ):
+        super( RGBAImageSourceTest, self ).setUp()
         basedir = os.path.dirname(volumina._testing.__file__)
         self.data = numpy.load(os.path.join(basedir, 'rgba129x104.npy'))
         self.red = _ArraySource2d(self.data[:,:,0])
