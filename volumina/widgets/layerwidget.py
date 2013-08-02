@@ -1,25 +1,19 @@
 import warnings
+from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, QPoint
 from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
-                        QAbstractItemView, QPainter, QItemSelectionModel, \
-                        QColor, QMenu, QAction, QFontMetrics, QFont, QImage, \
-                        QBrush, QPalette, QMouseEvent, QVBoxLayout, QLabel, QGridLayout, QPixmap, \
-                        QPushButton, QSpinBox, QApplication
-from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, \
-                         QPoint
+                        QPainter, QItemSelectionModel, QFontMetrics, QFont,\
+                        QPalette, QMouseEvent, QLabel, QGridLayout, QPixmap, \
+                        QSpinBox, QApplication
 
 from volumina.layer import Layer
-from layercontextmenu import layercontextmenu
-
-from os import path
 from volumina.layerstack import LayerStackModel
-from volumina.positionModel import PositionModel
-import volumina.icons_rc
+from layercontextmenu import layercontextmenu
 
 class FractionSelectionBar( QWidget ):
     fractionChanged = pyqtSignal(float)
 
     def __init__( self, initial_fraction=1., parent=None ):
-        QWidget.__init__( self, parent=parent )
+        super(FractionSelectionBar, self).__init__( parent=parent )
         self._fraction = initial_fraction
         self._lmbDown = False
 
@@ -101,7 +95,7 @@ class ToggleEye( QLabel ):
     activeChanged = pyqtSignal( bool )
 
     def __init__( self, parent=None ):
-        QWidget.__init__( self, parent=parent )
+        super(ToggleEye, self).__init__( parent=parent )
         self._active = True
         self._eye_open = QPixmap(":icons/icons/stock-eye-20.png")
         self._eye_closed = QPixmap(":icons/icons/stock-eye-20-gray.png")
@@ -142,25 +136,25 @@ class LayerItemWidget( QWidget ):
         self._layer.changed.connect(self._updateState)
 
     def __init__( self, parent=None ):
-        QWidget.__init__( self, parent=parent )
+        super(LayerItemWidget, self).__init__( parent=parent )
         self._layer = None
 
         self._font = QFont(QFont().defaultFamily(), 9)
         self._fm = QFontMetrics( self._font )
         self.bar = FractionSelectionBar( initial_fraction = 0. )
         self.bar.setFixedHeight(10)
-        self.nameLabel = QLabel()
+        self.nameLabel = QLabel( parent=self )
         self.nameLabel.setFont( self._font )
         self.nameLabel.setText( "None" )
-        self.opacityLabel = QLabel()
+        self.opacityLabel = QLabel( parent=self )
         self.opacityLabel.setAlignment(Qt.AlignRight)
         self.opacityLabel.setFont( self._font )
         self.opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self.bar.fraction())))
-        self.toggleEye = ToggleEye()
+        self.toggleEye = ToggleEye( parent=self )
         self.toggleEye.setActive(False)
         self.toggleEye.setFixedWidth(35)
         self.toggleEye.setToolTip("Visibility")
-        self.channelSelector = QSpinBox()
+        self.channelSelector = QSpinBox( parent=self )
         self.channelSelector.setFrame( False )
         self.channelSelector.setFont( self._font )
         self.channelSelector.setMaximumWidth( 35 )
@@ -168,7 +162,7 @@ class LayerItemWidget( QWidget ):
         self.channelSelector.setToolTip("Channel")
         self.channelSelector.setVisible(False)
 
-        self._layout = QGridLayout()
+        self._layout = QGridLayout( self )
         self._layout.addWidget( self.toggleEye, 0, 0 )
         self._layout.addWidget( self.nameLabel, 0, 1 )
         self._layout.addWidget( self.opacityLabel, 0, 2 )
@@ -179,15 +173,14 @@ class LayerItemWidget( QWidget ):
         self._layout.setSpacing(0)
         self._layout.setContentsMargins(5,2,5,2)
 
-        self.setLayout( self._layout)
+        self.setLayout( self._layout )
 
         self.bar.fractionChanged.connect( self._onFractionChanged )
         self.toggleEye.activeChanged.connect( self._onEyeToggle )
         self.channelSelector.valueChanged.connect( self._onChannelChanged )
 
     def mousePressEvent( self, ev ):
-        print "plonk", ev.pos(), ev.globalPos()
-        QWidget.mousePressEvent( self, ev )
+        super(LayerItemWidget, self).mousePressEvent( ev )
 
     def _onFractionChanged( self, fraction ):
         if self._layer and (fraction != self._layer.opacity):
@@ -348,7 +341,6 @@ class LayerWidget(QListView):
     def contextMenuEvent(self, event):
         idx = self.indexAt(event.pos())
         layer = self.model()[idx.row()]
-        #print "Context menu for layer '%s'" % layer.name
 
         layercontextmenu( layer, self.mapToGlobal(event.pos()), self )
 
@@ -385,11 +377,11 @@ class LayerWidget(QListView):
         if prevIndex != newIndex and newIndex.row() != -1:
             layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
             assert isinstance(layer, Layer)
-            hitWidget = QApplication.widgetAt(event.globalPos())
-            hitWidgetPos = event.pos() - hitWidget.geometry().topLeft()
-            hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, hitWidgetPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
+            hitWidget = QApplication.widgetAt( event.globalPos() )
+            localPos = hitWidget.mapFromGlobal( event.globalPos() )
+            hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, localPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
             QApplication.instance().sendEvent(hitWidget, hitWidgetPress)
-            hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, hitWidgetPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
+            hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, localPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
             QApplication.instance().sendEvent(hitWidget, hitWidgetRelease)
 
 #*******************************************************************************
@@ -403,7 +395,7 @@ if __name__ == "__main__":
 
     import sys, numpy
 
-    from PyQt4.QtGui import QApplication, QPushButton, QHBoxLayout, QVBoxLayout
+    from PyQt4.QtGui import QPushButton, QHBoxLayout, QVBoxLayout
     from volumina.pixelpipeline.datasources import ArraySource
 
     app = QApplication(sys.argv)
