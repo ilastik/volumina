@@ -361,24 +361,17 @@ class VolumeEditorWidget(QWidget):
             layout = QHBoxLayout()
             layout.addWidget( QLabel("Cached Slices Per View:") )
 
-            cache_size = [self.editor.cacheSize]
-            def parseCacheSize( strSize ):
-                # TODO: Use a QValidator to make sure the user always gives a number
-                try:
-                    cache_size[0] = int(strSize)
-                except:
-                    pass
-
-            edit = QLineEdit( str(cache_size[0]), parent=dlg )
-            edit.textChanged.connect( parseCacheSize )
-            layout.addWidget( edit )
+            spinBox = QSpinBox( parent=dlg )
+            spinBox.setRange( 0, 1000 )
+            spinBox.setValue( self.editor.cacheSize )
+            layout.addWidget( spinBox )
             okButton = QPushButton( "OK", parent=dlg )
             okButton.clicked.connect( dlg.accept )
             layout.addWidget( okButton )
             dlg.setLayout( layout )
             dlg.setModal(True)
-            dlg.exec_()
-            self.editor.cacheSize = cache_size[0]
+            if dlg.exec_() == QDialog.Accepted:
+                self.editor.cacheSize = spinBox.value()
         self._viewMenu.addAction( "Set layer cache size" ).triggered.connect(setCacheSize)
 
         def enablePrefetching( enable ):
