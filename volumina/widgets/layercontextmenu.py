@@ -84,63 +84,20 @@ def _add_actions( layer, menu ):
         #This feature is currently not implemented
         #_add_actions_colortablelayer( layer, menu )
 
-def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
+def layercontextmenu( layer, pos, parent=None ):
     '''Show a context menu to manipulate properties of layer.
 
     layer -- a volumina layer instance
     pos -- QPoint 
 
     '''
-    def onExport():
-        sourceTags = [True for l in layer.datasources]
-        for i, source in enumerate(layer.datasources):
-            if not hasattr(source, "dataSlot"):
-                 sourceTags[i] = False
-        if not any(sourceTags):
-            raise RuntimeError("can not export from a non-lazyflow data source (layer=%r, datasource=%r)" % (type(layer), type(layer.datasources[0])) )
-
-
-        if not _has_lazyflow:
-            raise RuntimeError("lazyflow not installed") 
-        import lazyflow
-        dataSlots = [slot.dataSlot for (slot, isSlot) in
-                     zip(layer.datasources, sourceTags) if isSlot is True]
-
-        opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
-        for slot in dataSlots:
-            assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (type(slot))
-            assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(slot.getRealOperator()))
-        opStackChannels.AxisFlag.setValue("c")
-        opStackChannels.Images.resize(len(dataSlots))
-        for i,islot in enumerate(opStackChannels.Images):
-            islot.connect(dataSlots[i])
-
-        # Create an operator to do the work
-        from lazyflow.operators.ioOperators import OpFormattedDataExport
-        opExport = OpFormattedDataExport( parent=opStackChannels.parent )
-        opExport.OutputFilenameFormat.setValue( layer.name )
-        opExport.Input.connect( opStackChannels.Output )
-        opExport.TransactionSlot.setValue(True)
-        
-        # Use this dialog to populate the operator's slot settings
-        settingsDlg = DataExportOptionsDlg( menu, opExport )
-
-        # If user didn't cancel, run the export now.
-        if ( settingsDlg.exec_() == DataExportOptionsDlg.Accepted ):
-            helper = ExportHelper( menu )
-            helper.run(opExport)
-            
-            # Clean up our temporary operators
-            opExport.cleanUp()
-            opStackChannels.cleanUp()
-
     menu = QMenu("Menu", parent)
     title = QAction("%s" % layer.name, menu)
     title.setEnabled(False)
     
     export = QAction("Export...",menu)
     export.setStatusTip("Export Layer...")
-    export.triggered.connect(onExport)
+    export.triggered.connect( partial( get_settings_and_export_layer, menu ) )
     
     menu.addAction(title)
     menu.addAction(export)
@@ -153,7 +110,51 @@ def layercontextmenu( layer, pos, parent=None, volumeEditor = None ):
         action.triggered.connect(callback)
         menu.addAction(action)
 
-    menu.exec_(pos)    
+    menu.exec_(pos)
+
+def get_settings_and_export_layer(layer, parent_widget=None):
+    sourceTags = [True for l in layer.datasources]
+    for i, source in enumerate(layer.datasources):
+        if not hasattr(source, "dataSlot"):
+             sourceTags[i] = False
+    if not any(sourceTags):
+        raise RuntimeError("can not export from a non-lazyflow data source (layer=%r, datasource=%r)" % (type(layer), type(layer.datasources[0])) )
+
+
+    if not _has_lazyflow:
+        raise RuntimeError("lazyflow not installed") 
+    import lazyflow
+    dataSlots = [slot.dataSlot for (slot, isSlot) in
+                 zip(layer.datasources, sourceTags) if isSlot is True]
+
+    opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
+    for slot in dataSlots:
+        assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (type(slot))
+        assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(slot.getRealOperator()))
+    opStackChannels.AxisFlag.setValue("c")
+    opStackChannels.Images.resize(len(dataSlots))
+    for i,islot in enumerate(opStackChannels.Images):
+        islot.connect(dataSlots[i])
+
+    # Create an operator to do the work
+    from lazyflow.operators.ioOperators import OpFormattedDataExport
+    opExport = OpFormattedDataExport( parent=opStackChannels.parent )
+    opExport.OutputFilenameFormat.setValue( layer.name )
+    opExport.Input.connect( opStackChannels.Output )
+    opExport.TransactionSlot.setValue(True)
+    
+    # Use this dialog to populate the operator's slot settings
+    settingsDlg = DataExportOptionsDlg( parent_widget, opExport )
+
+    # If user didn't cancel, run the export now.
+    if ( settingsDlg.exec_() == DataExportOptionsDlg.Accepted ):
+        helper = ExportHelper( parent_widget )
+        helper.run(opExport)
+        
+        # Clean up our temporary operators
+        opExport.cleanUp()
+        opStackChannels.cleanUp()
+
 
 class ExportHelper(QObject):
     """
