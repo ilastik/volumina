@@ -94,6 +94,7 @@ class LayerStackModel(QAbstractListModel):
         assert num_rows == 1, "Can't delete selected row: {} layers are currently selected.".format( num_rows )
         row = self.selectionModel.selectedRows()[0]
         layer = self._layerStack[row.row()]
+        assert not layer._cleaned_up, "This layer ({}) has already been cleaned up.  Shouldn't it already be removed from the layerstack?".format( layer.name )
         self.removeRow(row.row())
         if self.rowCount() > 0:
             self.selectionModel.select(self.index(0), QItemSelectionModel.Select)

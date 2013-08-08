@@ -172,6 +172,7 @@ class Layer( QObject ):
         Cleans up resources in this layer's datasources.
         Must not be called more than once.
         """
+        assert not self._cleaned_up, "Bug: You're attempting to clean layer {} twice.".format( self.name )
         for src in self.datasources:
             if src is not None:
                 src.clean_up()
