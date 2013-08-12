@@ -3,11 +3,9 @@ from functools import partial
 
 #Qt
 from PyQt4.QtCore import pyqtSignal, QObject
-from PyQt4.QtGui import QDialog, QSizePolicy, QMessageBox
+from PyQt4.QtGui import QMessageBox
 
 #volumina
-from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
-from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
 from dataExportOptionsDlg import DataExportOptionsDlg
 from multiStepProgressDialog import MultiStepProgressDialog
 
@@ -65,9 +63,9 @@ def get_settings_and_export_layer(layer, parent_widget=None):
         helper = ExportHelper( parent_widget )
         helper.run(opExport)
         
-        # Clean up our temporary operators
-        opExport.cleanUp()
-        opStackChannels.cleanUp()
+    # Clean up our temporary operators
+    opExport.cleanUp()
+    opStackChannels.cleanUp()
 
 
 class ExportHelper(QObject):
