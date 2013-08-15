@@ -236,7 +236,12 @@ class ShortcutManagerDlg(QDialog):
                     conflicting_shortcuts = mgr._findExistingShortcuts( newKey )
                     for conflicted in conflicting_shortcuts:
                         conflicted.setKey( QKeySequence("") )
-                        shortcutEdits[conflicted].setText( "" )
+                        try:
+                            shortcutEdits[conflicted].setText( "" )
+                        except KeyError:
+                            # There might not be an edit for this shortcut if 
+                            #  it was skipped as a duplicate (see ListOfActions, above).
+                            pass
                     shortcut.setKey( QKeySequence(newKey) )
                 
                 # Make sure the tooltips get updated.
