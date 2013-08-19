@@ -563,7 +563,12 @@ class TileProvider( QObject ):
             except:
                 with volumina.printLock:
                     sys.excepthook( *sys.exc_info() )
-                    sys.stderr.write("ERROR: volumina tiling layer rendering worker thread caught an unhandled exception.  See above.")
+                    sys.stderr.write("ERROR: volumina tiling layer rendering worker thread "\
+                                     "caught an unhandled exception.  See above.\n")
+                    if hasattr( ims, '_layer' ):
+                        # For debug, print out the layer name if possible
+                        sys.stderr.write("Error was encountered while requesting data from layer: "\
+                                         "'{}'\n".format( ims._layer.name ) )
             finally:
                 queue.task_done()
 
