@@ -1,8 +1,7 @@
 from functools import partial
-from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QRectF, QTimer
-from PyQt4.QtGui import QPainter, QPen, QBrush, QApplication, QGraphicsView, QMouseEvent
+from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
+from PyQt4.QtGui import QPen, QBrush, QApplication, QMouseEvent, QGraphicsLineItem
 
-from eventswitch import InterpreterABC
 from navigationControler import NavigationInterpreter
 
 #*******************************************************************************
@@ -193,7 +192,12 @@ class BrushingInterpreter( QObject ):
 
         # Draw temporary line for the brush stroke so the user gets feedback before the data is really updated.
         pen = QPen( QBrush(self._brushingCtrl._brushingModel.drawColor), self._brushingCtrl._brushingModel.brushSize, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
-        line = imageview.scene().addLine(o.x(), o.y(), n.x(), n.y(), pen)
+        line = QGraphicsLineItem(o.x(), o.y(), n.x(), n.y())
+        line.setPen(pen)
+        
+        imageview.scene().addItem(line)
+        line.setParentItem(imageview.scene().dataRect)
+
         self._lineItems.append(line)
         self._brushingCtrl._brushingModel.moveTo(imageview.mousePos)
 

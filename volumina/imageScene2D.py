@@ -208,6 +208,14 @@ class ImageScene2D(QGraphicsScene):
         rect = self.data2scene.mapRect(QRect(0, 0, w, h))
         sw, sh = rect.width(), rect.height()
         self.setSceneRect(0, 0, sw, sh)
+        
+        #this property represent a parent to QGraphicsItems which should
+        #be clipped to the data, such as temporary capped lines for brushing.
+        #This works around ilastik issue #516.
+        self.dataRect = QGraphicsRectItem(0,0,sw,sh)
+        self.dataRect.setPen(QPen(QColor(0,0,0,0)))
+        self.dataRect.setFlag(QGraphicsItem.ItemClipsChildrenToShape)
+        self.addItem(self.dataRect)
 
     @property
     def dataShape(self):
@@ -290,6 +298,7 @@ class ImageScene2D(QGraphicsScene):
         self._posModel = posModel
 
         self._dataShape = (0, 0)
+        self._dataRect = None #A QGraphicsRectItem (or None)
         self._offsetX = 0
         self._offsetY = 0
         self.name = name
