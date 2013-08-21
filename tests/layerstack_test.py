@@ -4,11 +4,11 @@ from volumina.layerstack import LayerStackModel
 
 class LayerStackModelTest( ut.TestCase ):
     def setUp( self ):
-        self.l1 = Layer()
+        self.l1 = Layer([])
         self.l1.name = 'l1'
-        self.l2 = Layer()
+        self.l2 = Layer([])
         self.l2.name = 'l2'
-        self.l3 = Layer()
+        self.l3 = Layer([])
         self.l3.name = 'l3'
 
     def testAddingAndRemoving( self ):

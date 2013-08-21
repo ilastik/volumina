@@ -69,12 +69,12 @@ class TestLayerWidget( ut.TestCase ):
     def test_repaint_after_visible_change(self):
         self.model = LayerStackModel()
 
-        self.o1 = Layer()
+        self.o1 = Layer([])
         self.o1.name = "Fancy Layer"
         self.o1.opacity = 0.5
         self.model.append(self.o1)
         
-        self.o2 = Layer()
+        self.o2 = Layer([])
         self.o2.name = "Some other Layer"
         self.o2.opacity = 0.25
         self.model.append(self.o2)
