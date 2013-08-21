@@ -196,7 +196,7 @@ class LayerStackModel(QAbstractListModel):
         endRow   = min(beginRow+count-1, len(self._layerStack))
         self.beginInsertRows(parent, beginRow, endRow) 
         while(beginRow <= endRow):
-            self._layerStack.insert(row, Layer())
+            self._layerStack.insert(row, Layer(datasources=[]))
             beginRow += 1
         self.endInsertRows()
         assert self.rowCount() == oldRowCount+1, "oldRowCount = %d, self.rowCount() = %d" % (oldRowCount, self.rowCount())

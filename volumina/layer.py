@@ -139,12 +139,12 @@ class Layer( QObject ):
             return True
         return False
 
-    def __init__( self, direct=False ):
+    def __init__( self, datasources, direct=False ):
         super(Layer, self).__init__()
         self._name = "Unnamed Layer"
         self._visible = True
         self._opacity = 1.0
-        self._datasources = []
+        self._datasources = datasources
         self._layerId = None
         self._numberOfChannels = 1
         self._allowToggleVisible = True
@@ -152,6 +152,9 @@ class Layer( QObject ):
         self.direct = direct
         self._toolTip = ""
         self._cleaned_up = False
+
+        for datasource in filter(None, self._datasources):
+            datasource.numberOfChannelsChanged.connect( self._updateNumberOfChannels )
 
         if self.direct:
             #in direct mode, we calculate the average time per tile for debug purposes
@@ -166,6 +169,14 @@ class Layer( QObject ):
         self.channelChanged.connect(self.changed)
 
         self.contexts = []
+
+    def _updateNumberOfChannels(self):
+        newchannels = self._datasources[0].numberOfChannels
+        for datasource in self._datasources[1:]:
+            newchannels = min( datasource.numberOfChannels, newchannels )
+        if newchannels != self.numberOfChannels:
+            # Update property (emits signal)
+            self.numberOfChannels = newchannels
 
     def clean_up(self):
         """
@@ -186,8 +197,8 @@ class Layer( QObject ):
 class ClickableLayer( Layer ):
     """A layer that, when being activated/selected, switches to an interpreter than can intercept
        right click events"""
-    def __init__( self, editor, clickFunctor, direct=False, right=True ):
-        super(ClickableLayer, self).__init__(direct=direct)
+    def __init__( self, datasource, editor, clickFunctor, direct=False, right=True ):
+        super(ClickableLayer, self).__init__([datasource], direct=direct)
         self._editor = editor
         self._clickInterpreter = ClickInterpreter(editor, self, clickFunctor, right=right)
         self._inactiveInterpreter = self._editor.eventSwitch.interpreter
@@ -278,20 +289,25 @@ class NormalizableLayer( Layer ):
                     If normalize=False, then no normalization is applied before displaying the data.
         
         """
-        super(NormalizableLayer, self).__init__(direct=direct)
         self._normalize = []
         self._range = []
-        self._datasources = datasources
         self._autoMinMax = []
         self._mmSources = []
+
+        wrapped_datasources = [None]*len( datasources )
 
         for i,datasource in enumerate(datasources):
             if datasource is not None:
                 self._autoMinMax.append(normalize is None) # Don't auto-set normalization if the caller provided one.
                 mmSource = MinMaxSource(datasource)
-                self._datasources[i] = mmSource
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
+                wrapped_datasources[i] = mmSource
                 self._mmSources.append(mmSource)
+
+        super(NormalizableLayer, self).__init__(wrapped_datasources, direct=direct)
+
+        for i, datasource in enumerate(self.datasources):
+            if datasource is not None:
                 self._normalize.append(normalize)
                 self._range.append(range)
                 self.set_range(i, range)
@@ -300,7 +316,6 @@ class NormalizableLayer( Layer ):
                 self._normalize.append((0,1))
                 self._range.append((0,1))
                 self._autoMinMax.append(True)
-                
 
         self.rangeChanged.connect(self.changed)
         self.normalizeChanged.connect(self.changed)
@@ -427,8 +442,7 @@ class ClickableColortableLayer(ClickableLayer):
     
     def __init__( self, editor, clickFunctor, datasource , colorTable, direct=False, right=True ):
         assert isinstance(datasource, SourceABC)
-        super(ClickableColortableLayer, self).__init__(editor, clickFunctor, direct=direct, right=right)
-        self._datasources = [datasource]
+        super(ClickableColortableLayer, self).__init__(datasource, editor, clickFunctor, direct=direct, right=right)
         self._colorTable = colorTable
         self.data = datasource
         

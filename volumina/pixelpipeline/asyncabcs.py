@@ -1,4 +1,5 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
+from PyQt4.QtCore import pyqtSignal
 
 def _has_attribute( cls, attr ):
     return True if any(attr in B.__dict__ for B in cls.__mro__) else False
@@ -37,6 +38,12 @@ class RequestABC:
 
 class SourceABC:
     __metaclass__ = ABCMeta
+    
+    numberOfChannelsChanged = pyqtSignal(int)
+
+    @abstractproperty
+    def numberOfChannels(self):
+        raise NotImplementedError
 
     @abstractmethod
     def request( self, slicing ):

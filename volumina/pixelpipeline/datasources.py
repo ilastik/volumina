@@ -61,11 +61,16 @@ assert issubclass(ArrayRequest, RequestABC)
 
 class ArraySource( QObject ):
     isDirty = pyqtSignal( object )
-
+    numberOfChannelsChanged = pyqtSignal(int) # Never emitted
+     
     def __init__( self, array ):
         super(ArraySource, self).__init__()
         self._array = array
         
+    @property
+    def numberOfChannels(self):
+        return self._array.shape[-1]
+
     def clean_up(self):
         self._array = None
 
@@ -212,6 +217,7 @@ def weakref_setDirtyLF( wref, *args, **kwargs ):
 
 class LazyflowSource( QObject ):
     isDirty = pyqtSignal( object )
+    numberOfChannelsChanged = pyqtSignal(int)
 
     @property
     def dataSlot(self):
@@ -235,6 +241,18 @@ class LazyflowSource( QObject ):
         self._op5.externally_managed = True
 
         self.additional_owned_ops = [] 
+
+        self._shape = self._op5.Output.meta.shape
+        self._op5.Output.notifyMetaChanged( self._checkForNumChannelsChanged )
+
+    @property
+    def numberOfChannels(self):
+        return self._shape[-1]
+    
+    def _checkForNumChannelsChanged(self, *args):
+        if self._op5 and self._op5.Output.ready() and self._shape[-1] != self._op5.Output.meta.shape[-1]:
+            self._shape = tuple(self._op5.Output.meta.shape)
+            self.numberOfChannelsChanged.emit( self._shape[-1] )
 
     def clean_up(self):
         self._op5.cleanUp()
@@ -347,10 +365,15 @@ assert issubclass(ConstantRequest, RequestABC)
 class ConstantSource( QObject ):
     isDirty = pyqtSignal( object )
     idChanged = pyqtSignal( object, object ) # old, new
+    numberOfChannelsChanged = pyqtSignal(int) # Never emitted
 
     @property
     def constant( self ):
         return self._constant
+
+    @property
+    def numberOfChannels(self):
+        return 1
 
     @constant.setter
     def constant( self, value ):
@@ -426,6 +449,7 @@ class MinMaxSource( QObject ):
     """
     isDirty = pyqtSignal( object )
     boundsChanged = pyqtSignal(object) # When a new min/max is discovered in the result of a request, this signal is fired with the new (dmin, dmax)
+    numberOfChannelsChanged = pyqtSignal(int)
     
     _delayedBoundsChange = pyqtSignal() # Internal use only.  Allows non-main threads to start the delayedDirtySignal timer.
     
@@ -438,6 +462,7 @@ class MinMaxSource( QObject ):
         
         self._rawSource = rawSource
         self._rawSource.isDirty.connect( self.isDirty )
+        self._rawSource.numberOfChannelsChanged.connect( self.numberOfChannelsChanged )
         self._bounds = [1e9,-1e9]
         
         self._delayedDirtySignal = QTimer()
@@ -445,6 +470,10 @@ class MinMaxSource( QObject ):
         self._delayedDirtySignal.setInterval(10)
         self._delayedDirtySignal.timeout.connect( partial(self.setDirty, sl[:,:,:,:,:]) )
         self._delayedBoundsChange.connect(self._delayedDirtySignal.start)
+
+    @property
+    def numberOfChannels(self):
+        return self._rawSource.numberOfChannels
 
     def clean_up(self):
         self._rawSource.clean_up()
