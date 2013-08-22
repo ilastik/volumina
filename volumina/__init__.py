@@ -37,6 +37,9 @@ colorama.init()
 import threading
 printLock = threading.Lock()
 
+# volumina.icons_rc is needed on some machines for the icons to be displayed correctly
+import volumina.icons_rc
+
 def strSlicing(slicing):
     str = "("
     for i,s in enumerate(slicing):
