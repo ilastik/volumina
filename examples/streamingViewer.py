@@ -6,6 +6,7 @@ from volumina.pixelpipeline.datasources import LazyflowSource
 
 from lazyflow.graph import Graph
 from lazyflow.operators.ioOperators.opStreamingHdf5Reader import OpStreamingHdf5Reader
+from lazyflow.operators import OpCompressedCache
 
 from PyQt4.QtGui import QApplication
 
@@ -26,18 +27,23 @@ v = Viewer()
 
 graph = Graph()
 
-rawFile = h5py.File("raw.h5")
-rawSource = OpStreamingHdf5Reader(graph=graph)
-rawSource.Hdf5File.setValue(rawFile)
-rawSource.InternalPath.setValue("raw")
+def mkH5source(fname, gname):
+    h5file = h5py.File(fname)
+    source = OpStreamingHdf5Reader(graph=graph)
+    source.Hdf5File.setValue(h5file)
+    source.InternalPath.setValue(gname)
 
-segFile = h5py.File("seg.h5")
-segSource = OpStreamingHdf5Reader(graph=graph)
-segSource.Hdf5File.setValue(segFile)
-segSource.InternalPath.setValue("seg")
+    op = OpCompressedCache( parent=None, graph=graph )
+    op.BlockShape.setValue( [100, 100, 100] )
+    op.Input.connect( source.OutputImage )
 
-v.addGrayscaleLayer(rawSource.OutputImage, name="raw")
-v.addColorTableLayer(segSource.OutputImage, name="seg")
+    return op.Output
+
+rawSource = mkH5source("raw.h5", "raw")
+segSource = mkH5source("seg.h5", "seg")
+
+v.addGrayscaleLayer(rawSource, name="raw")
+v.addColorTableLayer(segSource, name="seg")
 
 v.setWindowTitle("streaming viewer")
 v.showMaximized()
