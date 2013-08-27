@@ -193,7 +193,7 @@ class NavigationInterpreter(QObject):
         return itms
 
     def onMouseDoubleClick_default( self, imageview, event ):
-        if len( self._itemsAt(imageview, event.pos()) ) > 0:
+        if len( self._itemsAt(imageview, event.pos()) ) == 0:
             return False
 
         dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
