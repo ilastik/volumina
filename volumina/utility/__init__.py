@@ -1,3 +1,4 @@
 from singleton import Singleton
 from preferencesManager import PreferencesManager
 from shortcutManager import ShortcutManager, ShortcutManagerDlg
+from qstring_codec import encode_from_qstring, decode_to_qstring
