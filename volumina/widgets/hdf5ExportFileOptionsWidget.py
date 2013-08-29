@@ -4,6 +4,8 @@ from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
+from volumina.utility import encode_from_qstring, decode_to_qstring
+
 class Hdf5ExportFileOptionsWidget(QWidget):
     
     def __init__(self, parent):
@@ -40,7 +42,7 @@ class Hdf5ExportFileOptionsWidget(QWidget):
 
     def _applyFilepath(self):
         filepath = self.filepathEdit.text()
-        self._filepathSlot.setValue( str(filepath) )
+        self._filepathSlot.setValue( encode_from_qstring(filepath) )
 
     def updateFromSlots(self):
         if self._datasetNameSlot.ready():
@@ -53,10 +55,10 @@ class Hdf5ExportFileOptionsWidget(QWidget):
                 file_path += ".h5"
             else:
                 file_path += ext
-            self.filepathEdit.setText( file_path )
+            self.filepathEdit.setText( decode_to_qstring(file_path) )
             
             # Re-configure the file slot in case we changed the extension
-            self._filepathSlot.setValue( str(file_path) )
+            self._filepathSlot.setValue( file_path )
 
     def _browseForFilepath(self):
         starting_dir = os.path.expanduser("~")
@@ -71,8 +73,8 @@ class Hdf5ExportFileOptionsWidget(QWidget):
             return
         
         exportPath = dlg.selectedFiles()[0]
-        self._filepathSlot.setValue( str(exportPath) )
         self.filepathEdit.setText( exportPath )
+        self._filepathSlot.setValue( encode_from_qstring(exportPath) )
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication

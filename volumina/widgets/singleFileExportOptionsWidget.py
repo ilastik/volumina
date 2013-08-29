@@ -4,6 +4,8 @@ from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
+from volumina.utility import encode_from_qstring, decode_to_qstring
+
 class SingleFileExportOptionsWidget(QWidget):
     
     def __init__(self, parent, extension, file_filter):
@@ -23,7 +25,8 @@ class SingleFileExportOptionsWidget(QWidget):
                ( event.type() == QEvent.KeyPress and \
                  ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return) ):
                 newpath = self.filepathEdit.text()
-                self._filepathSlot.setValue( str(newpath) )
+                newpath = encode_from_qstring(newpath)
+                self._filepathSlot.setValue( newpath )
         return False
 
     def initSlot(self, filepathSlot):        
@@ -38,10 +41,10 @@ class SingleFileExportOptionsWidget(QWidget):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             file_path = os.path.splitext(file_path)[0] + "." + self._extension
-            self.filepathEdit.setText( file_path )
+            self.filepathEdit.setText( decode_to_qstring(file_path) )
             
             # Re-configure the slot in case we changed the extension
-            self._filepathSlot.setValue( str(file_path) )
+            self._filepathSlot.setValue( file_path )
     
     def _browseForFilepath(self):
         starting_dir = os.path.expanduser("~")
@@ -54,9 +57,9 @@ class SingleFileExportOptionsWidget(QWidget):
         if not dlg.exec_():
             return
         
-        exportPath = dlg.selectedFiles()[0]
-        self._filepathSlot.setValue( str(exportPath) )
-        self.filepathEdit.setText( exportPath )
+        exportPath = encode_from_qstring( dlg.selectedFiles()[0] )
+        self._filepathSlot.setValue( exportPath )
+        self.filepathEdit.setText( decode_to_qstring(exportPath) )
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication
