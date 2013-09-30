@@ -24,15 +24,15 @@ pipeline* (see: :doc:`pixelpipeline`)  and the *interaction modes*
 governed by the Observer and Model-View-Controller design
 patterns. The high level part builds upon the low level components and
 provides ready-to-use classes and widgets to be used in other applications; with the
-*volume editor* being the most important one.
+*volume editor* (see: :doc:`volumeeditor`) being the most important one.
 
 Contents:
 
 .. toctree::
    :maxdepth: 5
 
-   pixelpipeline
    volumeeditor
+   pixelpipeline
    interactionmodes
    
 
