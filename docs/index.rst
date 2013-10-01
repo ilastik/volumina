@@ -19,22 +19,21 @@ low level part consists of a collection of loosely coupled classes
 which can be combined to design a variety of systems
 for slicing and editing multidimensional volumetric data. Besides
 others the central low level components are the *pixel rendering
-pipeline* (see: :doc:`pixelpipeline`)  and the *interaction modes*
-(see: :doc:`interactionmodes`). The design of these components is
+pipeline* (see: :doc:`ll/pixelpipeline`)  and the *interaction modes*
+(see: :doc:`hl/interactionmodes`). The design of these components is
 governed by the Observer and Model-View-Controller design
 patterns. The high level part builds upon the low level components and
 provides ready-to-use classes and widgets to be used in other applications; with the
-*volume editor* (see: :doc:`volumeeditor`) being the most important one.
+*volume editor* (see: :doc:`hl/volumeeditor`) being the most important one.
 
 Contents:
 
 .. toctree::
    :maxdepth: 5
+   :numbered:
 
-   volumeeditor
-   pixelpipeline
-   interactionmodes
-   
+   hl/index
+   ll/index
 
 Indices and tables
 ==================
