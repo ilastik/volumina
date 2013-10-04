@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>417</width>
-    <height>146</height>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Grayscale Layer thresholds</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_6">
    <item>
@@ -84,7 +84,7 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="grayChannelThresholdingWidget" native="true"/>
+            <widget class="ThresholdingWidget" name="grayChannelThresholdingWidget"/>
            </item>
           </layout>
          </item>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>331</width>
-    <height>444</height>
+    <width>384</width>
+    <height>646</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>RGBA layer thresholds</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_6">
    <item>
@@ -83,7 +83,7 @@
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="redChannelThresholdingWidget" native="true"/>
+            <widget class="ThresholdingWidget" name="redChannelThresholdingWidget"/>
            </item>
           </layout>
          </item>
@@ -135,7 +135,7 @@
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="greenChannelThresholdingWidget" native="true"/>
+            <widget class="ThresholdingWidget" name="greenChannelThresholdingWidget"/>
            </item>
           </layout>
          </item>
@@ -187,7 +187,7 @@
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="blueChannelThresholdingWidget" native="true"/>
+            <widget class="ThresholdingWidget" name="blueChannelThresholdingWidget"/>
            </item>
           </layout>
          </item>
@@ -239,7 +239,7 @@
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="alphaChannelThresholdingWidget" native="true"/>
+            <widget class="ThresholdingWidget" name="alphaChannelThresholdingWidget"/>
            </item>
           </layout>
          </item>
