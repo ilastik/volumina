@@ -33,15 +33,12 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="shapeEdit">
+      <widget class="QLabel" name="shapeEdit">
        <property name="minimumSize">
         <size>
          <width>200</width>
          <height>0</height>
         </size>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -70,10 +67,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="axisOrderEdit">
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
+      <widget class="QLabel" name="axisOrderEdit">
       </widget>
      </item>
      <item>
@@ -101,10 +95,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="dtypeEdit">
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
+      <widget class="QLabel" name="dtypeEdit">
       </widget>
      </item>
      <item>
