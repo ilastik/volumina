@@ -132,7 +132,7 @@ def intersection( lhs, rhs ):
     Returns None if the intersection is empty.
 
     '''
-    assert len(lhs) == len(rhs)
+    assert len(lhs) == len(rhs), "%d <-> %d" % (len(lhs), len(rhs))
     assert is_pure_slicing(lhs) and is_pure_slicing(rhs)
     def _min_stop( stop1, stop2 ):
         if stop1 == None:
