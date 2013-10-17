@@ -62,9 +62,9 @@ class MultiStepProgressDialog(QDialog):
         if len(self.times) > 5:
             self.times.pop(0)
         if t < 120:
-            self.currentStepLabel.setText("ETA: %.02f sec" % (t))
+            self.currentStepLabel.setText("Estimated time left: %.02f sec" % (t))
         else:
-            self.currentStepLabel.setText("ETA: %.02f min" % (t / 60))
+            self.currentStepLabel.setText("Estimated time left: %.02f min" % (t / 60))
 
     def _initUic(self):
         p = os.path.split(__file__)[0]+'/'
