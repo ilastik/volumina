@@ -378,6 +378,8 @@ class LayerWidget(QListView):
             layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
             assert isinstance(layer, Layer)
             hitWidget = QApplication.widgetAt( event.globalPos() )
+            if hitWidget is None:
+                return
             localPos = hitWidget.mapFromGlobal( event.globalPos() )
             hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, localPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
             QApplication.instance().sendEvent(hitWidget, hitWidgetPress)
