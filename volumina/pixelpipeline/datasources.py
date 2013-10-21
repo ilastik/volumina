@@ -260,10 +260,6 @@ class LazyflowSource( QObject ):
         for op in reversed(self.additional_owned_ops):
             op.cleanUp()
 
-    def __del__(self):
-        if self._op5 is not None:
-            self._op5.cleanUp()
-            
     def dtype(self):
         dtype = self._orig_outslot.meta.dtype
         assert dtype is not None, "Your LazyflowSource doesn't have a dtype! Is your lazyflow slot properly configured in setupOutputs()?"
