@@ -113,6 +113,8 @@ class NavigationInterpreter(QObject):
         pass
 
     def onWheel_default( self, imageview, event ):
+        if not imageview.isEnabled():
+            return
         navCtrl = self._navCtrl
         k_alt = (event.modifiers() == Qt.AltModifier)
         k_ctrl = (event.modifiers() == Qt.ControlModifier)
