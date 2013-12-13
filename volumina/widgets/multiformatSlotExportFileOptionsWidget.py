@@ -13,8 +13,14 @@ from stackExportFileOptionsWidget import StackExportFileOptionsWidget
 try:
     from lazyflow.operators.ioOperators import OpExportSlot
     _has_lazyflow = True
-except:
+except ImportError:
     _has_lazyflow = False
+
+try:
+    from dvidVolumeExportOptionsWidget import DvidVolumeExportOptionsWidget
+    _supports_dvid = True
+except ImportError:
+    _supports_dvid = False
 
 class MultiformatSlotExportFileOptionsWidget(QWidget):
     formatValidityChange = pyqtSignal(bool)
@@ -48,6 +54,12 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )
         npyOptionsWidget.initSlot( opDataExport.OutputFilenameFormat )
         self._format_option_editors['npy'] = npyOptionsWidget
+
+        # DVID
+        if _supports_dvid:
+            dvidOptionsWidget = DvidVolumeExportOptionsWidget( self )
+            dvidOptionsWidget.initSlot( opDataExport.OutputFilenameFormat )
+            self._format_option_editors['dvid'] = dvidOptionsWidget
 
         # All 2D image formats
         for fmt in OpExportSlot._2d_formats:
