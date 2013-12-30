@@ -2,6 +2,7 @@ import os
 from PyQt4.QtGui import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
 from volumina.utility import decode_to_qstring
 from dvidclient.gui.contents_browser import ContentsBrowser
+from lazyflow.utility import isUrl
 
 class DvidVolumeExportOptionsWidget(QWidget):    
     def __init__(self, parent):
@@ -34,6 +35,8 @@ class DvidVolumeExportOptionsWidget(QWidget):
         if self._urlSlot.ready():
             # FIXME: Choose a default dvid url...            
             file_path = self._urlSlot.value
+            if not isUrl( file_path ):
+                file_path = ""
 
             # Remove extension
             file_path = os.path.splitext(file_path)[0]
@@ -43,12 +46,12 @@ class DvidVolumeExportOptionsWidget(QWidget):
             self._urlSlot.setValue( file_path )
     
     def _onSpecifyClicked(self):
-        # FIXME don't hardcode hostname
-        browser = ContentsBrowser( "localhost:8000", mode="specify_new", parent=self )
+        # FIXME don't hardcode hostname list
+        browser = ContentsBrowser( ["localhost:8000"], mode="specify_new", parent=self )
         if browser.exec_() == ContentsBrowser.Accepted:
-            dataset_index, data_name, node_uuid = browser.get_selection()
+            hostname, dataset_index, data_name, node_uuid = browser.get_selection()
 
-            url = "http://localhost:8000/api/node/{node_uuid}/{data_name}".format( **locals() )
+            url = "http://{hostname}/api/node/{node_uuid}/{data_name}".format( **locals() )
             self._urlSlot.setValue( url )
             self.urlLabel.setText( url )
 
