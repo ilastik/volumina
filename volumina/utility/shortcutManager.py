@@ -2,7 +2,8 @@ import re
 import abc
 import collections
 
-from PyQt4.QtCore import QStringList, Qt
+import sip
+from PyQt4.QtCore import QStringList, Qt, QObject
 from PyQt4.QtGui import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, QGroupBox, QGridLayout, \
                         QLabel, QLineEdit, QPushButton, QSpacerItem, QKeySequence, QWidget, QTreeWidget, QTreeWidgetItem, QSizePolicy
 
@@ -82,6 +83,9 @@ class ShortcutManager(object):
             keyseq = groupKeys[description]
             shortcut.setKey( keyseq )
         
+        # Purge invalid shortcuts
+        self._purgeDeletedShortcuts()
+        
         # Before we add this shortcut to our dict, disable any other shortcuts it replaces
         conflicting_shortcuts = self._findExistingShortcuts( shortcut.key().toString() )
         for conflicted in conflicting_shortcuts:
@@ -90,6 +94,12 @@ class ShortcutManager(object):
         
         self._shortcuts[group][shortcut] = (description, objectWithToolTip)
         self.updateToolTip( shortcut )
+        
+    def _purgeDeletedShortcuts(self):
+        for group in self._shortcuts.keys():
+            for shortcut in self._shortcuts[group]:
+                if sip.isdeleted(shortcut) or sip.isdeleted(shortcut.parentWidget()):
+                    del self._shortcuts[group][shortcut]
 
     def _findExistingShortcuts(self, keyseq):
         existing_shortcuts = []
@@ -136,8 +146,10 @@ class ShortcutManager(object):
                 (description, objectWithToolTip) = self._shortcuts[group][shortcut]
                 break
             
-        assert description is not None, "Couldn't find the shortcut you're trying to update."
+        assert description is not None, "Couldn't find the shortcut you're trying to update."        
         if objectWithToolTip is None:
+            return
+        if isinstance(objectWithToolTip, QObject) and sip.isdeleted(objectWithToolTip):
             return
 
         oldText = str(objectWithToolTip.toolTip())
@@ -173,6 +185,7 @@ class ShortcutManagerDlg(QDialog):
         self.setMinimumHeight(500)
 
         mgr = ShortcutManager() # Singleton
+        mgr._purgeDeletedShortcuts()
 
         scrollWidget = QWidget(parent=self)
         tempLayout = QVBoxLayout( scrollWidget )
