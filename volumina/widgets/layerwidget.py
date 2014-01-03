@@ -398,40 +398,40 @@ if __name__ == "__main__":
     import sys, numpy
 
     from PyQt4.QtGui import QPushButton, QHBoxLayout, QVBoxLayout
-    from volumina.pixelpipeline.datasources import ArraySource
+    from volumina.pixelpipeline.datasources import ArraySource, ConstantSource
 
     app = QApplication(sys.argv)
 
     model = LayerStackModel()
 
-    o1 = Layer()
+    o1 = Layer( [ConstantSource()] )
     o1.name = "Fancy Layer"
     o1.opacity = 0.5
     model.append(o1)
 
-    o2 = Layer()
+    o2 = Layer( [ConstantSource()] )
     o2.name = "Some other Layer"
     o2.opacity = 0.25
     o2.numberOfChannels = 3
     model.append(o2)
 
-    o3 = Layer()
+    o3 = Layer( [ConstantSource()] )
     o3.name = "Invisible Layer"
     o3.opacity = 0.15
     o3.visible = False
     model.append(o3)
 
-    o4 = Layer()
+    o4 = Layer( [ConstantSource()] )
     o4.name = "Fancy Layer II"
     o4.opacity = 0.95
     model.append(o4)
 
-    o5 = Layer()
+    o5 = Layer( [ConstantSource()] )
     o5.name = "Fancy Layer III"
     o5.opacity = 0.65
     model.append(o5)
 
-    o6 = Layer()
+    o6 = Layer( [ConstantSource()] )
     o6.name = "Lazyflow Layer"
     o6.opacity = 1
 
@@ -470,7 +470,7 @@ if __name__ == "__main__":
     delete.clicked.connect(model.deleteSelected)
     model.canDeleteSelected.connect(delete.setEnabled)
     def addRandomLayer():
-        o = Layer()
+        o = Layer( [ConstantSource()] )
         o.name = "Layer %d" % (model.rowCount()+1)
         o.opacity = numpy.random.rand()
         o.visible = bool(numpy.random.randint(0,2))
