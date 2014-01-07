@@ -166,6 +166,14 @@ class Viewer(QMainWindow):
             self.splitter.setSizes(s)
         QTimer.singleShot(0, adjustSplitter)
         
+    @property
+    def title(self):
+        return self.windowTitle()
+    
+    @title.setter
+    def title(self, t):
+        self.setWindowTitle(t)
+        
     def initLayerstackModel(self):
         self.layerstack = LayerStackModel()
         self.layerWidget.init(self.layerstack)
