@@ -1,3 +1,8 @@
+import volumina
+if volumina.NO3D:
+    # For testing purposes, it is sometimes convenient to intentionally disable this module.
+    raise ImportError("Intentionally skipping import of view3d module due to volumina.NO3D")
+
 from vtk import vtkRenderer, vtkConeSource, vtkPolyDataMapper, vtkActor, \
                     vtkImplicitPlaneWidget2, vtkImplicitPlaneRepresentation, \
                     vtkObject, vtkPNGReader, vtkImageActor, QVTKWidget2, \
