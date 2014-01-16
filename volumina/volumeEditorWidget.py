@@ -478,7 +478,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     layerStackModel = LayerStackModel()
     layerStackModel.insert(0,layer)
-    volumeEditor = VolumeEditor(layerStackModel)
+    volumeEditor = VolumeEditor(layerStackModel, parent=None)
     volumeEditor.dataShape = array.shape
     volumeEditorWidget = VolumeEditorWidget(editor=volumeEditor)
     volumeEditorWidget.show()

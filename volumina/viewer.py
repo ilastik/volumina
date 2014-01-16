@@ -155,7 +155,7 @@ class Viewer(QMainWindow):
         f.setBold(True)
         self.actionCurrentView.setFont(f)
 
-        self.editor = VolumeEditor(self.layerstack)
+        self.editor = VolumeEditor(self.layerstack, parent=self)
 
         #make sure the layer stack widget, which is the right widget
         #managed by the splitter self.splitter shows up correctly

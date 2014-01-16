@@ -59,14 +59,14 @@ class ImageView2D(QGraphicsView):
         scene.axesChanged.connect(hud.setAxes)
 
 
-    def __init__(self, imagescene2d):
+    def __init__(self, parent, imagescene2d):
         """
         Constructs a view upon a ImageScene2D
 
         imagescene2d -- a ImgeScene2D instance
         """
 
-        QGraphicsView.__init__(self)
+        QGraphicsView.__init__(self, parent)
         self.setScene(imagescene2d)
         self.mousePos = QPointF(0,0)
         # FIXME: These int members shadow QWidget.x() and QWidget.y(), which can lead to confusion when debugging...

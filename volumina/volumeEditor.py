@@ -24,6 +24,7 @@ from slicingtools import SliceProjection
 useVTK = True
 try:
     from view3d.view3d import OverviewScene
+    assert False
 except:
     print "Warning: could not import optional dependency VTK"
     useVTK = False
@@ -111,7 +112,7 @@ class VolumeEditor( QObject ):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
 
-    def __init__( self, layerStackModel, labelsink=None, parent=None, crosshair=True, syncAlongAxes=(0,1)):
+    def __init__( self, layerStackModel, parent, labelsink=None, crosshair=True, syncAlongAxes=(0,1)):
         super(VolumeEditor, self).__init__(parent=parent)
         self._sync_along = tuple(syncAlongAxes)
 
@@ -131,7 +132,7 @@ class VolumeEditor( QObject ):
         self.imageScenes = [ImageScene2D(self.posModel, (0,1,4), swapped_default=True),
                             ImageScene2D(self.posModel, (0,2,4)),
                             ImageScene2D(self.posModel, (0,3,4))]
-        self.imageViews = [ImageView2D(self.imageScenes[i]) for i in [0,1,2]]
+        self.imageViews = [ImageView2D(parent, self.imageScenes[i]) for i in [0,1,2]]
         self.imageViews[0].focusChanged.connect(lambda arg=0 : self.lastImageViewFocus(arg))
         self.imageViews[1].focusChanged.connect(lambda arg=1 : self.lastImageViewFocus(arg))
         self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg))

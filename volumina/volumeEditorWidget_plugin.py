@@ -40,7 +40,7 @@ class PyVolumeEditorWidgetPlugin(QPyDesignerCustomWidgetPlugin):
         layerstack = LayerStackModel()
         layerstack.append( GrayscaleLayer( source ) )
 
-        editor = VolumeEditor(layerstack, labelsink=None)  
+        editor = VolumeEditor(layerstack, labelsink=None, parent=self)  
         widget = VolumeEditorWidget(parent=parent)
         if not _has_lazyflow:
             widget.setEnabled(False)
