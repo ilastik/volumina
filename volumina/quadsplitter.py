@@ -122,8 +122,6 @@ class QuadView(QWidget):
         
         self.imageView2D_3 = view3
         
-        self.testView4 = ImageView2DDockWidget(view4)
-        
         self.dock1_ofSplitHorizontal1 = ImageView2DDockWidget(self.imageView2D_1)
         self.dock1_ofSplitHorizontal1.connectHud()
         self.dockableContainer.append(self.dock1_ofSplitHorizontal1)
@@ -148,7 +146,7 @@ class QuadView(QWidget):
         self.dockableContainer.append(self.dock1_ofSplitHorizontal2)
         self.splitHorizontal2.addWidget(self.dock1_ofSplitHorizontal2)
 
-        self.dock2_ofSplitHorizontal2 = ImageView2DDockWidget(self.testView4)
+        self.dock2_ofSplitHorizontal2 = ImageView2DDockWidget(view4)
         self.dockableContainer.append(self.dock2_ofSplitHorizontal2)
         self.splitHorizontal2.addWidget(self.dock2_ofSplitHorizontal2)  
         
