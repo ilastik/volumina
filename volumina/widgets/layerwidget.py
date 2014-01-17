@@ -223,38 +223,12 @@ class LayerDelegate(QStyledItemDelegate):
         self._w = LayerItemWidget()
         self._listModel = listModel
         self._listModel.rowsAboutToBeRemoved.connect(self.handleRemovedRows)
-
-    def updateEditorGeometry(self, editor, option, index):
-        editor.setGeometry(option.rect)
-
-    def paint(self, painter, option, index):
-        if option.state & QStyle.State_Selected:
-            modelIndex = index.row()
-            if modelIndex != self.currentIndex:
-                model = index.model()
-                self.currentIndex = modelIndex
-                model.wantsUpdate()
-
-        layer = index.data().toPyObject()
-        if isinstance(layer, Layer):
-            pic = QPixmap( option.rect.width(), option.rect.height() )
-            w = self._w
-            w.layer = layer
-            w.setGeometry( option.rect )
-            w.setPalette( option.palette )
-            
-            # Manually set alternating background colors for the rows
-            if index.row() % 2 == 0:
-                itemBackgroundColor = self.parent().palette().color(QPalette.Base)
-            else:
-                itemBackgroundColor = self.parent().palette().color(QPalette.AlternateBase)
-            pallete = w.palette()
-            pallete.setColor( QPalette.Window, itemBackgroundColor )
-            w.setPalette(pallete)
-            w.render(pic)            
-            painter.drawPixmap( option.rect, pic )
-        else:
-            QStyledItemDelegate.paint(self, painter, option, index)
+        
+        # We keep a dict of all open editors for easy access.
+        # Note that the LayerWidget uses persistent editors.
+        # (This is for convenience of testing.)
+        # This is also why we don't need to override the paint() method here.
+        self._editors = {}
 
     def sizeHint(self, option, index):
         layer = index.data().toPyObject()
@@ -266,16 +240,68 @@ class LayerDelegate(QStyledItemDelegate):
             return QStyledItemDelegate.sizeHint(self, option, index)
 
     def createEditor(self, parent, option, index):
+        """
+        Create an editor widget.  Note that the LayerWidget always uses persistent editors.
+        """
         layer = index.data().toPyObject()
         if isinstance(layer, Layer):
             editor = LayerItemWidget(parent=parent)
+            editor.is_editor = True
+            # We set a custom objectName for debug and eventcapture testing purposes.
+            editor.setObjectName("LayerItemWidget_{}".format(layer.name))
             editor.setAutoFillBackground(True)
             editor.setPalette( option.palette )
             editor.setBackgroundRole(QPalette.Highlight)
             editor.layer = layer
+            self._editors[layer] = editor
             return editor
         else:
             QStyledItemDelegate.createEditor(self, parent, option, index)
+
+    def editorForIndex(self, modelIndex):
+        """
+        Return the editor (if any) that has already been 
+        opened for the layer at the given index.
+        """
+        layer = modelIndex.data().toPyObject()
+        try:
+            return self._editors[layer]
+        except KeyError:
+            return None
+
+    def updateAllItemBackgrounds(self):
+        """
+        Iterate through the entire list of editors (item widgets)
+        and give them alternating background colors.
+        """
+        for row in range(self._listModel.rowCount()):
+            index = self._listModel.index( row )
+            editor = self.editorForIndex( index )
+            if editor is None:
+                continue
+            if index.row() % 2 == 0:
+                itemBackgroundColor = self.parent().palette().color(QPalette.Base)
+            else:
+                itemBackgroundColor = self.parent().palette().color(QPalette.AlternateBase)
+            pallete = editor.palette()
+            pallete.setColor( QPalette.Window, itemBackgroundColor )
+            editor.setPalette(pallete)
+    
+    def onSelectionChanged(self, selected, deselected):
+        """
+        Since we use persistent editors for every item, we have to handle 
+        highlighting/highlighting the selected editor ourselves whenever the selection changes.
+        """
+        if len(deselected) > 0:
+            deselected_index = deselected[0].indexes()[0]
+            editor = self.editorForIndex(deselected_index)
+            if editor is not None:
+                editor.setBackgroundRole(QPalette.Window)
+        if len(selected) > 0:
+            selected_index = selected[0].indexes()[0]
+            editor = self.editorForIndex(selected_index)
+            if editor is not None:
+                editor.setBackgroundRole(QPalette.Highlight)
 
     def setEditorData(self, editor, index):
         layer = index.data().toPyObject()
@@ -295,6 +321,7 @@ class LayerDelegate(QStyledItemDelegate):
         for row in range(start, end):
             itemData = self._listModel.itemData( self._listModel.index(row) )
             layer = itemData[Qt.EditRole].toPyObject()
+            del self._editors[layer]
             assert isinstance(layer, Layer)
 
 class LayerWidget(QListView):
@@ -310,13 +337,24 @@ class LayerWidget(QListView):
         self._itemDelegate = LayerDelegate( self, listModel, parent=self )
         self.setItemDelegate(self._itemDelegate)
         self.setSelectionModel(listModel.selectionModel)
-        #self.setDragDropMode(self.InternalMove)
         self.installEventFilter(self)
-        #self.setDragDropOverwriteMode(False)
         self.model().selectionModel.selectionChanged.connect(self.onSelectionChanged)
         QTimer.singleShot(0, self.selectFirstEntry)
-
-
+        
+        listModel.dataChanged.connect( self._handleModelDataChanged )
+        listModel.layoutChanged.connect( self._handleModelLayoutChanged )
+        
+    def _handleModelDataChanged(self, index, index2):
+        # Every time the data changes, open a persistent editor for that layer.
+        # Using persistent editors allows us to use the eventcapture testing system,
+        #  which cannot handle editors disappearing every time a new row is selected.
+        self.openPersistentEditor(index)
+    
+    def _handleModelLayoutChanged(self):
+        # If the order of the items in the list changes,
+        #  we need to refresh the alternating light/dark background colors of each widget.
+        self._itemDelegate.updateAllItemBackgrounds()
+    
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Up or event.key() == Qt.Key_Down:
             return super(LayerWidget, self).keyPressEvent(event)
@@ -334,10 +372,6 @@ class LayerWidget(QListView):
                 if layer.opacity > 0.0:
                     layer.opacity = max(0.0, layer.opacity - 0.01)
 
-    def resizeEvent(self, e):
-        self.updateGUI()
-        QListView.resizeEvent(self, e)
-
     def contextMenuEvent(self, event):
         idx = self.indexAt(event.pos())
         layer = self.model()[idx.row()]
@@ -345,12 +379,7 @@ class LayerWidget(QListView):
         layercontextmenu( layer, self.mapToGlobal(event.pos()), self )
 
     def selectFirstEntry(self):
-        #self.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.model().selectionModel.setCurrentIndex(self.model().index(0), QItemSelectionModel.SelectCurrent)
-        self.updateGUI()
-
-    def updateGUI(self):
-        self.openPersistentEditor(self.model().selectedIndex())
 
     def eventFilter(self, sender, event):
         #http://stackoverflow.com/questions/1224432/
@@ -360,31 +389,34 @@ class LayerWidget(QListView):
         return False
 
     def onSelectionChanged(self, selected, deselected):
-        if len(deselected) > 0:
-            self.closePersistentEditor(deselected[0].indexes()[0])
-        self.updateGUI()
+        """
+        Since we use persistent editors for every item, we have to handle 
+        highlighting/highlighting the selected editor ourselves whenever the selection changes.
+        """
+        self._itemDelegate.onSelectionChanged(selected, deselected)
 
-    def onOrderChanged(self):
-        self.updateGUI()
-
-    def mousePressEvent(self, event):
-        prevIndex = self.model().selectedIndex()
-        newIndex = self.indexAt( event.pos() )
-        super(LayerWidget, self).mousePressEvent(event)
-
-        # HACK: The first click merely gives focus to the list item without actually passing the event to it.
-        # We'll simulate a mouse click on the item by sending a duplicate pair of QMouseEvent press/release events to the appropriate widget.
-        if prevIndex != newIndex and newIndex.row() != -1:
-            layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
-            assert isinstance(layer, Layer)
-            hitWidget = QApplication.widgetAt( event.globalPos() )
-            if hitWidget is None:
-                return
-            localPos = hitWidget.mapFromGlobal( event.globalPos() )
-            hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, localPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
-            QApplication.instance().sendEvent(hitWidget, hitWidgetPress)
-            hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, localPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
-            QApplication.instance().sendEvent(hitWidget, hitWidgetRelease)
+#     This whole function used to be necessary when we didn't use persistent editors.
+#     Now that our editors exist permanently, this wacky duplication of mouseevents isn't necessary.
+#     In any case, the proper way to do what this function was doing is probably to override 
+#     QAbstractItemDelegate.editorEvent(), and forward the event from there.
+#     def mousePressEvent(self, event):
+#         prevIndex = self.model().selectedIndex()
+#         newIndex = self.indexAt( event.pos() )
+#         super(LayerWidget, self).mousePressEvent(event)
+#         
+#         # HACK: The first click merely gives focus to the list item without actually passing the event to it.
+#         # We'll simulate a mouse click on the item by sending a duplicate pair of QMouseEvent press/release events to the appropriate widget.
+#         if prevIndex != newIndex and newIndex.row() != -1:
+#             layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
+#             assert isinstance(layer, Layer)
+#             hitWidget = QApplication.widgetAt( event.globalPos() )
+#             if hitWidget is None:
+#                 return
+#             localPos = hitWidget.mapFromGlobal( event.globalPos() )
+#             hitWidgetPress = QMouseEvent( QMouseEvent.MouseButtonPress, localPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
+#             QApplication.instance().sendEvent(hitWidget, hitWidgetPress)
+#             hitWidgetRelease = QMouseEvent( QMouseEvent.MouseButtonRelease, localPos, event.globalPos(), event.button(), event.buttons(), event.modifiers() )
+#             QApplication.instance().sendEvent(hitWidget, hitWidgetRelease)
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
