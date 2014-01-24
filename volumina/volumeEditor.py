@@ -24,7 +24,6 @@ from slicingtools import SliceProjection
 useVTK = True
 try:
     from view3d.view3d import OverviewScene
-    assert False
 except:
     print "Warning: could not import optional dependency VTK"
     useVTK = False
