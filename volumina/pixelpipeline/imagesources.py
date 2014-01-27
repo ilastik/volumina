@@ -337,7 +337,7 @@ class ColortableImageSource( ImageSource ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s, along_through)
-        return ColortableImageRequest( req, self._colorTable, self._layer.normalize, self.direct )
+        return ColortableImageRequest( req, self._colorTable, self._layer.normalize[0], self.direct )
 assert issubclass(ColortableImageSource, SourceABC)
 
 class ColortableImageRequest( object ):
@@ -350,6 +350,7 @@ class ColortableImageRequest( object ):
         self._colorTable = colorTable
         self.direct = direct
         self._normalize = normalize
+        assert normalize is None or len(normalize) == 2
 
     def wait(self):
         return self.toImage()
