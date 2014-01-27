@@ -96,7 +96,8 @@ class GrayscaleImageSource( ImageSource ):
         self._layer = layer
         
         self._arraySource2D.isDirty.connect(self.setDirty)
-        self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
+        if hasattr(self._layer, "normalizeChanged"):
+            self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
 
     def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
@@ -303,7 +304,8 @@ class ColortableImageSource( ImageSource ):
         self._layer = layer
         self.updateColorTable()
         self._layer.colorTableChanged.connect(self.updateColorTable)
-        self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
+        if hasattr(self._layer, "normalizeChanged"):
+            self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None,None), slice(None,None))))
 
     def updateColorTable(self):
         layerColorTable = self._layer.colorTable
@@ -335,7 +337,7 @@ class ColortableImageSource( ImageSource ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s, along_through)
-        return ColortableImageRequest( req, self._colorTable, self._layer.normalize[0], self.direct )
+        return ColortableImageRequest( req, self._colorTable, self._layer.normalize, self.direct )
 assert issubclass(ColortableImageSource, SourceABC)
 
 class ColortableImageRequest( object ):

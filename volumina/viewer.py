@@ -9,7 +9,7 @@ from volumina.volumeEditor import VolumeEditor
 from volumina.navigationControler import NavigationInterpreter
 from volumina import colortables
 
-from PyQt4.QtCore import QTimer
+from PyQt4.QtCore import QTimer, pyqtSignal
 from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp
 from PyQt4.uic import loadUi
 

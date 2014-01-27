@@ -36,6 +36,10 @@ class Layer( QObject ):
     numberOfChannelsChanged = pyqtSignal(int)
 
     @property
+    def normalize( self ):
+        return None
+
+    @property
     def visible( self ):
         return self._visible
     @visible.setter

@@ -9,7 +9,7 @@ from volumina.volumeEditor import VolumeEditor
 from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.widgets.layerwidget import LayerWidget
 
-from volumina.viewer import Viewer
+from volumina.viewer import Viewer, ClickableSegmentationLayer
 
 from PyQt4.QtGui import QApplication
 import sys
