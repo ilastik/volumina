@@ -337,7 +337,6 @@ class LayerWidget(QListView):
         self._itemDelegate = LayerDelegate( self, listModel, parent=self )
         self.setItemDelegate(self._itemDelegate)
         self.setSelectionModel(listModel.selectionModel)
-        self.installEventFilter(self)
         self.model().selectionModel.selectionChanged.connect(self.onSelectionChanged)
         QTimer.singleShot(0, self.selectFirstEntry)
         
@@ -380,13 +379,6 @@ class LayerWidget(QListView):
 
     def selectFirstEntry(self):
         self.model().selectionModel.setCurrentIndex(self.model().index(0), QItemSelectionModel.SelectCurrent)
-
-    def eventFilter(self, sender, event):
-        #http://stackoverflow.com/questions/1224432/
-        #how-do-i-respond-to-an-internal-drag-and-drop-operation-using-a-qlistwidget
-        if (event.type() == QEvent.ChildRemoved):
-            self.onOrderChanged()
-        return False
 
     def onSelectionChanged(self, selected, deselected):
         """
