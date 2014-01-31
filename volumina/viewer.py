@@ -5,7 +5,6 @@ from volumina.pixelpipeline.datasources import *
 from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
-from volumina.volumeEditor import VolumeEditor
 from volumina.navigationControler import NavigationInterpreter
 from volumina import colortables
 
@@ -155,6 +154,8 @@ class Viewer(QMainWindow):
         f.setBold(True)
         self.actionCurrentView.setFont(f)
 
+        # Lazy import here to prevent this module from ignoring volumine.NO3D flag.
+        from volumina.volumeEditor import VolumeEditor
         self.editor = VolumeEditor(self.layerstack, parent=self)
 
         #make sure the layer stack widget, which is the right widget
