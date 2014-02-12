@@ -6,6 +6,8 @@ import warnings
 from collections import defaultdict, OrderedDict
 from threading import Thread, Lock
 from Queue import Queue, Empty, Full, LifoQueue
+import weakref
+import atexit
 
 #SciPy
 import numpy
@@ -376,6 +378,7 @@ class TileProvider( QObject ):
         self._axesSwapped = value
 
     _instance_count = 0
+    _global_instance_list = []
 
     def __init__( self, tiling, stackedImageSources, cache_size=100,
                   request_queue_size=100000, n_threads=2,
@@ -385,6 +388,7 @@ class TileProvider( QObject ):
         # Used for thread debug names
         self._serial_number = TileProvider._instance_count
         TileProvider._instance_count += 1
+        TileProvider._global_instance_list.append( weakref.ref(self) )
 
         self.tiling = tiling
         self.axesSwapped = False
@@ -505,7 +509,8 @@ class TileProvider( QObject ):
 
         '''
         for thread in self._dirtyLayerThreads:
-            thread.join( timeout )
+            if thread.is_alive():
+                thread.join( timeout )
 
     def aliveThreads( self ):
         '''Return a map of thread identifiers and their alive status.
@@ -712,3 +717,23 @@ class TileProvider( QObject ):
         for tile_no in xrange(len(self.tiling)):
             self._cache.setTileDirtyAll(tile_no, True)
         self.sceneRectChanged.emit(QRectF())
+    
+    @classmethod
+    def _stopAllWorkerThreads(cls):
+        """
+        This function attempts to stop all worker threads in the application.
+        """
+        # Stop them all
+        for w in cls._global_instance_list:
+            provider = w()
+            if provider is not None:
+                provider.notifyThreadsToStop()
+
+        # Join them all
+        for w in cls._global_instance_list:
+            provider = w()
+            if provider is not None:
+                provider.joinThreads(2*TileProvider.THREAD_HEARTBEAT)
+
+# Kill all worker threads
+atexit.register( TileProvider._stopAllWorkerThreads )
