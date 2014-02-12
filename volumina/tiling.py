@@ -375,10 +375,16 @@ class TileProvider( QObject ):
     def axesSwapped(self, value):
         self._axesSwapped = value
 
+    _instance_count = 0
+
     def __init__( self, tiling, stackedImageSources, cache_size=100,
                   request_queue_size=100000, n_threads=2,
                   layerIdChange_means_dirty=False, parent=None ):
         QObject.__init__( self, parent = parent )
+
+        # Used for thread debug names
+        self._serial_number = TileProvider._instance_count
+        TileProvider._instance_count += 1
 
         self.tiling = tiling
         self.axesSwapped = False
@@ -406,7 +412,7 @@ class TileProvider( QObject ):
 
         self._keepRendering = True
 
-        self._dirtyLayerThreads = [Thread(target=self._dirtyLayersWorker)
+        self._dirtyLayerThreads = [Thread(target=self._dirtyLayersWorker, name="TileProvider-{}-Worker-{}".format( self._serial_number, i ))
                                    for i in range(self._n_threads)]
         for thread in self._dirtyLayerThreads:
             thread.daemon = True
@@ -563,12 +569,10 @@ class TileProvider( QObject ):
             except:
                 with volumina.printLock:
                     sys.excepthook( *sys.exc_info() )
-                    sys.stderr.write("ERROR: volumina tiling layer rendering worker thread "\
-                                     "caught an unhandled exception.  See above.\n")
-                    if hasattr( ims, '_layer' ):
+                    # if hasattr( ims, '_layer' ):
                         # For debug, print out the layer name if possible
-                        sys.stderr.write("Error was encountered while requesting data from layer: "\
-                                         "'{}'\n".format( ims._layer.name ) )
+                        # sys.stderr.write("Error was encountered while requesting data from layer: "\
+                        #                 "'{}'\n".format( ims._layer.name ) )
             finally:
                 queue.task_done()
 
