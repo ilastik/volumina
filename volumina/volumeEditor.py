@@ -21,11 +21,14 @@ from brushingcontroler import BrushingInterpreter, BrushingControler, \
 from brushingmodel import BrushingModel
 from slicingtools import SliceProjection
 
+import logging
+logger = logging.getLogger(__name__)
+
 useVTK = True
 try:
     from view3d.view3d import OverviewScene
 except:
-    print "Warning: could not import optional dependency VTK"
+    logger.error( "Warning: could not import optional dependency VTK" )
     useVTK = False
 
 #*******************************************************************************
