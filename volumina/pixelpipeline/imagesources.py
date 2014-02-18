@@ -169,7 +169,7 @@ class GrayscaleImageRequest( object ):
             if not a.flags.contiguous:
                 a = a.copy()
             if self._normalize is None or \
-               self._normalize[0] > self._normalize[1] or \
+               self._normalize[0] >= self._normalize[1] or \
                self._normalize == [0, 0]: #FIXME: fix volumina conventions
                 n = np.asarray([0, 255], dtype=a.dtype)
             else:
