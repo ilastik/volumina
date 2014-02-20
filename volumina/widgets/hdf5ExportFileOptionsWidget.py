@@ -15,7 +15,6 @@
 # Copyright 2011-2014, the ilastik developers
 
 import os
-from functools import partial
 
 from PyQt4 import uic
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent
