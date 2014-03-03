@@ -73,6 +73,9 @@ class ShortcutManager(object):
     def __init__(self):
         self._shortcuts = collections.OrderedDict()
         self.shortcutCollisions = set()
+        # cache parent widget -> shortcuts mapping to optimize removing
+        # shortcuts associated to deleted widgets in _purgeDeletedShortcuts()
+        self._parent_shortcut_dict = dict()
     
     def register(self, group, description, shortcut, objectWithToolTip=None):
         """
@@ -109,12 +112,19 @@ class ShortcutManager(object):
             self.updateToolTip( conflicted )
         
         self._shortcuts[group][shortcut] = (description, objectWithToolTip)
+        self._parent_shortcut_dict.setdefault(
+                shortcut.parentWidget(), []).append((group, shortcut))
         self.updateToolTip( shortcut )
         
     def _purgeDeletedShortcuts(self):
+        for parent in self._parent_shortcut_dict.keys():
+            if sip.isdeleted(parent):
+                for group, shortcut in self._parent_shortcut_dict.pop(parent):
+                    del self._shortcuts[group][shortcut]
+
         for group in self._shortcuts.keys():
             for shortcut in self._shortcuts[group]:
-                if sip.isdeleted(shortcut) or sip.isdeleted(shortcut.parentWidget()):
+                if sip.isdeleted(shortcut):
                     del self._shortcuts[group][shortcut]
 
     def _findExistingShortcuts(self, keyseq):
