@@ -9,18 +9,53 @@ from volumina.utility import Singleton, PreferencesManager, getMainWindow
 
 
 class ShortcutManager(object):
+    """
+    A singleton class that serves as a registry for all keyboard shortcuts in the app.
+    All shortcuts should be configured using this class, not using the plain Qt shortcut API.
+    This class handles details of directing a shortcut trigger to the intended target,
+    even if the normal Qt shortcut API would get confused about whether or not the shortcut 
+    is active based on the current 'context'.
+    
+    See __init__ for implementation details.
+    """
     __metaclass__ = Singleton
 
+    # Each shortcut target is registered using this ActionInfo class.
+    #
+    # group (str): A user-friendly category name that this shortcut belongs to.
+    # name (str): A (non-user-friendly) id for this action
+    # description (str): A user-friendly description of what this shortcut does
+    # target_callable (callable): A Python callable that serves as the target for the shortcut when it is activated
+    # context_widget (QWidget): A widget that can be used as a reference for deciding when the shortcut is enabled.
+    #                           The shortcut is enabled if this widget or any of its children have keyboard focus
+    # tooltip_widget (ObjectWithToolTipABC): (optional) Any object that fulfills the ObjectWithToolTipABC (see below).
+    #                                        If provided, this object's tooltip will be updated to reflect the current shortcut key sequence.
+    #                                        To omit this field, simply provide None
     ActionInfo = collections.namedtuple('ActionInfo', 'group name description target_callable context_widget tooltip_widget')
 
     def __init__(self):
-        self._action_infos = collections.OrderedDict()    # { group : { name : set([ActionInfo, ActionInfo, ...]) } }
+        """
+        Implementation details:
+        
+        - All shortcuts are tracked by an id consisting of 2 strings: (group, name). (The description field is used for displaying to the user.)
+        - In _keyseq_target_actions, all known shortcut key sequences are mapped to a set of (group, name) pairs, i.e. the possible targets for the key sequence
+        - For a given (group, name) id, the associated action(s) can be looked up using _action_infos
+        - We register a single, universal shortcut handler with Qt (_handle_shortcut_pressed) for every shortcut key sequence we are aware of.
+          In that handler, we determine which target action (if any) should be triggered in response to the shortcut, and trigger it by calling its target_callable. 
+        """
         self._keyseq_target_actions = {} # { keyseq : set([(group,name), (group,name), ...]) }
+        self._action_infos = collections.OrderedDict()    # { group : { name : set([ActionInfo, ActionInfo, ...]) } }
         self._global_shortcuts = {}  # { keyseq : QShortcut }
 
         self._preferences_reversemap = self._load_from_preferences()
 
     def register(self, default_keyseq, action_info):
+        """
+        Register a new shortcut.
+        
+        :param default_keyseq: A string specifying the shortcut key, e.g. 's' or 'Ctrl+P'
+        :param action_info: The details of the shortcut's target action.  Must be of type ActionInfo (see above).
+        """
         default_keyseq = QKeySequence(default_keyseq)
         group, name, description, target_callable, context_widget, tooltip_widget = action_info
         assert context_widget is not None, "You must provide a context_widget"
@@ -46,6 +81,9 @@ class ShortcutManager(object):
             pass            
 
     def unregister(self, action_info):
+        """
+        Remove an action from the managed shortcut targets.
+        """
         group, name, description, target_callable, context_widget, tooltip_widget = action_info
         action_set = self._action_infos[group][name]
         action_set.remove(action_info)
@@ -53,6 +91,7 @@ class ShortcutManager(object):
     def get_all_action_descriptions(self):
         """
         Return a dict of { group : [(name, description), (name, description),...] }
+        Used by the ShortcutManagerDlg
         """
         all_descriptions = collections.OrderedDict()
         for group, group_dict in self._action_infos.items():
@@ -75,6 +114,9 @@ class ShortcutManager(object):
         return reversemap
     
     def change_keyseq(self, group, name, old_keyseq, keyseq):
+        """
+        Customize a shortcut's activating key sequence.
+        """
         if old_keyseq:
             old_keyseq = QKeySequence(old_keyseq)
             old_keytext = str(old_keyseq.toString())
@@ -106,6 +148,9 @@ class ShortcutManager(object):
 
     PreferencesGroup = "Shortcut Preferences v2"
     def store_to_preferences(self):
+        """
+        Immediately serialize the current set of shortcuts to the preferences file.
+        """
         # Auto-save after we're done setting prefs
         with PreferencesManager() as prefsMgr:
             # Just save the entire shortcut dict as a single pickle value
@@ -113,6 +158,10 @@ class ShortcutManager(object):
             prefsMgr.set( self.PreferencesGroup, "all_shortcuts", reversemap )
 
     def _load_from_preferences(self):
+        """
+        Read previously-saved preferences file and return the dict of shortcut keys -> targets (a 'reversemap').
+        Called during initialization only.  
+        """
         return PreferencesManager().get( self.PreferencesGroup, "all_shortcuts", default={} )
 
     
@@ -193,6 +242,9 @@ class ShortcutManager(object):
             return None
         
     def _get_ancestors(self, widget):
+        """
+        Return all 'ancestors' (i.e. parent widgets) of the given widget, INCLUDING the widget itself.
+        """
         if widget is None:
             return []
         ancestors = [widget]
@@ -242,6 +294,32 @@ class ShortcutManager(object):
                     pass
                 else:
                     raise
+
+class ObjectWithToolTipABC(object):
+    """
+    Defines an ABC for objects that have toolTip() and setToolTip() members.
+    Note: All QWidgets already implement this ABC.
+    
+    When a shortcut is registered with the shortcut manager, clients can (optionally) 
+    provide an object that updates the tooltip text for the shortcut.
+    That object must adhere to this interface.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def toolTip(self):
+        raise NotImplementedError()
+    
+    @abc.abstractmethod
+    def setToolTip(self, tip):
+        raise NotImplementedError()
+    
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is ObjectWithToolTipABC:
+            return _has_attributes(C, ['toolTip', 'setToolTip'])
+        return NotImplemented
+
 
 if __name__ == "__main__":
     from PyQt4.QtCore import Qt, QEvent, QTimer
