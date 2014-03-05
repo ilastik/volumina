@@ -11,21 +11,14 @@ from volumina.utility import Singleton, PreferencesManager, getMainWindow
 class ShortcutManager2(object):
     __metaclass__ = Singleton
 
-    class ActionInfo( collections.namedtuple('ActionInfo', 'group name description target_callable context_widget tooltip_widget') ):
-        __slots__ = ()
-
-        def __hash__(self):
-            return ( self.group, self.name, self.context_widget ).__hash__()
-        
-        def __eq__(self, other):
-            return ( (self.group == other.group)
-                 and (self.name == other.name)
-                 and (self.context_widget == other.context_widget) )
+    ActionInfo = collections.namedtuple('ActionInfo', 'group name description target_callable context_widget tooltip_widget')
 
     def __init__(self):
-        self._action_infos = collections.OrderedDict()    # { group : { name : [ActionInfo, ActionInfo, ...] } }
-        self._keyseq_target_actions = {} # keyseq : [(group,name), (group,name), ...]
-        self._global_shortcuts = {}  # keyseq : QShortcut
+        self._action_infos = collections.OrderedDict()    # { group : { name : set([ActionInfo, ActionInfo, ...]) } }
+        self._keyseq_target_actions = {} # { keyseq : set([(group,name), (group,name), ...]) }
+        self._global_shortcuts = {}  # { keyseq : QShortcut }
+
+        self._preferences_reversemap = self._load_from_preferences()
 
     def register(self, default_keyseq, action_info):
         default_keyseq = QKeySequence(default_keyseq)
@@ -38,18 +31,48 @@ class ShortcutManager2(object):
             group_dict = self._action_infos[group] = collections.OrderedDict()
         
         try:
-            action_list = group_dict[name]
+            action_set = group_dict[name]
         except KeyError:
-            action_list = group_dict[name] = set()
-        action_list.add( action_info )
+            action_set = group_dict[name] = set()
+        action_set.add( action_info )
         
         self.change_keyseq( group, name, None, default_keyseq )
-        # TODO: If we have preferences for this action, update the keyseq
+        
+        # If there was a preference for this keyseq, update our map to use it.
+        try:
+            stored_keyseq = self._preferences_reversemap[(group, name)]
+            self.change_keyseq( group, name, default_keyseq, stored_keyseq )
+        except KeyError:
+            pass            
 
     def unregister(self, action_info):
         group, name, description, target_callable, context_widget, tooltip_widget = action_info
-        action_list = self._action_infos[group][name]
-        action_list.remove(action_info)
+        action_set = self._action_infos[group][name]
+        action_set.remove(action_info)
+    
+    def get_all_action_descriptions(self):
+        """
+        Return a dict of { group : [(name, description), (name, description),...] }
+        """
+        all_descriptions = collections.OrderedDict()
+        for group, group_dict in self._action_infos.items():
+            all_descriptions[group] = []
+            for name, action_set in group_dict.items():
+                if action_set:
+                    all_descriptions[group].append( (name, iter(action_set).next().description) )
+        return all_descriptions
+    
+    def get_keyseq_reversemap(self, _d=None):
+        """
+        Construct the reverse-map of { (group, name) : keyseq }
+        :param _d: Internal use only.
+        """
+        _d = _d or self._keyseq_target_actions
+        reversemap = {}
+        for keyseq, targets in _d.items():
+            for (group, name) in targets:
+                reversemap[(group, name)] = keyseq
+        return reversemap
     
     def change_keyseq(self, group, name, old_keyseq, keyseq):
         if old_keyseq:
@@ -59,15 +82,18 @@ class ShortcutManager2(object):
         try:
             keyseq = QKeySequence(keyseq)
             keytext = str(keyseq.toString())
-            target_name_list = self._keyseq_target_actions[keytext]
+            target_name_set = self._keyseq_target_actions[keytext]
         except KeyError:
-            target_name_list = self._keyseq_target_actions[keytext] = set()
+            target_name_set = self._keyseq_target_actions[keytext] = set()
             self._add_global_shortcut_listener( keyseq )
         
-        target_name_list.add( (group, name) )
+        target_name_set.add( (group, name) )
         self._update_tooltip( group, name, keyseq )
     
     def update_description(self, action_info, new_description):
+        """
+        Locate the given action_info and replace it with a copy except for the new description text.
+        """ 
         assert action_info in self._action_infos[action_info.group][action_info.name],\
             "Couldn't locate action_info for {}/{}".format( action_info.group, action_info.name )
         
@@ -77,6 +103,18 @@ class ShortcutManager2(object):
         self._action_infos[action_info.group][action_info.name].add( new_action_info )
         self._update_tooltip( new_action_info.group, new_action_info.name, None )
         return new_action_info
+
+    PreferencesGroup = "Shortcut Preferences v2"
+    def store_to_preferences(self):
+        # Auto-save after we're done setting prefs
+        with PreferencesManager() as prefsMgr:
+            # Just save the entire shortcut dict as a single pickle value
+            reversemap = self.get_keyseq_reversemap(self._keyseq_target_actions)
+            prefsMgr.set( self.PreferencesGroup, "all_shortcuts", reversemap )
+
+    def _load_from_preferences(self):
+        return PreferencesManager().get( self.PreferencesGroup, "all_shortcuts", default={} )
+
     
     def _add_global_shortcut_listener(self, keyseq):
         # Create a shortcut for this new key sequence
@@ -97,9 +135,9 @@ class ShortcutManager2(object):
         # - Widget must be visible
         # - If multiple visible candidates, go with the one that has focus.
         # - Ignore deleted widgets
-        target_name_list = self._keyseq_target_actions[keytext]
+        target_name_set = self._keyseq_target_actions[keytext]
         candidate_actions = []
-        for index, (group, name) in enumerate(list(target_name_list)):
+        for index, (group, name) in enumerate(list(target_name_set)):
             instance_list = self._action_infos[group][name]
             for action_info in instance_list:
                 try:
@@ -109,7 +147,7 @@ class ShortcutManager2(object):
                     if 'has been deleted' in str(ex):
                         # This widget doesn't exist anymore.  
                         # Just remove it from our candidate list for next time.
-                        target_name_list.pop(index)
+                        target_name_set.pop(index)
                     else:
                         raise
 
@@ -164,16 +202,6 @@ class ShortcutManager2(object):
             parent = parent.parent()
         return ancestors
 
-    def storeToPreferences(self):
-        assert False, "TODO"
-        # Auto-save after we're done setting prefs
-        with PreferencesManager() as prefsMgr:
-            for group, shortcutDict in self.shortcuts.items():
-                groupKeys = {}
-                for shortcut, (desc, obj) in shortcutDict.items():
-                    groupKeys[desc] = shortcut.key() # QKeySequence is pickle-able
-                prefsMgr.set( self.PreferencesGroup, group, groupKeys )
-
     def _update_tooltip(self, group, name, new_keyseq=None):
         """
         If this shortcut is associated with an object with tooltip text, 
@@ -182,8 +210,8 @@ class ShortcutManager2(object):
         For example, a button with shortcut 'b' and tooltip "Make it happen!"
             is modified to have tooltip text "Make it happen! [B]"
         """
-        action_list = self._action_infos[group][name]
-        for action_info in action_list:
+        action_set = self._action_infos[group][name]
+        for action_info in action_set:
             widget = action_info.tooltip_widget
             if widget is None:
                 continue
