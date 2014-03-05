@@ -8,7 +8,7 @@ from PyQt4.QtGui import QApplication, QKeySequence, QShortcut
 from volumina.utility import Singleton, PreferencesManager, getMainWindow
 
 
-class ShortcutManager2(object):
+class ShortcutManager(object):
     __metaclass__ = Singleton
 
     ActionInfo = collections.namedtuple('ActionInfo', 'group name description target_callable context_widget tooltip_widget')
@@ -98,7 +98,7 @@ class ShortcutManager2(object):
             "Couldn't locate action_info for {}/{}".format( action_info.group, action_info.name )
         
         group, name, old_description, target_callable, context_widget, tooltip_widget = action_info
-        new_action_info = ShortcutManager2.ActionInfo( group, name, new_description, target_callable, context_widget, tooltip_widget )
+        new_action_info = ShortcutManager.ActionInfo( group, name, new_description, target_callable, context_widget, tooltip_widget )
         self._action_infos[action_info.group][action_info.name].remove( action_info )
         self._action_infos[action_info.group][action_info.name].add( new_action_info )
         self._update_tooltip( new_action_info.group, new_action_info.name, None )
@@ -259,8 +259,8 @@ if __name__ == "__main__":
         print "changing label text ({})".format(counter[0])
         label.setText("Hello! {}".format( counter[0] ))
 
-    mgr = ShortcutManager2()
-    mgr.register( "h", ShortcutManager2.ActionInfo("greetings", "say hello", "Say Hello (with gusto)", say_hello, label, label) )
+    mgr = ShortcutManager()
+    mgr.register( "h", ShortcutManager.ActionInfo("greetings", "say hello", "Say Hello (with gusto)", say_hello, label, label) )
 
     def change_key():
         mgr.change_keyseq("greetings", "say hello", "h", "q")

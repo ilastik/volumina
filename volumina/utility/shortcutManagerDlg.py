@@ -4,7 +4,7 @@ from PyQt4.QtCore import QStringList
 from PyQt4.QtGui import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, \
                         QLineEdit, QPushButton, QSpacerItem, QWidget, QTreeWidget, QTreeWidgetItem, QSizePolicy
 
-from shortcutManager2 import ShortcutManager2
+from shortcutManager import ShortcutManager
 
 class ShortcutManagerDlg(QDialog):
     def __init__(self, *args, **kwargs):
@@ -13,7 +13,7 @@ class ShortcutManagerDlg(QDialog):
         self.setMinimumWidth(500)
         self.setMinimumHeight(500)
 
-        mgr = ShortcutManager2() # Singleton
+        mgr = ShortcutManager() # Singleton
 
         scrollWidget = QWidget(parent=self)
         tempLayout = QVBoxLayout( scrollWidget )
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     def trigger(name):
         print "Shortcut triggered:",name
     
-    ActionInfo = ShortcutManager2.ActionInfo
+    ActionInfo = ShortcutManager.ActionInfo
     def registerShortcuts(mgr):
         mgr.register( "1", ActionInfo( "Group 1",
                                        "Shortcut 1A",
@@ -126,14 +126,14 @@ if __name__ == "__main__":
                                        None ) )
 
     
-    mgr = ShortcutManager2()
+    mgr = ShortcutManager()
     registerShortcuts(mgr)
 
     app.exec_()
 
     # Simulate a new session by making a new instance of the manager
-    ShortcutManager2.instance = None # Force the singleton to reset
-    mgr2 = ShortcutManager2()
+    ShortcutManager.instance = None # Force the singleton to reset
+    mgr2 = ShortcutManager()
     assert id(mgr) != id(mgr2), "Why didn't the singleton reset?"
  
     registerShortcuts(mgr2)

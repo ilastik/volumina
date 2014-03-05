@@ -17,6 +17,6 @@
 from getMainWindow import getMainWindow
 from singleton import Singleton
 from preferencesManager import PreferencesManager
-from shortcutManager import ShortcutManager, ShortcutManagerDlg
+from shortcutManager import ShortcutManager
+from shortcutManagerDlg import ShortcutManagerDlg
 from qstring_codec import encode_from_qstring, decode_to_qstring
-from shortcutManager2 import ShortcutManager2

@@ -33,7 +33,7 @@ from quadsplitter import QuadView
 from sliceSelectorHud import ImageView2DHud, QuadStatusBar
 from pixelpipeline.datasources import ArraySource
 from volumeEditor import VolumeEditor
-from volumina.utility import ShortcutManager2
+from volumina.utility import ShortcutManager
 
 class __TimerEventEater( QObject ):
     def eventFilter( self, obj, ev ):
@@ -251,8 +251,8 @@ class VolumeEditorWidget(QWidget):
 
     def _initShortcuts(self):
         # TODO: Fix this dependency on ImageView/HUD internals
-        mgr = ShortcutManager2()
-        ActionInfo = ShortcutManager2.ActionInfo
+        mgr = ShortcutManager()
+        ActionInfo = ShortcutManager.ActionInfo
         mgr.register("x", ActionInfo( "Navigation", 
                                       "Minimize/Maximize x-Window", 
                                       "Minimize/Maximize x-Window", 
@@ -400,7 +400,7 @@ class VolumeEditorWidget(QWidget):
         self._viewMenu.setObjectName( "view_menu" )
         self._debugActions = []
         
-        ActionInfo = ShortcutManager2.ActionInfo
+        ActionInfo = ShortcutManager.ActionInfo
         
         # This action is saved as a member so it can be triggered from tests
         self._viewMenu.actionFitToScreen = self._viewMenu.addAction( "&Zoom to &fit" )
@@ -429,7 +429,7 @@ class VolumeEditorWidget(QWidget):
         actionShowTiling = self._viewMenu.addAction( "Show Tiling" )
         actionShowTiling.setCheckable(True)
         actionShowTiling.toggled.connect(toggleDebugPatches)
-        ShortcutManager2().register( "Ctrl+D", ActionInfo( 
+        ShortcutManager().register( "Ctrl+D", ActionInfo( 
                                                    "Navigation",
                                                    "Show tiling",
                                                    "Show tiling",
@@ -473,7 +473,7 @@ class VolumeEditorWidget(QWidget):
             QApplication.processEvents()
         actionBlockGui = self._viewMenu.addAction( "Block for rendering" )
         actionBlockGui.triggered.connect(blockGuiForRendering)
-        ShortcutManager2().register("Ctrl+B", ActionInfo( 
+        ShortcutManager().register("Ctrl+B", ActionInfo( 
                                                   "Navigation", 
                                                   "Block gui for rendering",
                                                   "Block gui for rendering",
@@ -500,7 +500,7 @@ class VolumeEditorWidget(QWidget):
         
         actionFitImage = self._viewMenu.addAction( "Fit image" )
         actionFitImage.triggered.connect(self._fitImage)
-        ShortcutManager2().register( "K", ActionInfo( "Navigation", 
+        ShortcutManager().register( "K", ActionInfo( "Navigation", 
                                                       "Fit image on screen", 
                                                       "Fit image on screen",
                                                       actionFitImage.trigger,
@@ -520,7 +520,7 @@ class VolumeEditorWidget(QWidget):
             self.editor.imageViews[self.editor._lastImageViewFocus].centerImage()
         actionCenterImage = self._viewMenu.addAction( "Center image" )
         actionCenterImage.triggered.connect(centerImage)
-        ShortcutManager2().register( "C", ActionInfo( "Navigation", 
+        ShortcutManager().register( "C", ActionInfo( "Navigation", 
                                                       "Center image", 
                                                       "Center image", 
                                                       actionCenterImage.trigger,
@@ -531,7 +531,7 @@ class VolumeEditorWidget(QWidget):
             self.editor.imageViews[self.editor._lastImageViewFocus].doScaleTo()
         actionResetZoom = self._viewMenu.addAction( "Reset zoom" )
         actionResetZoom.triggered.connect(restoreImageToOriginalSize)
-        ShortcutManager2().register( "W", ActionInfo( "Navigation", 
+        ShortcutManager().register( "W", ActionInfo( "Navigation", 
                                                       "Reset zoom", 
                                                       "Reset zoom", 
                                                       actionResetZoom.trigger,
