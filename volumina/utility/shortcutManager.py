@@ -1,35 +1,299 @@
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# Copyright 2011-2014, the ilastik developers
-
-import re
-import abc
 import collections
+from functools import partial
+import logging
+logger = logging.getLogger(__name__)
 
-import sip
-from PyQt4.QtCore import QStringList, Qt, QObject
-from PyQt4.QtGui import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, QGroupBox, QGridLayout, \
-                        QLabel, QLineEdit, QPushButton, QSpacerItem, QKeySequence, QWidget, QTreeWidget, QTreeWidgetItem, QSizePolicy
+from PyQt4.QtCore import Qt
+from PyQt4.QtGui import QApplication, QKeySequence, QShortcut
+from volumina.utility import Singleton, PreferencesManager, getMainWindow
 
-from volumina.utility import Singleton, PreferencesManager
 
-def _has_attribute( cls, attr ):
-    return any(attr in B.__dict__ for B in cls.__mro__)
+class ShortcutManager(object):
+    """
+    A singleton class that serves as a registry for all keyboard shortcuts in the app.
+    All shortcuts should be configured using this class, not using the plain Qt shortcut API.
+    This class handles details of directing a shortcut trigger to the intended target,
+    even if the normal Qt shortcut API would get confused about whether or not the shortcut 
+    is active based on the current 'context'.
+    
+    See __init__ for implementation details.
+    """
+    __metaclass__ = Singleton
 
-def _has_attributes( cls, attrs ):
-    return all(_has_attribute(cls, a) for a in attrs)
+    # Each shortcut target is registered using this ActionInfo class.
+    #
+    # group (str): A user-friendly category name that this shortcut belongs to.
+    # name (str): A (non-user-friendly) id for this action
+    # description (str): A user-friendly description of what this shortcut does
+    # target_callable (callable): A Python callable that serves as the target for the shortcut when it is activated
+    # context_widget (QWidget): A widget that can be used as a reference for deciding when the shortcut is enabled.
+    #                           The shortcut is enabled if this widget or any of its children have keyboard focus
+    # tooltip_widget (ObjectWithToolTipABC): (optional) Any object that fulfills the ObjectWithToolTipABC (see below).
+    #                                        If provided, this object's tooltip will be updated to reflect the current shortcut key sequence.
+    #                                        To omit this field, simply provide None
+    ActionInfo = collections.namedtuple('ActionInfo', 'group name description target_callable context_widget tooltip_widget')
+
+    def __init__(self):
+        """
+        Implementation details:
+        
+        - All shortcuts are tracked by an id consisting of 2 strings: (group, name). (The description field is used for displaying to the user.)
+        - In _keyseq_target_actions, all known shortcut key sequences are mapped to a set of (group, name) pairs, i.e. the possible targets for the key sequence
+        - For a given (group, name) id, the associated action(s) can be looked up using _action_infos
+        - We register a single, universal shortcut handler with Qt (_handle_shortcut_pressed) for every shortcut key sequence we are aware of.
+          In that handler, we determine which target action (if any) should be triggered in response to the shortcut, and trigger it by calling its target_callable. 
+        """
+        self._keyseq_target_actions = {} # { keyseq : set([(group,name), (group,name), ...]) }
+        self._action_infos = collections.OrderedDict()    # { group : { name : set([ActionInfo, ActionInfo, ...]) } }
+        self._global_shortcuts = {}  # { keyseq : QShortcut }
+
+        self._preferences_reversemap = self._load_from_preferences()
+
+    def register(self, default_keyseq, action_info):
+        """
+        Register a new shortcut.
+        
+        :param default_keyseq: A string specifying the shortcut key, e.g. 's' or 'Ctrl+P'
+        :param action_info: The details of the shortcut's target action.  Must be of type ActionInfo (see above).
+        """
+        default_keyseq = QKeySequence(default_keyseq)
+        group, name, description, target_callable, context_widget, tooltip_widget = action_info
+        assert context_widget is not None, "You must provide a context_widget"
+        
+        try:
+            group_dict = self._action_infos[group]
+        except KeyError:
+            group_dict = self._action_infos[group] = collections.OrderedDict()
+        
+        try:
+            action_set = group_dict[name]
+        except KeyError:
+            action_set = group_dict[name] = set()
+        action_set.add( action_info )
+        
+        self.change_keyseq( group, name, None, default_keyseq )
+        
+        # If there was a preference for this keyseq, update our map to use it.
+        try:
+            stored_keyseq = self._preferences_reversemap[(group, name)]
+            self.change_keyseq( group, name, default_keyseq, stored_keyseq )
+        except KeyError:
+            pass            
+
+    def unregister(self, action_info):
+        """
+        Remove an action from the managed shortcut targets.
+        """
+        group, name, description, target_callable, context_widget, tooltip_widget = action_info
+        action_set = self._action_infos[group][name]
+        action_set.remove(action_info)
+    
+    def get_all_action_descriptions(self):
+        """
+        Return a dict of { group : [(name, description), (name, description),...] }
+        Used by the ShortcutManagerDlg
+        """
+        all_descriptions = collections.OrderedDict()
+        for group, group_dict in self._action_infos.items():
+            all_descriptions[group] = []
+            for name, action_set in group_dict.items():
+                if action_set:
+                    all_descriptions[group].append( (name, iter(action_set).next().description) )
+        return all_descriptions
+    
+    def get_keyseq_reversemap(self, _d=None):
+        """
+        Construct the reverse-map of { (group, name) : keyseq }
+        :param _d: Internal use only.
+        """
+        _d = _d or self._keyseq_target_actions
+        reversemap = {}
+        for keyseq, targets in _d.items():
+            for (group, name) in targets:
+                reversemap[(group, name)] = keyseq
+        return reversemap
+    
+    def change_keyseq(self, group, name, old_keyseq, keyseq):
+        """
+        Customize a shortcut's activating key sequence.
+        """
+        if old_keyseq:
+            old_keyseq = QKeySequence(old_keyseq)
+            old_keytext = str(old_keyseq.toString())
+            self._keyseq_target_actions[old_keytext].remove( (group, name) )        
+        try:
+            keyseq = QKeySequence(keyseq)
+            keytext = str(keyseq.toString())
+            target_name_set = self._keyseq_target_actions[keytext]
+        except KeyError:
+            target_name_set = self._keyseq_target_actions[keytext] = set()
+            self._add_global_shortcut_listener( keyseq )
+        
+        target_name_set.add( (group, name) )
+        self._update_tooltip( group, name, keyseq )
+    
+    def update_description(self, action_info, new_description):
+        """
+        Locate the given action_info and replace it with a copy except for the new description text.
+        """ 
+        assert action_info in self._action_infos[action_info.group][action_info.name],\
+            "Couldn't locate action_info for {}/{}".format( action_info.group, action_info.name )
+        
+        group, name, old_description, target_callable, context_widget, tooltip_widget = action_info
+        new_action_info = ShortcutManager.ActionInfo( group, name, new_description, target_callable, context_widget, tooltip_widget )
+        self._action_infos[action_info.group][action_info.name].remove( action_info )
+        self._action_infos[action_info.group][action_info.name].add( new_action_info )
+        self._update_tooltip( new_action_info.group, new_action_info.name, None )
+        return new_action_info
+
+    PreferencesGroup = "Shortcut Preferences v2"
+    def store_to_preferences(self):
+        """
+        Immediately serialize the current set of shortcuts to the preferences file.
+        """
+        # Auto-save after we're done setting prefs
+        with PreferencesManager() as prefsMgr:
+            # Just save the entire shortcut dict as a single pickle value
+            reversemap = self.get_keyseq_reversemap(self._keyseq_target_actions)
+            prefsMgr.set( self.PreferencesGroup, "all_shortcuts", reversemap )
+
+    def _load_from_preferences(self):
+        """
+        Read previously-saved preferences file and return the dict of shortcut keys -> targets (a 'reversemap').
+        Called during initialization only.  
+        """
+        return PreferencesManager().get( self.PreferencesGroup, "all_shortcuts", default={} )
+
+    
+    def _add_global_shortcut_listener(self, keyseq):
+        # Create a shortcut for this new key sequence
+        # Note: We associate the shortcut with the ENTIRE WINDOW.
+        #       We intercept the shortcut and decide which widget to direct it to.
+        #       (We don't rely on Qt to do this for us.)
+        # Note: This class assumes that all widgets using shortcuts belong to the SAME main window.
+        assert keyseq not in self._global_shortcuts
+        keyseq = QKeySequence(keyseq)
+        keytext = str(keyseq.toString())
+        self._global_shortcuts[keytext] = QShortcut( QKeySequence(keyseq), 
+                                                     getMainWindow(), 
+                                                     member=partial(self._handle_shortcut_pressed, keytext), 
+                                                     context=Qt.ApplicationShortcut )
+
+    def _handle_shortcut_pressed(self, keytext):
+        # Resolve the target callable for this shortcut among the registered candidates
+        # - Widget must be visible
+        # - If multiple visible candidates, go with the one that has focus.
+        # - Ignore deleted widgets
+        target_name_set = self._keyseq_target_actions[keytext]
+        candidate_actions = []
+        for index, (group, name) in enumerate(list(target_name_set)):
+            instance_list = self._action_infos[group][name]
+            for action_info in instance_list:
+                try:
+                    if action_info.context_widget.isVisible():
+                        candidate_actions.append( action_info )
+                except RuntimeError as ex:
+                    if 'has been deleted' in str(ex):
+                        # This widget doesn't exist anymore.  
+                        # Just remove it from our candidate list for next time.
+                        target_name_set.pop(index)
+                    else:
+                        raise
+
+        if len(candidate_actions) == 0:
+            return
+        if len(candidate_actions) == 1:
+            logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
+            candidate_actions[0].target_callable()
+            return
+        elif len( candidate_actions ) > 1:
+            best_focus_candidates = []
+            for action_info in candidate_actions:
+                focused_child_depth = self._focused_widget_ancestor_index(action_info.context_widget)
+                if focused_child_depth is not None:
+                    best_focus_candidates.append( (focused_child_depth, action_info ) )
+
+            if len(best_focus_candidates) == 0:
+                logger.debug("Ignoring key sequence: {} because no targets have focus.".format( keytext ))
+            elif len( best_focus_candidates ) == 1:
+                logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
+                best_focus_candidates[0][1].target_callable()
+            else:
+                best_focus_candidates = sorted(best_focus_candidates)
+                if best_focus_candidates[0][0] != best_focus_candidates[1][0]:
+                    # More than one of our targets owned the focus widget, but one was closer.
+                    logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
+                    best_focus_candidates[0][1].target_callable()
+                else:
+                    logger.debug( "Ignoring key sequence: {} due to multiple candidate targets:\n"
+                                  "{}".format( keytext, best_focus_candidates ) )
+
+    def _focused_widget_ancestor_index(self, widget):
+        """
+        If widget is an ancestor (parent, parent-parent, etc.) of the 
+        currently focused widget, return the number of parent steps 
+        between widget and the focused widget.  Otherwise, return None.
+        """
+        focused_widget = QApplication.focusWidget()
+        ancestors = self._get_ancestors(focused_widget)
+        try:
+            return ancestors.index(widget)
+        except ValueError:
+            return None
+        
+    def _get_ancestors(self, widget):
+        """
+        Return all 'ancestors' (i.e. parent widgets) of the given widget, INCLUDING the widget itself.
+        """
+        if widget is None:
+            return []
+        ancestors = [widget]
+        parent = widget.parent()
+        while parent is not None:
+            ancestors.append(parent)
+            parent = parent.parent()
+        return ancestors
+
+    def _update_tooltip(self, group, name, new_keyseq=None):
+        """
+        If this shortcut is associated with an object with tooltip text, 
+            the tooltip text is updated to include the shortcut key.
+
+        For example, a button with shortcut 'b' and tooltip "Make it happen!"
+            is modified to have tooltip text "Make it happen! [B]"
+        """
+        action_set = self._action_infos[group][name]
+        for action_info in action_set:
+            widget = action_info.tooltip_widget
+            if widget is None:
+                continue
+            try:
+                old_text = str(widget.toolTip())
+                if new_keyseq:
+                    new_key = str(new_keyseq.toString())
+                    if new_key == "":
+                        new_key = "<no key>"
+                    new_key_text = '[' + new_key + ']'
+                else:
+                    # No keyseq provided (it didn't change)
+                    new_key_text = old_text
+                
+                if old_text == "":
+                    old_text = action_info.description
+        
+                if '[' not in old_text:
+                    new_text = old_text + ' ' + new_key_text
+                else:
+                    keyhelp_start = old_text.find('[')
+                    new_text = old_text[:keyhelp_start] + new_key_text
+                
+                widget.setToolTip( new_text )
+            except RuntimeError as ex:
+                # Simply ignore 'XXX has been deleted' errors
+                if 'has been deleted' in str(ex):
+                    pass
+                else:
+                    raise
 
 class ObjectWithToolTipABC(object):
     """
@@ -56,311 +320,28 @@ class ObjectWithToolTipABC(object):
             return _has_attributes(C, ['toolTip', 'setToolTip'])
         return NotImplemented
 
-class ShortcutManager(object):
-    """
-    Singleton object.
-    Maintains a global list of shortcuts.
-    If an object is provided when the shortcut is registered, the object's tooltip is updated to show the shortcut keys.
-    """
-    __metaclass__ = Singleton
-    
-    PreferencesGroup = "Keyboard Shortcuts"
-
-    @property
-    def shortcuts(self):
-        return self._shortcuts
-
-    def __init__(self):
-        self._shortcuts = collections.OrderedDict()
-        self.shortcutCollisions = set()
-    
-    def register(self, group, description, shortcut, objectWithToolTip=None):
-        """
-        Register a shortcut with the shortcut manager.
-        
-        Note: If the new shortcut uses the same key sequence as a shortcut that 
-              already exists, the original shortcut is disabled, and this new 
-              shortcut takes it's place.
-        
-        group - The GUI category of this shortcut
-        description - A description of the shortcut action (shows up as default tooltip text)
-        shortcut - A QShortcut
-        objectWithToolTip - (optional) If provided, used to update the tooltip text with the shortcut keys. (See ABC above)
-        """
-        assert description is not None
-        assert objectWithToolTip is None or isinstance(objectWithToolTip, ObjectWithToolTipABC)
-
-        if not group in self._shortcuts:
-            self._shortcuts[group] = collections.OrderedDict()
-        
-        # If we've got user preferences for this shortcut, apply them now.
-        groupKeys = PreferencesManager().get( self.PreferencesGroup, group )
-        if groupKeys is not None and description in groupKeys:
-            keyseq = groupKeys[description]
-            shortcut.setKey( keyseq )
-        
-        # Purge invalid shortcuts
-        self._purgeDeletedShortcuts()
-        
-        # Before we add this shortcut to our dict, disable any other shortcuts it replaces
-        conflicting_shortcuts = self._findExistingShortcuts( shortcut.key().toString() )
-        for conflicted in conflicting_shortcuts:
-            conflicted.setKey( QKeySequence("") )
-            self.updateToolTip( conflicted )
-        
-        self._shortcuts[group][shortcut] = (description, objectWithToolTip)
-        self.updateToolTip( shortcut )
-        
-    def _purgeDeletedShortcuts(self):
-        for group in self._shortcuts.keys():
-            for shortcut in self._shortcuts[group]:
-                if sip.isdeleted(shortcut) or sip.isdeleted(shortcut.parentWidget()):
-                    del self._shortcuts[group][shortcut]
-
-    def _findExistingShortcuts(self, keyseq):
-        existing_shortcuts = []
-        for group, shortcutDict in self._shortcuts.items():
-            for (shortcut, (desc, obj)) in shortcutDict.items():
-                if str(shortcut.key().toString()).lower() == str(keyseq).lower():
-                    existing_shortcuts.append( shortcut )
-        return existing_shortcuts
-    
-    def unregister(self, shortcut):
-        """
-        Remove the shortcut from the manager.
-        Note that this does NOT disable the shortcut.
-        """
-        for group in self._shortcuts:
-            if shortcut in self._shortcuts[group]:
-                del self._shortcuts[group][shortcut]
-                break
-
-    def setDescription(self, shortcut, description):
-        for group in self._shortcuts:
-            if shortcut in self._shortcuts[group]:
-                (oldDescription, objectWithToolTip) = self._shortcuts[group][shortcut]
-                self._shortcuts[group][shortcut] = (description, objectWithToolTip)
-                self.updateToolTip(shortcut)
-
-            # If we've got user preferences for this shortcut, apply now.
-            groupKeys = PreferencesManager().get( self.PreferencesGroup, group )
-            if groupKeys is not None and description in groupKeys:
-                keyseq = groupKeys[description]
-                shortcut.setKey( keyseq )
-
-    def updateToolTip(self, shortcut):
-        """
-        If this shortcut is associated with an object with tooltip text, 
-            the tooltip text is updated to include the shortcut key.
-
-        For example, a button with shortcut 'b' and tooltip "Make it happen!"
-            is modified to have tooltip text "Make it happen! [B]"
-        """
-        description = None
-        for group in self._shortcuts:
-            if shortcut in self._shortcuts[group]:
-                (description, objectWithToolTip) = self._shortcuts[group][shortcut]
-                break
-            
-        assert description is not None, "Couldn't find the shortcut you're trying to update."        
-        if objectWithToolTip is None:
-            return
-        if isinstance(objectWithToolTip, QObject) and sip.isdeleted(objectWithToolTip):
-            return
-
-        oldText = str(objectWithToolTip.toolTip())
-        newKey = str(shortcut.key().toString())
-        if newKey == "":
-            newKey = "<no key>"
-        newKeyText = '[' + newKey + ']'
-        
-        if oldText == "":
-            oldText = description
-
-        if re.search("\[.*\]", oldText) is None:
-            newText = oldText + ' ' + newKeyText
-        else:
-            newText = re.sub("\[.*\]", newKeyText, oldText)
-        
-        objectWithToolTip.setToolTip( newText )
-    
-    def storeToPreferences(self):
-        # Auto-save after we're done setting prefs
-        with PreferencesManager() as prefsMgr:
-            for group, shortcutDict in self.shortcuts.items():
-                groupKeys = {}
-                for shortcut, (desc, obj) in shortcutDict.items():
-                    groupKeys[desc] = shortcut.key() # QKeySequence is pickle-able
-                prefsMgr.set( self.PreferencesGroup, group, groupKeys )
-
-class ShortcutManagerDlg(QDialog):
-    def __init__(self, *args, **kwargs):
-        super(ShortcutManagerDlg, self).__init__(*args, **kwargs)
-        self.setWindowTitle("Shortcut Preferences")
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(500)
-
-        mgr = ShortcutManager() # Singleton
-        mgr._purgeDeletedShortcuts()
-
-        scrollWidget = QWidget(parent=self)
-        tempLayout = QVBoxLayout( scrollWidget )
-        scrollWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        treeWidget = QTreeWidget(parent=scrollWidget)
-        treeWidget.setHeaderLabels( ["Action", "Shortcut"] )
-        treeWidget.setSizePolicy( QSizePolicy.Preferred, QSizePolicy.Preferred )
-        treeWidget.setColumnWidth(0, 300)
-        treeWidget.setColumnWidth(1, 50)
-
-        # Create a LineEdit for each shortcut,
-        # and keep track of them in a dict
-        shortcutEdits = collections.OrderedDict()
-        for group, shortcutDict in mgr.shortcuts.items():
-            groupItem = QTreeWidgetItem( treeWidget, QStringList( group ) )
-            ListOfActions = set()
-            for i, (shortcut, (desc, obj)) in enumerate(shortcutDict.items()):
-                if desc in ListOfActions:
-                    continue
-                edit = QLineEdit(str(shortcut.key().toString()))
-                shortcutEdits[shortcut] = edit
-                item = QTreeWidgetItem( groupItem, QStringList( desc ) )
-                item.setText(0, desc)
-                ListOfActions.add(desc)
-                treeWidget.setItemWidget( item, 1, edit )
-
-        tempLayout.addWidget( treeWidget )
-
-        # Add ok and cancel buttons
-        buttonLayout = QHBoxLayout()
-        cancelButton = QPushButton("Cancel")
-        cancelButton.clicked.connect( self.reject )
-        okButton = QPushButton("OK")
-        okButton.clicked.connect( self.accept )
-        okButton.setDefault(True)
-        buttonLayout.addSpacerItem(QSpacerItem(10, 0, QSizePolicy.Expanding))
-        buttonLayout.addWidget(cancelButton)
-        buttonLayout.addWidget(okButton)
-        tempLayout.addLayout(buttonLayout)
-
-        scroll = QScrollArea(parent=self)
-        scroll.setWidget(scrollWidget)
-        scroll.setWidgetResizable(True)
-        scroll.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        dlgLayout = QVBoxLayout()
-        dlgLayout.addWidget(scroll)
-        self.setLayout(dlgLayout)
-        
-        # Show the window
-        result = self.exec_()
-        
-        # If the user didn't hit "cancel", apply his changes to the manager's shortcuts
-        if result == QDialog.Accepted:
-            for shortcut, edit in shortcutEdits.items():
-                oldKey = str(shortcut.key().toString()).lower()
-                newKey = str(edit.text()).lower()
-                
-                if oldKey != newKey and newKey != "":
-                    # Before we add this shortcut to our dict, disable any other shortcuts it replaces
-                    conflicting_shortcuts = mgr._findExistingShortcuts( newKey )
-                    for conflicted in conflicting_shortcuts:
-                        conflicted.setKey( QKeySequence("") )
-                        try:
-                            shortcutEdits[conflicted].setText( "" )
-                        except KeyError:
-                            # There might not be an edit for this shortcut if 
-                            #  it was skipped as a duplicate (see ListOfActions, above).
-                            pass
-                    shortcut.setKey( QKeySequence(newKey) )
-                
-                # Make sure the tooltips get updated.
-                mgr.updateToolTip(shortcut)
-            mgr.storeToPreferences()
-                
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QShortcut, QKeySequence
-    from functools import partial
-
-    from PyQt4.QtGui import QApplication, QPushButton, QWidget
+    from PyQt4.QtCore import Qt, QEvent, QTimer
+    from PyQt4.QtGui import QApplication, QWidget, QLabel, QKeyEvent
+    
     app = QApplication([])
-
-    mainWindow = QWidget()
-
-    def showShortcuts():
-        mgrDlg = ShortcutManagerDlg(mainWindow)
-        
-        for group, shortcutDict in mgr.shortcuts.items():
-            print group + ":"
-            for i, (shortcut, (desc, obj)) in enumerate(shortcutDict.items()):
-                print desc + " : " + str(shortcut.key().toString())
-
-    mainLayout = QVBoxLayout()
-    btn = QPushButton("Show shortcuts")
-    btn.clicked.connect( showShortcuts )
-    mainLayout.addWidget(btn)
-    mainWindow.setLayout(mainLayout)
-    mainWindow.show()    
-
-    def trigger(name):
-        print "Shortcut triggered:",name
     
-    def registerShortcuts(mgr):
-        scA = QShortcut( QKeySequence("1"), mainWindow, member=partial(trigger, "A") )
-        mgr.register( "Group 1",
-                      "Shortcut 1A",
-                      scA,
-                      None )        
-    
-        scB = QShortcut( QKeySequence("2"), mainWindow, member=partial(trigger, "B") )
-        mgr.register( "Group 1",
-                      "Shortcut 1B",
-                      scB,
-                      None )        
-    
-        scC = QShortcut( QKeySequence("3"), mainWindow, member=partial(trigger, "C") )
-        mgr.register( "Group 2",
-                      "Shortcut 2C",
-                      scC,
-                      None )
+    widget = QWidget()
+    label = QLabel("<BLANK>", parent=widget)
+    widget.show()
+
+    counter = [0]
+    def say_hello():
+        counter[0] += 1
+        print "changing label text ({})".format(counter[0])
+        label.setText("Hello! {}".format( counter[0] ))
 
     mgr = ShortcutManager()
-    registerShortcuts(mgr)
+    mgr.register( "h", ShortcutManager.ActionInfo("greetings", "say hello", "Say Hello (with gusto)", say_hello, label, label) )
 
+    def change_key():
+        mgr.change_keyseq("greetings", "say hello", "h", "q")
+    
+    QTimer.singleShot(3000, change_key)
     app.exec_()
-    
-    
-    # Simulate a new session by making a new instance of the manager
-    ShortcutManager.instance = None # Force the singleton to reset
-    mgr2 = ShortcutManager()
-    assert id(mgr) != id(mgr2), "Why didn't the singleton reset?"
-
-    registerShortcuts(mgr2)
-
-    # Check to make sure the shortcuts loaded from disc match those from the first "session"
-    
-    for group, shortcutDict in mgr.shortcuts.items():
-        assert group in mgr2.shortcuts
-
-    descriptionToKeys_1 = {}
-    for group, shortcutDict in mgr.shortcuts.items():
-        for shortcut, (desc, obj) in shortcutDict.items():
-            descriptionToKeys_1[desc] = shortcut.key().toString()
-
-    descriptionToKeys_2 = {}
-    for group, shortcutDict in mgr2.shortcuts.items():
-        for shortcut, (desc, obj) in shortcutDict.items():
-            descriptionToKeys_2[desc] = shortcut.key().toString()
-    
-    assert descriptionToKeys_1 == descriptionToKeys_2
-    print descriptionToKeys_1
-    print descriptionToKeys_2
-
-
-
-
-
-
-
-
-
