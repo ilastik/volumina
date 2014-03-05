@@ -33,7 +33,7 @@ from quadsplitter import QuadView
 from sliceSelectorHud import ImageView2DHud, QuadStatusBar
 from pixelpipeline.datasources import ArraySource
 from volumeEditor import VolumeEditor
-from volumina.utility import ShortcutManager
+from volumina.utility import ShortcutManager2
 
 class __TimerEventEater( QObject ):
     def eventFilter( self, obj, ev ):
@@ -249,35 +249,62 @@ class VolumeEditorWidget(QWidget):
         if self.editor._lastImageViewFocus is not None:
             self.editor.imageViews[self.editor._lastImageViewFocus].centerImage()
 
-    def _shortcutHelper(self, keySequence, group, description, parent, function, context = None, enabled = None, widget=None):
-        shortcut = QShortcut(QKeySequence(keySequence), parent, member=function, ambiguousMember=function)
-        if context != None:
-            shortcut.setContext(context)
-        if enabled != None:
-            shortcut.setEnabled(True)
-
-        ShortcutManager().register( group, description, shortcut, widget )
-        return shortcut, group, description
-
     def _initShortcuts(self):
-        self.shortcuts = []
-
         # TODO: Fix this dependency on ImageView/HUD internals
-        self.shortcuts.append(self._shortcutHelper("x", "Navigation", "Minimize/Maximize x-Window", self, self.quadview.switchXMinMax, Qt.ApplicationShortcut, True, widget=self.editor.imageViews[0].hud.buttons['maximize']))
-        self.shortcuts.append(self._shortcutHelper("y", "Navigation", "Minimize/Maximize y-Window", self, self.quadview.switchYMinMax, Qt.ApplicationShortcut, True, widget=self.editor.imageViews[1].hud.buttons['maximize']))
-        self.shortcuts.append(self._shortcutHelper("z", "Navigation", "Minimize/Maximize z-Window", self, self.quadview.switchZMinMax, Qt.ApplicationShortcut, True, widget=self.editor.imageViews[2].hud.buttons['maximize']))
-        
-        
+        mgr = ShortcutManager2()
+        ActionInfo = ShortcutManager2.ActionInfo
+        mgr.register("x", ActionInfo( "Navigation", 
+                                      "Minimize/Maximize x-Window", 
+                                      "Minimize/Maximize x-Window", 
+                                      self.quadview.switchXMinMax,
+                                      self.editor.imageViews[0].hud.buttons['maximize'],
+                                      self.editor.imageViews[0].hud.buttons['maximize'] ) )
+
+        mgr.register("y", ActionInfo( "Navigation", 
+                                      "Minimize/Maximize y-Window", 
+                                      "Minimize/Maximize y-Window", 
+                                      self.quadview.switchYMinMax,
+                                      self.editor.imageViews[1].hud.buttons['maximize'],
+                                      self.editor.imageViews[1].hud.buttons['maximize'] ) )
+
+        mgr.register("z", ActionInfo( "Navigation", 
+                                      "Minimize/Maximize z-Window", 
+                                      "Minimize/Maximize z-Window", 
+                                      self.quadview.switchZMinMax,
+                                      self.editor.imageViews[2].hud.buttons['maximize'],
+                                      self.editor.imageViews[2].hud.buttons['maximize'] ) )
+
         for i, v in enumerate(self.editor.imageViews):
-            self.shortcuts.append(self._shortcutHelper("+", "Navigation", "Zoom in", v,  v.zoomIn, Qt.WidgetShortcut))
-            self.shortcuts.append(self._shortcutHelper("-", "Navigation", "Zoom out", v, v.zoomOut, Qt.WidgetShortcut))
-            
-            self.shortcuts.append(self._shortcutHelper("c", "Navigation", "Center image", v,  v.centerImage, Qt.WidgetShortcut))
-            self.shortcuts.append(self._shortcutHelper("h", "Navigation", "Toggle hud", v,  v.toggleHud, Qt.WidgetShortcut))
-            
+            mgr.register("+", ActionInfo( "Navigation", 
+                                          "Zoom in", 
+                                          "Zoom in", 
+                                          v.zoomIn,
+                                          v,
+                                          None) )
+            mgr.register("-", ActionInfo( "Navigation", 
+                                          "Zoom out", 
+                                          "Zoom out", 
+                                          v.zoomOut,
+                                          v,
+                                          None) )
+
+            mgr.register("c", ActionInfo( "Navigation", 
+                                          "Center image", 
+                                          "Center image", 
+                                          v.centerImage,
+                                          v,
+                                          None) )
+
+            mgr.register("h", ActionInfo( "Navigation", 
+                                          "Toggle hud", 
+                                          "Toggle hud", 
+                                          v.toggleHud,
+                                          v,
+                                          None) )
+
             # FIXME: The nextChannel/previousChannel functions don't work right now.
-            #self.shortcuts.append(self._shortcutHelper("q", "Navigation", "Switch to next channel",     v, self.editor.nextChannel,     Qt.WidgetShortcut))
-            #self.shortcuts.append(self._shortcutHelper("a", "Navigation", "Switch to previous channel", v, self.editor.previousChannel, Qt.WidgetShortcut))
+            #self._shortcutHelper("q", "Navigation", "Switch to next channel",     v, self.editor.nextChannel,     Qt.WidgetShortcut))
+            #self._shortcutHelper("a", "Navigation", "Switch to previous channel", v, self.editor.previousChannel, Qt.WidgetShortcut))
             
             def sliceDelta(axis, delta):
                 newPos = copy.copy(self.editor.posModel.slicingPos)
@@ -297,18 +324,50 @@ class VolumeEditorWidget(QWidget):
                 self.editor.posModel.slicingPos = newPos
             
             # TODO: Fix this dependency on ImageView/HUD internals
-            self.shortcuts.append(self._shortcutHelper("Ctrl+Up",   "Navigation", "Slice up",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut, widget=v.hud.buttons['slice'].upLabel))
-            self.shortcuts.append(self._shortcutHelper("Ctrl+Down", "Navigation", "Slice down", v, partial(sliceDelta, i, -1), Qt.WidgetShortcut, widget=v.hud.buttons['slice'].downLabel))
-            
-#            self.shortcuts.append(self._shortcutHelper("p", "Navigation", "Slice up (alternate shortcut)",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut))
-#            self.shortcuts.append(self._shortcutHelper("o", "Navigation", "Slice down (alternate shortcut)", v, partial(sliceDelta, i, -1), Qt.WidgetShortcut))
-            
-            self.shortcuts.append(self._shortcutHelper("Ctrl+Shift+Up",   "Navigation", "10 slices up",   v, partial(sliceDelta, i, 10),  Qt.WidgetShortcut))
-            self.shortcuts.append(self._shortcutHelper("Ctrl+Shift+Down", "Navigation", "10 slices down", v, partial(sliceDelta, i, -10), Qt.WidgetShortcut))
-            self.shortcuts.append(self._shortcutHelper("Shift+Up",   "Navigation", "Jump to first slice",   v, partial(jumpToFirstSlice, i),  Qt.WidgetShortcut))
-            self.shortcuts.append(self._shortcutHelper("Shift+Down", "Navigation", "Jump to last slice", v, partial(jumpToLastSlice, i), Qt.WidgetShortcut))
+            mgr.register("Ctrl+Up", ActionInfo( "Navigation", 
+                                                "Slice up", 
+                                                "Slice up", 
+                                                partial(sliceDelta, i, 1),
+                                                v,
+                                                v.hud.buttons['slice'].upLabel) )
 
+            mgr.register("Ctrl+Down", ActionInfo( "Navigation", 
+                                                  "Slice up", 
+                                                  "Slice up", 
+                                                  partial(sliceDelta, i, -1),
+                                                  v,
+                                                  v.hud.buttons['slice'].downLabel) )
+
+#            self._shortcutHelper("p", "Navigation", "Slice up (alternate shortcut)",   v, partial(sliceDelta, i, 1),  Qt.WidgetShortcut)
+#            self._shortcutHelper("o", "Navigation", "Slice down (alternate shortcut)", v, partial(sliceDelta, i, -1), Qt.WidgetShortcut)
             
+            mgr.register("Ctrl+Shift+Up", ActionInfo( "Navigation", 
+                                                      "10 slices up", 
+                                                      "10 slices up", 
+                                                      partial(sliceDelta, i, 10),
+                                                      v,
+                                                      None) )
+
+            mgr.register("Ctrl+Shift+Down", ActionInfo( "Navigation", 
+                                                        "10 slices down", 
+                                                        "10 slices down", 
+                                                        partial(sliceDelta, i, -10),
+                                                        v,
+                                                        None) )
+
+            mgr.register("Shift+Up", ActionInfo( "Navigation", 
+                                                 "Jump to first slice", 
+                                                 "Jump to first slice", 
+                                                 partial(jumpToFirstSlice, i),
+                                                 v,
+                                                 None) )
+
+            mgr.register("Shift+Down", ActionInfo( "Navigation", 
+                                                   "Jump to last slice", 
+                                                   "Jump to last slice", 
+                                                   partial(jumpToLastSlice, i),
+                                                   v,
+                                                   None) )
 
     def _updateInfoLabels(self, pos):
         self.quadViewStatusBar.setMouseCoords(*pos)
@@ -341,6 +400,8 @@ class VolumeEditorWidget(QWidget):
         self._viewMenu.setObjectName( "view_menu" )
         self._debugActions = []
         
+        ActionInfo = ShortcutManager2.ActionInfo
+        
         # This action is saved as a member so it can be triggered from tests
         self._viewMenu.actionFitToScreen = self._viewMenu.addAction( "&Zoom to &fit" )
         self._viewMenu.actionFitToScreen.triggered.connect(self._fitToScreen)
@@ -368,8 +429,13 @@ class VolumeEditorWidget(QWidget):
         actionShowTiling = self._viewMenu.addAction( "Show Tiling" )
         actionShowTiling.setCheckable(True)
         actionShowTiling.toggled.connect(toggleDebugPatches)
-        qsd = QShortcut( QKeySequence("Ctrl+D"), self, member=actionShowTiling.toggle, context=Qt.WidgetShortcut )
-        ShortcutManager().register("Navigation","Show tiling",qsd)
+        ShortcutManager2().register( "Ctrl+D", ActionInfo( 
+                                                   "Navigation",
+                                                   "Show tiling",
+                                                   "Show tiling",
+                                                   actionShowTiling.toggle,
+                                                   self,
+                                                   None ) )
         self._debugActions.append( actionShowTiling )
 
         def setCacheSize( cache_size ):
@@ -407,8 +473,13 @@ class VolumeEditorWidget(QWidget):
             QApplication.processEvents()
         actionBlockGui = self._viewMenu.addAction( "Block for rendering" )
         actionBlockGui.triggered.connect(blockGuiForRendering)
-        qsw = QShortcut( QKeySequence("Ctrl+B"), self, member=actionBlockGui.trigger, context=Qt.WidgetShortcut )
-        ShortcutManager().register( "Navigation", "Block gui for rendering", qsw )
+        ShortcutManager2().register("Ctrl+B", ActionInfo( 
+                                                  "Navigation", 
+                                                  "Block gui for rendering",
+                                                  "Block gui for rendering",
+                                                  actionBlockGui.trigger,
+                                                  self,
+                                                  None ) )
         self._debugActions.append( actionBlockGui )
 
         # ------ Separator ------
@@ -429,8 +500,12 @@ class VolumeEditorWidget(QWidget):
         
         actionFitImage = self._viewMenu.addAction( "Fit image" )
         actionFitImage.triggered.connect(self._fitImage)
-        qsa = QShortcut( QKeySequence("K"), self, member=actionFitImage.trigger, context=Qt.WidgetShortcut )
-        ShortcutManager().register( "Navigation", "Fit image on screen", qsa)
+        ShortcutManager2().register( "K", ActionInfo( "Navigation", 
+                                                      "Fit image on screen", 
+                                                      "Fit image on screen",
+                                                      actionFitImage.trigger,
+                                                      self,
+                                                      None ) )
 
         def toggleSelectedHud():
             self.editor.imageViews[self.editor._lastImageViewFocus].toggleHud()
@@ -445,15 +520,23 @@ class VolumeEditorWidget(QWidget):
             self.editor.imageViews[self.editor._lastImageViewFocus].centerImage()
         actionCenterImage = self._viewMenu.addAction( "Center image" )
         actionCenterImage.triggered.connect(centerImage)
-        qsc = QShortcut( QKeySequence("C"), self, member=actionCenterImage.trigger, context=Qt.WidgetShortcut )
-        ShortcutManager().register("Navigation","Center image",qsc)
+        ShortcutManager2().register( "C", ActionInfo( "Navigation", 
+                                                      "Center image", 
+                                                      "Center image", 
+                                                      actionCenterImage.trigger,
+                                                      self,
+                                                      None ) )
 
         def restoreImageToOriginalSize():
             self.editor.imageViews[self.editor._lastImageViewFocus].doScaleTo()
         actionResetZoom = self._viewMenu.addAction( "Reset zoom" )
         actionResetZoom.triggered.connect(restoreImageToOriginalSize)
-        qsw = QShortcut( QKeySequence("W"), self, member=actionResetZoom.trigger, context=Qt.WidgetShortcut )
-        ShortcutManager().register("Navigation","Reset zoom",qsw)        
+        ShortcutManager2().register( "W", ActionInfo( "Navigation", 
+                                                      "Reset zoom", 
+                                                      "Reset zoom", 
+                                                      actionResetZoom.trigger,
+                                                      self,
+                                                      None ) )
 
         def updateHudActions():
             dataShape = self.editor.dataShape
