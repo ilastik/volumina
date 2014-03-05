@@ -295,6 +295,15 @@ class ShortcutManager(object):
                 else:
                     raise
 
+
+
+def _has_attribute( cls, attr ):
+    return any(attr in B.__dict__ for B in cls.__mro__)
+
+def _has_attributes( cls, attrs ):
+    return all(_has_attribute(cls, a) for a in attrs)
+
+import abc
 class ObjectWithToolTipABC(object):
     """
     Defines an ABC for objects that have toolTip() and setToolTip() members.
