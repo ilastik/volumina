@@ -269,14 +269,17 @@ class ShortcutManager(object):
                 continue
             try:
                 old_text = str(widget.toolTip())
+                new_key_text = ''
                 if new_keyseq:
                     new_key = str(new_keyseq.toString())
                     if new_key == "":
                         new_key = "<no key>"
                     new_key_text = '[' + new_key + ']'
-                else:
-                    # No keyseq provided (it didn't change)
-                    new_key_text = old_text
+                elif '[' in old_text and ']' in old_text:
+                    # No keyseq provided (it didn't change, so just extract the old keyseq)
+                    start = old_text.find('[')
+                    stop = old_text.find(']')
+                    new_key_text = old_text[start:stop+1]
                 
                 if old_text == "":
                     old_text = action_info.description
