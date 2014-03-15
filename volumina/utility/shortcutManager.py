@@ -190,7 +190,7 @@ class ShortcutManager(object):
             instance_list = self._action_infos[group][name]
             for action_info in instance_list:
                 try:
-                    if action_info.context_widget.isVisible():
+                    if action_info.context_widget.isVisible() and action_info.context_widget.isEnabled():
                         candidate_actions.append( action_info )
                 except RuntimeError as ex:
                     if 'has been deleted' in str(ex):
