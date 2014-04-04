@@ -288,8 +288,6 @@ class ImageScene2D(QGraphicsScene):
         self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name)
         self._brushingLayer  = TiledImageLayer(self._tiling)
 
-        if self._tileProvider:
-            self._tileProvider.notifyThreadsToStop() # prevent ref cycle
         self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
 
@@ -340,11 +338,6 @@ class ImageScene2D(QGraphicsScene):
         self._posModel.slicingPositionChanged.connect(self._onSlicingPositionChanged)
         
         self._allTilesCompleteEvent = threading.Event()
-
-    def __del__(self):
-        if self._tileProvider:
-            self._tileProvider.notifyThreadsToStop()
-        self.joinRendering()
 
     def _onSizeChanged(self):
         self._brushingLayer  = TiledImageLayer(self._tiling)
@@ -410,26 +403,6 @@ class ImageScene2D(QGraphicsScene):
         if self._prefetching_enabled:
             for through in self._bowWave(self._n_preemptive):
                 self._tileProvider.prefetch(sceneRectF, through)
-
-    def joinRendering(self):
-        return self._tileProvider.join()
-
-    def joinRenderingAllTiles(self):
-        """
-        Wait until all tiles in the scene have been 100% rendered.
-        Note: This is useful for testing only.  If called from the GUI thread, the GUI thread will block until all tiles are rendered!
-        """
-        # If this is the main thread, keep repainting (otherwise we'll deadlock).
-        if threading.current_thread().name == "MainThread":
-            finished = False
-            sceneRectF = self.views()[0].viewportRect()
-            while not finished:
-                finished = True
-                tiles = self._tileProvider.getTiles(sceneRectF)
-                for tile in tiles:
-                    finished &= tile.progress >= 1.0
-        else:
-            self._allTilesCompleteEvent.wait()
 
     def _bowWave(self, n):
         shape5d = self._posModel.shape5D

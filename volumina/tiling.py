@@ -20,21 +20,86 @@ import time
 import collections
 import warnings
 from collections import defaultdict, OrderedDict
-from threading import Thread, Lock
-from Queue import Queue, Empty, Full, LifoQueue
-import weakref
-import atexit
+
+from threading import Lock
 
 #SciPy
 import numpy
 
 #PyQt
-from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal, Qt
+from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal, Qt, \
+        QThreadPool, QRunnable
 from PyQt4.QtGui import QImage, QPainter, QTransform, QColor
 
 #volumina
 from patchAccessor import PatchAccessor
 import volumina
+
+PREFETCH_PRIORITY=10
+NORMAL_PRIORITY=20
+renderer_pool = None
+
+def get_render_pool():
+    global renderer_pool
+    if renderer_pool is None:
+        renderer_pool = QThreadPool()
+    return renderer_pool
+
+# used to keep references to QRunnable subclasses
+# unless we manually keep a reference, Python garbage collects these
+# objects before they are run by Qt
+render_tasks = dict()
+
+class TileRenderer(QRunnable):
+    def __init__(self, tile_provider, ims, transform, tile_nr, stack_id,
+            image_req, timestamp, cache):
+        super(TileRenderer, self).__init__()
+        self.tile_provider = tile_provider
+        self.ims = ims
+        self.transform = transform
+        self.tile_nr = tile_nr
+        self.stack_id = stack_id
+        self.image_req = image_req
+        self.timestamp = timestamp
+        self.cache = cache
+
+        # hack to prevent Python's garbage collector from destroying this
+        # task before it gets run by Qt
+        global render_tasks
+        render_tasks[id(self)] = self
+
+    def run(self):
+        try:
+            try:
+                layerTimestamp = self.cache.layerTimestamp(self.stack_id,
+                        self.ims, self.tile_nr)
+            except KeyError:
+                pass
+
+            if self.timestamp > layerTimestamp:
+                img = self.image_req.wait()
+                img = img.transformed(self.transform)
+                try:
+                    self.cache.updateTileIfNecessary(self.stack_id,
+                            self.ims, self.tile_nr, self.timestamp, img)
+                except KeyError:
+                    pass
+
+                if self.stack_id == self.tile_provider._current_stack_id \
+                        and self.cache is self.tile_provider._cache:
+                    self.tile_provider.sceneRectChanged.emit( QRectF(
+                        self.tile_provider.tiling.imageRects[self.tile_nr]))
+        except:
+            with volumina.printLock:
+                sys.excepthook( *sys.exc_info() )
+
+        # remove reference from global task list and allow Python to
+        # garbage collect this instance
+        global render_tasks
+        try:
+            render_tasks.pop(id(self))
+        except KeyError:
+            print "ERROR!!! KeyError while removing TileRenderer from render_tasks"
 
 #*******************************************************************************
 # I m a g e T i l e                                                            *
@@ -363,8 +428,6 @@ class _TilesCache( object ):
 
 
 class TileProvider( QObject ):
-    THREAD_HEARTBEAT = 0.2
-
     Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling')
     sceneRectChanged = pyqtSignal( QRectF )
 
@@ -393,18 +456,10 @@ class TileProvider( QObject ):
     def axesSwapped(self, value):
         self._axesSwapped = value
 
-    _instance_count = 0
-    _global_instance_list = []
-
     def __init__( self, tiling, stackedImageSources, cache_size=100,
                   request_queue_size=100000, n_threads=2,
                   layerIdChange_means_dirty=False, parent=None ):
         QObject.__init__( self, parent = parent )
-
-        # Used for thread debug names
-        self._serial_number = TileProvider._instance_count
-        TileProvider._instance_count += 1
-        TileProvider._global_instance_list.append( weakref.ref(self) )
 
         self.tiling = tiling
         self.axesSwapped = False
@@ -418,9 +473,6 @@ class TileProvider( QObject ):
         self._cache = _TilesCache(self._current_stack_id, self._sims,
                                   maxstacks=self._cache_size)
 
-        self._dirtyLayerQueue = LifoQueue(self._request_queue_size)
-        self._prefetchQueue = Queue(self._request_queue_size)
-
         self._sims.layerDirty.connect(self._onLayerDirty)
         self._sims.visibleChanged.connect(self._onVisibleChanged)
         self._sims.opacityChanged.connect(self._onOpacityChanged)
@@ -431,12 +483,6 @@ class TileProvider( QObject ):
             self._sims.layerIdChanged.connect(self._onLayerIdChanged)
 
         self._keepRendering = True
-
-        self._dirtyLayerThreads = [Thread(target=self._dirtyLayersWorker, name="TileProvider-{}-Worker-{}".format( self._serial_number, i ))
-                                   for i in range(self._n_threads)]
-        for thread in self._dirtyLayerThreads:
-            thread.daemon = True
-        [ thread.start() for thread in self._dirtyLayerThreads ]
 
     def getTiles( self, rectF ):
         '''Get tiles in rect and request a refresh.
@@ -490,113 +536,6 @@ class TileProvider( QObject ):
             for tile_no in tile_nos:
                 self._refreshTile( stack_id, tile_no, prefetch=True )
 
-    def join( self ):
-        '''Wait until all refresh request are processed.
-
-        Blocks until no refresh request pending anymore and all
-        rendering finished.
-
-        '''
-        return self._dirtyLayerQueue.join()
-
-
-    def notifyThreadsToStop( self ):
-        '''Signals render threads to stop.
-
-        Call this method at the end of the lifetime of a TileProvider
-        instance. Otherwise the garbage collector will not clean up
-        the instance (even if you call del).
-
-        '''
-        self._keepRendering = False
-
-    def threadsAreNotifiedToStop( self ):
-        '''Check if NotifyThreadsToStop() was called at least once.'''
-        return not self._keepRendering
-
-    def joinThreads( self, timeout=None ):
-        '''Wait until all threads terminated.
-
-        Without calling notifyThreadsToStop, threads will never
-        terminate.
-
-        Arguments:
-        timeout -- timeout in seconds as a floating point number
-
-        '''
-        for thread in self._dirtyLayerThreads:
-            if thread.is_alive():
-                thread.join( timeout )
-
-    def aliveThreads( self ):
-        '''Return a map of thread identifiers and their alive status.
-
-        All threads are alive until notifyThreadsToStop() is
-        called. After that, they start dying. Call joinThreads() to wait
-        for the last thread to die.
-
-        '''
-        at = {}
-        for thread in self._dirtyLayerThreads:
-            if thread.ident:
-                at[thread.ident] = thread.isAlive()
-        return at
-
-    def _dirtyLayersWorker( self ):
-        while self._keepRendering:
-            # Save reference to the queue in case self._dirtyLayerQueue reassigned during this pass.
-            # See onSizeChanged()
-            dirtyLayerQueue = self._dirtyLayerQueue
-            prefetchQueue = self._prefetchQueue
-
-            try:
-                try:
-                    result = dirtyLayerQueue.get_nowait()
-                    queue = dirtyLayerQueue
-                except Empty:
-                    try:
-                        result = prefetchQueue.get_nowait()
-                        queue = prefetchQueue
-                    except Empty:
-                        try:
-                            result = dirtyLayerQueue.get(True, self.THREAD_HEARTBEAT)
-                            queue = dirtyLayerQueue
-                        except Empty:
-                            continue
-            except TypeError:
-                #the TypeError occurs when the queue
-                #is already None when the thread is being shut down
-                #on program exit.
-                #This avoids a lot of warnings.
-                continue
-
-            ims, transform, tile_nr, stack_id, image_req, timestamp, cache = result
-            try:
-                try:
-                    layerTimestamp = cache.layerTimestamp( stack_id, ims, tile_nr )
-                except KeyError:
-                    pass
-                else:
-                    if timestamp > layerTimestamp:
-                        img = image_req.wait()
-                        img = img.transformed(transform)
-                        try:
-                            cache.updateTileIfNecessary( stack_id, ims, tile_nr, timestamp, img )
-                        except KeyError:
-                            pass
-                        else:
-                            if stack_id == self._current_stack_id and cache is self._cache:
-                                self.sceneRectChanged.emit(QRectF(self.tiling.imageRects[tile_nr]))
-            except:
-                with volumina.printLock:
-                    sys.excepthook( *sys.exc_info() )
-                    # if hasattr( ims, '_layer' ):
-                        # For debug, print out the layer name if possible
-                        # sys.stderr.write("Error was encountered while requesting data from layer: "\
-                        #                 "'{}'\n".format( ims._layer.name ) )
-            finally:
-                queue.task_done()
-
     def _refreshTile( self, stack_id, tile_no, prefetch=False ):
         if not self.axesSwapped:
             transform = QTransform(0,1,0,1,0,0,1,1,1)
@@ -644,18 +583,14 @@ class TileProvider( QObject ):
                                                 img, self._sims.viewVisible(),
                                                 self._sims.viewOccluded() )
                         else:
-                            req = (ims, transform, tile_no, stack_id,
-                                   ims_req, time.time(), self._cache)
-                            try:
-                                if prefetch:
-                                    self._prefetchQueue.put_nowait( req )
-                                else:
-                                    self._dirtyLayerQueue.put_nowait( req )
-                            except Full:
-                                msg = " ".join(("Request queue full.",
-                                                "Dropping tile refresh request.",
-                                                "Increase queue size!"))
-                                warnings.warn(msg)
+                            pool = get_render_pool()
+                            task = TileRenderer( self, ims, transform,
+                                    tile_no, stack_id, ims_req,
+                                    time.time(), self._cache)
+                            priority  = PREFETCH_PRIORITY if prefetch \
+                                    else NORMAL_PRIORITY
+
+                            pool.start(task, priority)
         except KeyError:
             pass
 
@@ -703,7 +638,6 @@ class TileProvider( QObject ):
         else:
             self._cache.addStack( newId )
         self._current_stack_id = newId
-        self._prefetchQueue = Queue(self._request_queue_size)
         self.sceneRectChanged.emit(QRectF())
 
     def _onLayerIdChanged( self, ims, oldId, newId ):
@@ -725,31 +659,9 @@ class TileProvider( QObject ):
     def _onSizeChanged(self):
         self._cache = _TilesCache(self._current_stack_id, self._sims,
                                   maxstacks=self._cache_size)
-        self._dirtyLayerQueue = LifoQueue(self._request_queue_size)
-        self._prefetchQueue = Queue(self._request_queue_size)
         self.sceneRectChanged.emit(QRectF())
 
     def _onOrderChanged(self):
         for tile_no in xrange(len(self.tiling)):
             self._cache.setTileDirtyAll(tile_no, True)
         self.sceneRectChanged.emit(QRectF())
-    
-    @classmethod
-    def _stopAllWorkerThreads(cls):
-        """
-        This function attempts to stop all worker threads in the application.
-        """
-        # Stop them all
-        for w in cls._global_instance_list:
-            provider = w()
-            if provider is not None:
-                provider.notifyThreadsToStop()
-
-        # Join them all
-        for w in cls._global_instance_list:
-            provider = w()
-            if provider is not None:
-                provider.joinThreads(2*TileProvider.THREAD_HEARTBEAT)
-
-# Kill all worker threads
-atexit.register( TileProvider._stopAllWorkerThreads )

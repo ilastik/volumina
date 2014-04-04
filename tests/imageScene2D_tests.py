@@ -14,6 +14,10 @@
 #
 # Copyright 2011-2014, the ilastik developers
 
+
+# time to wait (in seconds) for rendering to finish
+SLEEP_DURATION = .2
+
 import unittest as ut
 import os
 import time, datetime
@@ -162,17 +166,12 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         self.scene.stackedImageSources = self.sims
         self.scene.dataShape = (310,290)
 
-    def tearDown( self ):
-        if self.scene._tileProvider:
-            self.scene._tileProvider.notifyThreadsToStop()
-            self.scene._tileProvider.joinThreads()
-
     def renderScene( self, s, exportFilename=None):
         img = QImage(310,290,QImage.Format_ARGB32_Premultiplied)
         img.fill(0)
         p = QPainter(img)
         s.render(p)
-        s.joinRendering()
+        time.sleep(SLEEP_DURATION)
         s.render(p)
         p.end()
         if exportFilename is not None:
