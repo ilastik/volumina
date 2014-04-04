@@ -17,7 +17,7 @@
 import os
 from PyQt4.QtGui import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
 from volumina.utility import decode_to_qstring
-from dvidclient.gui.contents_browser import ContentsBrowser
+from pydvid.gui.contents_browser import ContentsBrowser
 from lazyflow.utility import isUrl
 
 class DvidVolumeExportOptionsWidget(QWidget):    
