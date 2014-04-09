@@ -65,7 +65,7 @@ class SingleFileExportOptionsWidget(QWidget):
     def _browseForFilepath(self):
         starting_dir = os.path.expanduser("~")
         if self._filepathSlot.ready():
-            starting_dir = os.path.split(self._filepathSlot.value)[0]
+            starting_dir = os.path.split(self._filepathSlot.value)[-1]
         
         dlg = QFileDialog( self, "Export Location", starting_dir, self._file_filter )
         dlg.setDefaultSuffix(self._extension)
