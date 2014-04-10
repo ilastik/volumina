@@ -231,6 +231,7 @@ class MeshExtractorDialog(QDialog):
         self.extractor.start()
     
     def onMeshesExtracted(self):
+        self.extractor.wait() # Join the extractor thread so its safe to immediately destroy the window
         self.finished.emit()
         self.close()
 
