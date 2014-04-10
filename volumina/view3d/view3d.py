@@ -65,49 +65,48 @@ def convertVTPtoOBJ(vtpFilename, objFilename):
     numPoints = -1
     readPoints = 0
 
-    o = open(objFilename, 'w')
-
-    for l in lines:
-        l = l.strip()
-        if l == "":
-            continue
-        
-        if inPoints:
-            i=0
-            outLine = ""
-            for n in l.split(" "):
-                if i==0:
-                    outLine = "v"
-                
-                i+=1
-                
-                outLine += " "+n
-                readPoints += 1
-                
-                if i==3:
-                    o.write(outLine+"\n")
-                    i=0
+    with open(objFilename, 'w') as o:
+        for l in lines:
+            l = l.strip()
+            if l == "":
+                continue
             
-            if readPoints == numPoints:
-                inPoints = False
-        
-        elif inPolygons:
-            indices = l[2:].split(" ")
-            o.write("f ")
-            o.write(str(int(indices[0])+1)+" ")
-            o.write(str(int(indices[1])+1)+" ")
-            o.write(str(int(indices[2])+1)+" ")
-            o.write("\n")
-        
-        else:
-            if l.startswith("POINTS"):
-                m = l.split(" ")
-                numPoints = 3*int(m[1])
-                inPoints = True
-                inPolygons = False
-            elif l.startswith("POLYGONS"):
-                inPoints = False
-                inPolygons = True
+            if inPoints:
+                i=0
+                outLine = ""
+                for n in l.split(" "):
+                    if i==0:
+                        outLine = "v"
+                    
+                    i+=1
+                    
+                    outLine += " "+n
+                    readPoints += 1
+                    
+                    if i==3:
+                        o.write(outLine+"\n")
+                        i=0
+                
+                if readPoints == numPoints:
+                    inPoints = False
+            
+            elif inPolygons:
+                indices = l[2:].split(" ")
+                o.write("f ")
+                o.write(str(int(indices[0])+1)+" ")
+                o.write(str(int(indices[1])+1)+" ")
+                o.write(str(int(indices[2])+1)+" ")
+                o.write("\n")
+            
+            else:
+                if l.startswith("POINTS"):
+                    m = l.split(" ")
+                    numPoints = 3*int(m[1])
+                    inPoints = True
+                    inPolygons = False
+                elif l.startswith("POLYGONS"):
+                    inPoints = False
+                    inPolygons = True
 
 #*******************************************************************************
 # Q V T K O p e n G L W i d g e t                                              *
