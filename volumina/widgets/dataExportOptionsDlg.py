@@ -343,11 +343,11 @@ class DataExportOptionsDlg(QDialog):
 
             if need_reorder:
                 # Assume the ideal order is 'tzyxc', but omit the ones we don't need
-                ideal_order = filter( lambda k: k in axiskeys, 'tzyxc' )
+                ideal_order = "".join( self._opDataExport.Input.meta.getAxisKeys() )
                 self._opDataExport.OutputAxisOrder.setValue( "".join( ideal_order ) )
 
         if self._opDataExport.OutputAxisOrder.ready():
-            self.axisOrderCheckbox.setChecked( Qt.Checked )
+            self.axisOrderCheckbox.setChecked( Qt.Unchecked )
             self.outputAxisOrderEdit.setText( self._opDataExport.OutputAxisOrder.value )
             
         def _handleNewAxisOrder():
