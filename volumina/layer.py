@@ -247,7 +247,22 @@ def dtype_to_default_normalize(dsource):
     elif dtype is float or dtype == numpy.float64:
         normalize = (0,255)
     return normalize
-    
+
+def dtype_to_range(dsource):
+    if dsource is not None:
+        dtype = dsource.dtype()
+    else:
+        dtype = numpy.uint8
+    if issubclass(dtype, (int, long, numpy.integer)):
+        range = (0, numpy.iinfo(dtype).max)
+    elif (dtype == numpy.float32 or dtype == numpy.float64):
+        # Is there a way to get the min and max values of the actual dataset(s)?
+        range = (-4096,4096)
+    else:
+        # raise error 
+        raise Exception('dtype_to_range: unknown dtype {}'.format(dtype))
+    return range
+
 class NormalizableLayer( Layer ):
     '''
     int -- datasource index
@@ -274,7 +289,10 @@ class NormalizableLayer( Layer ):
         if value is not None:
             self._range[datasourceIdx] = value
         else:
-            value = self._range[datasourceIdx] = dtype_to_default_normalize(self._datasources[datasourceIdx])
+            value = self._range[datasourceIdx] = \
+                dtype_to_range(self._datasources[datasourceIdx])
+
+            # dtype_to_default_normalize(self._datasources[datasourceIdx]) 
         self.rangeChanged.emit(datasourceIdx, value[0], value[1])
     
     @property

@@ -42,8 +42,10 @@ class GrayscaleLayerDialog(QDialog):
             if state == 0:
                 self.grayChannelThresholdingWidget.setEnabled(True)
                 layer.set_normalize(0,layer.normalize[0])
-        self.grayChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
-        self.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])
+        self.grayChannelThresholdingWidget.setRange(layer.range[0][0], 
+                                                    layer.range[0][1])
+        self.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], 
+                                                    layer.normalize[0][1])
         self.grayChannelThresholdingWidget.valueChanged.connect(dbgPrint)
         self.grayAutoRange.stateChanged.connect(autoRange)
         self.grayAutoRange.setCheckState(layer._autoMinMax[0]*2)
