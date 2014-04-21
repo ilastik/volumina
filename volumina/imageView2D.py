@@ -127,10 +127,12 @@ class ImageView2D(QGraphicsView):
         self._crossHairCursor = CrossHairCursor(self.scene())
         self._crossHairCursor.setZValue(99)
 
-        self._sliceIntersectionMarker = SliceIntersectionMarker(self.scene())
+        posModel = self.scene()._posModel
+        axis = self.scene()._along[1] - 1 # axis is 0,1,2 for X,Y,Z
+        self._sliceIntersectionMarker = SliceIntersectionMarker(self.scene(), axis, posModel)
         self._sliceIntersectionMarker.setZValue(100)
 
-        self._sliceIntersectionMarker.setVisibility(True)
+        self._sliceIntersectionMarker.setVisible(True)
 
         #FIXME: this should be private, but is currently used from
         #       within the image scene renderer
