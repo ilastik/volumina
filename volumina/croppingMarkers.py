@@ -16,7 +16,7 @@
 import copy
 import contextlib
 from PyQt4.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
-from PyQt4.QtGui import QGraphicsItem, QGraphicsObject, QPen, QApplication, QCursor
+from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor
 
 class CropExtentsModel( QObject ):
     changed = pyqtSignal( object )  # list of start/stop coords indexed by axis
@@ -92,7 +92,7 @@ class CroppingMarkers( QGraphicsItem ):
         self.prepareGeometryChange()
 
     def onCropLineMoved(self, direction, index, new_position):
-        # Which 3D axis does this crop setting correspond to?
+        # Which 3D axis does this crop line correspond to?
         # (Depends on which orthoview we belong to.)
         axislookup = [[None, 'h', 'v'],
                       ['h', None, 'v'],
@@ -135,6 +135,7 @@ class CropLine(QGraphicsItem):
     @position.setter
     def position(self, new_position):
         self._position = new_position
+        self.setToolTip( "{}".format( int(new_position) ) )
         self.prepareGeometryChange()
         self.update()
 
@@ -169,18 +170,29 @@ class CropLine(QGraphicsItem):
         height = self._parent._height
         thickness = self._parent.PEN_THICKNESS
 
+        # Our pen thickness is consistent across zoom levels because the pen is "cosmetic"
+        # However, that doesn't ensure a consistent-size dash pattern.
+        # Determine the inverse scaling factor from scene to view to set a consistent dash pattern at all scales.
+        view = self.scene().views()[0]
+        inverted_transform, has_inverse = view.transform().inverted()
+        dash_length = 5 * inverted_transform.m11()
+        dash_length = max( 0.5, dash_length )
+
+        # Draw the line with two pens to get a black-and-white dashed line.
         pen_white = QPen( Qt.white, thickness )
-        pen_white.setDashPattern([5,5])
+        pen_white.setDashPattern([dash_length, dash_length])
         pen_white.setCosmetic(True)
 
         pen_black = QPen( Qt.black, thickness )
-        pen_black.setDashPattern([5,5])
+        pen_black.setDashPattern([dash_length, dash_length])
         pen_black.setCosmetic(True)
-        pen_black.setDashOffset(5)
+        pen_black.setDashOffset(dash_length)
 
         with painter_context(painter):
             t = painter.transform()
-            painter.setTransform(self.scene().data2scene * t )
+            painter.setTransform(self.scene().data2scene * t)
+
+            # Draw the line with two pens to get a black-and-white dashed line.
             for pen in [pen_white, pen_black]:
                 painter.setPen( pen )
     
@@ -201,9 +213,10 @@ class CropLine(QGraphicsItem):
     def mouseMoveEvent(self, event):
         new_pos = self.scene().data2scene.map( event.scenePos() )
         if self._direction == 'horizontal':
-            self._parent.onCropLineMoved( self._direction, self._index, new_pos.y() )
+            position = new_pos.y()
         else:
-            self._parent.onCropLineMoved( self._direction, self._index, new_pos.x() )
+            position = new_pos.x()
+        self._parent.onCropLineMoved( self._direction, self._index, position )
 
     # Note: We must override these or else the default implementation  
     #  prevents the mouseMoveEvent() override from working.
