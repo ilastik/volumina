@@ -21,6 +21,7 @@ import numpy
 
 from crossHairCursor import CrossHairCursor
 from sliceIntersectionMarker import SliceIntersectionMarker
+from croppingMarkers import CroppingMarkers
 
 #*******************************************************************************
 # I m a g e V i e w 2 D                                                        *
@@ -48,6 +49,7 @@ class ImageView2D(QGraphicsView):
         self.scene().dataShape = s
         self._crossHairCursor.dataShape = s
         self._sliceIntersectionMarker.dataShape = s
+        self._croppingMarkers.dataShape = s
 
     @property
     def hud(self):
@@ -75,7 +77,7 @@ class ImageView2D(QGraphicsView):
         scene.axesChanged.connect(hud.setAxes)
 
 
-    def __init__(self, parent, imagescene2d):
+    def __init__(self, parent, cropModel, imagescene2d):
         """
         Constructs a view upon a ImageScene2D
 
@@ -133,6 +135,8 @@ class ImageView2D(QGraphicsView):
         self._sliceIntersectionMarker.setZValue(100)
 
         self._sliceIntersectionMarker.setVisible(True)
+
+        self._croppingMarkers = CroppingMarkers( self.scene(), axis, cropModel )
 
         #FIXME: this should be private, but is currently used from
         #       within the image scene renderer
