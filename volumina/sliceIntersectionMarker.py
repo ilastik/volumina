@@ -64,6 +64,10 @@ class SliceIntersectionMarker(QGraphicsItem) :
         self._horizontal_marker = SliceMarkerLine(self, 'horizontal')
         self._vertical_marker = SliceMarkerLine(self, 'vertical')
 
+        # We 
+        self._horizontal_marker = SliceMarkerLine(self, 'horizontal')
+        self._vertical_marker = SliceMarkerLine(self, 'vertical')
+
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
     @property
@@ -115,6 +119,9 @@ class SliceIntersectionMarker(QGraphicsItem) :
         """
         Paint a single line of the slice intersection marker.
         """
+        if not self.isVisible:
+            return
+
         painter.save()
         t = painter.transform()
         painter.setTransform(self.scene().data2scene * t )
@@ -164,7 +171,7 @@ class SliceMarkerLine(QGraphicsItem):
         # This is a little tricky.  The line is always drawn with the same 
         #  absolute thickness, REGARDLESS of the view's transform.
         # That is, the line does not appear to be part of the data, 
-        #  so it doesn't get thinner as we zoom out. (See QPen.setCosmetic)
+        #  so it doesn't get thinner as we zoom out.
         # To compensate for this when determining the line's bounding box within the scene, 
         #  we need to know the transform used by the view that is showing this scene.
         # If we didn't do this, our bounding rect would be off by a few pixels.  
