@@ -27,7 +27,20 @@ class CropExtentsModel( QObject ):
         super( CropExtentsModel, self ).__init__( parent )
         self._crop_extents = [ [None, None], [None, None], [None, None] ]
 
-    def setVolumeExtents(self, extents):
+    def get_roi_3d(self):
+        """
+        Returns the xyz roi: [(x1,x2), (y1,y2), (z1,z2)].
+        This is not the same as crop_extents because here each range is guaranteed to be sorted.
+        """
+        roi = []
+        for start, stop in self._crop_extents:
+            if start < stop:
+                roi.append( (start, stop) )
+            else:
+                roi.append( (stop, start) )
+        return roi
+
+    def set_volume_extents(self, extents):
         # Since the volume size changed, 
         # reset the crop extents to a reasonable default.
         for i in range(3):

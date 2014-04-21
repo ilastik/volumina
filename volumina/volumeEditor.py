@@ -121,7 +121,7 @@ class VolumeEditor( QObject ):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
       
-        self.cropModel.setVolumeExtents(s[1:4])
+        self.cropModel.set_volume_extents(s[1:4])
       
         #for 2D images, disable the slice intersection marker
         x = numpy.sum(numpy.asarray(s[1:4]) == 1) 
@@ -220,6 +220,10 @@ class VolumeEditor( QObject ):
     def setInteractionMode( self, name):
         modes = {'navigation': self.navInterpret, 'brushing': self.brushingInterpreter}
         self.eventSwitch.interpreter = modes[name]
+
+    def showCropLines(self, visible):
+        for view in self.imageViews:
+            view.showCropLines(visible)
 
     def cleanUp(self):
         QApplication.processEvents()

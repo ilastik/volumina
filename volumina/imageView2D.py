@@ -158,6 +158,9 @@ class ImageView2D(QGraphicsView):
         # For screen recording BlankCursor doesn't work
         #self.hiddenCursor = QCursor(Qt.ArrowCursor)
 
+    def showCropLines(self, visible):
+        self._croppingMarkers.setVisible(visible)
+
     def _cleanUp(self):
         self._ticker.stop()
         del self._ticker
