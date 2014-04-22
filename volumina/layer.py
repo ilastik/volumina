@@ -233,21 +233,6 @@ class ClickableLayer( Layer ):
 # N o r m a l i z a b l e L a y e r                                            *
 #*******************************************************************************
 
-def dtype_to_default_normalize(dsource):
-    if dsource is not None:
-        dtype = dsource.dtype()
-    else:
-        dtype = numpy.uint8
-    if isinstance(dtype, numpy.dtype):
-        dtype = dtype.type
-    if issubclass(dtype, (int, long, numpy.integer)):
-        normalize = (0, numpy.iinfo(dtype).max)
-    elif dtype == numpy.float32:
-        normalize = (0,255)
-    elif dtype is float or dtype == numpy.float64:
-        normalize = (0,255)
-    return normalize
-
 def dtype_to_range(dsource):
     if dsource is not None:
         dtype = dsource.dtype()
@@ -257,6 +242,7 @@ def dtype_to_range(dsource):
         range = (0, numpy.iinfo(dtype).max)
     elif (dtype == numpy.float32 or dtype == numpy.float64):
         # Is there a way to get the min and max values of the actual dataset(s)?
+        # arbitrary range choice
         range = (-4096,4096)
     else:
         # raise error 
@@ -291,8 +277,6 @@ class NormalizableLayer( Layer ):
         else:
             value = self._range[datasourceIdx] = \
                 dtype_to_range(self._datasources[datasourceIdx])
-
-            # dtype_to_default_normalize(self._datasources[datasourceIdx]) 
         self.rangeChanged.emit(datasourceIdx, value[0], value[1])
     
     @property
