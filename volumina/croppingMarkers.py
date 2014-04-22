@@ -16,7 +16,7 @@
 import copy
 import contextlib
 from PyQt4.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
-from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor
+from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor, QBrush, QColor
 
 class CropExtentsModel( QObject ):
     changed = pyqtSignal( object )  # list of start/stop coords indexed by axis
@@ -76,6 +76,9 @@ class CroppingMarkers( QGraphicsItem ):
         self._width = 0
         self._height = 0
 
+        # Add shading item first so crop lines are drawn on top.
+        self._shading_item = ExcludedRegionShading( self, self.crop_extents_model )
+
         self._horizontal0 = CropLine(self, 'horizontal', 0)
         self._horizontal1 = CropLine(self, 'horizontal', 1)
         self._vertical0 = CropLine(self, 'vertical', 0)
@@ -98,18 +101,18 @@ class CroppingMarkers( QGraphicsItem ):
         crop_extents.pop(self.axis)
         
         # By default, place cropping lines at 25% and 75%
-        self._horizontal0.position = crop_extents[0][0]
-        self._horizontal1.position = crop_extents[0][1]
-        self._vertical0.position = crop_extents[1][0]
-        self._vertical1.position = crop_extents[1][1]
+        self._vertical0.position = crop_extents[0][0]
+        self._vertical1.position = crop_extents[0][1]
+        self._horizontal0.position = crop_extents[1][0]
+        self._horizontal1.position = crop_extents[1][1]
         self.prepareGeometryChange()
 
     def onCropLineMoved(self, direction, index, new_position):
         # Which 3D axis does this crop line correspond to?
         # (Depends on which orthoview we belong to.)
-        axislookup = [[None, 'h', 'v'],
-                      ['h', None, 'v'],
-                      ['h', 'v', None]]
+        axislookup = [[None, 'v', 'h'],
+                      ['v', None, 'h'],
+                      ['v', 'h', None]]
         axis_3d = axislookup[self.axis].index( direction[0])
         crop_extents_3d = self.crop_extents_model.crop_extents()
         crop_extents_3d[axis_3d][index] = int(new_position)
@@ -123,6 +126,52 @@ def painter_context(painter):
     finally:
         painter.restore()
 
+class ExcludedRegionShading(QGraphicsItem):
+    def __init__(self, parent, crop_extents_model):
+        self._parent = parent
+        self._crop_extents_model = crop_extents_model
+        super( ExcludedRegionShading, self ).__init__( parent )
+        
+    def boundingRect(self):
+        width, height = self._parent.dataShape
+        return QRectF(0.0, 0.0, width, height)
+    
+    def paint(self, painter, option, widget=None):
+        crop_extents_3d = self._crop_extents_model.crop_extents()
+        crop_extents = copy.deepcopy(crop_extents_3d)
+        crop_extents.pop(self._parent.axis)
+        
+        width, height = self._parent.dataShape
+        (left, right), (top, bottom) = crop_extents
+        
+        if None in (left, right, top, bottom, width, height):
+            # Don't paint if the crop settings aren't initialized yet.
+            return
+
+        # Black brush, 50% alpha
+        brush = QBrush( QColor(0,0,0,128) )
+        
+        rects = [ (0.0,    0.0, left,    top),
+                  (0.0,    top, left, bottom),
+                  (0.0, bottom, left, height),
+
+                  (left,    0.0, right,    top),
+                 #(left,    top, right, bottom), # Don't cover the middle.
+                  (left, bottom, right, height),
+
+                  (right,    0.0, width,    top),
+                  (right,    top, width, bottom),
+                  (right, bottom, width, height) ]
+        
+        with painter_context(painter):
+            t = painter.transform()
+            painter.setTransform(self.scene().data2scene * t)
+            
+            for rect_points in rects:
+                x1, y1, x2, y2 = rect_points
+                p1 = QPointF(x1,y1)
+                p2 = QPointF(x2,y2)
+                painter.fillRect( QRectF( p1, p2 ), brush )
 
 class CropLine(QGraphicsItem):
     """
@@ -156,24 +205,16 @@ class CropLine(QGraphicsItem):
         parent = self._parent
         width, height = parent._width, parent._height
         pen_width_in_view = parent.PEN_THICKNESS
-
-        # This is a little tricky.  The line is always drawn with the same 
-        #  absolute thickness, REGARDLESS of the view's transform.
-        # That is, the line does not appear to be part of the data, 
-        #  so it doesn't get thinner as we zoom out.  (See QPen.setCosmetic)
-        # To compensate for this when determining the line's bounding box within the scene, 
-        #  we need to know the transform used by the view that is showing this scene.
-        # If we didn't do this, our bounding rect would be off by a few pixels.  
-        # That probably wouldn't be a big deal.
-        view = self.scene().views()[0]
-        inverted_transform, has_inverse = view.transform().inverted()
-        transformed_pen_thickness = inverted_transform.map( QPointF(pen_width_in_view, pen_width_in_view) )
-        pen_width_in_scene = transformed_pen_thickness.x()
-
+        pen_width_in_scene = determine_pen_thickness_in_scene( self.scene(), pen_width_in_view )
+        
+        # Return a bounding rect that's a little larger than the actual line.
+        # This makes it easier to grab with the mouse.
+        line_thickness = 3*pen_width_in_scene
+        
         if self._direction == 'horizontal':
-            return self.scene().data2scene.mapRect( QRectF( 0, self._position - pen_width_in_scene/2.0, width, pen_width_in_scene ) )
+            return self.scene().data2scene.mapRect( QRectF( 0, self._position - line_thickness/2.0, width, line_thickness ) )
         else:
-            return self.scene().data2scene.mapRect( QRectF( self._position - pen_width_in_scene/2.0, 0, pen_width_in_scene, height ) )
+            return self.scene().data2scene.mapRect( QRectF( self._position - line_thickness/2.0, 0, line_thickness, height ) )
 
     def paint(self, painter, option, widget=None):
         """
@@ -225,10 +266,16 @@ class CropLine(QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         new_pos = self.scene().data2scene.map( event.scenePos() )
+        width, height = self._parent.dataShape
+        
         if self._direction == 'horizontal':
             position = new_pos.y()
+            position = max( 0, position )
+            position = min( height, position )
         else:
             position = new_pos.x()
+            position = max( 0, position )
+            position = min( width, position )
         self._parent.onCropLineMoved( self._direction, self._index, position )
 
     # Note: We must override these or else the default implementation  
@@ -248,3 +295,21 @@ class CropLine(QGraphicsItem):
         # Restore the cursor to its previous state.
         QApplication.instance().restoreOverrideCursor()
         
+def determine_pen_thickness_in_scene( scene, cosmetic_thickness ):
+    """
+    scene: ImageScene2D
+    cosmetic_thickness: (float) The width of a cosmetic QPen
+    """
+    # This is a little tricky.  The line is always drawn with the same 
+    #  absolute thickness, REGARDLESS of the view's transform.
+    # That is, the line does not appear to be part of the data, 
+    #  so it doesn't get thinner as we zoom out.  (See QPen.setCosmetic)
+    # To compensate for this when determining the line's bounding box within the scene, 
+    #  we need to know the transform used by the view that is showing this scene.
+    # If we didn't do this, our bounding rect would be off by a few pixels.  
+    # That probably wouldn't be a big deal.
+    view = scene.views()[0]
+    inverted_transform, has_inverse = view.transform().inverted()
+    transformed_pen_thickness = inverted_transform.map( QPointF(cosmetic_thickness, cosmetic_thickness) )
+    pen_width_in_scene = transformed_pen_thickness.x()
+    return pen_width_in_scene

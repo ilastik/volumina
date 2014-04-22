@@ -198,6 +198,9 @@ class VolumeEditor( QObject ):
         # initial interaction mode
         self.eventSwitch.interpreter = self.navInterpret
 
+        # By default, don't show cropping controls
+        self.showCropLines(False)
+
         ##
         ## connect
         ##
