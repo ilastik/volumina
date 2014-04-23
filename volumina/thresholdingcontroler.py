@@ -42,11 +42,14 @@ class ThresholdingInterpreter( QObject ):
         if self._current_state == self.FINAL:
             self._navIntr.start()
             self._current_state = self.DEFAULT_MODE
+            self._init_layer()
         else:
             pass 
     
     def stop( self ):
         self._current_state = self.FINAL
+        if self.valid_layer():
+            self._active_layer.channelChanged.disconnect(self.channel_changed)
         self._navIntr.stop()            
         
     def eventFilter( self, watched, event ):
@@ -58,12 +61,8 @@ class ThresholdingInterpreter( QObject ):
                     and self._navIntr.mousePositionValid(watched, event): 
                 # TODO maybe remove, if we can find out which view is active
                 self.set_active_layer()
-                if self.get_drange() != None:
-                    self._range_min, self._range_max = self.get_drange()
                 if self.valid_layer():
                     self._current_state = self.THRESHOLDING_MODE
-                    if self._active_channel_idx in self._channel_range:
-                        self._active_layer.set_normalize(0, self._channel_range[self._active_channel_idx])
                     self._current_position = watched.mapToGlobal( event.pos() )
                     return True
                 else:
@@ -109,13 +108,26 @@ class ThresholdingInterpreter( QObject ):
         self._channel_range[self._active_channel_idx] = (range[0],range[1])
 
     def set_active_layer(self):
+        """
+        determines the layer postion in the stack and the currently displayed
+        channel. Needs to be called constantly, because the user can change the 
+        position of the input layer within the stack
+        """
         for idx, layer in enumerate(self._layerStack):
-            if layer._name == 'Input Data':
-                self._active_layer = layer
-                self._active_channel_idx= layer._channel
-                return
+            if isinstance(layer, GrayscaleLayer):
+                if layer.window_leveling:
+                    self._active_layer = layer
+                    self._active_channel_idx= layer._channel
+                    return
         self._active_layer = None
 
+    def _init_layer(self):
+        self.set_active_layer()
+        if self.valid_layer():
+            self._active_layer.channelChanged.connect(self.channel_changed)
+            if self.get_drange() != None:
+                self._range_min, self._range_max = self.get_drange()
+        
     def onExit_threshold( self, watched, event ):
         pass
 
@@ -127,7 +139,18 @@ class ThresholdingInterpreter( QObject ):
         return self._active_layer._datasources[0]._rawSource._op5.Output.meta.drange
 
     def valid_layer(self):
-        return isinstance(self._active_layer, GrayscaleLayer)
+        if isinstance(self._active_layer, GrayscaleLayer):
+            return self._active_layer.window_leveling
+        else:
+            return False
+
+    def channel_changed(self):
+        self.set_active_layer()
+        if self._active_channel_idx in self._channel_range:
+            self._active_layer.set_normalize(0, self._channel_range[self._active_channel_idx])
+        else:
+            self._active_layer.set_normalize(0,(self._range_min, 
+                                                self._range_max))
 
     def get_min_max_of_current_view(self, imageview):
         """

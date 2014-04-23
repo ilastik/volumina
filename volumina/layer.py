@@ -356,9 +356,18 @@ class NormalizableLayer( Layer ):
 #*******************************************************************************
 
 class GrayscaleLayer( NormalizableLayer ):
-    def __init__( self, datasource, range = None, normalize = None, direct=False ):
+    @property
+    def window_leveling( self ):
+        return self._window_leveling
+    
+    @window_leveling.setter
+    def window_leveling( self, wl ):
+        self._window_leveling = wl
+
+    def __init__( self, datasource, range = None, normalize = None, direct=False, window_leveling=False):
         assert isinstance(datasource, SourceABC)
         super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
+        self._window_leveling = window_leveling
 
 #*******************************************************************************
 # A l p h a M o d u l a t e d L a y e r                                        *
