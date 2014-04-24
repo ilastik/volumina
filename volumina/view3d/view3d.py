@@ -256,16 +256,23 @@ class OverviewScene(QWidget):
     def dataShape(self, shape):
         if shape == self._dataShape:
             return
+
         
         self._dataShape = shape
         
         if self.planes:
+            #self.qvtk.renderer.RemoveAllViewProps()
+            self.planes.SetVisibility(False)
             self.planes.RemoveObserver(self.coordEventObserver)
-            self.qvtk.renderer.RemoveViewProp(self.planes)
+            #self.planes.RemoveAllParts()
+            self.qvtk.renderer.RemoveActor(self.planes)
+            self.qvtk.renderer.RemoveActor(self.axes)
+            #self.qvtk.renderer.RemoveViewProp(self.planes)
             del self.planes
 
         self.planes = SlicingPlanesWidget(shape, self.qvtk.GetInteractor())
         #self.planes.SetInteractor(self.qvtk.GetInteractor())
+        
         self.coordEventObserver = self.planes.AddObserver("CoordinatesEvent", self.slicingCallback)
         self.planes.SetCoordinate([0,0,0])
         self.planes.SetPickable(False)

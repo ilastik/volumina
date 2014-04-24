@@ -29,23 +29,30 @@ class CropExtentsModel( QObject ):
 
     def get_roi_3d(self):
         """
-        Returns the xyz roi: [(x1,x2), (y1,y2), (z1,z2)].
-        This is not the same as crop_extents because here each range is guaranteed to be sorted.
+        Returns the xyz roi: [ (x1,y1,z1), (x2,y2,z2) ]
         """
-        roi = []
+        ordered_extents = []
         for start, stop in self._crop_extents:
             if start < stop:
-                roi.append( (start, stop) )
+                ordered_extents.append( (start, stop) )
             else:
-                roi.append( (stop, start) )
+                ordered_extents.append( (stop, start) )
+
+        # [(x1,x2), (y1,y2), (z1,z2)] -> [(x1,y1,z1), (x2,y2,z2)]
+        roi = zip( *ordered_extents )
         return roi
 
-    def set_volume_extents(self, extents):
+    def set_roi_3d(self, roi):
+        # Convenience function.
+        # Set the extents as a roi
+        self.set_crop_extents( zip( *roi ) )
+
+    def set_volume_shape_3d(self, shape3d):
         # Since the volume size changed, 
         # reset the crop extents to a reasonable default.
         for i in range(3):
-            self._crop_extents[i][0] = 0.25 * extents[i]
-            self._crop_extents[i][1] = 0.75 * extents[i]
+            self._crop_extents[i][0] = 0
+            self._crop_extents[i][1] = shape3d[i]
         self.changed.emit( self._crop_extents )
     
     def crop_extents(self):
@@ -55,7 +62,7 @@ class CropExtentsModel( QObject ):
         assert len(crop_extents) == 3
         for e in crop_extents:
             assert len(e) == 2
-        self._crop_extents = crop_extents
+        self._crop_extents = map(list, crop_extents) # Ensure lists, not tuples
         self.changed.emit( self._crop_extents )
 
 class CroppingMarkers( QGraphicsItem ):
@@ -131,6 +138,7 @@ class ExcludedRegionShading(QGraphicsItem):
         self._parent = parent
         self._crop_extents_model = crop_extents_model
         super( ExcludedRegionShading, self ).__init__( parent )
+        crop_extents_model.changed.connect( self.prepareGeometryChange )
         
     def boundingRect(self):
         width, height = self._parent.dataShape
@@ -269,11 +277,11 @@ class CropLine(QGraphicsItem):
         width, height = self._parent.dataShape
         
         if self._direction == 'horizontal':
-            position = new_pos.y()
+            position = int(new_pos.y() + 0.5)
             position = max( 0, position )
             position = min( height, position )
         else:
-            position = new_pos.x()
+            position = int(new_pos.x() + 0.5)
             position = max( 0, position )
             position = min( width, position )
         self._parent.onCropLineMoved( self._direction, self._index, position )

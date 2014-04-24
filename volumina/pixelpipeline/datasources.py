@@ -190,11 +190,11 @@ class RelabelingArraySource( ArraySource ):
 
 class LazyflowRequest( object ):
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
-        self._req = op.Output[slicing]
-        self._slicing = slicing
         shape = op.Output.meta.shape
         if shape is not None:
             slicing = make_bounded(slicing, shape)
+        self._req = op.Output[slicing]
+        self._slicing = slicing
         self._shape = slicing2shape(slicing)
         self._objectName = objectName
         

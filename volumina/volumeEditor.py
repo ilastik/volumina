@@ -121,7 +121,7 @@ class VolumeEditor( QObject ):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
       
-        self.cropModel.set_volume_extents(s[1:4])
+        self.cropModel.set_volume_shape_3d(s[1:4])
       
         #for 2D images, disable the slice intersection marker
         x = numpy.sum(numpy.asarray(s[1:4]) == 1) 
