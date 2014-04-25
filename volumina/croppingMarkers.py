@@ -53,7 +53,7 @@ class CropExtentsModel( QObject ):
         for i in range(3):
             self._crop_extents[i][0] = 0
             self._crop_extents[i][1] = shape3d[i]
-        self.changed.emit( self._crop_extents )
+        self.changed.emit( self )
     
     def crop_extents(self):
         return copy.deepcopy(self._crop_extents)
@@ -63,7 +63,7 @@ class CropExtentsModel( QObject ):
         for e in crop_extents:
             assert len(e) == 2
         self._crop_extents = map(list, crop_extents) # Ensure lists, not tuples
-        self.changed.emit( self._crop_extents )
+        self.changed.emit( self )
 
 class CroppingMarkers( QGraphicsItem ):
     PEN_THICKNESS = 1
@@ -103,8 +103,8 @@ class CroppingMarkers( QGraphicsItem ):
         self._width = shape2D[0]
         self._height = shape2D[1]
 
-    def onExtentsChanged(self, crop_extents ):
-        crop_extents = copy.deepcopy(crop_extents)
+    def onExtentsChanged(self, crop_extents_model ):
+        crop_extents = crop_extents_model.crop_extents()
         crop_extents.pop(self.axis)
         
         # By default, place cropping lines at 25% and 75%
