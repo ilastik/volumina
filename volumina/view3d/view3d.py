@@ -256,18 +256,30 @@ class OverviewScene(QWidget):
     def dataShape(self, shape):
         if shape == self._dataShape:
             return
-
-        
         self._dataShape = shape
         
+        if self.isVisible():
+            # Defer reinitializing if we aren't visible at the moment.
+            # See showEvent()
+            # See reinitialize() for an explanation of why the entire widget is recreated when the datashape changes. 
+            self.reinitialize()
+        else:
+            self._needs_reinit = True
+
+    def showEvent(self, event):
+        # If our datashape changed while we were hidden, reinitialize this widget.
+        # (We don't reinitialize until the user actually views the widget.)
+        if self._needs_reinit:
+            self.reinitialize()
+            self._needs_reinit = False
+
+    def _initialize_slicing_planes(self):
+        shape = self._dataShape
         if self.planes:
-            #self.qvtk.renderer.RemoveAllViewProps()
             self.planes.SetVisibility(False)
             self.planes.RemoveObserver(self.coordEventObserver)
-            #self.planes.RemoveAllParts()
             self.qvtk.renderer.RemoveActor(self.planes)
             self.qvtk.renderer.RemoveActor(self.axes)
-            #self.qvtk.renderer.RemoveViewProp(self.planes)
             del self.planes
 
         self.planes = SlicingPlanesWidget(shape, self.qvtk.GetInteractor())
@@ -303,12 +315,36 @@ class OverviewScene(QWidget):
         self.planes = None
         self.axes = None
         self._dataShape = None
-        
+        self.qvtk = None
+
+        self.reinitialize()
+        self._needs_reinit = False
+
+    def reinitialize(self):
+        """
+        For some reason, we can't remove the items from the 3D scene when the datashape changes.
+        Calling self.qvtk.renderer.RemoveActor(self.planes) seems to have no effect.
+        So here we go for the nuclear option.  Remove all contents of the widget and simply start over.
+        """
+        def delete_gl_widget():
+            # This is called just before the app quits to avoid this error during shutdown:
+            # QGLContext::makeCurrent: Cannot make invalid context current
+            if self.qvtk is not None:
+                self.qvtk.setParent(None)
+                self.qvtk = None
+        delete_gl_widget()
+
         layout = QVBoxLayout()
         layout.setMargin(0)
         layout.setSpacing(0)
         self.qvtk = QVTKOpenGLWidget()
         layout.addWidget(self.qvtk)
+        if self.layout() is not None:
+            # We can't give ourselves a new layout until we remove the old one.
+            # The easiest way to remove the old one is to assign it to a temporary widget.
+            temp_widget = QWidget()
+            temp_widget.setLayout( self.layout() )
+            assert self.layout() is None
         self.setLayout(layout)
         self.qvtk.init()
         hbox = QHBoxLayout(None)
@@ -316,11 +352,6 @@ class OverviewScene(QWidget):
         hbox.setSpacing(5)
         hbox.setContentsMargins(5,3,5,3)
         
-        def delete_gl_widget():
-            # This is called just before the app quits to avoid this error during shutdown:
-            # QGLContext::makeCurrent: Cannot make invalid context current
-            self.qvtk.setParent(None)
-            del self.qvtk
         QApplication.instance().aboutToQuit.connect( delete_gl_widget )
         
         b1 = QToolButton()
@@ -367,18 +398,22 @@ class OverviewScene(QWidget):
         #hbox.addWidget(bExportMesh)
         layout.addLayout(hbox)
         
-        self.connect(b1, SIGNAL("clicked()"), self.TogglePlaneWidgetX)
-        self.connect(b2, SIGNAL("clicked()"), self.TogglePlaneWidgetY)
-        self.connect(b3, SIGNAL("clicked()"), self.TogglePlaneWidgetZ)
-        self.connect(bAnaglyph, SIGNAL("clicked()"), self.ToggleAnaglyph3D)
+        b1.clicked.connect( self.TogglePlaneWidgetX )
+        b2.clicked.connect( self.TogglePlaneWidgetY )
+        b3.clicked.connect( self.TogglePlaneWidgetZ )
+        bAnaglyph.clicked.connect( self.ToggleAnaglyph3D )
         #self.connect(bExportMesh, SIGNAL("clicked()"), self.exportMesh)
         #bCutter.toggled.connect(self.useCutterToggled)
         self.connect(self.qvtk, SIGNAL("objectPicked"), self.__onObjectPicked)
+        #self.qvtk.objectPicked.connect( self.__onObjectPicked )
         
         def layerContextMenu(layer, menu):
-          self.layerContextMenu(layer,menu)
+            self.layerContextMenu(layer,menu)
 
         Event.register("layerContextMenuRequested", layerContextMenu)
+
+        if self._dataShape is not None:
+            self._initialize_slicing_planes()
 
     def layerContextMenu(self, layer, menu):
         if isinstance( layer, ColortableLayer ):
@@ -467,6 +502,8 @@ class OverviewScene(QWidget):
             #print "Do NOT update cutter"
     
     def ChangeSlice(self, num, axis):
+        if self.planes is None:
+            return
         c = copy.copy(self.planes.coordinate)
         c[axis] = num
         self.planes.SetCoordinate(c)
