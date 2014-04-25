@@ -83,6 +83,10 @@ class SubregionRoiWidget( QTableWidget ):
         
         self._handling_click = False
     
+    @property
+    def roi(self):
+        return self._roi
+    
     def initWithExtents(self, axes, shape, start, stop):
         tagged_shape = collections.OrderedDict( zip(axes, shape) )
         tagged_start = collections.OrderedDict( zip(axes, start) )
@@ -125,6 +129,8 @@ class SubregionRoiWidget( QTableWidget ):
             self.setCellWidget( row, 2, stopBox )
             
             self._boxes[axis_key] = (checkbox_item, startBox, stopBox)
+        
+            self._updateRoi()
         
     def _updateRoi(self):
         checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
