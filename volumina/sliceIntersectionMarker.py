@@ -194,12 +194,28 @@ class SliceMarkerLine(QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         new_pos = self.scene().data2scene.map( event.scenePos() )
+        width, height = self._parent.dataShape
+
+        x = int(new_pos.x() + 0.5)
+        y = int(new_pos.y() + 0.5)
+
         if self._direction == 'horizontal':
-            new_pos.setX( self._parent.x )
+            # Horizontal line can only move up/down
+            x = self._parent.x
+
+            # Clip the Y position to the image boundary
+            y = max( 0, y )
+            y = min( height-1, y )
         else:
-            new_pos.setY( self._parent.y )
+            # Vertical line can only move left/right
+            y = self._parent.y
+            
+            # Clip the X position to the image boundary
+            x = max( 0, x )
+            x = min( width-1, x )
+
         old_slicing_pos = self._parent.posModel.slicingPos
-        slicing_pos = [ int(new_pos.x()), int(new_pos.y()) ]
+        slicing_pos = [x, y]
         slicing_pos.insert( self._parent.axis, old_slicing_pos[self._parent.axis] )
         self._parent.posModel.slicingPos = slicing_pos
 
