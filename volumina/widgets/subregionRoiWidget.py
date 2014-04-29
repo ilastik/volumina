@@ -72,9 +72,6 @@ class SubregionRoiWidget( QTableWidget ):
     
     def __init__(self, parent):
         super( SubregionRoiWidget, self ).__init__(parent)
-        self.setColumnCount( 3 )
-        self.setHorizontalHeaderLabels(["range", "[start,", "stop)"])
-        self.resizeColumnToContents(0)
         self._roi = None
         self._boxes = collections.OrderedDict()
 
@@ -88,6 +85,9 @@ class SubregionRoiWidget( QTableWidget ):
         return self._roi
     
     def initWithExtents(self, axes, shape, start, stop):
+        self.setColumnCount( 3 )
+        self.setHorizontalHeaderLabels(["range", "[start,", "stop)"])
+        self.resizeColumnsToContents()
         tagged_shape = collections.OrderedDict( zip(axes, shape) )
         tagged_start = collections.OrderedDict( zip(axes, start) )
         tagged_stop = collections.OrderedDict( zip(axes, stop) )
@@ -132,6 +132,8 @@ class SubregionRoiWidget( QTableWidget ):
         
             self._updateRoi()
         
+        self.resizeColumnsToContents()
+
     def _updateRoi(self):
         checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
         box_starts = map( RoiSpinBox.value, min_boxes )
@@ -183,6 +185,7 @@ if __name__ == "__main__":
     from PyQt4.QtGui import QApplication
     
     app = QApplication([])
+
     w = SubregionRoiWidget(None)
     w.initWithExtents( 'xyz', (10,20,30), (0, None, 10), (5, None, 11) )
     w.show()
