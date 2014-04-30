@@ -35,25 +35,19 @@ from PyQt4.QtGui import QImage, QPainter, QTransform, QColor
 from patchAccessor import PatchAccessor
 import volumina
 
-PREFETCH_PRIORITY=10
-NORMAL_PRIORITY=20
-renderer_pool = None
+from concurrent.futures.thread import ThreadPoolExecutor, _WorkItem
+from concurrent.futures import _base
+import Queue
 
-def get_render_pool():
-    global renderer_pool
-    if renderer_pool is None:
-        renderer_pool = QThreadPool()
-    return renderer_pool
+class RenderTask(_WorkItem):
+    def __init__(self, f, prefetch, timestamp,
+            tile_provider, ims, transform, tile_nr, stack_id, image_req,
+            cache):
+        super(RenderTask, self).__init__(f, self._render, [], {})
 
-# used to keep references to QRunnable subclasses
-# unless we manually keep a reference, Python garbage collects these
-# objects before they are run by Qt
-render_tasks = dict()
+        self.prefetch = prefetch
+        self.timestamp = timestamp
 
-class TileRenderer(QRunnable):
-    def __init__(self, tile_provider, ims, transform, tile_nr, stack_id,
-            image_req, timestamp, cache):
-        super(TileRenderer, self).__init__()
         self.tile_provider = tile_provider
         self.ims = ims
         self.transform = transform
@@ -63,12 +57,13 @@ class TileRenderer(QRunnable):
         self.timestamp = timestamp
         self.cache = cache
 
-        # hack to prevent Python's garbage collector from destroying this
-        # task before it gets run by Qt
-        global render_tasks
-        render_tasks[id(self)] = self
+    def _render(self, *args, **kwds):
+        """
+        Render tile.
 
-    def run(self):
+        Arguments are ignored. The function signature is preserved to
+        match the convention used in the base class.
+        """
         try:
             try:
                 layerTimestamp = self.cache.layerTimestamp(self.stack_id,
@@ -89,17 +84,50 @@ class TileRenderer(QRunnable):
                         and self.cache is self.tile_provider._cache:
                     self.tile_provider.sceneRectChanged.emit( QRectF(
                         self.tile_provider.tiling.imageRects[self.tile_nr]))
-        except:
+        except BaseException:
             with volumina.printLock:
                 sys.excepthook( *sys.exc_info() )
 
-        # remove reference from global task list and allow Python to
-        # garbage collect this instance
-        global render_tasks
-        try:
-            render_tasks.pop(id(self))
-        except KeyError:
-            print "ERROR!!! KeyError while removing TileRenderer from render_tasks"
+    def __lt__(self, other):
+        """
+        Compare two RenderTasks, where smallest has higher priority.
+
+        Regular render tasks have higher priority than prefetch tasks. A task
+        with higher timestamp has higher priority.
+        """
+        assert isinstance(self, RenderTask) and isinstance(other, RenderTask)
+        res = cmp(self.prefetch, other.prefetch)
+        if res != 0:
+            return res
+        # note reversed order for timestamp
+        return cmp(other.timestamp, self.timestamp)
+
+
+class RenderTaskExecutor(ThreadPoolExecutor):
+    def __init__(self, max_workers):
+        super(RenderTaskExecutor, self).__init__(max_workers)
+        self._work_queue = Queue.PriorityQueue()
+
+    def submit(self, *args):
+        with self._shutdown_lock:
+            if self._shutdown:
+                raise RuntimeError('cannot schedule new futures after shutdown')
+
+            f = _base.Future()
+            w = RenderTask(f, *args)
+
+            self._work_queue.put(w)
+            self._adjust_thread_count()
+            return f
+
+
+renderer_pool = None
+
+def get_render_pool():
+    global renderer_pool
+    if renderer_pool is None:
+        renderer_pool = RenderTaskExecutor(6)
+    return renderer_pool
 
 #*******************************************************************************
 # I m a g e T i l e                                                            *
@@ -267,6 +295,9 @@ class Tiling(object):
 #*******************************************************************************
 
 class TiledImageLayer(object):
+    """
+    Used for the brushing layer in ImageScene2d.
+    """
     def __init__(self, tiling):
         self._imageTiles = {}
         self._tiling = tiling
@@ -584,13 +615,9 @@ class TileProvider( QObject ):
                                                 self._sims.viewOccluded() )
                         else:
                             pool = get_render_pool()
-                            task = TileRenderer( self, ims, transform,
-                                    tile_no, stack_id, ims_req,
-                                    time.time(), self._cache)
-                            priority  = PREFETCH_PRIORITY if prefetch \
-                                    else NORMAL_PRIORITY
-
-                            pool.start(task, priority)
+                            pool.submit(prefetch, time.time(),
+                                    self, ims, transform, tile_no,
+                                    stack_id, ims_req, self._cache)
         except KeyError:
             pass
 
