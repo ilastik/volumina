@@ -95,6 +95,8 @@ class SubregionRoiWidget( QTableWidget ):
         self.setRowCount( len(tagged_shape) )
         self.setVerticalHeaderLabels( tagged_shape.keys() )
 
+        self._boxes.clear()
+
         for row, (axis_key, extent) in enumerate(tagged_shape.items()):
             # Init 'full' checkbox
             checkbox_item = QTableWidgetItem("All")
@@ -130,19 +132,21 @@ class SubregionRoiWidget( QTableWidget ):
             
             self._boxes[axis_key] = (checkbox_item, startBox, stopBox)
         
-            self._updateRoi()
-        
+        self._updateRoi()
         self.resizeColumnsToContents()
 
     def _updateRoi(self):
-        checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
-        box_starts = map( RoiSpinBox.value, min_boxes )
-        box_stops = map( RoiSpinBox.value, max_boxes )
-        checkbox_flags = map( lambda cbox: cbox.checkState() == Qt.Checked, checkboxes )
-
-        # For 'full range' axes, replace box value with the full extent value
-        start = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_starts ) )
-        stop  = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_stops ) )
+        if len( self._boxes ) == 0:
+            start = stop = ()
+        else:
+            checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
+            box_starts = map( RoiSpinBox.value, min_boxes )
+            box_stops = map( RoiSpinBox.value, max_boxes )
+            checkbox_flags = map( lambda cbox: cbox.checkState() == Qt.Checked, checkboxes )
+    
+            # For 'full range' axes, replace box value with the full extent value
+            start = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_starts ) )
+            stop  = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_stops ) )
         
         roi = (start, stop)
         if roi != self._roi:
