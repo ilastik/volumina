@@ -72,9 +72,6 @@ class SubregionRoiWidget( QTableWidget ):
     
     def __init__(self, parent):
         super( SubregionRoiWidget, self ).__init__(parent)
-        self.setColumnCount( 3 )
-        self.setHorizontalHeaderLabels(["range", "[start,", "stop)"])
-        self.resizeColumnToContents(0)
         self._roi = None
         self._boxes = collections.OrderedDict()
 
@@ -83,13 +80,22 @@ class SubregionRoiWidget( QTableWidget ):
         
         self._handling_click = False
     
+    @property
+    def roi(self):
+        return self._roi
+    
     def initWithExtents(self, axes, shape, start, stop):
+        self.setColumnCount( 3 )
+        self.setHorizontalHeaderLabels(["range", "[start,", "stop)"])
+        self.resizeColumnsToContents()
         tagged_shape = collections.OrderedDict( zip(axes, shape) )
         tagged_start = collections.OrderedDict( zip(axes, start) )
         tagged_stop = collections.OrderedDict( zip(axes, stop) )
         self._tagged_shape = tagged_shape
         self.setRowCount( len(tagged_shape) )
         self.setVerticalHeaderLabels( tagged_shape.keys() )
+
+        self._boxes.clear()
 
         for row, (axis_key, extent) in enumerate(tagged_shape.items()):
             # Init 'full' checkbox
@@ -126,15 +132,21 @@ class SubregionRoiWidget( QTableWidget ):
             
             self._boxes[axis_key] = (checkbox_item, startBox, stopBox)
         
-    def _updateRoi(self):
-        checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
-        box_starts = map( RoiSpinBox.value, min_boxes )
-        box_stops = map( RoiSpinBox.value, max_boxes )
-        checkbox_flags = map( lambda cbox: cbox.checkState() == Qt.Checked, checkboxes )
+        self._updateRoi()
+        self.resizeColumnsToContents()
 
-        # For 'full range' axes, replace box value with the full extent value
-        start = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_starts ) )
-        stop  = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_stops ) )
+    def _updateRoi(self):
+        if len( self._boxes ) == 0:
+            start = stop = ()
+        else:
+            checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
+            box_starts = map( RoiSpinBox.value, min_boxes )
+            box_stops = map( RoiSpinBox.value, max_boxes )
+            checkbox_flags = map( lambda cbox: cbox.checkState() == Qt.Checked, checkboxes )
+    
+            # For 'full range' axes, replace box value with the full extent value
+            start = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_starts ) )
+            stop  = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_stops ) )
         
         roi = (start, stop)
         if roi != self._roi:
@@ -177,6 +189,7 @@ if __name__ == "__main__":
     from PyQt4.QtGui import QApplication
     
     app = QApplication([])
+
     w = SubregionRoiWidget(None)
     w.initWithExtents( 'xyz', (10,20,30), (0, None, 10), (5, None, 11) )
     w.show()

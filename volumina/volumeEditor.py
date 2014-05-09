@@ -31,6 +31,7 @@ from eventswitch import EventSwitch
 from imageScene2D import ImageScene2D
 from imageView2D import ImageView2D
 from positionModel import PositionModel
+from croppingMarkers import CropExtentsModel
 from navigationControler import NavigationControler, NavigationInterpreter
 from brushingcontroler import BrushingInterpreter, BrushingControler, \
                               CrosshairControler
@@ -120,6 +121,8 @@ class VolumeEditor( QObject ):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
       
+        self.cropModel.set_volume_shape_3d(s[1:4])
+      
         #for 2D images, disable the slice intersection marker
         x = numpy.sum(numpy.asarray(s[1:4]) == 1) 
         self.navCtrl.indicateSliceIntersection = (x != 1)
@@ -146,11 +149,12 @@ class VolumeEditor( QObject ):
         self.layerStack = layerStackModel
         self.posModel = PositionModel()
         self.brushingModel = BrushingModel()
+        self.cropModel = CropExtentsModel( self )
 
         self.imageScenes = [ImageScene2D(self.posModel, (0,1,4), swapped_default=True),
                             ImageScene2D(self.posModel, (0,2,4)),
                             ImageScene2D(self.posModel, (0,3,4))]
-        self.imageViews = [ImageView2D(parent, self.imageScenes[i]) for i in [0,1,2]]
+        self.imageViews = [ImageView2D(parent, self.cropModel, self.imageScenes[i]) for i in [0,1,2]]
         self.imageViews[0].focusChanged.connect(lambda arg=0 : self.lastImageViewFocus(arg))
         self.imageViews[1].focusChanged.connect(lambda arg=1 : self.lastImageViewFocus(arg))
         self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg))
@@ -194,6 +198,9 @@ class VolumeEditor( QObject ):
         # initial interaction mode
         self.eventSwitch.interpreter = self.navInterpret
 
+        # By default, don't show cropping controls
+        self.showCropLines(False)
+
         ##
         ## connect
         ##
@@ -216,6 +223,10 @@ class VolumeEditor( QObject ):
     def setInteractionMode( self, name):
         modes = {'navigation': self.navInterpret, 'brushing': self.brushingInterpreter}
         self.eventSwitch.interpreter = modes[name]
+
+    def showCropLines(self, visible):
+        for view in self.imageViews:
+            view.showCropLines(visible)
 
     def cleanUp(self):
         QApplication.processEvents()

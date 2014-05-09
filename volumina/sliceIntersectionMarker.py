@@ -14,37 +14,8 @@
 #
 # Copyright 2011-2014, the ilastik developers
 
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-#    Copyright 2010, 2011 C Sommer, C Straehle, U Koethe, FA Hamprecht. All rights reserved.
-#
-#    Redistribution and use in source and binary forms, with or without modification, are
-#    permitted provided that the following conditions are met:
-#
-#       1. Redistributions of source code must retain the above copyright notice, this list of
-#          conditions and the following disclaimer.
-#
-#       2. Redistributions in binary form must reproduce the above copyright notice, this list
-#          of conditions and the following disclaimer in the documentation and/or other materials
-#          provided with the distribution.
-#
-#    THIS SOFTWARE IS PROVIDED BY THE ABOVE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS OR IMPLIED
-#    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-#    FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE ABOVE COPYRIGHT HOLDERS OR
-#    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-#    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-#    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-#    ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-#    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-#    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#    The views and conclusions contained in the software and documentation are those of the
-#    authors and should not be interpreted as representing official policies, either expressed
-#    or implied, of their employers.
-
 from PyQt4.QtCore import Qt, QRectF, QPointF
-from PyQt4.QtGui import QGraphicsItem, QPen
+from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor
 
 #*******************************************************************************
 # S l i c e I n t e r s e c t i o n M a r k e r                                *
@@ -52,18 +23,25 @@ from PyQt4.QtGui import QGraphicsItem, QPen
 
 class SliceIntersectionMarker(QGraphicsItem) :
     """
-    Marks a line within a ImageView2D/ImageScene2D
+    Marks a line within a ImageView2D/ImageScene2D.  
+    Used within a VolumeEditor to show the current slicing postion.
     """
     thick_width = 2
     thin_width = 0.5
     _diameter = 4
 
     def boundingRect(self):
-        return self.scene().data2scene.mapRect(QRectF(0,0, self._width, self._height));
+        # Return an empty rect to indicate 'no content'
+        # This 'item' is merely a parent node for child items
+        return QRectF()
 
-    def __init__(self, scene):
+    def __init__(self, scene, axis, posModel):
         QGraphicsItem.__init__(self, scene=scene)
-
+        self.setFlag(QGraphicsItem.ItemHasNoContents);
+        
+        self.axis = axis
+        self.posModel = posModel
+        
         self._width = 0
         self._height = 0
 
@@ -82,7 +60,13 @@ class SliceIntersectionMarker(QGraphicsItem) :
         self.x = 0
         self.y = 0
 
-        self.isVisible = True
+        # These child items do most of the work.
+        self._horizontal_marker = SliceMarkerLine(self, 'horizontal')
+        self._vertical_marker = SliceMarkerLine(self, 'vertical')
+
+        # We 
+        self._horizontal_marker = SliceMarkerLine(self, 'horizontal')
+        self._vertical_marker = SliceMarkerLine(self, 'vertical')
 
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
@@ -97,8 +81,9 @@ class SliceIntersectionMarker(QGraphicsItem) :
     def setPosition(self, x, y):
         self.x = x
         self.y = y
+        self._horizontal_marker.prepareGeometryChange()
+        self._vertical_marker.prepareGeometryChange()
         self.update()
-
 
     def _get_diameter(self):
         return self._diameter
@@ -127,34 +112,134 @@ class SliceIntersectionMarker(QGraphicsItem) :
 
         self.update()
 
-    def setVisibility(self, state):
-        if state == True:
-            self.isVisible = True
-        else:
-            self.isVisible = False
-        self.update()
-
     def paint(self, painter, option, widget=None):
-        if self.isVisible:
-            painter.save()
-            t = painter.transform()
-            painter.setTransform(self.scene().data2scene  * t )
+        pass # No content.
 
+    def paint_line(self, painter, direction):
+        """
+        Paint a single line of the slice intersection marker.
+        """
+        if not self.isVisible:
+            return
+
+        painter.save()
+        t = painter.transform()
+        painter.setTransform(self.scene().data2scene * t )
+
+        # Thin line directly over intersection
+        if direction == 'horizontal':
             painter.setPen(self.thin_penY)
             painter.drawLine(QPointF(0.0,self.y), QPointF(self._width, self.y))
-
+        else:
             painter.setPen(self.thin_penX)
             painter.drawLine(QPointF(self.x, 0), QPointF(self.x, self._height))
 
-            radius = self.diameter / 2 + 1
+        radius = self.diameter / 2 + 1
 
+        # Thick line elsewhere
+        if direction == 'horizontal':
             painter.setPen(self.thick_penY)
             painter.drawLine(QPointF(0.0, self.y), QPointF(self.x - radius, self.y))
             painter.drawLine(QPointF(self.x + radius, self.y), QPointF(self._width, self.y))
-
+        else:
             painter.setPen(self.thick_penX)
             painter.drawLine(QPointF(self.x, 0), QPointF(self.x, self.y - radius))
             painter.drawLine(QPointF(self.x, self.y + radius), QPointF(self.x, self._height))
 
+        painter.restore()
 
-            painter.restore()
+class SliceMarkerLine(QGraphicsItem):
+    """
+    QGraphicsItem for a single line (horizontal or vertical) of the slice intersection.
+    Must be a child of SliceIntersectionMarker.  It can be dragged to change the slicing position.
+    """
+    def __init__(self, parent, direction):
+        assert isinstance(parent, SliceIntersectionMarker)
+        assert direction in ('horizontal', 'vertical')
+
+        self._parent = parent
+        self._direction = direction
+        QGraphicsItem.__init__(self, parent)
+        self.setAcceptHoverEvents(True)
+
+    def boundingRect(self):
+        parent = self._parent
+        x, y = parent.x, parent.y
+        width, height = parent._width, parent._height
+        pen_width_in_view = parent.thick_width
+
+        # This is a little tricky.  The line is always drawn with the same 
+        #  absolute thickness, REGARDLESS of the view's transform.
+        # That is, the line does not appear to be part of the data, 
+        #  so it doesn't get thinner as we zoom out.
+        # To compensate for this when determining the line's bounding box within the scene, 
+        #  we need to know the transform used by the view that is showing this scene.
+        # If we didn't do this, our bounding rect would be off by a few pixels.  
+        # That probably wouldn't be a big deal.
+        view = self.scene().views()[0]
+        inverted_transform, has_inverse = view.transform().inverted()
+        transformed_pen_thickness = inverted_transform.map( QPointF(pen_width_in_view, pen_width_in_view) )
+        pen_width_in_scene = transformed_pen_thickness.x()
+
+        if self._direction == 'horizontal':
+            return self.scene().data2scene.mapRect( QRectF( 0, y - pen_width_in_scene/2.0, width, pen_width_in_scene ) )
+        else:
+            return self.scene().data2scene.mapRect( QRectF( x - pen_width_in_scene/2.0, 0, pen_width_in_scene, height ) )
+    
+    def paint(self, painter, option, widget=None):
+        # Delegate painting to our parent, since it keeps track of line thickness, etc.
+        self._parent.paint_line(painter, self._direction)
+
+    def hoverEnterEvent(self, event):
+        # Change the cursor to indicate the line is draggable
+        cursor = QCursor( Qt.OpenHandCursor )
+        QApplication.instance().setOverrideCursor( cursor )
+    
+    def hoverLeaveEvent(self, event):
+        # Restore the cursor to its previous state.
+        QApplication.instance().restoreOverrideCursor()
+
+    def mouseMoveEvent(self, event):
+        new_pos = self.scene().data2scene.map( event.scenePos() )
+        width, height = self._parent.dataShape
+
+        x = int(new_pos.x() + 0.5)
+        y = int(new_pos.y() + 0.5)
+
+        if self._direction == 'horizontal':
+            # Horizontal line can only move up/down
+            x = self._parent.x
+
+            # Clip the Y position to the image boundary
+            y = max( 0, y )
+            y = min( height-1, y )
+        else:
+            # Vertical line can only move left/right
+            y = self._parent.y
+            
+            # Clip the X position to the image boundary
+            x = max( 0, x )
+            x = min( width-1, x )
+
+        old_slicing_pos = self._parent.posModel.slicingPos
+        slicing_pos = [x, y]
+        slicing_pos.insert( self._parent.axis, old_slicing_pos[self._parent.axis] )
+        self._parent.posModel.slicingPos = slicing_pos
+
+    # Note: We must override these or else the default implementation  
+    #  prevents the mouseMoveEvent() override from working.
+    # If we didn't have actual work to do in these functions, 
+    #  we'd just use empty implementations:
+    # 
+    # def mousePressEvent(self, event): pass
+    # def mouseReleaseEvent(self, event): pass
+
+    def mousePressEvent(self, event):
+        # Change the cursor to indicate "currently dragging"
+        cursor = QCursor( Qt.ClosedHandCursor )
+        QApplication.instance().setOverrideCursor( cursor )
+        
+    def mouseReleaseEvent(self, event):
+        # Restore the cursor to its previous state.
+        QApplication.instance().restoreOverrideCursor()
+        

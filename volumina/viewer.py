@@ -229,6 +229,7 @@ class Viewer(QMainWindow):
     def addGrayscaleLayer(self, a, name=None, direct=False):
         source,self.dataShape = createDataSource(a,True)
         layer = GrayscaleLayer(source, direct=direct)
+        layer.numberOfChannels = self.dataShape[-1]
         if name:
             layer.name = name
         self.layerstack.append(layer)
@@ -324,33 +325,35 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     viewer = Viewer()
     viewer.show()
-    source1 = (numpy.random.random((100,100,1))) * 255
-    viewer.addGrayscaleLayer(source1)
+    array1 = (numpy.random.random((1,100,100,100,5))) * 255
+    viewer.addGrayscaleLayer(array1)
+    array2 = (numpy.random.random((100,100,100,3))) * 255
+    viewer.addRGBALayer(array2)
     
-    class MyInterpreter(NavigationInterpreter):
-        
-        def __init__(self, navigationcontroler):
-            NavigationInterpreter.__init__(self,navigationcontroler)
-    
-        def onMouseMove_default( self, imageview, event ):
-            if imageview._ticker.isActive():
-                #the view is still scrolling
-                #do nothing until it comes to a complete stop
-                return
-    
-            imageview.mousePos = mousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
-            imageview.oldX, imageview.oldY = imageview.x, imageview.y
-            x = imageview.x = mousePos.y()
-            y = imageview.y = mousePos.x()
-            self._navCtrl.positionCursor( x, y, self._navCtrl._views.index(imageview))
-    
-    #like this
-    myInt = MyInterpreter
-    viewer.editor.navigationInterpreterType = myInt
-    
-    #or like this
-    tmpInt = viewer.editor.navigationInterpreterType
-    tmpInt.onMouseMove_default = myInt.onMouseMove_default
-    viewer.editor.navigationInterpreterType = tmpInt
+#     class MyInterpreter(NavigationInterpreter):
+#         
+#         def __init__(self, navigationcontroler):
+#             NavigationInterpreter.__init__(self,navigationcontroler)
+#     
+#         def onMouseMove_default( self, imageview, event ):
+#             if imageview._ticker.isActive():
+#                 #the view is still scrolling
+#                 #do nothing until it comes to a complete stop
+#                 return
+#     
+#             imageview.mousePos = mousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
+#             imageview.oldX, imageview.oldY = imageview.x, imageview.y
+#             x = imageview.x = mousePos.y()
+#             y = imageview.y = mousePos.x()
+#             self._navCtrl.positionCursor( x, y, self._navCtrl._views.index(imageview))
+#     
+#     #like this
+#     myInt = MyInterpreter
+#     viewer.editor.navigationInterpreterType = myInt
+#     
+#     #or like this
+#     tmpInt = viewer.editor.navigationInterpreterType
+#     tmpInt.onMouseMove_default = myInt.onMouseMove_default
+#     viewer.editor.navigationInterpreterType = tmpInt
     
     app.exec_()
