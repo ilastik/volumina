@@ -530,8 +530,8 @@ class MinMaxSource( QObject ):
             dirty = True
 
         if dirty:
-            self._bounds[0] = min(self._bounds[0], dmin)
-            self._bounds[1] = max(self._bounds[0], dmax)
+            self._bounds[0] = dmin 
+            self._bounds[1] = dmax 
             self.boundsChanged.emit(self._bounds)
 
             # Our min/max have changed, which means we must force the TileProvider to re-request all tiles.

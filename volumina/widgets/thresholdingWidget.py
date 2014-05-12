@@ -36,7 +36,7 @@ class ThresholdingWidget(QWidget):
         
         uic.loadUi(p+"/ui/thresholdingWidget.ui", self)
         self.setRange(0,255)
-                    
+        
         self._minSlider.valueChanged.connect(self._onMinSliderMoved)
         self._maxSlider.valueChanged.connect(self._onMaxSliderMoved)
     
