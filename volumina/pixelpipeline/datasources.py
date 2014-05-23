@@ -96,7 +96,7 @@ class ArraySource( QObject ):
         self._array = None
 
     def dtype(self):
-        return self._array.dtype
+        return self._array.dtype.type
 
     def request( self, slicing ):
         if not is_pure_slicing(slicing):
