@@ -216,6 +216,7 @@ class Outliner(vtkPropAssembly):
 #*******************************************************************************
 
 class OverviewScene(QWidget):
+    reinitialized = pyqtSignal()
     
     #emitted when slice changes
     #  int -- slice number
@@ -419,6 +420,8 @@ class OverviewScene(QWidget):
 
         if self._dataShape is not None:
             self._initialize_slicing_planes()
+
+        self.reinitialized.emit()
 
     def layerContextMenu(self, layer, menu):
         if isinstance( layer, ColortableLayer ):

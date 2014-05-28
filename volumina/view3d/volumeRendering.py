@@ -101,22 +101,22 @@ class RenderingManager(object):
     map, renders the objects in the appropriate color.
 
     """
-    def __init__(self, renderer, qvtk=None):
-        self._renderer = renderer
-        self._qvtk = qvtk
+    def __init__(self, overview_scene):
+        self._overview_scene = overview_scene
         self.labelmgr = LabelManager(NOBJECTS)
         self.ready = False
         self._cmap = {}
-        
-        def release_qvtk_handle():
-            del self._qvtk
-        QApplication.instance().aboutToQuit.connect( release_qvtk_handle )
 
+        def _handle_scene_init():
+            self.setup( self._overview_scene.dataShape )
+            self.update()
+        self._overview_scene.reinitialized.connect( _handle_scene_init )
+        
     def setup(self, shape):
         shape = shape[::-1]
         self._volume = numpy.zeros(shape, dtype=numpy.uint8)
         dataImporter, colorFunc, volume, volumeMapper = makeVolumeRenderingPipeline(self._volume)
-        self._renderer.AddVolume(volume)
+        self._overview_scene.qvtk.renderer.AddVolume(volume)
         self._mapper = volumeMapper
         self._volumeRendering = volume
         self._dataImporter = dataImporter
@@ -130,8 +130,8 @@ class RenderingManager(object):
             self._colorFunc.AddRGBPoint(label, *color)
         self._dataImporter.Modified()
         self._volumeRendering.Update()
-        if self._qvtk is not None:
-            self._qvtk.update()
+        if self._overview_scene.qvtk is not None:
+            self._overview_scene.qvtk.update()
 
     def setColor(self, label, color):
         self._cmap[label] = color
