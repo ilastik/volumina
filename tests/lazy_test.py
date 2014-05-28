@@ -19,6 +19,10 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+
+# time to wait (in seconds) for rendering to finish
+SLEEP_DURATION = 1
+
 # check for optional dependencies
 has_dependencies = True
 try:
@@ -114,11 +118,6 @@ if has_dependencies:
             self.scene.stackedImageSources = self.sims
             self.scene.dataShape = (30,30)
 
-        def tearDown( self ):
-            if self.scene._tileProvider:
-                self.scene._tileProvider.notifyThreadsToStop()
-                self.scene._tileProvider.joinThreads()
-
         def renderScene( self, s, exportFilename=None, joinRendering=True):
             img = QImage(30,30,QImage.Format_ARGB32_Premultiplied)
             img.fill(Qt.white)
@@ -127,7 +126,7 @@ if has_dependencies:
             s.render(p) #trigger a rendering of the whole scene
             if joinRendering:
                 #wait for all the data to arrive
-                s.joinRendering()
+                time.sleep(SLEEP_DURATION)
                 #finally, render everything
                 s.render(p)
             p.end()
