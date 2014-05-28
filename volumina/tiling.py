@@ -18,18 +18,15 @@
 import sys
 import time
 import collections
-import warnings
+import threading
 from collections import defaultdict, OrderedDict
-
-from threading import Lock
 
 #SciPy
 import numpy
 
 #PyQt
-from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal, Qt, \
-        QThreadPool, QRunnable
-from PyQt4.QtGui import QImage, QPainter, QTransform, QColor
+from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
+from PyQt4.QtGui import QImage, QPainter, QTransform
 
 #volumina
 from patchAccessor import PatchAccessor
@@ -64,6 +61,11 @@ class RenderTask(_WorkItem):
         Arguments are ignored. The function signature is preserved to
         match the convention used in the base class.
         """
+        # Make sure the current thread has a name that excepthooks will recognize
+        # (If this is a new thread in the threadpool, we need to set the name.)
+        if not threading.current_thread().name.startswith("TileProvider"):
+            threading.current_thread().name = "TileProvider-" + str( threading.current_thread().ident )
+        
         try:
             try:
                 layerTimestamp = self.cache.layerTimestamp(self.stack_id,
@@ -356,7 +358,7 @@ def synchronous( tlockname ):
 
 class _TilesCache( object ):
     def __init__(self, first_stack_id, sims, maxstacks=None):
-        self._lock = Lock()
+        self._lock = threading.Lock()
         self._sims = sims
 
         kwargs = {'first_uid' : first_stack_id,
