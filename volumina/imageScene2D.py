@@ -409,6 +409,24 @@ class ImageScene2D(QGraphicsScene):
             for through in self._bowWave(self._n_preemptive):
                 self._tileProvider.prefetch(sceneRectF, through)
 
+    def joinRenderingAllTiles(self):
+        """
+        Wait until all tiles in the scene have been 100% rendered.
+        Note: This is useful for testing only.  If called from the GUI thread, the GUI thread will block until all tiles are rendered!
+        """
+        # If this is the main thread, keep repainting (otherwise we'll deadlock).
+        if threading.current_thread().name == "MainThread":
+            finished = False
+            sceneRectF = self.views()[0].viewportRect()
+            while not finished:
+                finished = True
+                tiles = self._tileProvider.getTiles(sceneRectF)
+                for tile in tiles:
+                    finished &= tile.progress >= 1.0
+        else:
+            self._allTilesCompleteEvent.wait()
+
+
     def _bowWave(self, n):
         shape5d = self._posModel.shape5D
         sl5d = self._posModel.slicingPos5D
