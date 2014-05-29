@@ -450,37 +450,6 @@ class OverviewScene(QWidget):
             for i in range(3): self.qvtk.renderer.RemoveActor(self.cutter[i])
         self.qvtk.update()
     
-    def exportMesh(self):
-        filename = QFileDialog.getSaveFileName(self,"Save Meshes As")
-        
-        self.qvtk.actors.InitTraversal();
-        for i in range(self.qvtk.actors.GetNumberOfItems()):
-            p = self.qvtk.actors.GetNextProp()
-            if p.GetPickable() and self.qvtk.actors.IsItemPresent(p):
-                vtpFilename = "%s%02d.vtp" % (filename, i)
-                objFilename = "%s%02d.obj" % (filename, i)
-                
-                logger.info( "writing VTP file '%s'" % vtpFilename )
-                d = p.GetMapper().GetInput()
-                w = vtkPolyDataWriter()
-                w.SetFileTypeToASCII()
-                w.SetInput(d)
-                w.SetFileName("%s%02d.vtp" % (filename, i))
-                w.Write()
-                
-                logger.info( "converting to OBJ file '%s'" % objFilename )
-                convertVTPtoOBJ(vtpFilename, objFilename)
-                
-                #renWin = vtkRenderWindow()
-                #ren = vtkRenderer()
-                #renWin.AddRenderer(ren)
-                #ren.AddActor(p)
-                #exporter = vtkOBJExporter()
-                #exporter.SetInput(renWin)
-                #exporter.SetFilePrefix("%s%02d" % (filename, i))
-                #exporter.Update()
-                
-
     def __onObjectPicked(self, coor):
         self.ChangeSlice( coor[0], 0)
         self.ChangeSlice( coor[1], 1)
