@@ -409,20 +409,20 @@ class ImageScene2D(QGraphicsScene):
             for through in self._bowWave(self._n_preemptive):
                 self._tileProvider.prefetch(sceneRectF, through)
 
-    def joinRenderingAllTiles(self):
+    def joinRenderingAllTiles(self, viewport_only=True):
         """
         Wait until all tiles in the scene have been 100% rendered.
+        If sceneRectF is None, use the viewport rect.
+        If sceneRectF is an invalid QRectF(), then wait for all tiles.
         Note: This is useful for testing only.  If called from the GUI thread, the GUI thread will block until all tiles are rendered!
         """
         # If this is the main thread, keep repainting (otherwise we'll deadlock).
         if threading.current_thread().name == "MainThread":
-            finished = False
-            sceneRectF = self.views()[0].viewportRect()
-            while not finished:
-                finished = True
-                tiles = self._tileProvider.getTiles(sceneRectF)
-                for tile in tiles:
-                    finished &= tile.progress >= 1.0
+            if viewport_only:
+                sceneRectF = self.views()[0].viewportRect()
+            else:
+                sceneRectF = QRectF() # invalid QRectF means 'get all tiles'
+            self._tileProvider.waitForTiles(sceneRectF)
         else:
             self._allTilesCompleteEvent.wait()
 

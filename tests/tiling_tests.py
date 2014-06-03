@@ -20,13 +20,10 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 # time to wait (in seconds) for rendering to finish
-SLEEP_DURATION=0.2
-import os
-import time
 import unittest as ut
 import numpy as np
 from PyQt4.QtCore import QRectF, QPoint, QRect
-from PyQt4.QtGui import QTransform, qApp
+from PyQt4.QtGui import QTransform
 from qimage2ndarray import byte_view
 
 from volumina.tiling import TileProvider, Tiling
@@ -35,7 +32,6 @@ from volumina.layer import GrayscaleLayer
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.pixelpipeline.imagesources import GrayscaleImageSource
 from volumina.pixelpipeline.imagepump import StackedImageSources, ImagePump
-from volumina.pixelpipeline.slicesources import SliceSource
 from volumina.slicingtools import SliceProjection
 
 
@@ -109,7 +105,7 @@ class TileProviderTest( ut.TestCase ):
         tp = TileProvider(tiling, self.sims)
 
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100,100,200,200))
         for tile in tiles:
             aimg = byte_view(tile.qimg)
@@ -120,7 +116,7 @@ class TileProviderTest( ut.TestCase ):
         self.layer2.visible = False
         self.layer3.visible = False
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100,100,200,200))
         for tile in tiles:
             # If all tiles are invisible, then no tile is even rendered at all.
@@ -131,7 +127,7 @@ class TileProviderTest( ut.TestCase ):
         self.layer2.opacity = 1.0
         self.layer3.visible = False
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100,100,200,200))
         for tile in tiles:
             aimg = byte_view(tile.qimg)
@@ -163,7 +159,7 @@ class DirtyPropagationTest( ut.TestCase ):
         tp = TileProvider(tiling, self.pump.stackedImageSources)
 
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100,100,200,200))
         for tile in tiles:
             aimg = byte_view(tile.qimg)
@@ -173,7 +169,7 @@ class DirtyPropagationTest( ut.TestCase ):
         NEW_CONSTANT = self.CONSTANT+1
         self.ds2.constant = NEW_CONSTANT
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100,100,200,200))
         for tile in tiles:
             aimg = byte_view(tile.qimg)
@@ -188,7 +184,7 @@ class DirtyPropagationTest( ut.TestCase ):
         # Navigate down to the second z-slice
         self.pump.syncedSliceSources.through = [0,1,0]
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
 
         # Sanity check: Do we see the right data on the second
         # slice? (should be all 1s)
@@ -201,7 +197,7 @@ class DirtyPropagationTest( ut.TestCase ):
         # Navigate down to the third z-slice
         self.pump.syncedSliceSources.through = [0,2,0]
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
 
         # Sanity check: Do we see the right data on the third
         # slice?(should be all 2s)
@@ -214,7 +210,7 @@ class DirtyPropagationTest( ut.TestCase ):
         # Navigate back up to the second z-slice
         self.pump.syncedSliceSources.through = [0,1,0]
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
         for tile in tiles:
             aimg = byte_view(tile.qimg)
             self.assertTrue(np.all(aimg[:,:,0:3] == 1))
@@ -230,7 +226,7 @@ class DirtyPropagationTest( ut.TestCase ):
         # Navigate back down to the third z-slice
         self.pump.syncedSliceSources.through = [0,2,0]
         tp.requestRefresh(QRectF(100,100,200,200))
-        time.sleep(SLEEP_DURATION)
+        tp.waitForTiles()
 
         # Even though the data was out-of-view when it was
         # changed, it should still have new values. If dirtiness

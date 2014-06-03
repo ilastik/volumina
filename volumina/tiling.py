@@ -543,6 +543,18 @@ class TileProvider( QObject ):
                 progress,
                 self.tiling)
 
+    def waitForTiles(self, rectF=QRectF()):
+        """
+        This function is for testing purposes only.
+        Block until all tiles intersecting the given rect are complete.
+        """
+        finished = False
+        while not finished:
+            finished = True
+            tiles = self.getTiles(rectF)
+            for tile in tiles:
+                finished &= tile.progress >= 1.0
+
     def requestRefresh( self, rectF ):
         '''Requests tiles to be refreshed.
 

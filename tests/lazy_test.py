@@ -19,10 +19,6 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-
-# time to wait (in seconds) for rendering to finish
-SLEEP_DURATION = 1
-
 # check for optional dependencies
 has_dependencies = True
 try:
@@ -54,6 +50,7 @@ if has_dependencies:
     from volumina.layerstack import LayerStackModel
     from volumina.layer import GrayscaleLayer
     import volumina.pixelpipeline.imagesourcefactories as imsfac
+    import volumina.tiling
 
     class OpLazy(Operator):
         Output = OutputSlot()
@@ -125,9 +122,9 @@ if has_dependencies:
 
             s.render(p) #trigger a rendering of the whole scene
             if joinRendering:
-                #wait for all the data to arrive
-                time.sleep(SLEEP_DURATION)
-                #finally, render everything
+                # wait for all the data to arrive
+                s.joinRenderingAllTiles( viewport_only=False ) # There is no viewport!
+                # finally, render everything
                 s.render(p)
             p.end()
 
@@ -146,6 +143,9 @@ if has_dependencies:
                 aimg = self.renderScene(self.scene, joinRendering=False, exportFilename="/tmp/x_%03d.png" % i)
                 #this should be "i", not 255 (the default background for the imagescene)
                 assert numpy.all(aimg[:,:,0] == i), "!= %d, [0,0,0]=%d" % (i, aimg[0,0,0])
+                
+                # Now give the scene time to update before we change it again...
+                self.scene.joinRenderingAllTiles( viewport_only=False )
 
 if __name__ == '__main__':
     import unittest as ut

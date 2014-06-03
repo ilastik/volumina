@@ -19,15 +19,10 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-
-# time to wait (in seconds) for rendering to finish
-SLEEP_DURATION = .2
-
 import unittest as ut
-import os
 import time, datetime
 
-from PyQt4.QtGui import QImage, QPainter, QApplication, QPicture, QStyleOptionGraphicsItem
+from PyQt4.QtGui import QImage, QPainter, QApplication, QStyleOptionGraphicsItem
 
 from qimage2ndarray import byte_view
 import numpy as np
@@ -176,7 +171,7 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         img.fill(0)
         p = QPainter(img)
         s.render(p)
-        time.sleep(SLEEP_DURATION)
+        s.joinRenderingAllTiles(viewport_only=False)
         s.render(p)
         p.end()
         if exportFilename is not None:
