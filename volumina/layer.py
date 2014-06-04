@@ -439,8 +439,8 @@ class ColortableLayer( NormalizableLayer ):
         self._colorTable = colorTable
         self.colorTableChanged.emit()
 
-    def randomizeColors(self):
-        self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
+    def randomizeColors(self, zeroIsTransparent=True):
+        self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, zeroIsTransparent)
         
     def isDifferentEnough(self, other_layer):
             
