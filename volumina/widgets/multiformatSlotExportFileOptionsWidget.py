@@ -44,7 +44,7 @@ except ImportError:
     _supports_dvid = False
 
 class MultiformatSlotExportFileOptionsWidget(QWidget):
-    formatValidityChange = pyqtSignal(bool)
+    formatValidityChange = pyqtSignal(str) # str
     pathValidityChange = pyqtSignal(bool)
     
     def __init__(self, parent):
@@ -52,14 +52,14 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         assert _has_lazyflow, "This widget can't be used unless you have lazyflow installed."
         super( MultiformatSlotExportFileOptionsWidget, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
-        self._valid_selection = True
+        self._selection_error_msg = ""
         self._valid_path = True
         self.formatErrorLabel.setVisible(False)
 
     def initExportOp(self, opDataExport):
         self._opDataExport = opDataExport
 
-        opDataExport.FormatSelectionIsValid.notifyDirty( self._handleFormatValidChange )
+        opDataExport.FormatSelectionErrorMsg.notifyDirty( self._handleFormatValidChange )
         
         # Specify our supported formats and their associated property widgets
         self._format_option_editors = collections.OrderedDict()
@@ -151,12 +151,13 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self._handlePathValidityChange()
     
     def _handleFormatValidChange(self, *args):
-        old_valid = self._valid_selection
-        self._valid_selection = self._opDataExport.FormatSelectionIsValid.value
-        self.formatErrorLabel.setVisible(not self._valid_selection)
+        old_err = self._selection_error_msg
+        self._selection_error_msg = self._opDataExport.FormatSelectionErrorMsg.value
+        self.formatErrorLabel.setVisible(self._selection_error_msg is not None)
+        self.formatErrorLabel.setText( '<font color="red">' + self._selection_error_msg + '</font>' )
 
-        if self._valid_selection != old_valid:
-            self.formatValidityChange.emit( self._valid_selection )
+        if self._selection_error_msg != old_err:
+            self.formatValidityChange.emit( self._selection_error_msg )
 
     def _handlePathValidityChange(self):
         old_valid = self._valid_path
@@ -177,7 +178,7 @@ if __name__ == "__main__":
         OutputFilenameFormat = InputSlot(value='~/something.h5')
         OutputInternalPath = InputSlot(value='volume/data')
         OutputFormat = InputSlot(value='hdf5')
-        FormatSelectionIsValid = InputSlot(value=True) # Normally an output slot
+        FormatSelectionErrorMsg = InputSlot(value=True) # Normally an output slot
         
         def setupOutputs(self): pass
         def execute(self, *args): pass

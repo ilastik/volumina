@@ -73,7 +73,7 @@ if _has_lazyflow:
         ConvertedImage = OutputSlot() # Preprocessed image, BEFORE axis reordering
         ImageToExport = OutputSlot() # Preview of the pre-processed image that will be exported
         ExportPath = OutputSlot() # Location of the saved file after export is complete.
-        FormatSelectionIsValid = OutputSlot()
+        FormatSelectionErrorMsg = OutputSlot()
     
         @classmethod
         def __subclasshook__(cls, C):
@@ -419,7 +419,9 @@ class DataExportOptionsDlg(QDialog):
     def _initFileOptionsWidget(self):
         opDataExport = self._opDataExport
         self.exportFileOptionsWidget.initExportOp( opDataExport )
-        self.exportFileOptionsWidget.formatValidityChange.connect( partial(self._set_okay_condition, 'file format') )
+        def set_okay_from_format_error(error_msg):
+            self._set_okay_condition('file format', error_msg == "")
+        self.exportFileOptionsWidget.formatValidityChange.connect( set_okay_from_format_error )
         self.exportFileOptionsWidget.pathValidityChange.connect( partial(self._set_okay_condition, 'file path') )
         
 #**************************************************************************
