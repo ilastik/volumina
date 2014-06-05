@@ -107,6 +107,11 @@ class LayerStackModel(QAbstractListModel):
         self.updateGUI()
 
     def selectRow( self, row ):
+        already_selected_rows = self.selectionModel.selectedRows()
+        if len(already_selected_rows) == 1 and row == already_selected_rows[0]:
+            # Nothing to do if this row is already selected
+            return
+        self.selectionModel.clear()
         self.selectionModel.setCurrentIndex( self.index(row), QItemSelectionModel.SelectCurrent)
 
     @pyqtSignature("deleteSelected()")
