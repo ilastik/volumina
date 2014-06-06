@@ -24,6 +24,7 @@ import logging
 import time
 import warnings
 
+
 try:
     import volumina
     from volumina.colorama import Fore, Back, Style
@@ -164,15 +165,19 @@ class GrayscaleImageRequest( object ):
         if not normalize:
             normalize = [0,255]
             
-        aCopy = a.copy()
+        # FIXME: It is obviously wrong to truncate like this (right?)
+        if a.dtype == np.uint64 or a.dtype == np.int64:
+            warnings.warn("Truncating 64-bit pixels for display")
+            if a.dtype == np.uint64:
+                a = a.astype( np.uint32 )
+            elif a.dtype == np.int64:
+                a = a.astype( np.int32 )
         
         #
         # new conversion
         #
         tImg = None
         if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
-            if not a.flags.contiguous:
-                a = a.copy()
             if self._normalize is None or \
                self._normalize[0] >= self._normalize[1] or \
                self._normalize == [0, 0]: #FIXME: fix volumina conventions
@@ -190,7 +195,7 @@ class GrayscaleImageRequest( object ):
                 #clipping has been implemented in this commit,
                 #but it is not yet available in the packages obtained via easy_install
                 #http://www.informatik.uni-hamburg.de/~meine/hg/qimage2ndarray/diff/fcddc70a6dea/qimage2ndarray/__init__.py
-                a = np.clip(aCopy, *self._normalize)
+                a = np.clip(a, *self._normalize)
             img = gray2qimage(a, self._normalize)
             ret = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             tImg = 1000.0*(time.time()-tImg)
@@ -412,7 +417,6 @@ class ColortableImageRequest( object ):
                 raise NotImplementedError()
                 #FIXME: maybe this should be done in a better way using an operator before the colortable request which properly handles 
                 #this problem 
-                import warnings
                 warnings.warn("Data for colortable layers cannot be float, casting",RuntimeWarning)
                 a=a.astype(np.int32)
             vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
