@@ -186,6 +186,8 @@ class GrayscaleImageRequest( object ):
                 n = np.asarray(self._normalize, dtype=a.dtype)
             tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
+            if not a.flags['C_CONTIGUOUS']:
+                a = a.copy()
             vigra.colors.gray2qimage_ARGB32Premultiplied(a, byte_view(img), n)
             tImg = 1000.0*(time.time()-tImg)
         else:
