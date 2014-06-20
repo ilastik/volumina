@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from log_exception import log_exception
 from getMainWindow import getMainWindow
 from singleton import Singleton
 from preferencesManager import PreferencesManager

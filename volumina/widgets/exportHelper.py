@@ -30,6 +30,10 @@ from PyQt4.QtGui import QMessageBox
 from dataExportOptionsDlg import DataExportOptionsDlg
 from multiStepProgressDialog import MultiStepProgressDialog
 
+import logging
+logger = logging.getLogger(__name__)
+from volumina.utility import log_exception
+
 ###
 ### lazyflow
 ###
@@ -72,7 +76,7 @@ def get_settings_and_export_layer(layer, parent_widget=None):
     # Create an operator to do the work
     from lazyflow.operators.ioOperators import OpFormattedDataExport
     opExport = OpFormattedDataExport( parent=opStackChannels.parent )
-    opExport.OutputFilenameFormat.setValue( layer.name )
+    opExport.OutputFilenameFormat.setValue( str(layer.name) )
     opExport.Input.connect( opStackChannels.Output )
     opExport.TransactionSlot.setValue(True)
     
@@ -123,8 +127,7 @@ class ExportHelper(QObject):
             self._forwardingSignal.emit( progressDlg.finishStep )
     
         def _onFail( exc, exc_info ):
-            import traceback
-            traceback.print_tb(exc_info[2])
+            log_exception( logger, "Failed to export layer.", exc_info=exc_info )
             msg = "Failed to export layer due to the following error:\n{}".format( exc )
             self._forwardingSignal.emit( partial(QMessageBox.critical, self.parent(), "Export Failed", msg) )
             self._forwardingSignal.emit( progressDlg.setFailed )
