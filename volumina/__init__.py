@@ -19,6 +19,25 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+import sys
+import logging
+volumina_logger = logging.getLogger("volumina")
+
+def has_handler(logger):
+    if len(logger.handlers) > 0:
+        return True
+    if logger.parent is None:
+        return False
+    return has_handler(logger.parent)
+
+# If the system already has a logging setup, then don't add our own handlers to it.
+if not has_handler(volumina_logger):
+    volumina_logging_handler = logging.StreamHandler(sys.stdout)
+    volumina_logger.addHandler( volumina_logging_handler )
+    
+    volumina_logger.setLevel(logging.DEBUG)
+    volumina_logging_handler.setLevel(logging.DEBUG)
+
 NO3D = False
 import api
 
