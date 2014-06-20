@@ -22,12 +22,14 @@
 import colorsys
 import numpy
 
-from PyQt4.QtCore import QObject, pyqtSignal
+from PyQt4.QtCore import QObject, pyqtSignal, QString
 from PyQt4.QtGui import QColor
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource 
+
+from volumina.utility import decode_to_qstring, encode_from_qstring
 
 from functools import partial
 
@@ -41,7 +43,7 @@ class Layer( QObject ):
     datasources -- list of ArraySourceABC; read-only
     visible -- boolean
     opacity -- float; range 0.0 - 1.0
-    name -- string
+    name -- QString
     numberOfChannels -- int
     layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
     '''
@@ -52,7 +54,7 @@ class Layer( QObject ):
 
     visibleChanged = pyqtSignal(bool) 
     opacityChanged = pyqtSignal(float) 
-    nameChanged = pyqtSignal(object)
+    nameChanged = pyqtSignal(object)  # sends a python str object, not a QString!
     channelChanged = pyqtSignal(int)
     numberOfChannelsChanged = pyqtSignal(int)
 
@@ -88,9 +90,14 @@ class Layer( QObject ):
         return self._name
     @name.setter
     def name( self, n ):
+        if isinstance(n, str):
+            n = decode_to_qstring(n)
+        assert isinstance(n, QString)
+        pystr = encode_from_qstring(n)
+
         if self._name != n:
             self._name = n
-            self.nameChanged.emit(n)
+            self.nameChanged.emit(pystr)
 
     @property
     def numberOfChannels( self ):
@@ -166,7 +173,7 @@ class Layer( QObject ):
 
     def __init__( self, datasources, direct=False ):
         super(Layer, self).__init__()
-        self._name = "Unnamed Layer"
+        self._name = QString("Unnamed Layer")
         self._visible = True
         self._opacity = 1.0
         self._datasources = datasources
