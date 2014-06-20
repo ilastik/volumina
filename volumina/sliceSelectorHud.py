@@ -280,6 +280,7 @@ class ImageView2DHud(QWidget):
         leftHudFrame = QFrame()
         leftHudFrame.setLayout( leftHudLayout )
         setupFrameStyle( leftHudFrame )
+        self.leftHudFrame = leftHudFrame
 
         self.layout.addWidget( leftHudFrame )
 
@@ -312,6 +313,11 @@ class ImageView2DHud(QWidget):
         self.sliceSelector = self.buttons['slice']
         self.dockButton = self.buttons['undock']
         self.maxButton = self.buttons['maximize']
+
+    def set3DButtonsVisible(self, visible):
+        self.leftHudFrame.setVisible( visible )
+        self.dockButton.setVisible( visible )
+        self.maxButton.setVisible( visible )
 
     def setMaximum(self, v):
         self.sliceSelector.setNewValue(v)

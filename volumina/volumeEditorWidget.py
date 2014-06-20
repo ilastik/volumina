@@ -179,13 +179,18 @@ class VolumeEditorWidget(QWidget):
         self.editor.posModel.cursorPositionChanged.connect(self._updateInfoLabels)
 
         def onShapeChanged():
+            # By default, 3D HUD buttons are visible,
+            #  but we'll turn them off below if the dataset is 2D.
+            for axis in [0,1,2]:
+                self.editor.imageViews[axis].hud.set3DButtonsVisible(True)
+
             singletonDims = filter( lambda (i,dim): dim == 1, enumerate(self.editor.posModel.shape5D[1:4]) )
             if len(singletonDims) == 1:
                 # Maximize the slicing view for this axis
                 axis = singletonDims[0][0]
                 self.quadview.ensureMaximized(axis)
                 self.hudsShown[axis] = self.editor.imageViews[axis].hudVisible()
-                self.editor.imageViews[axis].setHudVisible(False)
+                self.editor.imageViews[axis].hud.set3DButtonsVisible(False)
                 self.quadViewStatusBar.showXYCoordinates()
                 
                 self.quadview.statusBar.positionCheckBox.setVisible(False)
