@@ -35,8 +35,8 @@ if not has_handler(volumina_logger):
     volumina_logging_handler = logging.StreamHandler(sys.stdout)
     volumina_logger.addHandler( volumina_logging_handler )
     
-    volumina_logger.setLevel(logging.DEBUG)
-    volumina_logging_handler.setLevel(logging.DEBUG)
+    volumina_logger.setLevel(logging.INFO)
+    volumina_logging_handler.setLevel(logging.INFO)
 
 NO3D = False
 import api
