@@ -65,6 +65,7 @@ class StackExportFileOptionsWidget(QWidget):
         self._imageSlot = imageSlot
         self.selectDirectoryButton.clicked.connect( self._browseForFilepath )
         imageSlot.notifyMetaChanged( self._updateDescription )
+        self._updateDescription()
 
     def showEvent(self, event):
         super(StackExportFileOptionsWidget, self).showEvent(event)
