@@ -117,18 +117,20 @@ class SubregionRoiWidget( QTableWidget ):
             default_start = tagged_start[axis_key] or 0
             default_stop = tagged_stop[axis_key] or extent
 
-            startBox = RoiSpinBox(self, 0, extent-1, default_start )
-            stopBox = RoiSpinBox(self, 1, extent, default_stop )            
+            startBox = RoiSpinBox(self, 0, extent-1, 0 )
+            stopBox = RoiSpinBox(self, 1, extent, extent )
 
             startBox.setPartner( stopBox )
             stopBox.setPartner( startBox )
             
-            startBox.setValue( default_start )
-            stopBox.setValue( default_stop )
-
             startBox.setEnabled( tagged_start[axis_key] is not None )
             stopBox.setEnabled( tagged_stop[axis_key] is not None )
- 
+            
+            if startBox.isEnabled():
+                startBox.setValue( default_start )
+            if stopBox.isEnabled():
+                stopBox.setValue( default_stop )
+
             startBox.valueChanged.connect( self._updateRoi )
             stopBox.valueChanged.connect( self._updateRoi )
             
