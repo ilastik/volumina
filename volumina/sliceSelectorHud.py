@@ -65,6 +65,7 @@ class LabelButtons(QLabel):
 
     # values: (icon path, tooltip)
     icons = {
+        'export' : (':icons/icons/export.png', "Export"),
         'undock' : (':icons/icons/undock.png', "Undock"),
         'dock' : (':icons/icons/dock.png', "Dock"),
         'zoom-to-fit' : (':icons/icons/spin-up.png', "Zoom to fit"),
@@ -224,6 +225,7 @@ class ImageView2DHud(QWidget):
     rotLeftButtonClicked = pyqtSignal()
     rotRightButtonClicked = pyqtSignal()
     swapAxesButtonClicked = pyqtSignal()
+    exportButtonClicked = pyqtSignal()
     def __init__(self, parent ):
         QWidget.__init__(self, parent)
 
@@ -303,7 +305,8 @@ class ImageView2DHud(QWidget):
         self.layout.addWidget(self.zoomLevelIndicator)
         self.layout.addSpacing(4)
         
-        for name, handler in [('zoom-to-fit', self.on_zoomToFit),
+        for name, handler in [('export', self.on_exportButton),
+                              ('zoom-to-fit', self.on_zoomToFit),
                               ('reset-zoom', self.on_resetZoom),
                               ('undock', self.on_dockButton),
                               ('maximize', self.on_maxButton)]:
@@ -327,6 +330,9 @@ class ImageView2DHud(QWidget):
     
     def on_zoomToFit(self):
         self.zoomToFitButtonClicked.emit()
+    
+    def on_exportButton(self):
+        self.exportButtonClicked.emit()
     
     def on_resetZoom(self):
         self.resetZoomButtonClicked.emit()

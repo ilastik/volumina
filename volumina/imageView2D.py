@@ -19,14 +19,16 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRect
-from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication
+from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRect, QRectF
+from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
 
 import numpy
+import os
 
 from crossHairCursor import CrossHairCursor
 from sliceIntersectionMarker import SliceIntersectionMarker
 from croppingMarkers import CroppingMarkers
+from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 
 #*******************************************************************************
 # I m a g e V i e w 2 D                                                        *
@@ -78,6 +80,7 @@ class ImageView2D(QGraphicsView):
         hud.rotLeftButtonClicked.connect(scene._onRotateLeft)
         hud.rotRightButtonClicked.connect(scene._onRotateRight)
         hud.swapAxesButtonClicked.connect(scene._onSwapAxes)
+        hud.exportButtonClicked.connect(self.exportImages)
 
         scene.axesChanged.connect(hud.setAxes)
 
@@ -256,7 +259,81 @@ class ImageView2D(QGraphicsView):
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         width, height = self.size().width() / self.sceneRect().width(), self.height() / self.sceneRect().height()
         self.setZoomFactor(min(width, height))
+    
+    def exportImages(self):
+        settingsDlg = WysiwygExportOptionsDlg(self)
+
+        if (settingsDlg.exec_() == WysiwygExportOptionsDlg.Accepted):
+            start, stop = settingsDlg.getRoi()
+            iter_axes, iter_coords = settingsDlg.getIterAxes()
+            slice_axes = settingsDlg._sliceAxes
+            slice_coords = settingsDlg._sliceCoords
+        else:
+            return
         
+        posModel = self.scene()._posModel
+        shape5D = posModel.shape5D
+        
+        def setPos5D(pos5d):
+            posModel.time = pos5d[0]
+            posModel.slicingPos = pos5d[1:4]
+            posModel.channel = pos5d[4]
+        
+        def saveImg(pos, rect, scene, img, painter, folder, fname):
+            img.fill(0)
+            setPos5D(pos)
+            scene.joinRenderingAllTiles(viewport_only=False, rect=rect)
+            scene.render(painter, source=rect)
+            print fname
+            img.save(os.path.join(folder,fname), "PNG")
+        
+        def filename(base, extension, axes, coords):
+            return (base + ''.join(['_%s=%d' % (axes[i], coords[i]) 
+                                    for i in range(len(coords))])
+                     + "." + extension)
+        
+        folder = "stack/"
+        basename = "slice"
+        ext = "png"
+        
+        # width and height of images
+        w = stop[slice_axes[0]] - start[slice_axes[0]]
+        h = stop[slice_axes[1]] - start[slice_axes[1]]
+        
+        # scene rectangle to render
+        rect = QRectF(start[slice_axes[0]], start[slice_axes[1]], w, h)
+        
+        # plain image
+        img = QImage(w, h, QImage.Format_RGB16)
+        painter = QPainter(img)
+        
+        # remember current position to correctly place view afterwards
+        currentPos5D = posModel.slicingPos5D
+        pos = list(start)
+        
+        if len(iter_axes) < 0:
+            # single image
+            fname = filename(basename, ext, iter_coords, [])
+            saveImg(start, rect, self.scene(), img, painter, folder, fname)
+        else:
+            # iterate over first coordinate (e.g. t)
+            for i in range(start[iter_axes[0]], stop[iter_axes[0]]):
+                pos[iter_axes[0]] = i
+                
+                # iterate over second coordinate (e.g. z) if any
+                if len(iter_axes) > 1:
+                    for j in range(start[iter_axes[1]], stop[iter_axes[1]]):
+                        pos[iter_axes[1]] = j
+                        fname = filename(basename, ext, iter_coords, [i,j,])
+                        saveImg(pos, rect, self.scene(), img, painter, folder, fname)
+                else:
+                    fname = filename(basename, ext, iter_coords, [i,])
+                    saveImg(pos, rect, self.scene(), img, painter, folder, fname)
+                    
+            painter.end()
+            
+            # reset viewer position
+            setPos5D(currentPos5D)
 
     def centerImage(self):
         self.centerOn(self.sceneRect().width()/2 + self.sceneRect().x(), self.sceneRect().height()/2 + self.sceneRect().y())
@@ -309,7 +386,7 @@ if __name__ == '__main__':
         cb = numpy.zeros(shape)
         for i in range(shape[0]/squareSize):
             for j in range(shape[1]/squareSize):
-                a = i*squareSiz#e
+                a = i*squareSize
                 b = min((i+1)*squareSize, shape[0])
                 c = j*squareSize
                 d = min((j+1)*squareSize, shape[1])
