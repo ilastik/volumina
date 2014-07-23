@@ -265,36 +265,34 @@ class ImageView2D(QGraphicsView):
 
         if (settingsDlg.exec_() == WysiwygExportOptionsDlg.Accepted):
             start, stop = settingsDlg.getRoi()
-            iter_axes, iter_coords = settingsDlg.getIterAxes()
-            slice_axes = settingsDlg._sliceAxes
-            slice_coords = settingsDlg._sliceCoords
+            iter_axes, iter_coords, _ = settingsDlg.getIterAxes()
+            slice_axes = settingsDlg.sliceAxes
+            folder, pattern, fileExt = settingsDlg.getExportInfo()
         else:
+            # user didn't click OK button -> do nothing
             return
         
         posModel = self.scene()._posModel
         shape5D = posModel.shape5D
         
+        # convenience functions
         def setPos5D(pos5d):
             posModel.time = pos5d[0]
             posModel.slicingPos = pos5d[1:4]
             posModel.channel = pos5d[4]
         
-        def saveImg(pos, rect, scene, img, painter, folder, fname):
+        def saveImg(pos, rect, scene, img, painter, fname):
             img.fill(0)
             setPos5D(pos)
             scene.joinRenderingAllTiles(viewport_only=False, rect=rect)
             scene.render(painter, source=rect)
             print fname
-            img.save(os.path.join(folder,fname), "PNG")
+            img.save(fname, "PNG")
         
-        def filename(base, extension, axes, coords):
-            return (base + ''.join(['_%s=%d' % (axes[i], coords[i]) 
-                                    for i in range(len(coords))])
-                     + "." + extension)
-        
-        folder = "stack/"
-        basename = "slice"
-        ext = "png"
+        def filename(folder, pattern, extension, iters, coords):
+            for i, c in enumerate(iters):
+                pattern = pattern.replace("{%s}" % c, coords[i])            
+            return os.path.join(folder, pattern+"."+extension)
         
         # width and height of images
         w = stop[slice_axes[0]] - start[slice_axes[0]]
@@ -313,8 +311,8 @@ class ImageView2D(QGraphicsView):
         
         if len(iter_axes) < 0:
             # single image
-            fname = filename(basename, ext, iter_coords, [])
-            saveImg(start, rect, self.scene(), img, painter, folder, fname)
+            fname = filename(folder, pattern, fileExt, iter_coords, [])
+            saveImg(start, rect, self.scene(), img, painter, fname)
         else:
             # iterate over first coordinate (e.g. t)
             for i in range(start[iter_axes[0]], stop[iter_axes[0]]):
@@ -324,11 +322,11 @@ class ImageView2D(QGraphicsView):
                 if len(iter_axes) > 1:
                     for j in range(start[iter_axes[1]], stop[iter_axes[1]]):
                         pos[iter_axes[1]] = j
-                        fname = filename(basename, ext, iter_coords, [i,j,])
-                        saveImg(pos, rect, self.scene(), img, painter, folder, fname)
+                        fname = filename(folder, pattern, fileExt, iter_coords, [i,j,])
+                        saveImg(pos, rect, self.scene(), img, painter, fname)
                 else:
-                    fname = filename(basename, ext, iter_coords, [i,])
-                    saveImg(pos, rect, self.scene(), img, painter, folder, fname)
+                    fname = filename(folder, pattern, fileExt, iter_coords, [i,])
+                    saveImg(pos, rect, self.scene(), img, painter, fname)
                     
             painter.end()
             
