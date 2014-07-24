@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRect, QRectF
+from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
 from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
 
 import numpy
@@ -264,74 +264,13 @@ class ImageView2D(QGraphicsView):
         settingsDlg = WysiwygExportOptionsDlg(self)
 
         if (settingsDlg.exec_() == WysiwygExportOptionsDlg.Accepted):
-            start, stop = settingsDlg.getRoi()
-            iter_axes, iter_coords, _ = settingsDlg.getIterAxes()
-            slice_axes = settingsDlg.sliceAxes
-            folder, pattern, fileExt = settingsDlg.getExportInfo()
+            from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportHelper
+            exportHelper = WysiwygExportHelper(self, settingsDlg)
+            exportHelper.prepareExport()
+            exportHelper.run()
         else:
             # user didn't click OK button -> do nothing
             return
-        
-        posModel = self.scene()._posModel
-        shape5D = posModel.shape5D
-        
-        # convenience functions
-        def setPos5D(pos5d):
-            posModel.time = pos5d[0]
-            posModel.slicingPos = pos5d[1:4]
-            posModel.channel = pos5d[4]
-        
-        def saveImg(pos, rect, scene, img, painter, fname):
-            img.fill(0)
-            setPos5D(pos)
-            scene.joinRenderingAllTiles(viewport_only=False, rect=rect)
-            scene.render(painter, source=rect)
-            print fname
-            img.save(fname, "PNG")
-        
-        def filename(folder, pattern, extension, iters, coords):
-            for i, c in enumerate(iters):
-                pattern = pattern.replace("{%s}" % c, coords[i])            
-            return os.path.join(folder, pattern+"."+extension)
-        
-        # width and height of images
-        w = stop[slice_axes[0]] - start[slice_axes[0]]
-        h = stop[slice_axes[1]] - start[slice_axes[1]]
-        
-        # scene rectangle to render
-        rect = QRectF(start[slice_axes[0]], start[slice_axes[1]], w, h)
-        
-        # plain image
-        img = QImage(w, h, QImage.Format_RGB16)
-        painter = QPainter(img)
-        
-        # remember current position to correctly place view afterwards
-        currentPos5D = posModel.slicingPos5D
-        pos = list(start)
-        
-        if len(iter_axes) < 0:
-            # single image
-            fname = filename(folder, pattern, fileExt, iter_coords, [])
-            saveImg(start, rect, self.scene(), img, painter, fname)
-        else:
-            # iterate over first coordinate (e.g. t)
-            for i in range(start[iter_axes[0]], stop[iter_axes[0]]):
-                pos[iter_axes[0]] = i
-                
-                # iterate over second coordinate (e.g. z) if any
-                if len(iter_axes) > 1:
-                    for j in range(start[iter_axes[1]], stop[iter_axes[1]]):
-                        pos[iter_axes[1]] = j
-                        fname = filename(folder, pattern, fileExt, iter_coords, [i,j,])
-                        saveImg(pos, rect, self.scene(), img, painter, fname)
-                else:
-                    fname = filename(folder, pattern, fileExt, iter_coords, [i,])
-                    saveImg(pos, rect, self.scene(), img, painter, fname)
-                    
-            painter.end()
-            
-            # reset viewer position
-            setPos5D(currentPos5D)
 
     def centerImage(self):
         self.centerOn(self.sceneRect().width()/2 + self.sceneRect().x(), self.sceneRect().height()/2 + self.sceneRect().y())
