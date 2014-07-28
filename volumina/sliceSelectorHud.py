@@ -408,7 +408,7 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     spinbox.setToolTip("{0} Spin Box".format(name))
     spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
     spinbox.setMaximumHeight(20)
-    spinbox.setMaximum(9999)
+    spinbox.setMaximum(999999)
     font = spinbox.font()
     font.setPixelSize(14)
     spinbox.setFont(font)
