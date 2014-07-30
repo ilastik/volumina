@@ -79,7 +79,7 @@ class StackExportFileOptionsWidget(QWidget):
 
             # Auto-insert the {slice_index} field
             if re.search("{slice_index(:.*)?}", filename_pattern) is None:
-                filename_pattern += '{slice_index}'
+                filename_pattern += '_{slice_index}'
 
             self.directoryEdit.setText( decode_to_qstring(directory) )
             self.filePatternEdit.setText( decode_to_qstring(filename_pattern + '.' + self._extension) )
