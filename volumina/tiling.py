@@ -102,7 +102,8 @@ class RenderTask(_WorkItem):
         Regular render tasks have higher priority than prefetch tasks. A task
         with higher timestamp has higher priority.
         """
-        assert isinstance(self, RenderTask) and isinstance(other, RenderTask)
+        assert isinstance(self, RenderTask) and isinstance(other, RenderTask), \
+            "Can't compare {} with {}".format( type(self), type(other) )
         res = cmp(self.prefetch, other.prefetch)
         if res != 0:
             return res
