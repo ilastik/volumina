@@ -113,6 +113,7 @@ class ImageScene2D(QGraphicsScene):
     an overlay stack, together with a 2D cursor.
     """
     axesChanged = pyqtSignal(int, bool)
+    dirtyChanged = pyqtSignal()
 
     @property
     def stackedImageSources(self):
@@ -301,6 +302,7 @@ class ImageScene2D(QGraphicsScene):
         del self._dirtyIndicator
         self._dirtyIndicator = DirtyIndicator(self._tiling)
         self.addItem(self._dirtyIndicator)
+        self._dirtyIndicator.setVisible(False)
 
 
     def __init__(self, posModel, along, preemptive_fetch_number=5,
@@ -324,7 +326,10 @@ class ImageScene2D(QGraphicsScene):
 
         self._stackedImageSources = StackedImageSources(LayerStackModel())
         self._showTileOutlines = False
-        self._showTileProgress = True
+
+        # FIXME: We don't show the red 'progress pies' because they look terrible.  
+        #        If we could fix their timing, maybe it would be worth it.
+        self._showTileProgress = False
 
         self._tileProvider = None
         self._dirtyIndicator = None
@@ -343,6 +348,7 @@ class ImageScene2D(QGraphicsScene):
         self._posModel.slicingPositionChanged.connect(self._onSlicingPositionChanged)
         
         self._allTilesCompleteEvent = threading.Event()
+        self.dirty = False
 
     def _onSizeChanged(self):
         self._brushingLayer  = TiledImageLayer(self._tiling)
@@ -400,8 +406,14 @@ class ImageScene2D(QGraphicsScene):
                 self._dirtyIndicator.setTileProgress(tile.id, tile.progress)
 
         if allComplete:
+            if self.dirty:
+                self.dirty = False
+                self.dirtyChanged.emit()
             self._allTilesCompleteEvent.set()
         else:
+            if not self.dirty:
+                self.dirty = True
+                self.dirtyChanged.emit()
             self._allTilesCompleteEvent.clear()
 
         # preemptive fetching

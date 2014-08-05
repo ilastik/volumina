@@ -25,7 +25,7 @@ from functools import partial
 from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QFrame, QTransform
+                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy
 
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
@@ -463,7 +463,18 @@ class QuadStatusBar(QHBoxLayout):
         self.addWidget(self.zLabel)
         self.addWidget(self.zSpinBox)
 
+        self.addSpacing(10)
+
+        self.busyIndicator = QProgressBar()
+        self.busyIndicator.setMaximum(0)
+        self.busyIndicator.setMinimum(0)
+        self.busyIndicator.setVisible(False)
+        self.busyIndicator.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.addWidget( self.busyIndicator )
+        self.setStretchFactor(self.busyIndicator, 1)
+
         self.addStretch()
+        self.addSpacing(10)
 
         self.positionCheckBox = QCheckBox()
         self.positionCheckBox.setChecked(True)

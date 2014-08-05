@@ -29,7 +29,7 @@ import copy
 import numpy
 
 #PyQt
-from PyQt4.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent
+from PyQt4.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent, QTimer
 from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, QHBoxLayout, \
                         QColor, QSizePolicy, QAction, QIcon, QSpinBox, QMenu, QDialog, QLabel, QLineEdit, QPushButton, QMainWindow
 
@@ -143,7 +143,37 @@ class VolumeEditorWidget(QWidget):
             QColor("white"))
         self.quadview.addStatusBar(self.quadViewStatusBar)
         self.layout.addWidget(self.quadview)
+        
+        # Here we subscribe to the dirtyChanged() signal from all slicing views, 
+        #  and show the status bar "busy indicator" if any view is dirty.
+        # Caveat: To avoid a flickering indicator for quick updates, we use a 
+        #         timer that prevents the indicator from showing for a bit. 
+        def updateDirtyStatus(fromTimer=False):
+            # We only care about views that are both VISIBLE and DIRTY.
+            dirties = map( lambda v: v.scene().dirty, self.editor.imageViews)
+            visibilities = map( lambda v: v.isVisible(), self.editor.imageViews)
+            visible_dirtiness = numpy.logical_and(visibilities, dirties)
+            
+            if not any(visible_dirtiness):
+                # Not dirty: Hide immediately
+                self.quadViewStatusBar.busyIndicator.setVisible(False)
+            else:
+                if fromTimer:
+                    # The timer finished and we're still dirty:
+                    # Time to show the busy indicator.
+                    self.quadViewStatusBar.busyIndicator.setVisible(True)
+                elif not self.quadViewStatusBar.busyIndicator.isVisible() and not self._dirtyTimer.isActive():
+                    # We're dirty, but delay for a bit before showing the busy indicator.
+                    self._dirtyTimer.start(750)
 
+        self._dirtyTimer = QTimer()
+        self._dirtyTimer.setSingleShot(True)
+        self._dirtyTimer.timeout.connect( partial(updateDirtyStatus, fromTimer=True) )
+        for i, view in enumerate(self.editor.imageViews):
+            view.scene().dirtyChanged.connect( updateDirtyStatus )
+
+        # If the user changes the position in the quad-view status bar (at the bottom),
+        # Update the position of the whole editor.
         def setPositionFromQuadBar( x,y,z ):
             self.editor.posModel.slicingPos = (x,y,z)
             self.editor.posModel.cursorPos = (x,y,z)
