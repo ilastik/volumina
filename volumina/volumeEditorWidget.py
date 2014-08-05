@@ -144,6 +144,11 @@ class VolumeEditorWidget(QWidget):
         self.quadview.addStatusBar(self.quadViewStatusBar)
         self.layout.addWidget(self.quadview)
 
+        def setPositionFromQuadBar( x,y,z ):
+            self.editor.posModel.slicingPos = (x,y,z)
+            self.editor.posModel.cursorPos = (x,y,z)
+        self.quadViewStatusBar.positionChanged.connect( setPositionFromQuadBar )
+
         ## Why do we have to prevent TimerEvents reaching the SpinBoxes?
         #
         # Sometimes clicking a SpinBox once caused the value to increase by
@@ -200,6 +205,7 @@ class VolumeEditorWidget(QWidget):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
                 self.quadview.statusBar.positionCheckBox.setVisible(True)
         
+            self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
             self._setupVolumeExtent()
 
         self.editor.shapeChanged.connect(onShapeChanged)

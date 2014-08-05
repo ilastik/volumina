@@ -19,10 +19,12 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from functools import partial
+
 #PyQt
 from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
-                        QFont, QPainterPath, QBrush, QSpinBox, QAbstractSpinBox, \
+                        QFont, QPainterPath, QBrush, QAbstractSpinBox, \
                         QCheckBox, QWidget, QFrame, QTransform
 
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
@@ -177,7 +179,7 @@ class SpinBoxImageView(QHBoxLayout):
         self.valueChanged.emit(value)
 
     def setValue(self, value):
-        self.spinBox.setValue(value)
+        self.spinBox.setValueWithoutSignal(value)
 
     def setNewValue(self, value):
         self.spinBox.setMaximum(value)
@@ -404,13 +406,13 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     label.setPixmap(pixmap)
 
     spinbox = DelayedSpinBox(750)
-    spinbox.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-    spinbox.setEnabled(False)
+    #spinbox.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+    #spinbox.setEnabled(True)
     spinbox.setAlignment(Qt.AlignCenter)
     spinbox.setToolTip("{0} Spin Box".format(name))
     spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
     spinbox.setMaximumHeight(20)
-    spinbox.setMaximum(999999)
+    #spinbox.setMaximum(999999)
     font = spinbox.font()
     font.setPixelSize(14)
     spinbox.setFont(font)
@@ -421,6 +423,8 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
 
 
 class QuadStatusBar(QHBoxLayout):
+    positionChanged = pyqtSignal(int, int, int) # x,y,z
+    
     def __init__(self, parent=None ):
         QHBoxLayout.__init__(self, parent)
         self.setContentsMargins(0,4,0,0)
@@ -447,6 +451,10 @@ class QuadStatusBar(QHBoxLayout):
         self.zLabel, self.zSpinBox = _get_pos_widget('Z',
                                                      zbackgroundColor,
                                                      zforegroundColor)
+        
+        self.xSpinBox.delayedValueChanged.connect( partial(self._handlePositionBoxValueChanged, 'x') )
+        self.ySpinBox.delayedValueChanged.connect( partial(self._handlePositionBoxValueChanged, 'y') )
+        self.zSpinBox.delayedValueChanged.connect( partial(self._handlePositionBoxValueChanged, 'z') )
 
         self.addWidget(self.xLabel)
         self.addWidget(self.xSpinBox)
@@ -471,10 +479,22 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSpinBox = DelayedSpinBox(750)
         self.addWidget(self.timeSpinBox)
 
+    def _handlePositionBoxValueChanged(self, axis, value):
+        new_position = [self.xSpinBox.value(), self.ySpinBox.value(), self.zSpinBox.value()]
+        changed_axis = ord(axis) - ord('x')
+        new_position[changed_axis] = value
+        self.positionChanged.emit(*new_position)
+
+    def updateShape5D(self, shape5D):
+        self.timeSpinBox.setMaximum(shape5D[0]-1)
+        self.xSpinBox.setMaximum(shape5D[1]-1)
+        self.ySpinBox.setMaximum(shape5D[2]-1)
+        self.zSpinBox.setMaximum(shape5D[3]-1)
+
     def setMouseCoords(self, x, y, z):
-        self.xSpinBox.setValue(x)
-        self.ySpinBox.setValue(y)
-        self.zSpinBox.setValue(z)
+        self.xSpinBox.setValueWithoutSignal(x)
+        self.ySpinBox.setValueWithoutSignal(y)
+        self.zSpinBox.setValueWithoutSignal(z)
 
 
 if __name__ == "__main__":

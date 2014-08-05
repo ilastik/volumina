@@ -11,6 +11,7 @@ class DelayedSpinBox(QSpinBox):
     def __init__(self, delay_ms, *args, **kwargs):
         super(DelayedSpinBox, self).__init__(*args, **kwargs)
         self.delay_ms = delay_ms
+        self._blocksignal = False
 
         self._timer = QTimer(self)
         self._timer.setInterval(self.delay_ms)
@@ -20,11 +21,17 @@ class DelayedSpinBox(QSpinBox):
         self.valueChanged.connect( self._handleValueChanged )
     
     def _handleValueChanged(self, value):
-        # Reset the timer.
-        self._timer.start()
+        if not self._blocksignal:
+            # Reset the timer.
+            self._timer.start()
 
     def _handleTimeout(self):
         self.delayedValueChanged.emit( self.value() )
+    
+    def setValueWithoutSignal(self, value):
+        self._blocksignal = True
+        self.setValue(value)
+        self._blocksignal = False
 
 if __name__ == "__main__":
     from PyQt4.QtGui import QApplication, QWidget, QLabel, QVBoxLayout
