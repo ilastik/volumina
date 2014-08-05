@@ -25,6 +25,8 @@ from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QV
                         QFont, QPainterPath, QBrush, QSpinBox, QAbstractSpinBox, \
                         QCheckBox, QWidget, QFrame, QTransform
 
+from volumina.widgets.delayedSpinBox import DelayedSpinBox
+
 TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
 
 def _load_icon(filename, backgroundColor, width, height):
@@ -150,8 +152,8 @@ class SpinBoxImageView(QHBoxLayout):
 
         self.addLayout(self.labelLayout)
 
-        self.spinBox = QSpinBox()
-        self.spinBox.valueChanged.connect(self.spinBoxValueChanged)
+        self.spinBox = DelayedSpinBox(750)
+        self.spinBox.delayedValueChanged.connect(self.spinBoxValueChanged)
         self.addWidget(self.spinBox)
         self.spinBox.setToolTip("Spinbox")
         self.spinBox.setButtonSymbols(QAbstractSpinBox.NoButtons)
@@ -401,7 +403,7 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
                            Qt.SmoothTransformation)
     label.setPixmap(pixmap)
 
-    spinbox = QSpinBox()
+    spinbox = DelayedSpinBox(750)
     spinbox.setAttribute(Qt.WA_TransparentForMouseEvents, True)
     spinbox.setEnabled(False)
     spinbox.setAlignment(Qt.AlignCenter)
@@ -466,7 +468,7 @@ class QuadStatusBar(QHBoxLayout):
         self.timeLabel = QLabel("Time:")
         self.addWidget(self.timeLabel)
 
-        self.timeSpinBox = QSpinBox()
+        self.timeSpinBox = DelayedSpinBox(750)
         self.addWidget(self.timeSpinBox)
 
     def setMouseCoords(self, x, y, z):

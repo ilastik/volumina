@@ -167,7 +167,7 @@ class VolumeEditorWidget(QWidget):
             if t == self.editor.posModel.time:
                 return
             self.editor.posModel.time = t
-        self.quadview.statusBar.timeSpinBox.valueChanged.connect(setTime)
+        self.quadview.statusBar.timeSpinBox.delayedValueChanged.connect(setTime)
         def getTime(newT):
             self.quadview.statusBar.timeSpinBox.setValue(newT)
         self.editor.posModel.timeChanged.connect(getTime) 
