@@ -263,9 +263,9 @@ class QuadView(QWidget):
         Keyword arguments:
         axis -- the axis which is represented by the widget (no default)
                 either string or integer 
-                'x' - 2
+                'x' - 0
                 'y' - 1
-                'z' - 0
+                'z' - 2
         """
         
         #TODO: get the mapping information from where it is set! if this is not
