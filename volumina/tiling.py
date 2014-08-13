@@ -73,7 +73,8 @@ class RenderTask(_WorkItem):
         
         try:
             try:
-                layerTimestamp = self.cache.layerTimestamp(self.stack_id,
+                with self.cache:
+                    layerTimestamp = self.cache.layerTimestamp(self.stack_id,
                         self.ims, self.tile_nr)
             except KeyError:
                 pass
@@ -82,7 +83,8 @@ class RenderTask(_WorkItem):
                 img = self.image_req.wait()
                 img = img.transformed(self.transform)
                 try:
-                    self.cache.updateTileIfNecessary(self.stack_id,
+                    with self.cache:
+                        self.cache.updateTileIfNecessary(self.stack_id,
                             self.ims, self.tile_nr, self.timestamp, img)
                 except KeyError:
                     pass
@@ -344,24 +346,6 @@ class _MultiCache( object ):
         del self.caches[uid]
         self.caches[uid] = c
 
-
-from functools import wraps
-def synchronous( tlockname ):
-    """A decorator to place an instance based lock around a method """
-
-    def _synched(func):
-        @wraps(func)
-        def _synchronizer(self,*args, **kwargs):
-            tlock = self.__getattribute__( tlockname)
-            tlock.acquire()
-            try:
-                return func(self, *args, **kwargs)
-            finally:
-                tlock.release()
-        return _synchronizer
-    return _synched
-
-
 class _TilesCache( object ):
     def __init__(self, first_stack_id, sims, maxstacks=None):
         self._lock = threading.Lock()
@@ -375,19 +359,28 @@ class _TilesCache( object ):
         self._layerCacheDirty = _MultiCache(default_factory=lambda: True, **kwargs)
         self._layerCacheTimestamp = _MultiCache(default_factory=float, **kwargs)
 
-    @synchronous('_lock')
+    def __enter__(self):
+        self._lock.acquire()
+        return self
+    
+    def __exit__(self, *args):
+        assert self._lock.locked()
+        self._lock.release()
+
     def __contains__( self, stack_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return stack_id in self._tileCache.caches
 
-    @synchronous('_lock')
     def __len__( self ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return len(self._tileCache.caches)
 
-    @synchronous('_lock')
     def tile( self, stack_id, tile_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._tileCache.caches[stack_id][tile_id]
-    @synchronous('_lock')
+
     def setTile( self, stack_id, tile_id, img, stack_visible, stack_occluded ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         if len(stack_visible) > 0:
             visible = numpy.asarray(stack_visible)
             occluded = numpy.asarray(stack_occluded)
@@ -404,61 +397,73 @@ class _TilesCache( object ):
             progress = 1.0
         self._tileCache.caches[stack_id][tile_id] = (img, progress)
 
-    @synchronous('_lock')
     def tileDirty( self, stack_id, tile_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._tileCacheDirty.caches[stack_id][tile_id]
-    @synchronous('_lock')
+
     def setTileDirty( self, stack_id, tile_id, b):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._tileCacheDirty.caches[stack_id][tile_id] = b
-    @synchronous('_lock')
+
     def setTileDirtyAll( self, tile_id, b):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         for stack_id in self._tileCacheDirty.caches:
             self._tileCacheDirty.caches[stack_id][tile_id] = b
 
-    @synchronous('_lock')
+
     def layer(self, stack_id, layer_id, tile_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCache.caches[stack_id][(layer_id,tile_id)]
-    @synchronous('_lock')
+
     def setLayer( self, stack_id, layer_id, tile_id, img ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
 
-    @synchronous('_lock')
+
     def layerDirty(self, stack_id, layer_id, tile_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)]
-    @synchronous('_lock')
+
     def setLayerDirty( self, stack_id, layer_id, tile_id, b ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
-    @synchronous('_lock')
+
     def setLayerDirtyAll( self, layer_id, tile_id, b ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         for stack_id in self._layerCacheDirty.caches:
             self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
 
-    @synchronous('_lock')
+
     def layerTimestamp(self, stack_id, layer_id, tile_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]
-    @synchronous('_lock')
+
     def setLayerTimestamp( self, stack_id, layer_id, tile_id, time):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = time
 
-    @synchronous('_lock')
+
     def addStack( self, stack_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._tileCache.add( stack_id )
         self._tileCacheDirty.add( stack_id, default_factory=lambda:True )
         self._layerCache.add( stack_id )
         self._layerCacheDirty.add( stack_id, default_factory=lambda:True )
         self._layerCacheTimestamp.add( stack_id, default_factory=float )
 
-    @synchronous('_lock')
+
     def touchStack( self, stack_id ):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._tileCache.touch( stack_id )
         self._tileCacheDirty.touch( stack_id )
         self._layerCache.touch( stack_id )
         self._layerCacheDirty.touch( stack_id )
         self._layerCacheTimestamp.touch( stack_id )
 
-    @synchronous('_lock')
+
     def updateTileIfNecessary( self, stack_id, layer_id, tile_id,
                                req_timestamp, img):
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         if req_timestamp > self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]:
             self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
             self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = False
@@ -536,7 +541,8 @@ class TileProvider( QObject ):
         tile_nos = self.tiling.intersected( rectF )
         stack_id = self._current_stack_id
         for tile_no in tile_nos:
-            qimg, progress = self._cache.tile(stack_id, tile_no)
+            with self._cache:
+                qimg, progress = self._cache.tile(stack_id, tile_no)
             yield TileProvider.Tile(
                 tile_no,
                 qimg,
@@ -580,9 +586,10 @@ class TileProvider( QObject ):
         '''
         if self._cache_size > 1:
             stack_id = (self._current_stack_id[0], enumerate(through))
-            if stack_id not in self._cache:
-                self._cache.addStack(stack_id)
-                self._cache.touchStack( self._current_stack_id )
+            with self._cache:
+                if stack_id not in self._cache:
+                    self._cache.addStack(stack_id)
+                    self._cache.touchStack( self._current_stack_id )
             tile_nos = self.tiling.intersected( rectF )
             for tile_no in tile_nos:
                 self._refreshTile( stack_id, tile_no, prefetch=True )
@@ -595,17 +602,23 @@ class TileProvider( QObject ):
         transform *= self.tiling.data2scene
 
         try:
-            if self._cache.tileDirty( stack_id, tile_no ):
+            with self._cache:
+                tile_dirty = self._cache.tileDirty( stack_id, tile_no )
+            if tile_dirty:
                 if not prefetch:
-                    self._cache.setTileDirty(stack_id, tile_no, False)
+                    with self._cache:
+                        self._cache.setTileDirty(stack_id, tile_no, False)
                     img = self._renderTile( stack_id, tile_no )
-                    self._cache.setTile(stack_id, tile_no, img,
-                                        self._sims.viewVisible(),
-                                        self._sims.viewOccluded())
+                    with self._cache:
+                        self._cache.setTile(stack_id, tile_no, img,
+                                            self._sims.viewVisible(),
+                                            self._sims.viewOccluded())
 
                 # refresh dirty layer tiles
                 for ims in self._sims.viewImageSources():
-                    if self._cache.layerDirty(stack_id, ims, tile_no) \
+                    with self._cache:
+                        layer_dirty = self._cache.layerDirty(stack_id, ims, tile_no)
+                    if layer_dirty \
                        and not self._sims.isOccluded(ims) \
                        and self._sims.isVisible(ims):
 
@@ -627,12 +640,14 @@ class TileProvider( QObject ):
                             ims._layer.timePerTile(stop-start,
                                                    self.tiling.imageRects[tile_no])
 
-                            self._cache.updateTileIfNecessary(
-                                stack_id, ims, tile_no, time.time(), img )
+                            with self._cache:
+                                self._cache.updateTileIfNecessary(
+                                    stack_id, ims, tile_no, time.time(), img )
                             img = self._renderTile( stack_id, tile_no )
-                            self._cache.setTile(stack_id, tile_no,
-                                                img, self._sims.viewVisible(),
-                                                self._sims.viewOccluded() )
+                            with self._cache:
+                                self._cache.setTile(stack_id, tile_no,
+                                                    img, self._sims.viewVisible(),
+                                                    self._sims.viewOccluded() )
                         else:
                             pool = get_render_pool()
                             pool.submit(prefetch, time.time(),
@@ -649,7 +664,8 @@ class TileProvider( QObject ):
             if not visible:
                 continue
 
-            patch = self._cache.layer(stack_id, layerImageSource, tile_nr )
+            with self._cache:
+                patch = self._cache.layer(stack_id, layerImageSource, tile_nr )
             if patch is not None:
                 if qimg is None:
                     qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
@@ -668,22 +684,26 @@ class TileProvider( QObject ):
         if dirtyImgSrc in self._sims.viewImageSources():
             visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) \
                                     and not self._sims.isOccluded( dirtyImgSrc )
-            for tile_no in xrange(len(self.tiling)):
-                # an invalid rect means everything is dirty
-                if not sceneRect.isValid() \
-                   or self.tiling.tileRects[tile_no].intersected( sceneRect ):
-                    for ims in self._sims.viewImageSources():
-                        self._cache.setLayerDirtyAll(ims, tile_no, True)
-                    if visibleAndNotOccluded:
-                        self._cache.setTileDirtyAll(tile_no, True)
+            # Obtain the cache OUTSIDE the loop
+            # this avoids lots of locking/unlocking if we have 1000s of tiles.
+            with self._cache:
+                for tile_no in xrange(len(self.tiling)):
+                    # an invalid rect means everything is dirty
+                    if not sceneRect.isValid() \
+                       or self.tiling.tileRects[tile_no].intersected( sceneRect ):
+                        for ims in self._sims.viewImageSources():
+                            self._cache.setLayerDirtyAll(ims, tile_no, True)
+                        if visibleAndNotOccluded:
+                            self._cache.setTileDirtyAll(tile_no, True)
             if visibleAndNotOccluded:
                 self.sceneRectChanged.emit( QRectF(sceneRect) )
 
     def _onStackIdChanged( self, oldId, newId ):
-        if newId in self._cache:
-            self._cache.touchStack( newId )
-        else:
-            self._cache.addStack( newId )
+        with self._cache:
+            if newId in self._cache:
+                self._cache.touchStack( newId )
+            else:
+                self._cache.addStack( newId )
         self._current_stack_id = newId
         self.sceneRectChanged.emit(QRectF())
 
@@ -692,14 +712,16 @@ class TileProvider( QObject ):
             self._onLayerDirty( ims, QRect() )
 
     def _onVisibleChanged(self, ims, visible):
-        for tile_no in xrange(len(self.tiling)):
-            self._cache.setTileDirtyAll(tile_no, True)
+        with self._cache:
+            for tile_no in xrange(len(self.tiling)):
+                self._cache.setTileDirtyAll(tile_no, True)
         if not self._sims.isOccluded( ims ):
             self.sceneRectChanged.emit(QRectF())
 
     def _onOpacityChanged(self, ims, opacity):
-        for tile_no in xrange(len(self.tiling)):
-            self._cache.setTileDirtyAll(tile_no, True)
+        with self._cache:
+            for tile_no in xrange(len(self.tiling)):
+                self._cache.setTileDirtyAll(tile_no, True)
         if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):
             self.sceneRectChanged.emit(QRectF())
 
@@ -709,6 +731,7 @@ class TileProvider( QObject ):
         self.sceneRectChanged.emit(QRectF())
 
     def _onOrderChanged(self):
-        for tile_no in xrange(len(self.tiling)):
-            self._cache.setTileDirtyAll(tile_no, True)
+        with self._cache:
+            for tile_no in xrange(len(self.tiling)):
+                self._cache.setTileDirtyAll(tile_no, True)
         self.sceneRectChanged.emit(QRectF())
