@@ -35,7 +35,7 @@ import volumina
 def posView2D(pos3d, axis):
     """convert from a 3D position to a 2D position on the slicing plane
        perpendicular to axis"""
-    pos2d = copy.deepcopy(pos3d)
+    pos2d = list(copy.deepcopy(pos3d))
     del pos2d[axis]
     return pos2d
 
