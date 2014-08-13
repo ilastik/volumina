@@ -405,11 +405,20 @@ class _TilesCache( object ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._tileCacheDirty.caches[stack_id][tile_id] = b
 
-    def setTileDirtyAll( self, tile_id, b):
+    def setTileDirtyAllStacks( self, tile_id, b):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         for stack_id in self._tileCacheDirty.caches:
             self._tileCacheDirty.caches[stack_id][tile_id] = b
 
+    def setAllTilesDirty( self ):
+        """
+        Mark all tiles in all stacks as dirty.
+        For speed, this is done by simply deleting all entries 
+        (by default missing entries are considered dirty).
+        """
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
+        for stack_id in self._tileCacheDirty.caches:
+            self._tileCacheDirty.caches[stack_id].clear()
 
     def layer(self, stack_id, layer_id, tile_id ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
@@ -428,11 +437,26 @@ class _TilesCache( object ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
 
-    def setLayerDirtyAll( self, layer_id, tile_id, b ):
+    def setLayerDirtyAllStacks( self, layer_id, tile_id, b ):
+        """
+        Mark the given tile as dirty in all stacks.
+        """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         for stack_id in self._layerCacheDirty.caches:
             self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
 
+    def setLayerDirtyAllTiles(self, layer_id):
+        """
+        For a given layer, marks all tiles in all stacks as dirty.
+        This is achieved by simply deleting all tiles for the given 
+            layer (by default, missing entries are dirty)
+        """ 
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
+        for stack_id in self._layerCacheDirty.caches:
+            dirty_entries = [(l_id, t_id) for (l_id, t_id) in self._layerCacheDirty.caches[stack_id].keys() if l_id == layer_id]
+            #dirty_entries = filter( lambda (l_id, t_id): l_id == layer_id, self._layerCacheDirty.caches[stack_id].keys() )
+            for entry in dirty_entries:
+                del self._layerCacheDirty.caches[stack_id][entry]
 
     def layerTimestamp(self, stack_id, layer_id, tile_id ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
@@ -681,22 +705,32 @@ class TileProvider( QObject ):
     
     def _onLayerDirty(self, dirtyImgSrc, dataRect ):
         sceneRect = self.tiling.data2scene.mapRect(dataRect)
-        if dirtyImgSrc in self._sims.viewImageSources():
-            visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) \
-                                    and not self._sims.isOccluded( dirtyImgSrc )
-            # Obtain the cache OUTSIDE the loop
-            # this avoids lots of locking/unlocking if we have 1000s of tiles.
+        if dirtyImgSrc not in self._sims.viewImageSources():
+            return
+        
+        visibleAndNotOccluded = self._sims.isVisible( dirtyImgSrc ) \
+                                and not self._sims.isOccluded( dirtyImgSrc )
+
+        # Is EVERYTHING dirty?
+        if not sceneRect.isValid() or dataRect == QRect(0,0,*self.tiling.sliceShape):
+            # Everything is dirty.
+            # This is a FAST PATH for quickly setting all tiles dirty.
+            # (It makes a HUGE difference for very large tiling scenes.)
             with self._cache:
-                for tile_no in xrange(len(self.tiling)):
-                    # an invalid rect means everything is dirty
-                    if not sceneRect.isValid() \
-                       or self.tiling.tileRects[tile_no].intersected( sceneRect ):
-                        for ims in self._sims.viewImageSources():
-                            self._cache.setLayerDirtyAll(ims, tile_no, True)
-                        if visibleAndNotOccluded:
-                            self._cache.setTileDirtyAll(tile_no, True)
-            if visibleAndNotOccluded:
-                self.sceneRectChanged.emit( QRectF(sceneRect) )
+                for ims in self._sims.viewImageSources():
+                    self._cache.setLayerDirtyAllTiles(ims)
+                if visibleAndNotOccluded:
+                    self._cache.setAllTilesDirty()
+        else:
+            # Slow path: Mark intersecting tiles as dirty.
+            with self._cache:
+                for tile_no in self.tiling.intersected(sceneRect):
+                    for ims in self._sims.viewImageSources():
+                        self._cache.setLayerDirtyAllStacks(ims, tile_no, True)
+                    if visibleAndNotOccluded:
+                        self._cache.setTileDirtyAllStacks(tile_no, True)
+        if visibleAndNotOccluded:
+            self.sceneRectChanged.emit( QRectF(sceneRect) )
 
     def _onStackIdChanged( self, oldId, newId ):
         with self._cache:
@@ -713,15 +747,13 @@ class TileProvider( QObject ):
 
     def _onVisibleChanged(self, ims, visible):
         with self._cache:
-            for tile_no in xrange(len(self.tiling)):
-                self._cache.setTileDirtyAll(tile_no, True)
+            self._cache.setAllTilesDirty()
         if not self._sims.isOccluded( ims ):
             self.sceneRectChanged.emit(QRectF())
 
     def _onOpacityChanged(self, ims, opacity):
         with self._cache:
-            for tile_no in xrange(len(self.tiling)):
-                self._cache.setTileDirtyAll(tile_no, True)
+            self._cache.setAllTilesDirty()
         if self._sims.isVisible( ims ) and not self._sims.isOccluded( ims ):
             self.sceneRectChanged.emit(QRectF())
 
@@ -732,6 +764,5 @@ class TileProvider( QObject ):
 
     def _onOrderChanged(self):
         with self._cache:
-            for tile_no in xrange(len(self.tiling)):
-                self._cache.setTileDirtyAll(tile_no, True)
+            self._cache.setAllTilesDirty()
         self.sceneRectChanged.emit(QRectF())
