@@ -19,13 +19,24 @@ class DelayedSpinBox(QSpinBox):
         self._timer.timeout.connect( self._handleTimeout )
 
         self.valueChanged.connect( self._handleValueChanged )
+        self._lastvalue = self.value()
     
     def _handleValueChanged(self, value):
         if not self._blocksignal:
-            # Reset the timer.
-            self._timer.start()
+            # If it looks like the user is NOT typing, then update immediately.
+            # (i.e. if the value is changing by just 1 or exactly 10)
+            diff = abs(value - self._lastvalue)
+            if diff == 1 or diff == 10:
+                self._lastvalue = self.value()
+                self.delayedValueChanged.emit( self.value() )
+            else:
+                # The user is typing a new value into the box.
+                # Don't update immediately.
+                # Instead, reset the timer.
+                self._timer.start()
 
     def _handleTimeout(self):
+        self._lastvalue = self.value()
         self.delayedValueChanged.emit( self.value() )
     
     def setValueWithoutSignal(self, value):
@@ -53,5 +64,6 @@ if __name__ == "__main__":
     widget = QWidget()
     widget.setLayout(layout)
     widget.show()
+    widget.raise_()
     
     app.exec_()
