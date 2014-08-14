@@ -177,6 +177,7 @@ class VolumeEditorWidget(QWidget):
         def setPositionFromQuadBar( x,y,z ):
             self.editor.posModel.slicingPos = (x,y,z)
             self.editor.posModel.cursorPos = (x,y,z)
+            self.editor.navCtrl.panSlicingViews( (x,y,z), [0,1,2] )
         self.quadViewStatusBar.positionChanged.connect( setPositionFromQuadBar )
 
         ## Why do we have to prevent TimerEvents reaching the SpinBoxes?
