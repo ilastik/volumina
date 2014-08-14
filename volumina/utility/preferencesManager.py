@@ -85,6 +85,21 @@ class PreferencesManager():
         self._poolingSave = False
         self._save()
 
+    class Setting(object):
+        """
+        Convenience class for getting/setting for a single setting multiple times in a row.
+        """
+        def __init__(self, group, setting):
+            self._group = group
+            self._setting = setting
+        
+        def get(self, default=None):
+            return PreferencesManager().get( self._group, self._setting, default )
+        
+        def set(self, value):
+            PreferencesManager().set( self._group, self._setting, value )
+        
+
 if __name__ == "__main__":
     prefsMgr = PreferencesManager()
     prefsMgr2 = PreferencesManager()
