@@ -449,7 +449,7 @@ class NavigationControler(QObject):
         if not self._positionValid(newPos):
             return
 
-        cursorPos = copy.copy(self._model.cursorPos)
+        cursorPos = list(self._model.cursorPos)
         cursorPos[axis] = value
         self._model.cursorPos  = cursorPos
 
