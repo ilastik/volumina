@@ -101,6 +101,13 @@ class BrushingInterpreter( QObject ):
 
     def eventFilter( self, watched, event ):
         etype = event.type()
+
+        # Before we steal this event from the scene, check that it is allowing brush strokes 
+        allow_brushing = True
+        for view in self._navCtrl._views:
+            allow_brushing &= view.scene().allow_brushing
+        if not allow_brushing:
+            return self._navIntr.eventFilter( watched, event )
         
         if etype == QEvent.MouseButtonDblClick and self._doubleClickTimer is not None:
             # On doubleclick, cancel release handler that normally draws the stroke.

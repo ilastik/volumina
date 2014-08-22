@@ -318,6 +318,10 @@ class ImageScene2D(QGraphicsScene):
         self._along = along
         self._posModel = posModel
 
+        # QGraphicsItems can change this if they are in a state that should temporarily forbid brushing
+        # (For example, when the slice intersection marker is in 'draggable' state.)
+        self.allow_brushing = True
+
         self._dataShape = (0, 0)
         self._dataRect = None #A QGraphicsRectItem (or None)
         self._offsetX = 0

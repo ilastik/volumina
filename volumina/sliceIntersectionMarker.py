@@ -29,7 +29,7 @@ from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor
 class SliceIntersectionMarker(QGraphicsItem) :
     """
     Marks a line within a ImageView2D/ImageScene2D.  
-    Used within a VolumeEditor to show the current slicing postion.
+    Used within a VolumeEditor to show the current slicing position.
     """
     thick_width = 2
     thin_width = 0.5
@@ -41,6 +41,9 @@ class SliceIntersectionMarker(QGraphicsItem) :
         return QRectF()
 
     def __init__(self, scene, axis, posModel):
+        """
+        scene: Must be an ImageScene2D instance.  We manipulate the scene.allow_brushing flag.
+        """
         QGraphicsItem.__init__(self, scene=scene)
         self.setFlag(QGraphicsItem.ItemHasNoContents);
         
@@ -199,10 +202,12 @@ class SliceMarkerLine(QGraphicsItem):
         # Change the cursor to indicate the line is draggable
         cursor = QCursor( Qt.OpenHandCursor )
         QApplication.instance().setOverrideCursor( cursor )
+        self.scene().allow_brushing = False
     
     def hoverLeaveEvent(self, event):
         # Restore the cursor to its previous state.
         QApplication.instance().restoreOverrideCursor()
+        self.scene().allow_brushing = True
 
     def mouseMoveEvent(self, event):
         new_pos = self.scene().data2scene.map( event.scenePos() )
