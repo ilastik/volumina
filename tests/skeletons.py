@@ -31,6 +31,9 @@ from volumina.skeletons import Skeletons, SkeletonInterpreter
 
 from optparse import OptionParser
 
+#import sys
+#sys.argv.append('/magnetic/gigacube.h5/volume/data')
+
 usage = "usage: %prog <filename.h5/groupname>"
 parser = OptionParser(usage)
 (options, args) = parser.parse_args()
@@ -67,4 +70,5 @@ e = SkeletonInterpreter(v.editor, skeletons, v)
 v.editor.eventSwitch.interpreter = e
 
 v.show()
+v.raise_()
 app.exec_()

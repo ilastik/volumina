@@ -334,6 +334,7 @@ if __name__ == "__main__":
     viewer.addGrayscaleLayer(array1)
     array2 = (numpy.random.random((100,100,100,3))) * 255
     viewer.addRGBALayer(array2)
+    viewer.raise_()
     
 #     class MyInterpreter(NavigationInterpreter):
 #         
