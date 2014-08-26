@@ -27,6 +27,8 @@ class ClickReportingInterpreter(QObject):
     
     def __init__(self, navigationInterpreter, positionModel):
         QObject.__init__(self)
+        assert hasattr(navigationInterpreter, 'updateCursorPosition')
+        
         self.baseInterpret = navigationInterpreter
         self.posModel      = positionModel
 
@@ -38,6 +40,7 @@ class ClickReportingInterpreter(QObject):
 
     def eventFilter( self, watched, event ):
         if event.type() == QEvent.MouseButtonPress:
+            self.baseInterpret.updateCursorPosition(watched, event)
             pos = [int(i) for i in self.posModel.cursorPos]
             pos = [self.posModel.time] + pos + [self.posModel.channel]
 

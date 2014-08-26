@@ -237,6 +237,9 @@ class BrushingInterpreter( QObject ):
         for l in lines:
             l.hide()
 
+    def updateCursorPosition(self, *args, **kwargs):
+        self._navIntr.updateCursorPosition(*args, **kwargs)
+
 #*******************************************************************************
 # B r u s h i n g C o n t r o l e r                                            *
 #*******************************************************************************
