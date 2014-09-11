@@ -36,10 +36,17 @@ from PyQt4.QtGui import QImage, QPainter, QTransform
 #volumina
 from patchAccessor import PatchAccessor
 import volumina
+from volumina.pixelpipeline.asyncabcs import IndeterminateRequestError
+from volumina.utility import log_exception
 
 from concurrent.futures.thread import ThreadPoolExecutor, _WorkItem
 from concurrent.futures import _base
 import Queue
+
+import logging
+logger = logging.getLogger(__name__)
+
+
 
 class RenderTask(_WorkItem):
     def __init__(self, f, prefetch, timestamp,
@@ -94,8 +101,7 @@ class RenderTask(_WorkItem):
                     self.tile_provider.sceneRectChanged.emit( QRectF(
                         self.tile_provider.tiling.imageRects[self.tile_nr]))
         except BaseException:
-            with volumina.printLock:
-                sys.excepthook( *sys.exc_info() )
+            sys.excepthook( *sys.exc_info() )
 
     def __lt__(self, other):
         """
@@ -648,35 +654,39 @@ class TileProvider( QObject ):
 
                         rect = self.tiling.imageRects[tile_no]
                         dataRect = self.tiling.scene2data.mapRect(rect)
-                        ims_req = ims.request(dataRect, stack_id[1])
-                        if ims.direct and not prefetch:
-                            # The ImageSource 'ims' is fast (it has the
-                            # direct flag set to true) so we process
-                            # the request synchronously here. This
-                            # improves the responsiveness for layers
-                            # that have the data readily available.
-                            start = time.time()
-                            img = ims_req.wait()
-
-                            img = img.transformed(transform)
-                            stop = time.time()
-
-                            ims._layer.timePerTile(stop-start,
-                                                   self.tiling.imageRects[tile_no])
-
-                            with self._cache:
-                                self._cache.updateTileIfNecessary(
-                                    stack_id, ims, tile_no, time.time(), img )
-                            img = self._renderTile( stack_id, tile_no )
-                            with self._cache:
-                                self._cache.setTile(stack_id, tile_no,
-                                                    img, self._sims.viewVisible(),
-                                                    self._sims.viewOccluded() )
+                        try:
+                            ims_req = ims.request(dataRect, stack_id[1])
+                        except IndeterminateRequestError:
+                            sys.excepthook( *sys.exc_info() )
                         else:
-                            pool = get_render_pool()
-                            pool.submit(prefetch, time.time(),
-                                    self, ims, transform, tile_no,
-                                    stack_id, ims_req, self._cache)
+                            if ims.direct and not prefetch:
+                                # The ImageSource 'ims' is fast (it has the
+                                # direct flag set to true) so we process
+                                # the request synchronously here. This
+                                # improves the responsiveness for layers
+                                # that have the data readily available.
+                                start = time.time()
+                                img = ims_req.wait()
+    
+                                img = img.transformed(transform)
+                                stop = time.time()
+    
+                                ims._layer.timePerTile(stop-start,
+                                                       self.tiling.imageRects[tile_no])
+    
+                                with self._cache:
+                                    self._cache.updateTileIfNecessary(
+                                        stack_id, ims, tile_no, time.time(), img )
+                                img = self._renderTile( stack_id, tile_no )
+                                with self._cache:
+                                    self._cache.setTile(stack_id, tile_no,
+                                                        img, self._sims.viewVisible(),
+                                                        self._sims.viewOccluded() )
+                            else:
+                                pool = get_render_pool()
+                                pool.submit(prefetch, time.time(),
+                                        self, ims, transform, tile_no,
+                                        stack_id, ims_req, self._cache)
         except KeyError:
             pass
 

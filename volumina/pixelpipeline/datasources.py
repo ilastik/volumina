@@ -19,11 +19,12 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+import sys
 import threading
 import weakref
-from functools import partial
+from functools import partial, wraps
 from PyQt4.QtCore import QObject, pyqtSignal, QTimer
-from asyncabcs import RequestABC, SourceABC
+from asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, \
     is_bounded, make_bounded, index2slice, sl
@@ -41,7 +42,7 @@ try:
     import vigra
 except ImportError:
     _has_vigra = False
-    
+
 #*******************************************************************************
 # A r r a y R e q u e s t                                                      *
 #*******************************************************************************
@@ -193,7 +194,27 @@ class RelabelingArraySource( ArraySource ):
 # L a z y f l o w R e q u e s t                                                *
 #*******************************************************************************
 
+if _has_lazyflow:
+    from lazyflow.graph import Slot
+    def translate_lf_exceptions(func):
+        """
+        Decorator.
+        Since volumina doesn't know about lazyflow, this datasource is responsible 
+        for translating SlotNotReady errors into the volumina equivalent.
+        """
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Slot.SlotNotReadyError as ex:
+                # Translate lazyflow not-ready errors into the volumina equivalent.
+                raise IndeterminateRequestError, IndeterminateRequestError(ex), sys.exc_info()[2]
+        wrapper.__wrapped__ = func # Emulate python 3 behavior of @functools.wraps        
+        return wrapper
+
 class LazyflowRequest( object ):
+    
+    @translate_lf_exceptions
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
         shape = op.Output.meta.shape
         if shape is not None:
@@ -203,12 +224,14 @@ class LazyflowRequest( object ):
         self._shape = slicing2shape(slicing)
         self._objectName = objectName
         
+    @translate_lf_exceptions
     def wait( self ):
         a = self._req.wait()
         assert(isinstance(a, np.ndarray))
         assert(a.shape == self._shape), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
         return a
         
+    @translate_lf_exceptions
     def getResult(self):
         a = self._req.result
         assert(isinstance(a, np.ndarray))
@@ -286,6 +309,7 @@ class LazyflowSource( QObject ):
         assert dtype is not None, "Your LazyflowSource doesn't have a dtype! Is your lazyflow slot properly configured in setupOutputs()?"
         return dtype
     
+    @translate_lf_exceptions
     def request( self, slicing ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
