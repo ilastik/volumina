@@ -22,16 +22,22 @@
 import sys
 from PyQt4.QtCore import QString
 
-def encode_from_qstring(qstr):
-    """Convert the given QString into a Python str with the same encoding as the filesystem."""
+def encode_from_qstring(qstr, encoding=sys.getfilesystemencoding()):
+    """
+    Convert the given QString into a Python str.
+    If no encoding is provided, use the same encoding as the filesystem.
+    """
     assert isinstance(qstr, QString)
-    return unicode(qstr).encode( sys.getfilesystemencoding() )
+    return unicode(qstr).encode( encoding )
 
-def decode_to_qstring(s):
-    """Convert the given Python str into a QString assuming the same encoding as the filesystem."""
+def decode_to_qstring(s, encoding=sys.getfilesystemencoding()):
+    """
+    Convert the given Python str into a QString.
+    If not encoding is specified, use the same encoding as the filesystem.
+    """
     # pyqt converts unicode to QString correctly.
     assert isinstance(s, str)
-    return QString( s.decode( sys.getfilesystemencoding() ) )
+    return QString( s.decode( encoding ) )
 
 
 assert sys.version_info.major == 2, \
