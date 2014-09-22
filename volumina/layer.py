@@ -91,9 +91,9 @@ class Layer( QObject ):
     @name.setter
     def name( self, n ):
         if isinstance(n, str):
-            n = decode_to_qstring(n)
+            n = decode_to_qstring(n, 'utf-8')
         assert isinstance(n, QString)
-        pystr = encode_from_qstring(n)
+        pystr = encode_from_qstring(n, 'utf-8')
 
         if self._name != n:
             self._name = n
