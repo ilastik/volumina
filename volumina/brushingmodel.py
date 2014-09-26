@@ -132,14 +132,38 @@ class BrushingModel(QObject):
             assert(self.pos == pos)
             self.moveTo(QPointF(pos.x()+0.0001, pos.y()+0.0001)) # move a little
 
-        tempi = QImage(QSize(self.bb.width(), self.bb.height()), QImage.Format_ARGB32_Premultiplied) #TODO: format
+        # Qt seems to use strange rules for determining which pixels to set when rendering a brush stroke to a QImage.
+        # We seem to get better results if we do the following:
+        # 1) Slightly offset the source window because apparently there is a small shift in the data
+        # 2) Render the scene to an image that is MUCH larger than the scene resolution (4x by 4x)
+        # 3) Downsample each 4x4 patch from the large image back to a single pixel in the final image,
+        #     applying some threshold to determine if the final pixel is on or off. 
+
+        tempi = QImage(QSize(4*self.bb.width(), 4*self.bb.height()), QImage.Format_ARGB32_Premultiplied) #TODO: format
         tempi.fill(0)
         painter = QPainter(tempi)
-        self.scene.render(painter, target=QRectF(), source=QRectF(QPointF(self.bb.x(), self.bb.y()), QSizeF(self.bb.width(), self.bb.height())))
+        # Offset the source window.  At first I thought the right offset was 0.5, because 
+        #  that would seem to make sure points are rounded to pixel CENTERS, but 
+        #  experimentation indicates that 0.25 is slightly better for some reason...
+        source_rect = QRectF( QPointF(self.bb.x()+0.25, self.bb.y()+0.25), 
+                              QSizeF(self.bb.width(), self.bb.height()) )
+        target_rect = QRectF( QPointF(0,0),
+                             QSizeF(4*self.bb.width(), 4*self.bb.height()) )
+        self.scene.render(painter, target=target_rect, source=source_rect)
         painter.end()
 
-        ndarr = qimage2ndarray.rgb_view(tempi)[:,:,0]
-        labels = numpy.where(ndarr>0,numpy.uint8(self.drawnNumber),numpy.uint8(0))
+        # Now downsample: convert each 4x4 patch into a single pixel by summing and dividing
+        ndarr = qimage2ndarray.rgb_view(tempi)[:,:,0].astype(int)
+        ndarr = ndarr.reshape( (ndarr.shape[0],) + (ndarr.shape[1]/4,) + (4,) )
+        ndarr = ndarr.sum(axis=-1)
+        ndarr = ndarr.transpose()
+        ndarr = ndarr.reshape( (ndarr.shape[0],) + (ndarr.shape[1]/4,) + (4,) )
+        ndarr = ndarr.sum(axis=-1)
+        ndarr = ndarr.transpose()
+        ndarr /= 4*4
+
+        downsample_threshold = (7./16)*255
+        labels = numpy.where(ndarr>=downsample_threshold, numpy.uint8(self.drawnNumber), numpy.uint8(0))
         labels = labels.swapaxes(0,1)
         assert labels.shape[0] == self.bb.width()
         assert labels.shape[1] == self.bb.height()
