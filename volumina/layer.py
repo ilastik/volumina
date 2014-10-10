@@ -250,16 +250,20 @@ def dtype_to_range(dsource):
         dtype = dsource.dtype()
     else:
         dtype = numpy.uint8
-    if issubclass(dtype, (int, long, numpy.integer)):
-        range = (0, numpy.iinfo(dtype).max)
+    
+    if (dtype == numpy.bool_ or dtype == bool):
+        # Special hack for bool
+        rng = (0,1)
+    elif issubclass(dtype, (int, long, numpy.integer)):
+        rng = (0, numpy.iinfo(dtype).max)
     elif (dtype == numpy.float32 or dtype == numpy.float64):
         # Is there a way to get the min and max values of the actual dataset(s)?
         # arbitrary range choice
-        range = (-4096,4096)
+        rng = (-4096,4096)
     else:
         # raise error 
         raise Exception('dtype_to_range: unknown dtype {}'.format(dtype))
-    return range
+    return rng
 
 class NormalizableLayer( Layer ):
     '''
