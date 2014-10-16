@@ -32,7 +32,7 @@ class ValueRangeWidget(QWidget):
 
     changedSignal = pyqtSignal()
 
-    def __init__(self, parent = None, dtype = numpy.float):
+    def __init__(self, parent = None, dtype = numpy.float32):
         super(ValueRangeWidget, self).__init__(parent)
         self._blank = False
         self._initUic()
