@@ -273,6 +273,7 @@ class LazyflowSource( QObject ):
         assert _has_lazyflow, "Can't instantiate a LazyflowSource: Wasn't able to import lazyflow."
 
         self._orig_outslot = outslot
+        self._orig_meta = outslot.meta.copy()
 
         # Attach an OpReorderAxes to ensure the data will display correctly
         # (We include the graph parameter, too, since tests sometimes provide an operator with no parent.)
@@ -330,6 +331,8 @@ class LazyflowSource( QObject ):
 
     def __eq__( self, other ):
         if other is None:
+            return False
+        if self._orig_meta != other._orig_meta:
             return False
         return self._orig_outslot is other._orig_outslot
     
