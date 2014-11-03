@@ -34,6 +34,8 @@ import logging
 logger = logging.getLogger(__name__)
 from volumina.utility import log_exception
 
+from volumina.utility.qstring_codec import encode_from_qstring
+
 ###
 ### lazyflow
 ###
@@ -76,7 +78,7 @@ def get_settings_and_export_layer(layer, parent_widget=None):
     # Create an operator to do the work
     from lazyflow.operators.ioOperators import OpFormattedDataExport
     opExport = OpFormattedDataExport( parent=opStackChannels.parent )
-    opExport.OutputFilenameFormat.setValue( str(layer.name) )
+    opExport.OutputFilenameFormat.setValue( encode_from_qstring(layer.name) )
     opExport.Input.connect( opStackChannels.Output )
     opExport.TransactionSlot.setValue(True)
     
