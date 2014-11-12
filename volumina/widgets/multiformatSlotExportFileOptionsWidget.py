@@ -106,6 +106,11 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         multipageTiffSequenceWidget.pathValidityChange.connect( self._handlePathValidityChange )
         self._format_option_editors["multipage tiff sequence"] = multipageTiffSequenceWidget
 
+        # DEBUG ONLY: blockwise hdf5
+        blockwiseHdf5OptionsWidget = SingleFileExportOptionsWidget( self, "json", "Blockwise Volume description (*.json)" )
+        blockwiseHdf5OptionsWidget.initSlot( opDataExport.OutputFilenameFormat )
+        self._format_option_editors['blockwise hdf5'] = blockwiseHdf5OptionsWidget
+
         # Populate the format combo
         for file_format, widget in self._format_option_editors.items():
             self.formatCombo.addItem( file_format )
