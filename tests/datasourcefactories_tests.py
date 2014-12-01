@@ -23,11 +23,12 @@ from numpy import ndarray,squeeze,ndarray
 from numpy.random import rand
 from unittest import TestCase
 from volumina.pixelpipeline.datasourcefactories import createDataSource
-from volumina.pixelpipeline.datasources import LazyflowSource,ArraySource
+from volumina.pixelpipeline.datasources import ArraySource
 
 hasLazyflow = True
 try:
     from lazyflow.graph import Graph, Operator, InputSlot, OutputSlot
+    from volumina.pixelpipeline.datasources import LazyflowSource
 except:
     hasLazyflow = False
 

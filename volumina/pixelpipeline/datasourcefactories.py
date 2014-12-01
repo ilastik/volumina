@@ -20,12 +20,13 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from volumina.multimethods import multimethod
-from datasources import ArraySource, LazyflowSource
+from datasources import ArraySource
 import numpy
 
 hasLazyflow = True
 try:
     import lazyflow
+    from datasources import LazyflowSource
 except:
     hasLazyflow = False
 

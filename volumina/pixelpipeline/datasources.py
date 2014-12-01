@@ -190,9 +190,6 @@ class RelabelingArraySource( ArraySource ):
         #assert a.dtype == oldDtype 
         return ArrayRequest(a, 5*(slice(None),))
         
-#*******************************************************************************
-# L a z y f l o w R e q u e s t                                                *
-#*******************************************************************************
 
 if _has_lazyflow:
     from lazyflow.graph import Slot
@@ -212,167 +209,170 @@ if _has_lazyflow:
         wrapper.__wrapped__ = func # Emulate python 3 behavior of @functools.wraps        
         return wrapper
 
-class LazyflowRequest( object ):
-    
-    @translate_lf_exceptions
-    def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
-        shape = op.Output.meta.shape
-        if shape is not None:
-            slicing = make_bounded(slicing, shape)
-        self._req = op.Output[slicing]
-        self._slicing = slicing
-        self._shape = slicing2shape(slicing)
-        self._objectName = objectName
+    #*******************************************************************************
+    # L a z y f l o w R e q u e s t                                                *
+    #*******************************************************************************
+    class LazyflowRequest( object ):
         
-    @translate_lf_exceptions
-    def wait( self ):
-        a = self._req.wait()
-        assert(isinstance(a, np.ndarray))
-        assert(a.shape == self._shape), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
-        return a
+        @translate_lf_exceptions
+        def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest" ):
+            shape = op.Output.meta.shape
+            if shape is not None:
+                slicing = make_bounded(slicing, shape)
+            self._req = op.Output[slicing]
+            self._slicing = slicing
+            self._shape = slicing2shape(slicing)
+            self._objectName = objectName
+            
+        @translate_lf_exceptions
+        def wait( self ):
+            a = self._req.wait()
+            assert(isinstance(a, np.ndarray))
+            assert(a.shape == self._shape), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
+            return a
+            
+        @translate_lf_exceptions
+        def getResult(self):
+            a = self._req.result
+            assert(isinstance(a, np.ndarray))
+            assert(a.shape == self._shape), "LazyflowRequest.getResult() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
+            return a
+    
+        def cancel( self ):
+            self._req.cancel()
+    
+        def submit( self ):
+            self._req.submit()
+    
+        def notify( self, callback, **kwargs ):
+            self._req.notify_finished( partial(callback, (), **kwargs) )
+    assert issubclass(LazyflowRequest, RequestABC)
+
+    #*******************************************************************************
+    # L a z y f l o w S o u r c e                                                  *
+    #*******************************************************************************
+
+    def weakref_setDirtyLF( wref, *args, **kwargs ):
+        """
+        LazyflowSource uses this function to subscribe to dirty notifications without giving out a shared reference to itself.
+        Otherwise, LazyflowSource.__del__ would never be called.
+        """
+        wref()._setDirtyLF(*args, **kwargs)
+
+    class LazyflowSource( QObject ):
+        isDirty = pyqtSignal( object )
+        numberOfChannelsChanged = pyqtSignal(int)
+    
+        @property
+        def dataSlot(self):
+            return self._orig_outslot
+    
+        def __init__( self, outslot, priority = 0 ):
+            super(LazyflowSource, self).__init__()
+    
+            assert _has_lazyflow, "Can't instantiate a LazyflowSource: Wasn't able to import lazyflow."
+    
+            self._orig_outslot = outslot
+            self._orig_meta = outslot.meta.copy()
+    
+            # Attach an OpReorderAxes to ensure the data will display correctly
+            # (We include the graph parameter, too, since tests sometimes provide an operator with no parent.)
+            self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( parent=outslot.getRealOperator().parent, graph=outslot.getRealOperator().graph )
+            self._op5.Input.connect( outslot )
+    
+            self._priority = priority
+            self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
+            self._op5.Output.notifyDirty( self._dirtyCallback )
+            self._op5.externally_managed = True
+    
+            self.additional_owned_ops = [] 
+    
+            self._shape = self._op5.Output.meta.shape
+            self._op5.Output.notifyMetaChanged( self._checkForNumChannelsChanged )
+    
+        @property
+        def numberOfChannels(self):
+            return self._shape[-1]
         
-    @translate_lf_exceptions
-    def getResult(self):
-        a = self._req.result
-        assert(isinstance(a, np.ndarray))
-        assert(a.shape == self._shape), "LazyflowRequest.getResult() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (self._objectName, self._shape, self._slicing, a.shape)
-        return a
-
-    def cancel( self ):
-        self._req.cancel()
-
-    def submit( self ):
-        self._req.submit()
-
-    def notify( self, callback, **kwargs ):
-        self._req.notify_finished( partial(callback, (), **kwargs) )
-assert issubclass(LazyflowRequest, RequestABC)
-
-#*******************************************************************************
-# L a z y f l o w S o u r c e                                                  *
-#*******************************************************************************
-
-def weakref_setDirtyLF( wref, *args, **kwargs ):
-    """
-    LazyflowSource uses this function to subscribe to dirty notifications without giving out a shared reference to itself.
-    Otherwise, LazyflowSource.__del__ would never be called.
-    """
-    wref()._setDirtyLF(*args, **kwargs)
-
-class LazyflowSource( QObject ):
-    isDirty = pyqtSignal( object )
-    numberOfChannelsChanged = pyqtSignal(int)
-
-    @property
-    def dataSlot(self):
-        return self._orig_outslot
-
-    def __init__( self, outslot, priority = 0 ):
-        super(LazyflowSource, self).__init__()
-
-        assert _has_lazyflow, "Can't instantiate a LazyflowSource: Wasn't able to import lazyflow."
-
-        self._orig_outslot = outslot
-        self._orig_meta = outslot.meta.copy()
-
-        # Attach an OpReorderAxes to ensure the data will display correctly
-        # (We include the graph parameter, too, since tests sometimes provide an operator with no parent.)
-        self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( parent=outslot.getRealOperator().parent, graph=outslot.getRealOperator().graph )
-        self._op5.Input.connect( outslot )
-
-        self._priority = priority
-        self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
-        self._op5.Output.notifyDirty( self._dirtyCallback )
-        self._op5.externally_managed = True
-
-        self.additional_owned_ops = [] 
-
-        self._shape = self._op5.Output.meta.shape
-        self._op5.Output.notifyMetaChanged( self._checkForNumChannelsChanged )
-
-    @property
-    def numberOfChannels(self):
-        return self._shape[-1]
+        def _checkForNumChannelsChanged(self, *args):
+            if self._op5 and self._op5.Output.ready() and self._shape[-1] != self._op5.Output.meta.shape[-1]:
+                self._shape = tuple(self._op5.Output.meta.shape)
+                self.numberOfChannelsChanged.emit( self._shape[-1] )
     
-    def _checkForNumChannelsChanged(self, *args):
-        if self._op5 and self._op5.Output.ready() and self._shape[-1] != self._op5.Output.meta.shape[-1]:
-            self._shape = tuple(self._op5.Output.meta.shape)
-            self.numberOfChannelsChanged.emit( self._shape[-1] )
-
-    def clean_up(self):
-        self._op5.cleanUp()
-        self._op5 = None
-        for op in reversed(self.additional_owned_ops):
-            op.cleanUp()
-
-    def dtype(self):
-        dtype = self._orig_outslot.meta.dtype
-        assert dtype is not None, "Your LazyflowSource doesn't have a dtype! Is your lazyflow slot properly configured in setupOutputs()?"
-        return dtype
+        def clean_up(self):
+            self._op5.cleanUp()
+            self._op5 = None
+            for op in reversed(self.additional_owned_ops):
+                op.cleanUp()
     
-    @translate_lf_exceptions
-    def request( self, slicing ):
-        if cfg.getboolean('pixelpipeline', 'verbose'):
-            volumina.printLock.acquire()
-            print "  LazyflowSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing))
-            volumina.printLock.release()
-        if not is_pure_slicing(slicing):
-            raise Exception('LazyflowSource: slicing is not pure')
-        assert self._op5 is not None, "Underlying operator is None.  Are you requesting from a datasource that has been cleaned up already?"
-        return LazyflowRequest( self._op5, slicing, self._priority, objectName=self.objectName() )
-
-    def _setDirtyLF(self, slot, roi):
-        self.setDirty(roi.toSlice())
-
-    def setDirty( self, slicing):
-        if not is_pure_slicing(slicing):
-            raise Exception('dirty region: slicing is not pure')
-        self.isDirty.emit( slicing )
-
-    def __eq__( self, other ):
-        if other is None:
-            return False
-        if self._orig_meta != other._orig_meta:
-            return False
-        return self._orig_outslot is other._orig_outslot
+        def dtype(self):
+            dtype = self._orig_outslot.meta.dtype
+            assert dtype is not None, "Your LazyflowSource doesn't have a dtype! Is your lazyflow slot properly configured in setupOutputs()?"
+            return dtype
+        
+        @translate_lf_exceptions
+        def request( self, slicing ):
+            if cfg.getboolean('pixelpipeline', 'verbose'):
+                volumina.printLock.acquire()
+                print "  LazyflowSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing))
+                volumina.printLock.release()
+            if not is_pure_slicing(slicing):
+                raise Exception('LazyflowSource: slicing is not pure')
+            assert self._op5 is not None, "Underlying operator is None.  Are you requesting from a datasource that has been cleaned up already?"
+            return LazyflowRequest( self._op5, slicing, self._priority, objectName=self.objectName() )
     
-    def __ne__( self, other ):
-        return not ( self == other )
-
-assert issubclass(LazyflowSource, SourceABC)
-
-class LazyflowSinkSource( LazyflowSource ):
-    def __init__( self, outslot, inslot, priority = 0 ):
-        LazyflowSource.__init__(self, outslot)
-        self._inputSlot = inslot
-        self._priority = priority
-
-    def put( self, slicing, array ):
-        assert _has_vigra, "Lazyflow SinkSource requires lazyflow and vigra."
-
-        taggedArray = array.view(vigra.VigraArray)
-        taggedArray.axistags = vigra.defaultAxistags('txyzc')
-
-        inputTags = self._inputSlot.meta.axistags
-        inputKeys = [tag.key for tag in inputTags]
-        transposedArray = taggedArray.withAxes(*inputKeys)
-
-        taggedSlicing = dict(zip('txyzc', slicing))
-        transposedSlicing = ()
-        for k in inputKeys:
-            if k in 'txyzc':
-                transposedSlicing += (taggedSlicing[k],)
-        self._inputSlot[transposedSlicing] = transposedArray.view(np.ndarray)
-
-    def __eq__( self, other ):
-        if other is None:
-            return False
-        result = super(LazyflowSinkSource, self).__eq__(other)
-        result &= self._inputSlot == other._inputSlot
-        return result
+        def _setDirtyLF(self, slot, roi):
+            self.setDirty(roi.toSlice())
     
-    def __ne__( self, other ):
-        return not ( self == other )
+        def setDirty( self, slicing):
+            if not is_pure_slicing(slicing):
+                raise Exception('dirty region: slicing is not pure')
+            self.isDirty.emit( slicing )
+    
+        def __eq__( self, other ):
+            if other is None:
+                return False
+            if self._orig_meta != other._orig_meta:
+                return False
+            return self._orig_outslot is other._orig_outslot
+        
+        def __ne__( self, other ):
+            return not ( self == other )
+    
+    assert issubclass(LazyflowSource, SourceABC)
+    
+    class LazyflowSinkSource( LazyflowSource ):
+        def __init__( self, outslot, inslot, priority = 0 ):
+            LazyflowSource.__init__(self, outslot)
+            self._inputSlot = inslot
+            self._priority = priority
+    
+        def put( self, slicing, array ):
+            assert _has_vigra, "Lazyflow SinkSource requires lazyflow and vigra."
+    
+            taggedArray = array.view(vigra.VigraArray)
+            taggedArray.axistags = vigra.defaultAxistags('txyzc')
+    
+            inputTags = self._inputSlot.meta.axistags
+            inputKeys = [tag.key for tag in inputTags]
+            transposedArray = taggedArray.withAxes(*inputKeys)
+    
+            taggedSlicing = dict(zip('txyzc', slicing))
+            transposedSlicing = ()
+            for k in inputKeys:
+                if k in 'txyzc':
+                    transposedSlicing += (taggedSlicing[k],)
+            self._inputSlot[transposedSlicing] = transposedArray.view(np.ndarray)
+    
+        def __eq__( self, other ):
+            if other is None:
+                return False
+            result = super(LazyflowSinkSource, self).__eq__(other)
+            result &= self._inputSlot == other._inputSlot
+            return result
+        
+        def __ne__( self, other ):
+            return not ( self == other )
         
 #*******************************************************************************
 # C o n s t a n t R e q u e s t                                                *
