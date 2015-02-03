@@ -204,7 +204,7 @@ class Layer( QObject ):
         self.contexts = []
 
     def _updateNumberOfChannels(self):
-        # As there can many datasources and they can all be None,
+        # As there can be many datasources and they can all be None,
         # grab numberOfChannels for those that are defined.
         # That is, if there are any datasources.
         newchannels = []
