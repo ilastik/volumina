@@ -169,15 +169,17 @@ class GrayscaleImageRequest( object ):
         if a.dtype == np.uint64 or a.dtype == np.int64:
             warnings.warn("Truncating 64-bit pixels for display")
             if a.dtype == np.uint64:
-                a = a.astype( np.uint32 )
+                a = np.asanyarray(np.uint32)
             elif a.dtype == np.int64:
-                a = a.astype( np.int32 )
-        
+                a = np.asanyarray(np.int32)
+
+        has_no_mask = not np.ma.is_masked(a)
+
         #
         # new conversion
         #
         tImg = None
-        if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+        if has_no_mask and _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
             if self._normalize is None or \
                self._normalize[0] >= self._normalize[1] or \
                self._normalize == [0, 0]: #FIXME: fix volumina conventions
@@ -191,7 +193,8 @@ class GrayscaleImageRequest( object ):
             vigra.colors.gray2qimage_ARGB32Premultiplied(a, byte_view(img), n)
             tImg = 1000.0*(time.time()-tImg)
         else:
-            self.logger.warning("using slow image creation function")
+            if has_no_mask:
+                self.logger.warning("using slow image creation function")
             tImg = time.time()
             if self._normalize:
                 #clipping has been implemented in this commit,
@@ -269,8 +272,10 @@ class AlphaModulatedImageRequest( object ):
         a = self._arrayreq.getResult()
         tAR = 1000.0*(time.time()-tAR)
 
+        has_no_mask = not np.ma.is_masked(a)
+
         tImg = None
-        if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+        if has_no_mask and _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
             if not a.flags.contiguous:
                 a = a.copy()
             tImg = time.time()
@@ -282,14 +287,14 @@ class AlphaModulatedImageRequest( object ):
             vigra.colors.alphamodulated2qimage_ARGB32Premultiplied(a, byte_view(img), tintColor, normalize) 
             tImg = 1000.0*(time.time()-tImg)
         else:
-            self.logger.warning("using unoptimized conversion functions")
+            if has_no_mask:
+                self.logger.warning("using unoptimized conversion functions")
             tImg = time.time()
-            shape = a.shape + (4,)
-            d = np.empty(shape, dtype=np.float32)
-            d[:,:,0] = a[:,:]*self._tintColor.redF()
-            d[:,:,1] = a[:,:]*self._tintColor.greenF()
-            d[:,:,2] = a[:,:]*self._tintColor.blueF()
-            d[:,:,3] = a[:,:]
+            d = a[..., None].repeat(4, axis=-1)
+            d[:,:,0] *= self._tintColor.redF()
+            d[:,:,1] *= self._tintColor.greenF()
+            d[:,:,2] *= self._tintColor.blueF()
+
             normalize = self._normalize
             img = array2qimage(d, normalize)
             img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
@@ -402,11 +407,11 @@ class ColortableImageRequest( object ):
             if scale != 1.0:
                 a = a * scale
             if len(self._colorTable) <= 2**8:
-                a = np.asarray( a, dtype=np.uint8 )
+                a = np.asanyarray( a, dtype=np.uint8 )
             elif len(self._colorTable) <= 2**16:
-                a = np.asarray( a, dtype=np.uint16 )
+                a = np.asanyarray( a, dtype=np.uint16 )
             elif len(self._colorTable) <= 2**32:
-                a = np.asarray( a, dtype=np.uint32 )
+                a = np.asanyarray( a, dtype=np.uint32 )
 
         # Use vigra if possible (much faster)
         tImg = None
@@ -418,8 +423,95 @@ class ColortableImageRequest( object ):
                 #FIXME: maybe this should be done in a better way using an operator before the colortable request which properly handles 
                 #this problem 
                 warnings.warn("Data for colortable layers cannot be float, casting",RuntimeWarning)
-                a=a.astype(np.int32)
-            vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
+                a = np.asanyarray(a, dtype=np.uint32)
+
+            # If we have a masked array with a non-trivial mask, ensure that mask is made transparent.
+            _colorTable = self._colorTable
+            if np.ma.is_masked(a):
+                # If there is no transparency color at the beginning of the colortable, add one for the mask.
+                # Otherwise, we use the colortable as is.
+                if (_colorTable[0, 3] != 0):
+                    # Have to modify the table. Preserve the original.
+                    _colorTable = _colorTable.copy()
+
+                    # Next we want to insert the transparent color at the beginning if it doesn't exist.
+                    # First verify that the first color is not in use. If it is, try make sure it isn't.
+                    expand_colorTable = True
+                    if (a.min() == 0):
+                        # If we will have a overflow error, promote to the next largest type, if possible.
+                        #
+                        # If we can't promote further, try tricks like wrapping or finding gaps to affect the
+                        # same change.
+                        if (a.max() == np.iinfo(a.dtype).max):
+                            if a.dtype.type == np.uint8:
+                                a = np.asarray(a, dtype=np.uint16)
+                            elif a.dtype.type == np.uint16:
+                                a = np.asarray(a, dtype=np.uint32)
+                            elif a.dtype.type == np.uint32:
+                                # We have reached the largest type VIGRA supports. Time for some tricks.
+
+                                # Try the following.
+                                #
+                                # First, see if we can't just wrap the largest value on to another value in the
+                                # colortable. This is the color it would have been anyways.
+                                #
+                                # Second, see if we can't find an unused color (number that doesn't appear) and then
+                                # drop this color (number) from the table (image).
+                                if np.iinfo(a.dtype).max >= len(_colorTable):
+                                    a[a == np.iinfo(a.dtype).max] %= len(_colorTable)
+                                else:
+                                    assert(False,
+                                           "Code for this feature has been added below and \"should\" work"
+                                           + " as is. However, it is untested and is believed to be slow because the"
+                                           + " size of the colortable is quite large and the number of integers is"
+                                           + " believed to be quite large. Check to make sure what you are doing makes"
+                                           + " sense. If so, feel free to comment this assert and proceed with caution.")
+                                    # Lots of colors. This will be tricky and may be slow.
+
+                                    # Find the first non-consecutive value. This means a color/value were unused and
+                                    # can be safely dropped from the table.
+                                    a_values = np.unique(a)
+                                    a_gap_mask = (np.ediff1d(a_values, to_begin=1) > 1)
+                                    a_gap_mask &= (a_gap_mask.cumsum() == 1)
+
+                                    # If this assertion occurs, chances are everything is going really slow.
+                                    assert(a_gap_mask.any(),
+                                           "Trying to display a masked array using a ColortableImageSource. However, a"
+                                           + " a transparent color was not found and it was not possible to easily add"
+                                           + " one as all valid integer values are already in use in the image. Add a"
+                                           + " transparent color at the beginning of your colortable."
+                                    )
+
+                                    # Extract the gap value.
+                                    a_gap_value = a_values[a_gap_mask][0]
+                                    expand_colorTable = False
+
+                                    # Reduce everything at the non-consecutive value and above by 1.
+                                    a -= (a >= a_gap_value)
+                                    # Overwrite the unused color by shifting all colors before it up.
+                                    # This way we have room for the transparent color at the beginning.
+                                    _colorTable[1:a_gap_value] = _colorTable[:a_gap_value-1]
+                                    _colorTable[0] = 0
+
+                        a += 1
+
+                    if expand_colorTable:
+                        # Add room for one more
+                        _colorTable_shape = list(_colorTable.shape)
+                        _colorTable_shape[0] += 1
+                        _colorTable_shape = tuple(_colorTable_shape)
+
+                        # Create the larger color table.
+                        _colorTable = np.empty(_colorTable_shape, dtype=_colorTable.dtype)
+
+                        # Make sure the first color is transparent and copy the rest of the colors over.
+                        _colorTable[0] = 0
+                        _colorTable[1:] = self._colorTable
+
+                # Make masked values transparent.
+                a = np.ma.filled(a, 0)
+
+            vigra.colors.applyColortable(a, _colorTable, byte_view(img))
             tImg = 1000.0*(time.time()-tImg)
 
         # Without vigra, do it the slow way 
