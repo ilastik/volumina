@@ -35,9 +35,10 @@ from PyQt4.QtGui import QColor
 
 #volumina
 import volumina._testing
-from volumina.pixelpipeline.imagesources import GrayscaleImageSource, RGBAImageSource, ColortableImageSource
+from volumina.pixelpipeline.imagesources import GrayscaleImageSource, AlphaModulatedImageSource, RGBAImageSource, \
+    ColortableImageSource
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
-from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer
+from volumina.layer import GrayscaleLayer, AlphaModulatedLayer, RGBALayer, ColortableLayer
 
 import threading
 imagesources_thread_failures = 0
@@ -133,6 +134,44 @@ class GrayscaleImageSourceTest( ImageSourcesTestBase ):
         self.ims.setDirty((slice(34,37), slice(12,34)))
         self.ims.isDirty.disconnect( checkDirtyRect )
 
+#*******************************************************************************
+# A l p h a M o d u l a t e d I m a g e S o u r c e T e s t
+#*******************************************************************************
+
+class AlphaModulatedImageSourceTest( ImageSourcesTestBase ):
+    def setUp( self ):
+        super( AlphaModulatedImageSourceTest, self ).setUp()
+        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], 'lena.npy')).astype( numpy.uint32 )
+        self.ars = _ArraySource2d(self.raw)
+        self.ims = AlphaModulatedImageSource( self.ars, AlphaModulatedLayer( self.ars, QColor(1,2,3) ))
+
+    def testRequest( self ):
+        imr = self.ims.request(QRect(0,0,512,512))
+        def check(result, codon):
+            self.assertEqual(codon, "unique")
+            self.assertTrue(type(result) == QImage)
+
+        imr.notify(check, codon="unique")
+
+    def testSetDirty( self ):
+        def checkAllDirty( rect ):
+            self.assertTrue( rect.isEmpty() )
+
+        def checkDirtyRect( rect ):
+            self.assertEqual( rect.x(), 34 )
+            self.assertEqual( rect.y(), 12 )
+            self.assertEqual( rect.width(), 3 )
+            self.assertEqual( rect.height(), 22  )
+
+        # should mark everything dirty
+        self.ims.isDirty.connect( checkAllDirty )
+        self.ims.setDirty((slice(34,None), slice(12,34)))
+        self.ims.isDirty.disconnect( checkAllDirty )
+
+        # dirty subrect
+        self.ims.isDirty.connect( checkDirtyRect )
+        self.ims.setDirty((slice(34,37), slice(12,34)))
+        self.ims.isDirty.disconnect( checkDirtyRect )
 
 #*******************************************************************************
 # C o l o r t a b l e I m a g e S o u r c e T e s t 
