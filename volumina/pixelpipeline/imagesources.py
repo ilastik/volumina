@@ -469,7 +469,7 @@ class ColortableImageRequest( object ):
                                            + " sense. If so, feel free to comment this assert and proceed with caution.")
                                     # Lots of colors. This will be tricky and may be slow.
 
-                                    # Find the first non-consecutive value. This means a color/value were unused and
+                                    # Find the first non-consecutive value. This means a color/value was unused and
                                     # can be safely dropped from the table.
                                     a_values = np.unique(a)
                                     a_gap_mask = (np.ediff1d(a_values, to_begin=1) > 1)
