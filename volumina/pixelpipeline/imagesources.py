@@ -507,8 +507,8 @@ class ColortableImageRequest( object ):
                         # Copy the rest of the colors over.
                         _colorTable[1:] = self._colorTable
 
-                        # Make sure the first color is transparent.
-                        _colorTable[0] = 0
+                    # Make sure the first color is transparent.
+                    _colorTable[0] = 0
 
                 # Make masked values transparent.
                 a = np.ma.filled(a, 0)
