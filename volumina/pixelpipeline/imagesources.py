@@ -436,8 +436,9 @@ class ColortableImageRequest( object ):
 
                     # Next we want to insert the transparent color at the beginning if it doesn't exist.
                     # First verify that the first color is not in use. If it is, try make sure it isn't.
-                    expand_colorTable = True
+                    expand_colorTable = False
                     if (a.min() == 0):
+                        expand_colorTable = True
                         # If we will have a overflow error, promote to the next largest type, if possible.
                         #
                         # If we can't promote further, try tricks like wrapping or finding gaps to affect the
