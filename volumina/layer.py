@@ -185,6 +185,7 @@ class Layer( QObject ):
         self._toolTip = ""
         self._cleaned_up = False
 
+        self._updateNumberOfChannels()
         for datasource in filter(None, self._datasources):
             datasource.numberOfChannelsChanged.connect( self._updateNumberOfChannels )
 
@@ -203,9 +204,22 @@ class Layer( QObject ):
         self.contexts = []
 
     def _updateNumberOfChannels(self):
-        newchannels = self._datasources[0].numberOfChannels
-        for datasource in self._datasources[1:]:
-            newchannels = min( datasource.numberOfChannels, newchannels )
+        # As there can be many datasources and they can all be None,
+        # grab numberOfChannels for those that are defined.
+        # That is, if there are any datasources.
+        newchannels = []
+        for i in xrange(len(self._datasources)):
+            if self._datasources[i] is not None:
+                newchannels.append(self._datasources[i].numberOfChannels)
+
+        # If the datasources are all None or there aren't any,
+        # default to 1 channel as we must have at least 1.
+        if not newchannels:
+            newchannels = [1]
+
+        # Get the smallest number of channels that works for all.
+        newchannels = min(newchannels)
+
         if newchannels != self.numberOfChannels:
             # Update property (emits signal)
             self.numberOfChannels = newchannels
