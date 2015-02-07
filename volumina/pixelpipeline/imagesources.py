@@ -430,8 +430,6 @@ class ColortableImageRequest( object ):
             if np.ma.is_masked(a):
                 # Add transparent color at the beginning of the colortable as needed.
                 if (_colorTable[0, 3] != 0):
-                    _colorTable = _colorTable.copy()  # Must add transparent color. Preserve original colortable.
-
                     # If label 0 is unused, it can be transparent. Otherwise, the transparent color must be inserted.
                     if (a.min() == 0):
                         # If it will overflow simply promote the type. Otherwise skip. Assume unsigned.
