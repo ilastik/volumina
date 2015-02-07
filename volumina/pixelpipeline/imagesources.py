@@ -435,9 +435,9 @@ class ColortableImageRequest( object ):
                         # If it will overflow simply promote the type. Otherwise skip. Assume unsigned.
                         if (a.max() == np.iinfo(a.dtype).max):
                             if a.dtype.type == np.uint8:
-                                a = np.asarray(a, dtype=np.uint16)
+                                a = np.asanyarray(a, dtype=np.uint16)
                             elif a.dtype.type == np.uint16:
-                                a = np.asarray(a, dtype=np.uint32)
+                                a = np.asanyarray(a, dtype=np.uint32)
                             elif a.dtype.type == np.uint32:
                                 assert(np.iinfo(a.dtype).max >= len(_colorTable),
                                        "This is a very large colortable. If it is indeed needed, add a transparent"
