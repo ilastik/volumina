@@ -456,8 +456,8 @@ class ColortableImageRequest( object ):
                                            + " sense. If so, feel free to comment this assert and proceed with caution.")
                                     # Otherwise, drop the first unused color from the colortable and remap everything.
 
-                                    # Find the first non-consecutive value. This means a color/value was unused and
-                                    # can be safely dropped from the table.
+                                    # Find the first non-consecutive label. This means a label was unused and can be
+                                    # safely dropped from the table.
                                     a_values = np.unique(a)
                                     a_gap_mask = (np.ediff1d(a_values, to_begin=1) > 1)
                                     a_gap_mask &= (a_gap_mask.cumsum() == 1)
