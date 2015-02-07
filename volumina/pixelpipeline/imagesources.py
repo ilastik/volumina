@@ -457,8 +457,8 @@ class ColortableImageRequest( object ):
                                     # Otherwise, drop the first unused color from the colortable and remap everything.
 
                                     # Find non-consecutive labels. Get a mask for the first skipped label.
-                                    a_values = np.unique(a)
-                                    a_gap_mask = (np.ediff1d(a_values, to_begin=1) > 1)
+                                    a_labels = np.unique(a)
+                                    a_gap_mask = (np.ediff1d(a_labels, to_begin=1) > 1)
                                     a_gap_mask &= (a_gap_mask.cumsum() == 1)
 
                                     assert(a_gap_mask.any(),
@@ -469,7 +469,7 @@ class ColortableImageRequest( object ):
                                     )
 
                                     # Extract the gap value.
-                                    a_gap_value = a_values[a_gap_mask][0]
+                                    a_gap_value = a_labels[a_gap_mask][0]
                                     expand_colorTable = False
 
                                     # Reduce everything at the non-consecutive value and above by 1.
