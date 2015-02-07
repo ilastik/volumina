@@ -472,7 +472,7 @@ class ColortableImageRequest( object ):
                                     a_gap_value = a_labels[a_nonconsecutive_label_mask][0]
                                     expand_colorTable = False
 
-                                    # Reduce everything at the non-consecutive value and above by 1.
+                                    # Reduce everything at the skipped label and above by 1.
                                     a -= (a >= a_gap_value)
                                     # Overwrite the unused color by shifting all colors before it up.
                                     # This way we have room for the transparent color at the beginning.
