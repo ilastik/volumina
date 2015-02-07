@@ -461,7 +461,6 @@ class ColortableImageRequest( object ):
                                     a_gap_mask = (np.ediff1d(a_values, to_begin=1) > 1)
                                     a_gap_mask &= (a_gap_mask.cumsum() == 1)
 
-                                    # If this assertion occurs, chances are everything is going really slow.
                                     assert(a_gap_mask.any(),
                                            "Trying to display a masked array using a ColortableImageSource. However, a"
                                            + " a transparent color was not found and it was not possible to easily add"
