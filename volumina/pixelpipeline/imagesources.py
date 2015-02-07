@@ -449,16 +449,9 @@ class ColortableImageRequest( object ):
                             elif a.dtype.type == np.uint16:
                                 a = np.asarray(a, dtype=np.uint32)
                             elif a.dtype.type == np.uint32:
-                                # We have reached the largest type VIGRA supports. Time for some tricks.
-
-                                # Try the following.
-                                #
-                                # First, see if we can't just wrap the largest value on to another value in the
-                                # colortable. This is the color it would have been anyways.
-                                #
-                                # Second, see if we can't find an unused color (number that doesn't appear) and then
-                                # drop this color (number) from the table (image).
+                                # We have reached the largest type VIGRA supports. Need to free up a label/color.
                                 if np.iinfo(a.dtype).max >= len(_colorTable):
+                                    # Try to wrap the max value to a smaller value of the same color.
                                     a[a == np.iinfo(a.dtype).max] %= len(_colorTable)
                                 else:
                                     assert(False,
@@ -467,7 +460,7 @@ class ColortableImageRequest( object ):
                                            + " size of the colortable is quite large and the number of integers is"
                                            + " believed to be quite large. Check to make sure what you are doing makes"
                                            + " sense. If so, feel free to comment this assert and proceed with caution.")
-                                    # Lots of colors. This will be tricky and may be slow.
+                                    # Otherwise, drop the first unused color from the colortable and remap everything.
 
                                     # Find the first non-consecutive value. This means a color/value was unused and
                                     # can be safely dropped from the table.
