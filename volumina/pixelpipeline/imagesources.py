@@ -449,11 +449,11 @@ class ColortableImageRequest( object ):
                                     a[a == np.iinfo(a.dtype).max] %= len(_colorTable)
                                 else:
                                     assert(False,
-                                           "Code for this feature has been added below and \"should\" work"
-                                           + " as is. However, it is untested and is believed to be slow because the"
-                                           + " size of the colortable is quite large and the number of integers is"
-                                           + " believed to be quite large. Check to make sure what you are doing makes"
-                                           + " sense. If so, feel free to comment this assert and proceed with caution.")
+                                           "Code for this feature has been added below and \"should\" work as is."
+                                           + " However, it is untested and is believed to be slow because the size of"
+                                           + " the colortable is quite large and the number of integers is believed to"
+                                           + " be quite large. Check to make sure what you are doing makes sense. If"
+                                           + " so, feel free to comment this assert and proceed with caution.")
                                     # Otherwise, drop the first unused color from the colortable and remap everything.
 
                                     # Find non-consecutive labels. Get a mask for the first skipped label.
