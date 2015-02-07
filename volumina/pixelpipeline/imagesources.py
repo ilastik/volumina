@@ -463,7 +463,7 @@ class ColortableImageRequest( object ):
 
                                     assert(a_nonconsecutive_label_mask.any(),
                                            "Trying to display a masked array using a ColortableImageSource. However, a"
-                                           + " a transparent color was not found and it was not possible to easily add"
+                                           + " transparent color was not found and it was not possible to easily add"
                                            + " one as all valid integer values are already in use in the image. Add a"
                                            + " transparent color at the beginning of your colortable."
                                     )
