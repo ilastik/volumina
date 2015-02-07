@@ -449,8 +449,7 @@ class ColortableImageRequest( object ):
                         a += 1
 
                         # Insert space for transparent color as needed.
-                        _colorTable = np.empty((1,) + _colorTable.shape[1:], dtype=_colorTable.dtype)
-                        _colorTable = np.vstack([_colorTable, self._colorTable])
+                        _colorTable = np.insert(_colorTable, 0, 0, axis=0)
                     else:
                         _colorTable = self._colorTable.copy()
 
