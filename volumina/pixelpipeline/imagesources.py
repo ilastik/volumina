@@ -450,7 +450,6 @@ class ColortableImageRequest( object ):
                                 # Try to wrap the max value to a smaller value of the same color.
                                 a[a == np.iinfo(a.dtype).max] %= len(_colorTable)
 
-
                         a += 1
 
                     # Insert space for transparent color as needed.
