@@ -443,39 +443,13 @@ class ColortableImageRequest( object ):
                             elif a.dtype.type == np.uint16:
                                 a = np.asarray(a, dtype=np.uint32)
                             elif a.dtype.type == np.uint32:
-                                # We have reached the largest type VIGRA supports. Need to free up a label/color.
-                                if np.iinfo(a.dtype).max >= len(_colorTable):
-                                    # Try to wrap the max value to a smaller value of the same color.
-                                    a[a == np.iinfo(a.dtype).max] %= len(_colorTable)
-                                else:
-                                    assert(False,
-                                           "Code for this feature has been added below and \"should\" work as is."
-                                           + " However, it is untested and is believed to be slow because the size of"
-                                           + " the colortable is quite large and the number of integers is believed to"
-                                           + " be quite large. Check to make sure what you are doing makes sense. If"
-                                           + " so, feel free to comment this assert and proceed with caution.")
-                                    # Otherwise, drop the first unused color from the colortable and remap everything.
+                                assert(np.iinfo(a.dtype).max >= len(_colorTable),
+                                       "This is a very large colortable. If it is indeed needed, add a transparent"
+                                       " color at the beginning of the colortable for displaying masked arrays.")
 
-                                    # Find non-consecutive labels. Get a mask for the first skipped label.
-                                    a_labels = np.unique(a)
-                                    a_nonconsecutive_label_mask = (np.ediff1d(a_labels, to_begin=1) > 1)
-                                    a_nonconsecutive_label_mask &= (a_nonconsecutive_label_mask.cumsum() == 1)
+                                # Try to wrap the max value to a smaller value of the same color.
+                                a[a == np.iinfo(a.dtype).max] %= len(_colorTable)
 
-                                    assert(a_nonconsecutive_label_mask.any(),
-                                           "Trying to display a masked array using a ColortableImageSource. However, a"
-                                           + " transparent color was not found and it was not possible to easily add"
-                                           + " one as all valid integer values are already in use in the image. Add a"
-                                           + " transparent color at the beginning of your colortable."
-                                    )
-
-                                    # Extract the gap value.
-                                    a_nonconsecutive_label = a_labels[a_nonconsecutive_label_mask][0]
-                                    expand_colorTable = False
-
-                                    # Shift all colors below the unused one up, freeing space for the transparent color.
-                                    _colorTable[1:a_nonconsecutive_label] = _colorTable[:a_nonconsecutive_label-1]
-                                    # Reduce everything at the skipped label and above by 1.
-                                    a -= (a >= a_nonconsecutive_label)
 
                         a += 1
 
