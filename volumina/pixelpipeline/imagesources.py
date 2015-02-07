@@ -433,9 +433,7 @@ class ColortableImageRequest( object ):
                     _colorTable = _colorTable.copy()  # Must add transparent color. Preserve original colortable.
 
                     # If label 0 is unused, it can be transparent. Otherwise, the transparent color must be inserted.
-                    expand_colorTable = False
                     if (a.min() == 0):
-                        expand_colorTable = True
                         # If it will overflow simply promote the type. Otherwise skip. Assume unsigned.
                         if (a.max() == np.iinfo(a.dtype).max):
                             if a.dtype.type == np.uint8:
@@ -452,8 +450,7 @@ class ColortableImageRequest( object ):
 
                         a += 1
 
-                    # Insert space for transparent color as needed.
-                    if expand_colorTable:
+                        # Insert space for transparent color as needed.
                         _colorTable_shape = list(_colorTable.shape)
                         _colorTable_shape[0] += 1
                         _colorTable_shape = tuple(_colorTable_shape)
