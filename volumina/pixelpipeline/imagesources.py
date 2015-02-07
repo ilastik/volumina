@@ -434,11 +434,10 @@ class ColortableImageRequest( object ):
                     if (a.min() == 0):
                         # If it will overflow simply promote the type. Otherwise skip. Assume unsigned.
                         if (a.max() == np.iinfo(a.dtype).max):
-                            if a.dtype.type == np.uint8:
-                                a = np.asanyarray(a, dtype=np.uint16)
-                            elif a.dtype.type == np.uint16:
-                                a = np.asanyarray(a, dtype=np.uint32)
-                            elif a.dtype.type == np.uint32:
+                            a_new_dtype = np.min_scalar_type(np.iinfo(a.dtype).max + 1)
+                            if a_new_dtype <= np.dtype(np.uint32):
+                                 a = np.asanyarray(a, dtype=a_new_dtype)
+                            else:
                                 assert(np.iinfo(a.dtype).max >= len(_colorTable),
                                        "This is a very large colortable. If it is indeed needed, add a transparent"
                                        " color at the beginning of the colortable for displaying masked arrays.")
