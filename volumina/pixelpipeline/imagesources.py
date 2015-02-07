@@ -430,8 +430,7 @@ class ColortableImageRequest( object ):
             if np.ma.is_masked(a):
                 # If there is no transparency color at the beginning of the colortable, add one. Skip otherwise.
                 if (_colorTable[0, 3] != 0):
-                    # Have to modify the table. Preserve the original.
-                    _colorTable = _colorTable.copy()
+                    _colorTable = _colorTable.copy()  # Must add transparent color. Preserve original colortable.
 
                     # Next we want to insert the transparent color at the beginning if it doesn't exist.
                     # First verify that the first color is not in use. If it is, try make sure it isn't.
