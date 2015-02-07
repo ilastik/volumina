@@ -474,8 +474,7 @@ class ColortableImageRequest( object ):
 
                                     # Reduce everything at the skipped label and above by 1.
                                     a -= (a >= a_gap_value)
-                                    # Overwrite the unused color by shifting all colors before it up.
-                                    # This way we have room for the transparent color at the beginning.
+                                    # Shift all colors below the unused one up, freeing space for the transparent color.
                                     _colorTable[1:a_gap_value] = _colorTable[:a_gap_value-1]
 
                         a += 1
