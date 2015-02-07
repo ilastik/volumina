@@ -450,7 +450,7 @@ class ColortableImageRequest( object ):
                         a += 1
                     else:
                         # Make sure the first color is transparent.
-                        _colorTable = self._colorTable.copy()
+                        _colorTable = _colorTable.copy()
                         _colorTable[0] = 0
 
                 # Make masked values transparent.
