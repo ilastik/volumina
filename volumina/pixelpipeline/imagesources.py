@@ -439,10 +439,7 @@ class ColortableImageRequest( object ):
                     expand_colorTable = False
                     if (a.min() == 0):
                         expand_colorTable = True
-                        # If we will have a overflow error, promote to the next largest type, if possible.
-                        #
-                        # If we can't promote further, try tricks like wrapping or finding gaps to affect the
-                        # same change.
+                        # If it will overflow simply promote the type. Otherwise skip. Assume unsigned.
                         if (a.max() == np.iinfo(a.dtype).max):
                             if a.dtype.type == np.uint8:
                                 a = np.asarray(a, dtype=np.uint16)
