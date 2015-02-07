@@ -458,10 +458,10 @@ class ColortableImageRequest( object ):
 
                                     # Find non-consecutive labels. Get a mask for the first skipped label.
                                     a_labels = np.unique(a)
-                                    a_gap_mask = (np.ediff1d(a_labels, to_begin=1) > 1)
-                                    a_gap_mask &= (a_gap_mask.cumsum() == 1)
+                                    a_nonconsecutive_label_mask = (np.ediff1d(a_labels, to_begin=1) > 1)
+                                    a_nonconsecutive_label_mask &= (a_nonconsecutive_label_mask.cumsum() == 1)
 
-                                    assert(a_gap_mask.any(),
+                                    assert(a_nonconsecutive_label_mask.any(),
                                            "Trying to display a masked array using a ColortableImageSource. However, a"
                                            + " a transparent color was not found and it was not possible to easily add"
                                            + " one as all valid integer values are already in use in the image. Add a"
@@ -469,7 +469,7 @@ class ColortableImageRequest( object ):
                                     )
 
                                     # Extract the gap value.
-                                    a_gap_value = a_labels[a_gap_mask][0]
+                                    a_gap_value = a_labels[a_nonconsecutive_label_mask][0]
                                     expand_colorTable = False
 
                                     # Reduce everything at the non-consecutive value and above by 1.
