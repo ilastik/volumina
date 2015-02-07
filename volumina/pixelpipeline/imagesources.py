@@ -451,10 +451,9 @@ class ColortableImageRequest( object ):
                         # Insert space for transparent color as needed.
                         _colorTable = np.insert(_colorTable, 0, 0, axis=0)
                     else:
+                        # Make sure the first color is transparent.
                         _colorTable = self._colorTable.copy()
-
-                    # Make sure the first color is transparent.
-                    _colorTable[0] = 0
+                        _colorTable[0] = 0
 
                 # Make masked values transparent.
                 a = np.ma.filled(a, 0)
