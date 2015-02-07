@@ -432,7 +432,7 @@ class ColortableImageRequest( object ):
                 if (_colorTable[0, 3] != 0):
                     # If label 0 is unused, it can be transparent. Otherwise, the transparent color must be inserted.
                     if (a.min() == 0):
-                        # If it will overflow simply promote the type. Otherwise skip. Assume unsigned.
+                        # If it will overflow simply promote the type. Unless we have reached the max VIGRA type.
                         if (a.max() == np.iinfo(a.dtype).max):
                             a_new_dtype = np.min_scalar_type(np.iinfo(a.dtype).max + 1)
                             if a_new_dtype <= np.dtype(np.uint32):
