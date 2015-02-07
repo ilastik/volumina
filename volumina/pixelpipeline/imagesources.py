@@ -433,7 +433,7 @@ class ColortableImageRequest( object ):
                     _colorTable = _colorTable.copy()  # Must add transparent color. Preserve original colortable.
 
                     # Next we want to insert the transparent color at the beginning if it doesn't exist.
-                    # First verify that the first color is not in use. If it is, try make sure it isn't.
+                    # First verify that the first color is not in use. If it is, try to make sure it isn't.
                     expand_colorTable = False
                     if (a.min() == 0):
                         expand_colorTable = True
