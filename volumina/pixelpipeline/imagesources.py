@@ -428,7 +428,7 @@ class ColortableImageRequest( object ):
             # If we have a masked array with a non-trivial mask, ensure that mask is made transparent.
             _colorTable = self._colorTable
             if np.ma.is_masked(a):
-                # If there is no transparency color at the beginning of the colortable, add one. Skip otherwise.
+                # Add transparent color at the beginning of the colortable as needed.
                 if (_colorTable[0, 3] != 0):
                     _colorTable = _colorTable.copy()  # Must add transparent color. Preserve original colortable.
 
