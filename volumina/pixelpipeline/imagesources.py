@@ -169,15 +169,17 @@ class GrayscaleImageRequest( object ):
         if a.dtype == np.uint64 or a.dtype == np.int64:
             warnings.warn("Truncating 64-bit pixels for display")
             if a.dtype == np.uint64:
-                a = a.astype( np.uint32 )
+                a = np.asanyarray(np.uint32)
             elif a.dtype == np.int64:
-                a = a.astype( np.int32 )
-        
+                a = np.asanyarray(np.int32)
+
+        has_no_mask = not np.ma.is_masked(a)
+
         #
         # new conversion
         #
         tImg = None
-        if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+        if has_no_mask and _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
             if self._normalize is None or \
                self._normalize[0] >= self._normalize[1] or \
                self._normalize == [0, 0]: #FIXME: fix volumina conventions
@@ -191,7 +193,8 @@ class GrayscaleImageRequest( object ):
             vigra.colors.gray2qimage_ARGB32Premultiplied(a, byte_view(img), n)
             tImg = 1000.0*(time.time()-tImg)
         else:
-            self.logger.warning("using slow image creation function")
+            if has_no_mask:
+                self.logger.warning("using slow image creation function")
             tImg = time.time()
             if self._normalize:
                 #clipping has been implemented in this commit,
@@ -269,8 +272,10 @@ class AlphaModulatedImageRequest( object ):
         a = self._arrayreq.getResult()
         tAR = 1000.0*(time.time()-tAR)
 
+        has_no_mask = not np.ma.is_masked(a)
+
         tImg = None
-        if _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
+        if has_no_mask and _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
             if not a.flags.contiguous:
                 a = a.copy()
             tImg = time.time()
@@ -282,14 +287,14 @@ class AlphaModulatedImageRequest( object ):
             vigra.colors.alphamodulated2qimage_ARGB32Premultiplied(a, byte_view(img), tintColor, normalize) 
             tImg = 1000.0*(time.time()-tImg)
         else:
-            self.logger.warning("using unoptimized conversion functions")
+            if has_no_mask:
+                self.logger.warning("using unoptimized conversion functions")
             tImg = time.time()
-            shape = a.shape + (4,)
-            d = np.empty(shape, dtype=np.float32)
-            d[:,:,0] = a[:,:]*self._tintColor.redF()
-            d[:,:,1] = a[:,:]*self._tintColor.greenF()
-            d[:,:,2] = a[:,:]*self._tintColor.blueF()
-            d[:,:,3] = a[:,:]
+            d = a[..., None].repeat(4, axis=-1)
+            d[:,:,0] *= self._tintColor.redF()
+            d[:,:,1] *= self._tintColor.greenF()
+            d[:,:,2] *= self._tintColor.blueF()
+
             normalize = self._normalize
             img = array2qimage(d, normalize)
             img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
@@ -299,8 +304,6 @@ class AlphaModulatedImageRequest( object ):
             tTOT = 1000.0*(time.time()-t)
             self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
             
-        return img
-        
         return img
             
     def notify( self, callback, **kwargs ):
@@ -404,11 +407,11 @@ class ColortableImageRequest( object ):
             if scale != 1.0:
                 a = a * scale
             if len(self._colorTable) <= 2**8:
-                a = np.asarray( a, dtype=np.uint8 )
+                a = np.asanyarray( a, dtype=np.uint8 )
             elif len(self._colorTable) <= 2**16:
-                a = np.asarray( a, dtype=np.uint16 )
+                a = np.asanyarray( a, dtype=np.uint16 )
             elif len(self._colorTable) <= 2**32:
-                a = np.asarray( a, dtype=np.uint32 )
+                a = np.asanyarray( a, dtype=np.uint32 )
 
         # Use vigra if possible (much faster)
         tImg = None
@@ -420,8 +423,40 @@ class ColortableImageRequest( object ):
                 #FIXME: maybe this should be done in a better way using an operator before the colortable request which properly handles 
                 #this problem 
                 warnings.warn("Data for colortable layers cannot be float, casting",RuntimeWarning)
-                a=a.astype(np.int32)
-            vigra.colors.applyColortable(a, self._colorTable, byte_view(img))
+                a = np.asanyarray(a, dtype=np.uint32)
+
+            # If we have a masked array with a non-trivial mask, ensure that mask is made transparent.
+            _colorTable = self._colorTable
+            if np.ma.is_masked(a):
+                # Add transparent color at the beginning of the colortable as needed.
+                if (_colorTable[0, 3] != 0):
+                    # If label 0 is unused, it can be transparent. Otherwise, the transparent color must be inserted.
+                    if (a.min() == 0):
+                        # If it will overflow simply promote the type. Unless we have reached the max VIGRA type.
+                        if (a.max() == np.iinfo(a.dtype).max):
+                            a_new_dtype = np.min_scalar_type(np.iinfo(a.dtype).max + 1)
+                            if a_new_dtype <= np.dtype(np.uint32):
+                                 a = np.asanyarray(a, dtype=a_new_dtype)
+                            else:
+                                assert(np.iinfo(a.dtype).max >= len(_colorTable),
+                                       "This is a very large colortable. If it is indeed needed, add a transparent"
+                                       " color at the beginning of the colortable for displaying masked arrays.")
+
+                                # Try to wrap the max value to a smaller value of the same color.
+                                a[a == np.iinfo(a.dtype).max] %= len(_colorTable)
+
+                        # Insert space for transparent color and shift labels up.
+                        _colorTable = np.insert(_colorTable, 0, 0, axis=0)
+                        a += 1
+                    else:
+                        # Make sure the first color is transparent.
+                        _colorTable = _colorTable.copy()
+                        _colorTable[0] = 0
+
+                # Make masked values transparent.
+                a = np.ma.filled(a, 0)
+
+            vigra.colors.applyColortable(a, _colorTable, byte_view(img))
             tImg = 1000.0*(time.time()-tImg)
 
         # Without vigra, do it the slow way 
