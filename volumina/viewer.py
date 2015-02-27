@@ -240,9 +240,9 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return layer
         
-    def addAlphaModulatedLayer(self, a, name=None):
+    def addAlphaModulatedLayer(self, a, name=None, **kwargs):
         source,self.dataShape = createDataSource(a,True)
-        layer = AlphaModulatedLayer(source)
+        layer = AlphaModulatedLayer(source, **kwargs)
         if name:
             layer.name = name
         self.layerstack.append(layer)
@@ -345,6 +345,18 @@ if __name__ == "__main__":
         f = h5py.File('/tmp/blabla.h5', 'w')
         f['data'] = (numpy.random.random((1,100,100,100,4))) * 255
         viewer.addGrayscaleLayer(f['data'], name='from_hdf5')    
+    
+    white_array = (numpy.ones((100,100,100,1))) * 255
+    viewer.addGrayscaleLayer(white_array, "white")
+    
+    array3 = (numpy.random.random((100,100,100,3))) * 255
+    red_layer = viewer.addAlphaModulatedLayer(array3[...,0], "array3-red", tintColor=QColor(255,0,0))
+    green_layer = viewer.addAlphaModulatedLayer(array3[...,1], "array3-green", tintColor=QColor(0,255,0))
+    blue_layer = viewer.addAlphaModulatedLayer(array3[...,2], "array3-blue", tintColor=QColor(0,0,255))
+
+    red_layer.opacity = 1.0
+    green_layer.opacity = 0.66
+    blue_layer.opacity = 0.33
     
     viewer.raise_()
     
