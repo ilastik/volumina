@@ -27,8 +27,21 @@ hasLazyflow = True
 try:
     import lazyflow
     from datasources import LazyflowSource
-except:
+except ImportError:
     hasLazyflow = False
+    
+try:
+    import h5py
+    hasH5py = True
+except ImportError:
+    hasH5py = False
+
+try:
+    import vigra
+    hasVigra = True
+except ImportError:
+    hasVigra = False
+
 
 if hasLazyflow:
     def _createDataSourceLazyflow( slot, withShape ):
@@ -58,6 +71,20 @@ if hasLazyflow:
 
 @multimethod(numpy.ndarray,bool)
 def createDataSource(source,withShape = False):
+    return _createArrayDataSource(source, withShape)
+
+if hasH5py:
+    @multimethod(h5py.Dataset,bool)
+    def createDataSource(source,withShape = False):
+        return _createArrayDataSource(source, withShape)    
+
+if hasVigra:
+    @multimethod(vigra.VigraArray,bool)
+    def createDataSource(source,withShape = False):
+        source = source.withAxes(*"txyzc").view(numpy.ndarray)
+        return _createArrayDataSource(source, withShape)
+
+def _createArrayDataSource(source,withShape = False):
     #has to handle NumpyArray
     #check if the array is 5d, if not so embed it in a canonical way
     if len(source.shape) == 2:

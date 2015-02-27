@@ -319,21 +319,33 @@ class Viewer(QMainWindow):
         return colors
         
 if __name__ == "__main__":
-    
     import sys
-    from lazyflow.operators import OpImageReader
-    from lazyflow.graph import Operator, OutputSlot, InputSlot
-    from lazyflow.graph import Graph
-    from vigra import VigraArray
-
     
     app = QApplication(sys.argv)
     viewer = Viewer()
     viewer.show()
     array1 = (numpy.random.random((1,100,100,100,5))) * 255
+
+    try:
+        import vigra
+    except:    
+        pass
+    else:
+        array1 = vigra.taggedView(array1, 'txyzc')
     viewer.addGrayscaleLayer(array1)
+
     array2 = (numpy.random.random((100,100,100,3))) * 255
     viewer.addRGBALayer(array2)
+
+    try:
+        import h5py
+    except:
+        pass
+    else:
+        f = h5py.File('/tmp/blabla.h5', 'w')
+        f['data'] = (numpy.random.random((1,100,100,100,4))) * 255
+        viewer.addGrayscaleLayer(f['data'], name='from_hdf5')    
+    
     viewer.raise_()
     
 #     class MyInterpreter(NavigationInterpreter):
