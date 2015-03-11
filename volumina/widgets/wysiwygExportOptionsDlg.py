@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from operator import mul
 import os
 import numpy as np
 
@@ -64,6 +65,8 @@ class WysiwygExportOptionsDlg(QDialog):
         # See self.eventFilter()
         self.installEventFilter(self)
 
+        self.directoryEdit.setText(os.path.expanduser("~"))
+
     def eventFilter(self, watched, event):
         # Ignore 'enter' keypress events, since the user may just be entering settings.
         # The user must manually click the 'OK' button to close the dialog.
@@ -78,12 +81,14 @@ class WysiwygExportOptionsDlg(QDialog):
         self.roi_start = tuple([s if not s is None else 0 for s in self.roi_start])
         self.roi_stop = tuple([s if not s is None else self.shape[i] 
                       for i,s in enumerate(self.roi_stop)])
+        print "ROI", self.roi_start, self.roi_stop
         return self.roi_start, self.roi_stop
     
     def getIterAxes(self):
         # return axes to iterate over (e.g. time t) in format: axes indices, axes symbols, stack size
         start, stop = self.getRoi()
         axes = [i for i in self.along if stop[i]-start[i] > 1]
+        print "AXS", axes, [self.inputAxes[i] for i in axes], [stop[i]-start[i] for i in axes]
         return axes, [self.inputAxes[i] for i in axes], [stop[i]-start[i] for i in axes]
     
     def getExportInfo(self):
@@ -152,24 +157,20 @@ class WysiwygExportOptionsDlg(QDialog):
         ax, co, it = self.getIterAxes()
         w = self.roi_stop[self.sliceAxes[0]] - self.roi_start[self.sliceAxes[0]]
         h = self.roi_stop[self.sliceAxes[1]] - self.roi_start[self.sliceAxes[1]]
-        
-        # describe stacking
-        slice_str = "images"
-        if len(ax) == 1:
-            iter_desc = " (stacked along %s-direction)" % co[0].upper()
-            iter_num = "%d " % it[0]
-        elif len(ax) == 2:
-            iter_desc= (" (%d along %s-direction times "
-                        "%d along %s-direction)" % (it[0], co[0].upper(), it[1], co[1].upper()))
-            iter_num = "%d " % it[0]*it[1]
-        else:
-            iter_desc = ""
-            iter_num = "1 "
-            slice_str = "image"
-        
-        # write full description to label in widget
-        desc = iter_num + self.sliceCoords.upper() + "-" + slice_str + iter_desc + " of size %d x %d" % (w,h)
-        self.exportDesc.setText(desc)
+
+        stack_list = ("{} stacked along {}-direction".format(i, d.upper()) for d, i in zip(co, it))
+
+        stack = ("({})" if ax else "{}").format(" times ".join(stack_list))
+        description = "{count} {dim}-image{s} {stack} of size {w} x {h}".format(
+            count=reduce(mul, it, 1),
+            dim=self.sliceCoords.upper(),
+            s="s" if ax else "",
+            stack=stack,
+            w=int(w),
+            h=int(h)
+        )
+
+        self.exportDesc.setText(description)
     
     def _updateFilePattern(self):
         # if iterator axes change, update file pattern accordingly
@@ -226,8 +227,8 @@ class WysiwygExportOptionsDlg(QDialog):
             self.filePattern = txt
         
     def _browseForPath(self):
-        export_dir = QFileDialog.getExistingDirectory(self, "Export Directory", 
-                                                      os.path.expanduser("~"))
+        default_path = self.directoryEdit().text()
+        export_dir = QFileDialog.getExistingDirectory(self, "Export Directory", default_path)
         if not export_dir.isNull():
             self.directoryEdit.setText(export_dir)
             

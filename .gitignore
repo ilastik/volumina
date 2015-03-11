@@ -10,3 +10,6 @@
 *.kate-swp
 .ropeproject
 *.DS_Store
+
+# pycharm project settings
+.idea/
