@@ -19,13 +19,14 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from operator import mul
+from itertools import product, starmap, repeat
+from operator import mul, sub, add, itemgetter
 import os
 import numpy as np
 
 from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent, QString, QRectF
-from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter
+from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb
 
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
 
@@ -81,14 +82,12 @@ class WysiwygExportOptionsDlg(QDialog):
         self.roi_start = tuple([s if not s is None else 0 for s in self.roi_start])
         self.roi_stop = tuple([s if not s is None else self.shape[i] 
                       for i,s in enumerate(self.roi_stop)])
-        print "ROI", self.roi_start, self.roi_stop
         return self.roi_start, self.roi_stop
     
     def getIterAxes(self):
         # return axes to iterate over (e.g. time t) in format: axes indices, axes symbols, stack size
         start, stop = self.getRoi()
         axes = [i for i in self.along if stop[i]-start[i] > 1]
-        print "AXS", axes, [self.inputAxes[i] for i in axes], [stop[i]-start[i] for i in axes]
         return axes, [self.inputAxes[i] for i in axes], [stop[i]-start[i] for i in axes]
     
     def getExportInfo(self):
@@ -312,48 +311,29 @@ class WysiwygExportHelper(MultiStepProgressDialog):
 
         # create plain image and painter
         self.img = QImage(w, h, QImage.Format_RGB16)
+        self.img.fill(qRgb(0, 0, 0))
         self.painter = QPainter(self.img)
-
-        # calculate number of iterations/images to export
-        if len(iter_axes) > 0:
-            self.n_iter = np.prod(np.array(iter_n))
-        else:
-            self.n_iter = 1
                         
         # prepare export loop
         self.exportloop = self.loopGenerator(rect, pos, start, stop, iter_axes, 
                                              iter_coords, folder, pattern, fileExt)
 
     # Idea from: http://stackoverflow.com/a/7226877
-    def loopGenerator(self, rect, pos, start, stop, iter_axes, 
+    def loopGenerator(self, rect, base_pos, start, stop, iter_axes,
                       iter_coords, folder, pattern, fileExt):
-        if len(iter_axes) < 1:
-            # single image
-            fname = self._filename(folder, pattern, fileExt, iter_coords, [])
-            self._saveImg(pos, rect, fname)
-            self._setProgress(1)
+
+        ranges = [xrange(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
+        steps = reduce(mul, map(len, ranges), 1.0)
+
+        print steps
+
+        for i, pos in enumerate(product(*ranges)):
+            coords = itemgetter(*iter_axes)(pos)
+            self._saveImg(pos, rect, self._filename(folder, pattern, fileExt, iter_coords, coords))
+            self.setStepProgress(100 * i / steps)
             yield
-        else:
-            k = 0
-            # iterate over first coordinate (e.g. t)
-            for i in range(start[iter_axes[0]], stop[iter_axes[0]]):
-                pos[iter_axes[0]] = i
-                
-                # iterate over second coordinate (e.g. z) if any
-                if len(iter_axes) > 1:
-                    for j in range(start[iter_axes[1]], stop[iter_axes[1]]):
-                        pos[iter_axes[1]] = j
-                        fname = self._filename(folder, pattern, fileExt, iter_coords, [i,j,])
-                        self._saveImg(pos, rect, fname)
-                        k += 1
-                        self._setProgress(k)
-                        yield
-                else:
-                    fname = self._filename(folder, pattern, fileExt, iter_coords, [i,])
-                    self._saveImg(pos, rect, fname)
-                    k += 1
-                    self._setProgress(k)
-                    yield
+        self.setStepProgress(100)
+        self.finishStep()
 
     def cancel(self):
         # kill timer
@@ -382,10 +362,6 @@ class WysiwygExportHelper(MultiStepProgressDialog):
             except StopIteration:
                 # if loop finished, call cancel to wrap up the process
                 self.cancel()
-
-    # convenience functions
-    def _setProgress(self, k):
-        self.setStepProgress(100*float(k)/self.n_iter)
     
     def _setPos5D(self, pos5d):
         self.posModel.time = pos5d[0]
@@ -400,8 +376,9 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         self.img.save(fname)
     
     def _filename(self, folder, pattern, extension, iters, coords):
-        for i, c in enumerate(iters):
-            to_rep = "{%s}" % c
-            pattern = pattern.replace(to_rep, str(coords[i]))
-        return os.path.join(folder, pattern+"."+extension)
-    
+        if not hasattr(coords, "__iter__"):
+            coords = [coords]
+
+        replace = dict(zip(iters, coords))
+        fname = "{pattern}.{ext}".format(pattern=pattern.format(**replace), ext=extension)
+        return os.path.join(folder, fname)
