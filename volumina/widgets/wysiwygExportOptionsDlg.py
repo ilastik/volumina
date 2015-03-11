@@ -19,14 +19,13 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from itertools import product, starmap, repeat
-from operator import mul, sub, add, itemgetter
+from itertools import product
+from operator import mul, itemgetter
 import os
-import numpy as np
 
 from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent, QString, QRectF
-from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb
+from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb, QColorDialog
 
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
 
@@ -106,7 +105,7 @@ class WysiwygExportOptionsDlg(QDialog):
         stop = [None,] * len(self.shape)
         pos5d = self.view.scene()._posModel.slicingPos5D
         rect = self.view.viewportRect()
-        for i in range(4):
+        for i in range(len(self.shape)):
             if self.shape[i] > 1:
                 start[i] = pos5d[i]
                 stop[i] = pos5d[i]+1
@@ -120,13 +119,13 @@ class WysiwygExportOptionsDlg(QDialog):
         self.roi_stop = tuple(stop)
         
         # initialize widget
-        self.roiWidget.initWithExtents(self.inputAxes[:-1], self.shape[:-1], 
-                                       self.roi_start[:-1], self.roi_stop[:-1])
+        self.roiWidget.initWithExtents(self.inputAxes[:], self.shape[:],
+                                       self.roi_start[:], self.roi_stop[:])
         
         # if user changes roi in widget, save new values to class        
         def _handleRoiChange(newstart, newstop):
-            self.roi_start = newstart+(None,)
-            self.roi_stop = newstop+(None,)
+            self.roi_start = newstart
+            self.roi_stop = newstop
             self._updateExportDesc()
             self._updateFilePattern()
 
@@ -311,7 +310,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
 
         # create plain image and painter
         self.img = QImage(w, h, QImage.Format_RGB16)
-        self.img.fill(qRgb(0, 0, 0))
+        self.img.fill(Qt.black)
         self.painter = QPainter(self.img)
                         
         # prepare export loop
@@ -325,10 +324,9 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         ranges = [xrange(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
         steps = reduce(mul, map(len, ranges), 1.0)
 
-        print steps
-
+        getter = itemgetter(*iter_axes if iter_axes else [slice(0)])
         for i, pos in enumerate(product(*ranges)):
-            coords = itemgetter(*iter_axes)(pos)
+            coords = getter(pos)
             self._saveImg(pos, rect, self._filename(folder, pattern, fileExt, iter_coords, coords))
             self.setStepProgress(100 * i / steps)
             yield

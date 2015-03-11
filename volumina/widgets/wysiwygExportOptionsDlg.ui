@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>690</width>
-    <height>463</height>
+    <height>566</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -107,7 +107,7 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="0" colspan="2">
+      <item row="2" column="0" colspan="2">
        <widget class="QCheckBox" name="displayMarkersCheckbox">
         <property name="text">
          <string>Display slice intersection markers in exported images</string>
@@ -292,5 +292,33 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>change_background_color</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>changeBackgroundColor()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>122</x>
+  <connection>
+   <sender>change_background_color</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>changeBackgroundColor()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>122</x>
+     <y>246</y>
+     <y>262</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>344</x>
+     <y>282</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>changeBackgroundColor()</slot>
+ </slots>
 </ui>
