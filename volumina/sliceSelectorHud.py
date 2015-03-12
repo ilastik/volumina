@@ -69,7 +69,7 @@ class LabelButtons(QLabel):
 
     # values: (icon path, tooltip)
     icons = {
-        'export' : (':icons/icons/export.png', "Export"),
+        'export' : (':icons/icons/export.png', "Export Current Composite View"),
         'undock' : (':icons/icons/undock.png', "Undock"),
         'dock' : (':icons/icons/dock.png', "Dock"),
         'zoom-to-fit' : (':icons/icons/spin-up.png', "Zoom to fit"),

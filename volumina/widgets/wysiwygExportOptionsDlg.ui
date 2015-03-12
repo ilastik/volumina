@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>690</width>
-    <height>566</height>
+    <height>578</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -156,14 +156,24 @@
       </property>
       <item>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="1" column="2">
+        <item row="7" column="0" colspan="2">
+         <widget class="QCheckBox" name="stack_tiffs_checkbox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Combine 2D Stacks</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
          <widget class="QPushButton" name="selectDirectoryButton">
           <property name="text">
            <string>Select...</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="1" colspan="2">
+        <item row="5" column="1" colspan="2">
          <widget class="QLineEdit" name="filePatternEdit">
           <property name="text">
            <string>file.png</string>
@@ -183,17 +193,17 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="2" column="1">
          <widget class="QLineEdit" name="directoryEdit"/>
         </item>
-        <item row="2" column="1">
+        <item row="3" column="1">
          <widget class="QLabel" name="directoryInvalidLabel">
           <property name="text">
            <string>Invalid directory!</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
            <string>Directory:</string>
@@ -207,14 +217,14 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="label_3">
           <property name="text">
            <string>File Pattern:</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
+        <item row="6" column="1">
          <widget class="QLabel" name="filePatternInvalidLabel">
           <property name="text">
            <string>Invalid file pattern!</string>
@@ -300,23 +310,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>122</x>
-  <connection>
-   <sender>change_background_color</sender>
-   <signal>clicked()</signal>
-   <receiver>Dialog</receiver>
-   <slot>changeBackgroundColor()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>122</x>
      <y>246</y>
-     <y>262</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>344</x>
-     <y>282</y>
-    </hint>
-   </hints>
-  </connection>
  </connections>
  <slots>
   <slot>changeBackgroundColor()</slot>

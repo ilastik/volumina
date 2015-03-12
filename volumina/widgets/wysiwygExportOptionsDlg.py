@@ -28,6 +28,13 @@ from PyQt4.QtCore import Qt, QEvent, QString, QRectF
 from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb, QColorDialog, \
     QApplication
 
+try:
+    import wand
+except ImportError:
+    wand = None
+else:
+    from wand.image import Image
+
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
 
 class WysiwygExportOptionsDlg(QDialog):
@@ -67,6 +74,14 @@ class WysiwygExportOptionsDlg(QDialog):
         self.installEventFilter(self)
 
         self.directoryEdit.setText(os.path.expanduser("~"))
+
+        # hide stack tiffs if libtiff is not installed
+        if wand is None:
+            self.stack_tiffs_checkbox.setVisible(False)
+
+    def stack_tiffs(self):
+        return wand is not None and \
+            self.stack_tiffs_checkbox.isEnabled() and self.stack_tiffs_checkbox.checkState() == Qt.Checked
 
     def eventFilter(self, watched, event):
         # Ignore 'enter' keypress events, since the user may just be entering settings.
@@ -170,6 +185,7 @@ class WysiwygExportOptionsDlg(QDialog):
         )
 
         self.exportDesc.setText(description)
+        self._updateStackTiffCheckbox()
     
     def _updateFilePattern(self):
         # if iterator axes change, update file pattern accordingly
@@ -211,6 +227,23 @@ class WysiwygExportOptionsDlg(QDialog):
     def _handleFormatChange(self):
         self.fileExt = str(self.fileFormatCombo.currentText()).split(" ")[0]
         self._updateFileExtensionInPattern(self.fileExt)
+        self._updateStackTiffCheckbox()
+
+    def _updateStackTiffCheckbox(self):
+        check = self.stack_tiffs_checkbox
+        check.setEnabled(False)
+        check.setCheckState(Qt.Unchecked)
+        if wand is None:
+            check.setToolTip("Wand is not installed")
+            return
+        if self.fileExt not in ["tiff", "tif", "ico"]:
+            check.setToolTip("File format may not be '{} sequence'".format(self.fileExt))
+            return
+        if not {"x", "y", "z"} & set(self.getIterAxes()[1]):
+            check.setToolTip("There is no 3D stack")
+            return
+
+        self.stack_tiffs_checkbox.setEnabled(True)
         
     def _handlePatternChange(self):
         txt = str(self.filePatternEdit.text()).split(".")
@@ -279,7 +312,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         if self.dlg is None:
             return
         
-        self.setNumberOfSteps(1)
+        self.setNumberOfSteps(1 + self.dlg.stack_tiffs())
         
         # grab settings from dialog
         start, stop = self.dlg.getRoi()
@@ -327,13 +360,48 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         steps = reduce(mul, map(len, ranges), 1.0)
 
         getter = itemgetter(*iter_axes if iter_axes else [slice(0)])
+        file_names = []
         for i, pos in enumerate(product(*ranges)):
             coords = getter(pos)
-            self._saveImg(pos, rect, self._filename(folder, pattern, fileExt, iter_coords, coords, padding))
+            file_names.append(self._filename(folder, pattern, fileExt, iter_coords, coords, padding))
+            self._saveImg(pos, rect, file_names[-1])
             self.setStepProgress(100 * i / steps)
             yield
         self.setStepProgress(100)
         self.finishStep()
+
+        if not self.dlg.stack_tiffs():
+            return
+
+        tsteps = stop[0] - start[0] if "t" in iter_coords else 1
+        chunks = [iter(file_names)] * (len(file_names) / tsteps)
+        depth_index = None
+        depth_coord = None
+        for index, name in zip(iter_axes, iter_coords):
+            if name in ["x", "y", "z"]:
+                depth_coord = name
+                depth_index = index
+                break
+        assert depth_index is not None
+        assert depth_coord is not None
+        stack_range = "{}-{}".format(start[depth_index], stop[depth_index])
+        for t, chunk in zip(xrange(start[0], stop[0]), zip(*chunks)):
+            stack_pattern = pattern.replace("{{{}}}".format(depth_coord), stack_range)
+            stack_name = self._filename(folder, stack_pattern, fileExt, iter_coords, [t] + [0] * (len(iter_axes) - 1)
+                                        , padding)
+            self.combine_stack(stack_name, *chunk)
+            self.setStepProgress(100 * t / tsteps)
+            yield
+
+        self.setStepProgress(100)
+        self.finishStep()
+
+    @staticmethod
+    def combine_stack(out_file, *in_files):
+        image = Image(filename=in_files[0])
+        for in_file in in_files[1:]:
+            image.read(filename=in_file)
+        image.save(filename=out_file)
 
     def cancel(self):
         # kill timer
@@ -381,5 +449,6 @@ class WysiwygExportHelper(MultiStepProgressDialog):
             coords = [coords]
 
         replace = dict(zip(iters, map(format, coords, padding)))
+
         fname = "{pattern}.{ext}".format(pattern=pattern.format(**replace), ext=extension)
         return os.path.join(folder, fname)
