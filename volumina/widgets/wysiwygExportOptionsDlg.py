@@ -25,7 +25,8 @@ import os
 
 from PyQt4 import uic
 from PyQt4.QtCore import Qt, QEvent, QString, QRectF
-from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb, QColorDialog
+from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb, QColorDialog, \
+    QApplication
 
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
 
@@ -356,6 +357,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
     def timerEvent(self, event):
         if not self.exportloop is None:
             try:
+                QApplication.processEvents()
                 # if not canceled, process next image in export loop
                 next(self.exportloop)
             except StopIteration:
