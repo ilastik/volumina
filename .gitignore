@@ -13,3 +13,5 @@
 
 # pycharm project settings
 .idea/
+# kdiff3 backups
+*.orig

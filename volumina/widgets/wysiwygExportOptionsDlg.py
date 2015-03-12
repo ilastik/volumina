@@ -37,6 +37,7 @@ else:
 
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
 
+
 class WysiwygExportOptionsDlg(QDialog):
     
     def __init__(self, view):
@@ -53,6 +54,7 @@ class WysiwygExportOptionsDlg(QDialog):
         # indicators for ok button
         self._pattern_ok = False
         self._directory_ok = False
+        self.fileExt = ""
 
         # properties
         self.along = self.view.scene()._along
@@ -75,7 +77,7 @@ class WysiwygExportOptionsDlg(QDialog):
 
         self.directoryEdit.setText(os.path.expanduser("~"))
 
-        # hide stack tiffs if libtiff is not installed
+        # hide stack tiffs if Wand is not installed
         if wand is None:
             self.stack_tiffs_checkbox.setVisible(False)
 
@@ -121,6 +123,7 @@ class WysiwygExportOptionsDlg(QDialog):
         stop = [None,] * len(self.shape)
         pos5d = self.view.scene()._posModel.slicingPos5D
         rect = self.view.viewportRect()
+        print "RECT", pos5d, rect
         for i in range(len(self.shape)):
             if self.shape[i] > 1:
                 start[i] = pos5d[i]
@@ -146,6 +149,7 @@ class WysiwygExportOptionsDlg(QDialog):
             self._updateFilePattern()
 
         self.roiWidget.roiChanged.connect(_handleRoiChange)
+        _handleRoiChange(*self.roiWidget.roi)
 
     def _initFileOptionsWidget(self):        
         # List all image formats supported by QImageWriter
@@ -174,8 +178,8 @@ class WysiwygExportOptionsDlg(QDialog):
 
         stack_list = ("{} stacked along {}-direction".format(i, d.upper()) for d, i in zip(co, it))
 
-        stack = ("({})" if ax else "{}").format(" times ".join(stack_list))
-        description = "{count} {dim}-image{s} {stack} of size {w} x {h}".format(
+        stack = (" ({})" if ax else "{}").format(" times ".join(stack_list))
+        description = "{count} {dim}-image{s}{stack} of size {w} x {h}".format(
             count=reduce(mul, it, 1),
             dim=self.sliceCoords.upper(),
             s="s" if ax else "",
@@ -320,7 +324,10 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         slice_axes = self.dlg.sliceAxes
         show_markers = self.dlg.showMarkers()
         folder, pattern, fileExt = self.dlg.getExportInfo()
-        
+
+        if slice_axes[0] == 2 and slice_axes[1] == 3:
+            slice_axes[0], slice_axes[1] = slice_axes[1], slice_axes[0]
+
         # width and height of images
         w = stop[slice_axes[0]] - start[slice_axes[0]]
         h = stop[slice_axes[1]] - start[slice_axes[1]]
@@ -438,11 +445,14 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         self.posModel.channel = pos5d[4]
     
     def _saveImg(self, pos, rect, fname):
+        print "POS", pos
+        print "RECT", rect
         #img.fill(0)
         self._setPos5D(pos)
         self.view.scene().joinRenderingAllTiles(viewport_only=False, rect=rect)
         self.view.scene().render(self.painter, source=rect)
         self.img.save(fname)
+
     
     def _filename(self, folder, pattern, extension, iters, coords, padding):
         if not hasattr(coords, "__iter__"):
