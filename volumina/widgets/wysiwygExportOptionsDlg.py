@@ -120,13 +120,13 @@ class WysiwygExportOptionsDlg(QDialog):
         self.roi_stop = tuple(stop)
         
         # initialize widget
-        self.roiWidget.initWithExtents(self.inputAxes[:], self.shape[:],
-                                       self.roi_start[:], self.roi_stop[:])
-        
+        self.roiWidget.initWithExtents(self.inputAxes[:-1], self.shape[:-1],
+                                       self.roi_start[:-1], self.roi_stop[:-1])
+
         # if user changes roi in widget, save new values to class        
         def _handleRoiChange(newstart, newstop):
-            self.roi_start = newstart
-            self.roi_stop = newstop
+            self.roi_start = newstart + (0,)
+            self.roi_stop = newstop + (1,)
             self._updateExportDesc()
             self._updateFilePattern()
 
