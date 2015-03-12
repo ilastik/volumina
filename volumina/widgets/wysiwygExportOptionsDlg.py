@@ -322,12 +322,13 @@ class WysiwygExportHelper(MultiStepProgressDialog):
                       iter_coords, folder, pattern, fileExt):
 
         ranges = [xrange(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
+        padding = ["0{}".format(len(str(len(r) - 1))) for r in ranges if len(r) > 1]
         steps = reduce(mul, map(len, ranges), 1.0)
 
         getter = itemgetter(*iter_axes if iter_axes else [slice(0)])
         for i, pos in enumerate(product(*ranges)):
             coords = getter(pos)
-            self._saveImg(pos, rect, self._filename(folder, pattern, fileExt, iter_coords, coords))
+            self._saveImg(pos, rect, self._filename(folder, pattern, fileExt, iter_coords, coords, padding))
             self.setStepProgress(100 * i / steps)
             yield
         self.setStepProgress(100)
@@ -373,10 +374,10 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         self.view.scene().render(self.painter, source=rect)
         self.img.save(fname)
     
-    def _filename(self, folder, pattern, extension, iters, coords):
+    def _filename(self, folder, pattern, extension, iters, coords, padding):
         if not hasattr(coords, "__iter__"):
             coords = [coords]
 
-        replace = dict(zip(iters, coords))
+        replace = dict(zip(iters, map(format, coords, padding)))
         fname = "{pattern}.{ext}".format(pattern=pattern.format(**replace), ext=extension)
         return os.path.join(folder, fname)
