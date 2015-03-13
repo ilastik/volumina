@@ -262,7 +262,7 @@ class WysiwygExportOptionsDlg(QDialog):
             self.filePattern = txt
         
     def _browseForPath(self):
-        default_path = self.directoryEdit().text()
+        default_path = self.directoryEdit.text()
         export_dir = QFileDialog.getExistingDirectory(self, "Export Directory", default_path)
         if not export_dir.isNull():
             self.directoryEdit.setText(export_dir)
