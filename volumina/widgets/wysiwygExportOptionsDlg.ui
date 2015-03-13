@@ -113,7 +113,7 @@
          <string>Display slice intersection markers in exported images</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -302,24 +302,5 @@
     </hint>
    </hints>
   </connection>
-  <connection>
-   <sender>change_background_color</sender>
-   <signal>clicked()</signal>
-   <receiver>Dialog</receiver>
-   <slot>changeBackgroundColor()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>122</x>
-     <y>246</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>344</x>
-     <y>288</y>
-    </hint>
-   </hints>
-  </connection>
  </connections>
- <slots>
-  <slot>changeBackgroundColor()</slot>
- </slots>
 </ui>

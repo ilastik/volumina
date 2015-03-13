@@ -123,7 +123,6 @@ class WysiwygExportOptionsDlg(QDialog):
         stop = [None,] * len(self.shape)
         pos5d = self.view.scene()._posModel.slicingPos5D
         rect = self.view.viewportRect()
-        print "RECT", pos5d, rect
         for i in range(len(self.shape)):
             if self.shape[i] > 1:
                 start[i] = pos5d[i]
@@ -445,8 +444,6 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         self.posModel.channel = pos5d[4]
     
     def _saveImg(self, pos, rect, fname):
-        print "POS", pos
-        print "RECT", rect
         #img.fill(0)
         self._setPos5D(pos)
         self.view.scene().joinRenderingAllTiles(viewport_only=False, rect=rect)
