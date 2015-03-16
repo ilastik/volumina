@@ -237,6 +237,7 @@ class VolumeEditor( QObject ):
         self.eventSwitch.interpreter = modes[name]
 
     def showCropLines(self, visible):
+        print " ///// SLT /////> in volumeEditor.showCropLines"
         for view in self.imageViews:
             view.showCropLines(visible)
 
@@ -274,6 +275,7 @@ class VolumeEditor( QObject ):
             newPos = copy.deepcopy(self.posModel.slicingPos)
             newPos[pos] = num
             self.posModel.slicingPos = newPos
+            print ",,,,, SLT ,,,,,> moving a Slice"
         view3d.changedSlice.connect(onSliceDragged)
         return view3d
 

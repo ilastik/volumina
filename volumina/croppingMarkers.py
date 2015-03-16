@@ -277,13 +277,27 @@ class CropLine(QGraphicsItem):
         width, height = self._parent.dataShape
         
         if self._direction == 'horizontal':
+            minPos = self._parent._horizontal0.position
+            maxPos = self._parent._horizontal1.position
             position = int(new_pos.y() + 0.5)
             position = max( 0, position )
             position = min( height, position )
         else:
+            minPos = self._parent._vertical0.position
+            maxPos = self._parent._vertical1.position
             position = int(new_pos.x() + 0.5)
             position = max( 0, position )
             position = min( width, position )
+
+        if self._index==0: # min crop line
+            if position >= maxPos:
+                self._parent.onCropLineMoved( self._direction, 1, position+1 )
+
+        if self._index==1: # max crop line
+            if position <= minPos:
+                self._parent.onCropLineMoved( self._direction, 0, position-1 )
+
+
         self._parent.onCropLineMoved( self._direction, self._index, position )
 
     # Note: We must override these or else the default implementation  

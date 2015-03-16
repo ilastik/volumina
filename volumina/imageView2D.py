@@ -23,6 +23,7 @@ from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRect
 from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication
 
 import numpy
+import threading
 
 from crossHairCursor import CrossHairCursor
 from sliceIntersectionMarker import SliceIntersectionMarker
@@ -34,6 +35,7 @@ from croppingMarkers import CroppingMarkers
 
 class ImageView2D(QGraphicsView):
     focusChanged = pyqtSignal()
+
     """
     Shows a ImageScene2D to the user and allows for interactive
     scrolling, panning, zooming etc.
@@ -143,6 +145,7 @@ class ImageView2D(QGraphicsView):
 
         self._croppingMarkers = CroppingMarkers( self.scene(), axis, cropModel )
 
+
         #FIXME: this should be private, but is currently used from
         #       within the image scene renderer
         self.tempImageItems = []
@@ -164,6 +167,7 @@ class ImageView2D(QGraphicsView):
         #self.hiddenCursor = QCursor(Qt.ArrowCursor)
 
     def showCropLines(self, visible):
+        print " ----- SLT -----> in imageView2D.showCropLines"
         self._croppingMarkers.setVisible(visible)
 
     def _cleanUp(self):
@@ -184,6 +188,7 @@ class ImageView2D(QGraphicsView):
         widget's viewport in the scene's coordinates
         """
         r =  self.mapToScene(self.viewport().geometry()).boundingRect()
+        print " ..... SLT .....> viewportRect=",r
         return r
 
     def mapScene2Data(self, pos):
