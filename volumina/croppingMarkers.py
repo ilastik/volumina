@@ -19,10 +19,8 @@ from PyQt4.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
 from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor, QBrush, QColor
 
 class CropExtentsModel( QObject ):
-    changed = pyqtSignal( object )  # list of start/stop coords indexed by axis
-                                    # Note: There is no required ordering for start/stop 
-                                    #       (i.e. start could be greater than stop)
-    
+    changed = pyqtSignal( object )  # list of start/stop coords indexed by axis: start < stop
+
     def __init__(self, parent):
         super( CropExtentsModel, self ).__init__( parent )
         self._crop_extents = [ [None, None], [None, None], [None, None] ]
@@ -291,11 +289,13 @@ class CropLine(QGraphicsItem):
 
         if self._index==0: # min crop line
             if position >= maxPos:
-                self._parent.onCropLineMoved( self._direction, 1, position+1 )
+                self._parent.onCropLineMoved( self._direction, 1, position )
+                position -= 1
 
         if self._index==1: # max crop line
             if position <= minPos:
-                self._parent.onCropLineMoved( self._direction, 0, position-1 )
+                self._parent.onCropLineMoved( self._direction, 0, position )
+                position += 1
 
 
         self._parent.onCropLineMoved( self._direction, self._index, position )

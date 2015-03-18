@@ -70,150 +70,101 @@ class SubModelSelectionWidget(QWidget):
 
     # t
     def _onMinSliderTMoved(self, v):
-        if v >= self._maxSliderT.value():
-            if v < self._maxSliderT.maximum():
-                self._maxSliderT.setValue(v+1)
-            else:
-                self._minSliderT.setValue(v-1)
+        if v > self._maxSliderT.value():
+            self._maxSliderT.setValue(v)
         self.valueChanged.emit('T','min',self._minSliderT.value())
         self._minSpinT.setValue(v)
 
-
     def _onMaxSliderTMoved(self, v):
-        if v <= self._minSliderT.value():
-            if v > self._minSliderT.minimum():
-                self._minSliderT.setValue(v-1)
-            else:
-                self._maxSliderT.setValue(self._minSliderT.minimum()+1)
+        if v < self._minSliderT.value():
+            self._minSliderT.setValue(v)
         self.valueChanged.emit('T','max',self._maxSliderT.value())
         self._maxSpinT.setValue(v)
 
     def _onMinSpinTMoved(self, v):
-        if v >= self._maxSpinT.value():
-            if v < self._maxSpinT.maximum():
-                self._maxSpinT.setValue(v+1)
-            else:
-                self._minSpinT.setValue(v-1)
+        if v > self._maxSpinT.value():
+            self._maxSpinT.setValue(v)
         self.valueChanged.emit('T','min',self._minSpinT.value())
         self._minSliderT.setValue(v)
 
     def _onMaxSpinTMoved(self, v):
-        if v <= self._minSpinT.value():
-            if v > self._minSpinT.minimum():
-                self._minSpinT.setValue(v-1)
-            else:
-                self._maxSpinT.setValue(self._minSpinT.minimum()+1)
+        if v < self._minSpinT.value():
+            self._minSpinT.setValue(v)
         self.valueChanged.emit('T','max',self._maxSpinT.value())
         self._maxSliderT.setValue(v)
 
     # x
     def _onMinSliderXMoved(self, v):
-        if v >= self._maxSliderX.value():
-            if v < self._maxSliderX.maximum():
-                self._maxSliderX.setValue(v+1)
-            else:
-                self._minSliderX.setValue(v-1)
+        if v > self._maxSliderX.value():
+            self._maxSliderX.setValue(v)
         self.valueChanged.emit('X','min',self._minSliderX.value())
         self._minSpinX.setValue(v)
 
     def _onMaxSliderXMoved(self, v):
-        if v <= self._minSliderX.value():
-            if v > self._minSliderX.minimum():
-                self._minSliderX.setValue(v-1)
-            else:
-                self._maxSliderX.setValue(self._minSliderX.minimum()+1)
+        if v < self._minSliderX.value():
+            self._minSliderX.setValue(v)
         self.valueChanged.emit('X','max',self._maxSliderX.value())
         self._maxSpinX.setValue(v)
 
     def _onMinSpinXMoved(self, v):
-        if v >= self._maxSpinX.value():
-            if v < self._maxSpinX.maximum():
-                self._maxSpinX.setValue(v+1)
-            else:
-                self._minSpinX.setValue(v-1)
+        if v > self._maxSpinX.value():
+            self._maxSpinX.setValue(v)
         self.valueChanged.emit('X','min',self._minSpinX.value())
         self._minSliderX.setValue(v)
 
     def _onMaxSpinXMoved(self, v):
-        if v <= self._minSpinX.value():
-            if v > self._minSpinX.minimum():
-                self._minSpinX.setValue(v-1)
-            else:
-                self._maxSpinX.setValue(self._minSpinX.minimum()+1)
+        if v < self._minSpinX.value():
+            self._minSpinX.setValue(v)
         self.valueChanged.emit('X','max',self._maxSpinX.value())
         self._maxSliderX.setValue(v)
 
     # y
     def _onMinSliderYMoved(self, v):
-        if v >= self._maxSliderY.value():
-            if v < self._maxSliderY.maximum():
-                self._maxSliderY.setValue(v+1)
-            else:
-                self._minSliderY.setValue(v-1)
+        if v > self._maxSliderY.value():
+            self._maxSliderY.setValue(v)
         self.valueChanged.emit('Y','min',self._minSliderY.value())
         self._minSpinY.setValue(v)
 
     def _onMaxSliderYMoved(self, v):
-        if v <= self._minSliderY.value():
-            if v > self._minSliderY.minimum():
-                self._minSliderY.setValue(v-1)
-            else:
-                self._maxSliderY.setValue(self._minSliderY.minimum()+1)
+        if v < self._minSliderY.value():
+            self._minSliderY.setValue(v)
         self.valueChanged.emit('Y','max',self._maxSliderY.value())
         self._maxSpinY.setValue(v)
 
     def _onMinSpinYMoved(self, v):
-        if v >= self._maxSpinY.value():
-            if v < self._maxSpinY.maximum():
-                self._maxSpinY.setValue(v+1)
-            else:
-                self._minSpinY.setValue(v-1)
+        if v > self._maxSpinY.value():
+            self._maxSpinY.setValue(v)
         self.valueChanged.emit('Y','min',self._minSpinY.value())
         self._minSliderY.setValue(v)
 
     def _onMaxSpinYMoved(self, v):
-        if v <= self._minSpinY.value():
-            if v > self._minSpinY.minimum():
-                self._minSpinY.setValue(v-1)
-            else:
-                self._maxSpinY.setValue(self._minSpinY.minimum()+1)
+        if v < self._minSpinY.value():
+            self._minSpinY.setValue(v)
         self.valueChanged.emit('Y','max',self._maxSpinY.value())
         self._maxSliderY.setValue(v)
 
     # z
     def _onMinSliderZMoved(self, v):
-        if v >= self._maxSliderZ.value():
-            if v < self._maxSliderZ.maximum():
-                self._maxSliderZ.setValue(v+1)
-            else:
-                self._minSliderZ.setValue(v-1)
+        if v > self._maxSliderZ.value():
+            self._maxSliderZ.setValue(v)
         self.valueChanged.emit('Z','min',self._minSliderZ.value())
         self._minSpinZ.setValue(v)
 
     def _onMaxSliderZMoved(self, v):
-        if v <= self._minSliderZ.value():
-            if v > self._minSliderZ.minimum():
-                self._minSliderZ.setValue(v-1)
-            else:
-                self._maxSliderZ.setValue(self._minSliderZ.minimum()+1)
+        if v < self._minSliderZ.value():
+            self._minSliderZ.setValue(v)
         self.valueChanged.emit('Z','max',self._maxSliderZ.value())
         self._maxSpinZ.setValue(v)
 
     def _onMinSpinZMoved(self, v):
-        if v >= self._maxSpinZ.value():
-            if v < self._maxSpinZ.maximum():
-                self._maxSpinZ.setValue(v+1)
-            else:
-                self._minSpinZ.setValue(v-1)
+        if v > self._maxSpinZ.value():
+            self._maxSpinZ.setValue(v)
         self.valueChanged.emit('Z','min',self._minSpinZ.value())
         self._minSliderZ.setValue(v)
 
     def _onMaxSpinZMoved(self, v):
-        if v <= self._minSpinZ.value():
-            if v > self._minSpinZ.minimum():
-                self._minSpinZ.setValue(v-1)
-            else:
-                self._maxSpinZ.setValue(self._minSpinZ.minimum()+1)
+        if v < self._minSpinZ.value():
+            self._minSpinZ.setValue(v)
         self.valueChanged.emit('Z','max',self._maxSpinZ.value())
         self._maxSliderZ.setValue(v)
 
