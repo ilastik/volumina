@@ -167,7 +167,6 @@ class ImageView2D(QGraphicsView):
         #self.hiddenCursor = QCursor(Qt.ArrowCursor)
 
     def showCropLines(self, visible):
-        print " ----- SLT -----> in imageView2D.showCropLines"
         self._croppingMarkers.setVisible(visible)
 
     def _cleanUp(self):
