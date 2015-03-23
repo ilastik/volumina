@@ -496,11 +496,17 @@ class QuadStatusBar(QHBoxLayout):
         new_position[changed_axis] = value
         self.positionChanged.emit(*new_position)
 
-    def updateShape5D(self, shape5D):
-        self.timeSpinBox.setMaximum(shape5D[0]-1)
-        self.xSpinBox.setMaximum(shape5D[1]-1)
-        self.ySpinBox.setMaximum(shape5D[2]-1)
-        self.zSpinBox.setMaximum(shape5D[3]-1)
+    def updateShape5D(self, shape5Dmax, shape5DcropMin):#=[0,0,0,0,0]):
+        print "changing time in QuadStatusBar.updateShape5D--------------------------------------------------->",shape5Dmax,shape5DcropMin
+        self.timeSpinBox.setMaximum(shape5Dmax[0]-1)
+        self.xSpinBox.setMaximum(shape5Dmax[1]-1)
+        self.ySpinBox.setMaximum(shape5Dmax[2]-1)
+        self.zSpinBox.setMaximum(shape5Dmax[3]-1)
+
+        self.timeSpinBox.setValue(shape5DcropMin[0])
+        self.xSpinBox.setValue(shape5DcropMin[1])
+        self.ySpinBox.setValue(shape5DcropMin[2])
+        self.zSpinBox.setValue(shape5DcropMin[3])
 
     def setMouseCoords(self, x, y, z):
         self.xSpinBox.setValueWithoutSignal(x)

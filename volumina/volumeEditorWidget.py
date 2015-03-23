@@ -103,7 +103,7 @@ class VolumeEditorWidget(QWidget):
         
         for i in range(3):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
-    
+
     def init(self, volumina):
         self.editor = volumina
         
@@ -204,9 +204,9 @@ class VolumeEditorWidget(QWidget):
                 return
             self.editor.posModel.time = t
         self.quadview.statusBar.timeSpinBox.delayedValueChanged.connect(setTime)
-        def getTime(newT):
+        def setTimeSpinBox(newT):
             self.quadview.statusBar.timeSpinBox.setValue(newT)
-        self.editor.posModel.timeChanged.connect(getTime) 
+        self.editor.posModel.timeChanged.connect(setTimeSpinBox)
 
         def toggleSliceIntersection(state):
             self.editor.navCtrl.indicateSliceIntersection = (state == Qt.Checked)
@@ -235,8 +235,16 @@ class VolumeEditorWidget(QWidget):
                 for i in range(3):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
                 self.quadview.statusBar.positionCheckBox.setVisible(True)
-        
-            self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
+
+            #self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
+            if self.editor.cropModel  == None or self.editor.cropModel.cropZero():
+                print "changing QuadStatusBar.updateShape5D===================================================>"
+                self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
+            else:
+                cropMin = (self.editor.posModel.time,self.editor.cropModel._crop_extents[0][0],self.editor.cropModel._crop_extents[1][0],self.editor.cropModel._crop_extents[2][0],0)
+                print "changing QuadStatusBar.updateShape5D--------------------------------------------------->",self.editor.posModel.shape5D,cropMin
+                self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D,cropMin)#<-----------------------
+
             self._setupVolumeExtent()
 
         self.editor.shapeChanged.connect(onShapeChanged)

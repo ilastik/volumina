@@ -64,6 +64,17 @@ class CropExtentsModel( QObject ):
         self._crop_extents = map(list, crop_extents) # Ensure lists, not tuples
         self.changed.emit( self )
 
+    def cropZero(self):
+        if self._crop_extents == None:
+            return True
+
+        flag = True
+        for c in self._crop_extents:
+            flag = (flag and c[0]==0 and c[1]==0)
+
+        return flag
+
+
 class CroppingMarkers( QGraphicsItem ):
     PEN_THICKNESS = 1
 

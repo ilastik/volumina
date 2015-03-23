@@ -314,6 +314,7 @@ class NavigationControler(QObject):
         self._endStackIndex   = 1
         self._view3d = view3d
         self._navigationEnabled = True
+        print "changing time in NavigationControler.__init__ ",time
 
         self.axisColors = [QColor(255,0,0,255), QColor(0,255,0,255), QColor(0,0,255,255)]
 
@@ -363,6 +364,8 @@ class NavigationControler(QObject):
         QTimer.singleShot(50, partial(maybeUpdateSlice, self._model.slicingPos))
 
     def changeTime(self, newTime):
+        print "tiiiiiiiiiiiiiiiiiiiime set tooooooooooooooooooooo ----------------------------newTime>",newTime
+
         for i in range(3):
             self._imagePumps[i].syncedSliceSources.setThrough(0, newTime)
 
@@ -374,6 +377,7 @@ class NavigationControler(QObject):
 
         #sanitize
         new_t = 0 if new_t < 0 else new_t
+        print "tiiiiiiiiiiiiiiiiiiiime set tooooooooooooooooooooo ----------------------------new_t>",new_t
         new_t = self._model.shape5D[0] - 1 if new_t >= self._model.shape5D[0] else new_t
         self._model.time = new_t
 

@@ -232,7 +232,7 @@ class SubModelSelectionWidget(QWidget):
         self._maxSliderT.setValue(maximumT)
         self._minSpinT.setValue(minimumT)
         self._maxSpinT.setValue(maximumT)
-        
+
         # x
         self._minSliderX.setValue(minimumX)
         self._maxSliderX.setValue(maximumX)
