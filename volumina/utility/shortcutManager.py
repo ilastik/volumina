@@ -27,7 +27,7 @@ class ShortcutManager(object):
     # description (str): A user-friendly description of what this shortcut does
     # target_callable (callable): A Python callable that serves as the target for the shortcut when it is activated
     # context_widget (QWidget): A widget that can be used as a reference for deciding when the shortcut is enabled.
-    #                           The shortcut is enabled if this widget or any of its children have keyboard focus
+    #                           The shortcut is enabled if this widget is visible and enabled.
     # tooltip_widget (ObjectWithToolTipABC): (optional) Any object that fulfills the ObjectWithToolTipABC (see below).
     #                                        If provided, this object's tooltip will be updated to reflect the current shortcut key sequence.
     #                                        To omit this field, simply provide None
