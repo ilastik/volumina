@@ -348,6 +348,7 @@ class NavigationControler(QObject):
                 view.centerOn( scenePoint )
 
     def moveSlicingPosition(self, newPos, oldPos):
+        print "------------------------------------------------------------------------moveSlicingPosition>",newPos, oldPos
         for i in range(3):
             if newPos[i] != oldPos[i]:
                 self._updateSlice(self._model.slicingPos[i], i)

@@ -127,7 +127,7 @@ class VolumeEditor( QObject ):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
 
-        if self.cropModel._crop_extents[0][0] == None or self.cropZero(self.cropModel._crop_extents):
+        if self.cropModel._crop_extents[0][0] == None or self.cropModel.cropZero():
             self.cropModel.set_volume_shape_3d([0,0,0],s[1:4])
         else:
             self.cropModel.set_crop_extents(self.cropModel._crop_extents)
@@ -137,16 +137,6 @@ class VolumeEditor( QObject ):
         self.navCtrl.indicateSliceIntersection = (x != 1)
         
         self.shapeChanged.emit()
-
-    def cropZero(selfself, crop):
-        if crop == None:
-            return True
-
-        flag = True
-        for c in crop:
-            flag = (flag and c[0]==0 and c[1]==0)
-
-        return flag
 
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis

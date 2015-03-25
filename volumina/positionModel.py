@@ -83,9 +83,9 @@ class PositionModel(QObject):
         self._time       = 0
         self._channel    = 0
 
-        print "SETTING SHAPE5D in __init_________________________________________________________________________________"
         self._shape5D    = [0,0,0,0,0]
-        
+        print "SETTING SHAPE5D in _PositionModel_init_____________________________________________________________________", self._shape5D
+
         """
         Index of the currently active view in [0,1,2].
         A view is active when the mouse cursor hovered over it last.
