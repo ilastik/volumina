@@ -39,6 +39,10 @@ from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
 
 
 class WysiwygExportOptionsDlg(QDialog):
+    TOO_MANY_PLACEHOLDER = "File pattern invalid! Pattern may not contain placeholder '{0}'. Use '{{{{{0}}}}}' instead."
+    NOT_ENOUGH_PLACEHOLDER = "File pattern invalid! Pattern has to contain placeholder(s) '{{{}}}'."
+    INVALID_PLACEHOLDER = "File pattern invalid! Pattern may not contain single '{', '}' or '{}'.\
+     Use '{{', '}}' and '{{}}' instead."
     
     def __init__(self, view):
         """
@@ -204,15 +208,23 @@ class WysiwygExportOptionsDlg(QDialog):
         # check if placeholders for iterator axes are there (e.g. {t})
         _, co, _ = self.getIterAxes()
         valid = len([1 for c in co if not ("{%s}" % c.lower()) in txt]) < 1
+        self.filePatternInvalidLabel.setVisible(True)
+        self._pattern_ok = False
         if valid:
-            self.filePatternInvalidLabel.setVisible(False)
-            self._pattern_ok = True
+            try:
+                d = dict(zip(co, range(len(co))))
+                txt.format(**d)
+            except KeyError as e:
+                self.filePatternInvalidLabel.setText(self.TOO_MANY_PLACEHOLDER.format(e.message))
+            except (ValueError, IndexError):
+                self.filePatternInvalidLabel.setText(self.INVALID_PLACEHOLDER)
+            else:
+                self.filePatternInvalidLabel.setVisible(False)
+                self._pattern_ok = True
         else:
             plc = ", ".join([("{%s}" % c.lower()) for c in co])
-            txt = "File pattern invalid! Pattern has to contain placeholder(s) %s." % plc
+            txt = self.NOT_ENOUGH_PLACEHOLDER.format(plc)
             self.filePatternInvalidLabel.setText('<font color="red">'+txt+'</font>')
-            self.filePatternInvalidLabel.setVisible(True)
-            self._pattern_ok = False
         self._updateOkButton()
         return valid
     
