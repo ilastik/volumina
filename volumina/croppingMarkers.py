@@ -31,12 +31,12 @@ class CropExtentsModel( QObject ):
         """
         ordered_extents = []
         for start, stop in self._crop_extents:
-            if start < stop:
+            #if start < stop:
                 ordered_extents.append( (start, stop) )
-                print "NORMAL ORDER"
-            else:
-                ordered_extents.append( (stop, start) )
-                print "--- REVERSED --- ORDER"
+            #    print "NORMAL ORDER"
+            #else:
+            #    ordered_extents.append( (stop, start) )
+            #    print "--- REVERSED --- ORDER"
 
         # [(x1,x2), (y1,y2), (z1,z2)] -> [(x1,y1,z1), (x2,y2,z2)]
         roi = zip( *ordered_extents )
@@ -81,11 +81,8 @@ class CroppingMarkers( QGraphicsItem ):
     PEN_THICKNESS = 1
 
     def boundingRect(self):
-        # Return an empty rect to indicate 'no content'
-        # This 'item' is merely a parent node for child items
-        #return QRectF() ###xxx
-        width, height = self.dataShape ###xxx
-        return QRectF(0.0, 0.0, width, height) ###xxx
+        width, height = self.dataShape
+        return QRectF(0.0, 0.0, width, height)
 
     def __init__(self, scene, axis, crop_extents_model):
         QGraphicsItem.__init__(self, scene=scene)
@@ -130,7 +127,7 @@ class CroppingMarkers( QGraphicsItem ):
 
     def onCropLineMoved(self, direction, index, new_position):
         # Which 3D axis does this crop line correspond to?
-        # (Depends on which orthoview we belong to.)
+        # (Depends on which orthogonal view we belong to.)
         axislookup = [[None, 'v', 'h'],
                       ['v', None, 'h'],
                       ['v', 'h', None]]
@@ -139,9 +136,7 @@ class CroppingMarkers( QGraphicsItem ):
         crop_extents_3d[axis_3d][index] = int(new_position)
         self.crop_extents_model.set_crop_extents( crop_extents_3d )
 
-    # click/drag/release to define a rectangle in the view
     def mousePressEvent(self, event):
-        # Change the cursor to indicate "currently dragging"
         position = self.scene().data2scene.map( event.scenePos() )
         width, height = self.dataShape
 
@@ -158,6 +153,7 @@ class CroppingMarkers( QGraphicsItem ):
         self.onCropLineMoved( "horizontal", 0, positionY )
         self.onCropLineMoved( "vertical", 0, positionX )
 
+        # Change the cursor to indicate "currently dragging"
         cursor = QCursor( Qt.SizeFDiagCursor )
         QApplication.instance().setOverrideCursor( cursor )
 
@@ -364,12 +360,12 @@ class CropLine(QGraphicsItem):
             position = max( 0, position )
             position = min( width, position )
 
-        if self._index==0: # min crop line
+        if self._index==0:
             if position >= maxPos:
                 self._parent.onCropLineMoved( self._direction, 1, position )
                 position -= 1
 
-        if self._index==1: # max crop line
+        if self._index==1:
             if position <= minPos:
                 self._parent.onCropLineMoved( self._direction, 0, position )
                 position += 1

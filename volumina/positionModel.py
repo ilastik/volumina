@@ -82,16 +82,13 @@ class PositionModel(QObject):
         self._slicingPos = [0,0,0]
         self._time       = 0
         self._channel    = 0
-
         self._shape5D    = [0,0,0,0,0]
-        print "SETTING SHAPE5D in _PositionModel_init_____________________________________________________________________", self._shape5D
 
         """
         Index of the currently active view in [0,1,2].
         A view is active when the mouse cursor hovered over it last.
         """
         self.activeView = 0
-
         self._scrollTimer = QTimer()
         self._scrollTimer.setInterval(self.scrollDelay)
         self._scrollTimer.setSingleShot(True)

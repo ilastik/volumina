@@ -27,22 +27,16 @@ from PyQt4 import uic
 from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QWidget, QButtonGroup
 
-#===----------------------------------------------------------------------------------------------------------------===
-
 class SubModelSelectionWidget(QWidget):
-    #valueChanged = pyqtSignal(int, int, int, int, int, int, int, int)
     valueChanged = pyqtSignal(str, str, int)
-    #print " ..... SLT .....> in SubModelSelectionWidget"
 
     def __init__(self, parent=None):
-        #print " ..... SLT .....> in __init__ SubModelSelectionWidget"
         QWidget.__init__(self, parent)
 
         p = path.split(__file__)[0]
         if not p:
             p = "."
 
-        #print " path ",p
         uic.loadUi(p+"/ui/subModelSelectionWidget.ui", self)
         self.setRange(0,0,0,0,0,0,0,0)
         
@@ -65,8 +59,6 @@ class SubModelSelectionWidget(QWidget):
         self._maxSliderZ.valueChanged.connect(self._onMaxSliderZMoved)
         self._minSpinZ.valueChanged.connect(self._onMinSpinZMoved)
         self._maxSpinZ.valueChanged.connect(self._onMaxSpinZMoved)
-
-        #print " ..... SLT .....> end __init__ SubModelSelectionWidget"
 
     # t
     def _onMinSliderTMoved(self, v):
@@ -170,11 +162,9 @@ class SubModelSelectionWidget(QWidget):
 
 
     def setLayername(self, n):
-        #print " ..... SLT .....> in setLayername SubModelSelectionWidget"
         self._layerLabel.setText("Layer <b>%s</b>" % n)
         
     def setRange(self, minimumT, maximumT, minimumX, maximumX, minimumY, maximumY, minimumZ, maximumZ):
-        print " ..... SLT .....> in setRange SubModelSelectionWidget", minimumT, maximumT
 
         # t
         self._minSliderT.setRange(minimumT, maximumT)
@@ -225,7 +215,6 @@ class SubModelSelectionWidget(QWidget):
         self._maxSpinZ.setValue(maximumZ)
 
     def setValue(self, minimumT, maximumT, minimumX, maximumX, minimumY, maximumY, minimumZ, maximumZ):
-        print " ..... SLT .....> in setValue SubModelSelectionWidget", minimumT, maximumT, minimumX, maximumX, minimumY, maximumY, minimumZ, maximumZ
 
         # t
         self._minSliderT.setValue(minimumT)
@@ -252,7 +241,6 @@ class SubModelSelectionWidget(QWidget):
         self._maxSpinZ.setValue(maximumZ)
 
     def getValues(self):
-        #print " ..... SLT .....> in getValue SubModelSelectionWidget"
 
         return (self._minSliderT.value(),
                 self._maxSliderT.value(),

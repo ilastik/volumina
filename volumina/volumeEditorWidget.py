@@ -102,7 +102,6 @@ class VolumeEditorWidget(QWidget):
         self.quadview.statusBar.timeSpinBox.setSuffix("/{}".format( maxTime ) )
 
         cropMidPos = [(b+a)/2 for [a,b] in self.editor.cropModel._crop_extents]
-        print "in volumeEditorWidget <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<", self.editor.cropModel._crop_extents, cropMidPos
         for i in range(3):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i],i)
@@ -239,14 +238,11 @@ class VolumeEditorWidget(QWidget):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
                 self.quadview.statusBar.positionCheckBox.setVisible(True)
 
-            #self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
             if self.editor.cropModel._crop_extents[0][0]  == None or self.editor.cropModel.cropZero():
-                print "changing QuadStatusBar.updateShape5D===================================================>"
                 self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
             else:
                 cropMin = (self.editor.posModel.time,self.editor.cropModel._crop_extents[0][0],self.editor.cropModel._crop_extents[1][0],self.editor.cropModel._crop_extents[2][0],0)
-                print "changing QuadStatusBar.updateShape5D--------------------------------------------------->",self.editor.posModel.shape5D,cropMin
-                self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D,cropMin)#<-----------------------
+                self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D,cropMin)
 
             self._setupVolumeExtent()
 
