@@ -33,8 +33,10 @@ class CropExtentsModel( QObject ):
         for start, stop in self._crop_extents:
             if start < stop:
                 ordered_extents.append( (start, stop) )
+                print "NORMAL ORDER"
             else:
                 ordered_extents.append( (stop, start) )
+                print "--- REVERSED --- ORDER"
 
         # [(x1,x2), (y1,y2), (z1,z2)] -> [(x1,y1,z1), (x2,y2,z2)]
         roi = zip( *ordered_extents )
@@ -81,12 +83,14 @@ class CroppingMarkers( QGraphicsItem ):
     def boundingRect(self):
         # Return an empty rect to indicate 'no content'
         # This 'item' is merely a parent node for child items
-        return QRectF()
+        #return QRectF() ###xxx
+        width, height = self.dataShape ###xxx
+        return QRectF(0.0, 0.0, width, height) ###xxx
 
     def __init__(self, scene, axis, crop_extents_model):
         QGraphicsItem.__init__(self, scene=scene)
-        self.setFlag(QGraphicsItem.ItemHasNoContents);
-        
+        self.setAcceptHoverEvents(True)
+
         self.axis = axis
         self.crop_extents_model = crop_extents_model
         
@@ -102,7 +106,7 @@ class CroppingMarkers( QGraphicsItem ):
         self._vertical1 = CropLine(self, 'vertical', 1)
 
         self.crop_extents_model.changed.connect( self.onExtentsChanged )
-        
+
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
     @property
@@ -134,6 +138,64 @@ class CroppingMarkers( QGraphicsItem ):
         crop_extents_3d = self.crop_extents_model.crop_extents()
         crop_extents_3d[axis_3d][index] = int(new_position)
         self.crop_extents_model.set_crop_extents( crop_extents_3d )
+
+    # click/drag/release to define a rectangle in the view
+    def mousePressEvent(self, event):
+        # Change the cursor to indicate "currently dragging"
+        position = self.scene().data2scene.map( event.scenePos() )
+        width, height = self.dataShape
+
+        positionX = int(position.x() + 0.5)
+        positionX = max( 0, positionX )
+        positionX = min( width, positionX )
+
+        positionY = int(position.y() + 0.5)
+        positionY = max( 0, positionY )
+        positionY = min( height, positionY )
+
+        self.onCropLineMoved( "horizontal", 1, positionY )
+        self.onCropLineMoved( "vertical", 1, positionX )
+        self.onCropLineMoved( "horizontal", 0, positionY )
+        self.onCropLineMoved( "vertical", 0, positionX )
+
+        cursor = QCursor( Qt.SizeFDiagCursor )
+        QApplication.instance().setOverrideCursor( cursor )
+
+    def mouseReleaseEvent(self, event):
+        position = self.scene().data2scene.map( event.scenePos() )
+        width, height = self.dataShape
+
+        positionX = int(position.x() + 0.5)
+        positionX = max( 0, positionX )
+        positionX = min( width, positionX )
+
+        positionY = int(position.y() + 0.5)
+        positionY = max( 0, positionY )
+        positionY = min( height, positionY )
+
+        self.onCropLineMoved( "vertical", 1, positionX )
+        self.onCropLineMoved( "horizontal", 1, positionY )
+
+        # Restore the cursor to its previous state.
+        QApplication.instance().restoreOverrideCursor()
+
+    def mouseMoveEvent(self, event):
+        position = self.scene().data2scene.map( event.scenePos() )
+        width, height = self.dataShape
+
+        positionX = int(position.x() + 0.5)
+        positionX = max( 0, positionX )
+        positionX = min( width, positionX )
+
+        positionY = int(position.y() + 0.5)
+        positionY = max( 0, positionY )
+        positionY = min( height, positionY )
+
+        self.onCropLineMoved( "vertical", 1, positionX )
+        self.onCropLineMoved( "horizontal", 1, positionY )
+
+    def paint(self, painter, option, widget=None):
+        pass
 
 @contextlib.contextmanager
 def painter_context(painter):
@@ -274,15 +336,18 @@ class CropLine(QGraphicsItem):
                     painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, height) )
 
     def hoverEnterEvent(self, event):
+        print "hoverEnterEvent"
         # Change the cursor to indicate the line is draggable
         cursor = QCursor( Qt.OpenHandCursor )
         QApplication.instance().setOverrideCursor( cursor )
     
     def hoverLeaveEvent(self, event):
+        print "hoverLeaveEvent"
         # Restore the cursor to its previous state.
         QApplication.instance().restoreOverrideCursor()
 
     def mouseMoveEvent(self, event):
+        print "mouseMoveEvent"
         new_pos = self.scene().data2scene.map( event.scenePos() )
         width, height = self._parent.dataShape
         
@@ -321,11 +386,13 @@ class CropLine(QGraphicsItem):
     # def mouseReleaseEvent(self, event): pass
 
     def mousePressEvent(self, event):
+        print "mousePressEvent"
         # Change the cursor to indicate "currently dragging"
         cursor = QCursor( Qt.ClosedHandCursor )
         QApplication.instance().setOverrideCursor( cursor )
         
     def mouseReleaseEvent(self, event):
+        print "mouseReleaseEvent"
         # Restore the cursor to its previous state.
         QApplication.instance().restoreOverrideCursor()
         
