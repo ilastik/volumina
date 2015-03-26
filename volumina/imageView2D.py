@@ -19,14 +19,16 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRect
-from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication
+from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
+from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
 
 import numpy
+import os
 
 from crossHairCursor import CrossHairCursor
 from sliceIntersectionMarker import SliceIntersectionMarker
 from croppingMarkers import CroppingMarkers
+from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 
 #*******************************************************************************
 # I m a g e V i e w 2 D                                                        *
@@ -78,6 +80,7 @@ class ImageView2D(QGraphicsView):
         hud.rotLeftButtonClicked.connect(scene._onRotateLeft)
         hud.rotRightButtonClicked.connect(scene._onRotateRight)
         hud.swapAxesButtonClicked.connect(scene._onSwapAxes)
+        hud.exportButtonClicked.connect(self.exportImages)
 
         scene.axesChanged.connect(hud.setAxes)
 
@@ -256,7 +259,18 @@ class ImageView2D(QGraphicsView):
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         width, height = self.size().width() / self.sceneRect().width(), self.height() / self.sceneRect().height()
         self.setZoomFactor(min(width, height))
-        
+    
+    def exportImages(self):
+        settingsDlg = WysiwygExportOptionsDlg(self)
+
+        if (settingsDlg.exec_() == WysiwygExportOptionsDlg.Accepted):
+            from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportHelper
+            exportHelper = WysiwygExportHelper(self, settingsDlg)
+            exportHelper.prepareExport()
+            exportHelper.run()
+        else:
+            # user didn't click OK button -> do nothing
+            return
 
     def centerImage(self):
         self.centerOn(self.sceneRect().width()/2 + self.sceneRect().x(), self.sceneRect().height()/2 + self.sceneRect().y())
@@ -309,7 +323,7 @@ if __name__ == '__main__':
         cb = numpy.zeros(shape)
         for i in range(shape[0]/squareSize):
             for j in range(shape[1]/squareSize):
-                a = i*squareSiz#e
+                a = i*squareSize
                 b = min((i+1)*squareSize, shape[0])
                 c = j*squareSize
                 d = min((j+1)*squareSize, shape[1])

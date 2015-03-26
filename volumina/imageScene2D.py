@@ -425,7 +425,7 @@ class ImageScene2D(QGraphicsScene):
             for through in self._bowWave(self._n_preemptive):
                 self._tileProvider.prefetch(sceneRectF, through)
 
-    def joinRenderingAllTiles(self, viewport_only=True):
+    def joinRenderingAllTiles(self, viewport_only=True, rect=None):
         """
         Wait until all tiles in the scene have been 100% rendered.
         If sceneRectF is None, use the viewport rect.
@@ -437,7 +437,10 @@ class ImageScene2D(QGraphicsScene):
             if viewport_only:
                 sceneRectF = self.views()[0].viewportRect()
             else:
-                sceneRectF = QRectF() # invalid QRectF means 'get all tiles'
+                if rect is None or not isinstance(rect, QRectF):
+                    sceneRectF = QRectF() # invalid QRectF means 'get all tiles'
+                else:
+                    sceneRectF = rect
             self._tileProvider.waitForTiles(sceneRectF)
         else:
             self._allTilesCompleteEvent.wait()
