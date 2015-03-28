@@ -85,7 +85,7 @@ class CroppingMarkers( QGraphicsItem ):
     def __init__(self, scene, axis, crop_extents_model):
         QGraphicsItem.__init__(self, scene=scene)
         self.setAcceptHoverEvents(True)
-
+        self.scene = scene
         self.axis = axis
         self.crop_extents_model = crop_extents_model
         
@@ -95,13 +95,26 @@ class CroppingMarkers( QGraphicsItem ):
         # Add shading item first so crop lines are drawn on top.
         self._shading_item = ExcludedRegionShading( self, self.crop_extents_model )
 
-        self._horizontal0 = CropLine(self, 'horizontal', 0)
-        self._horizontal1 = CropLine(self, 'horizontal', 1)
-        self._vertical0 = CropLine(self, 'vertical', 0)
-        self._vertical1 = CropLine(self, 'vertical', 1)
+        self._horizontal0 = CropLine(self, 'horizontal', 0, 1, 0)
+        self._horizontal1 = CropLine(self, 'horizontal', 1, 1, 0)
+        self._vertical0 = CropLine(self, 'vertical', 0, 1, 0)
+        self._vertical1 = CropLine(self, 'vertical', 1, 1, 0)
 
         self.crop_extents_model.changed.connect( self.onExtentsChanged )
 
+        self.axisLookup = [[None, 'v', 'h'], # constant
+                           ['v', None, 'h'],
+                           ['v', 'h', None]]
+
+        self.axisOrderLookup = [[None, 'v', 'h'],
+                                ['v', None, 'h'],
+                                ['v', 'h', None]]
+
+        self.axisDirectionLookup = [[None,1,1],
+                                    [1,None,1],
+                                    [1,1,None]]
+
+        print "_____________CroppingMarkers______________",self
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
     @property
@@ -112,11 +125,51 @@ class CroppingMarkers( QGraphicsItem ):
         self._width = shape2D[0]
         self._height = shape2D[1]
 
+    def _onSwapAxesButtonClicked(self):
+
+        print "..................................................>_onSwapAxesButtonClicked"
+
+    def _onRotRightButtonClicked(self):
+        #self._rotation = (self._rotation + 1) % 4
+        print "..................................................>_onRotRightButtonClicked"
+
+    def _onRotLeftButtonClicked(self):
+        print "..................................................>_onRotLeftButtonClicked"
+
+    def setDefaultValues(self):
+        width, height = self.dataShape
+
+        if self.scene._swappedDefault:
+            self._horizontal0._maxPosition = height
+            self._horizontal1._maxPosition = height
+            self._vertical0._maxPosition = width
+            self._vertical1._maxPosition = width
+            self._horizontal0._direction = 'vertical'
+            self._horizontal1._direction = 'vertical'
+            self._vertical0._direction = 'horizontal'
+            self._vertical1._direction = 'horizontal'
+
+            #self._vertical0.position, self._horizontal0.position = self._horizontal0.position, self._vertical0.position
+            #self._vertical1.position, self._horizontal1.position = self._horizontal1.position, self._vertical1.position
+
+            #crop_extents = self.crop_extents_model.crop_extents()
+            #crop_extents.pop(self.axis)
+            #crop_extents[0][0] = self._vertical0.position
+            #crop_extents[0][1] = self._vertical1.position
+            #crop_extents[1][0] = self._horizontal0.position
+            #crop_extents[1][1] = self._horizontal1.position
+
+            print "_swappedDefault", width, height
+        else:
+            self._horizontal0._maxPosition = width
+            self._horizontal1._maxPosition = width
+            self._vertical0._maxPosition = height
+            self._vertical1._maxPosition = height
+
     def onExtentsChanged(self, crop_extents_model ):
         crop_extents = crop_extents_model.crop_extents()
         crop_extents.pop(self.axis)
         
-        # By default, place cropping lines at 25% and 75%
         self._vertical0.position = crop_extents[0][0]
         self._vertical1.position = crop_extents[0][1]
         self._horizontal0.position = crop_extents[1][0]
@@ -128,10 +181,25 @@ class CroppingMarkers( QGraphicsItem ):
         # (Depends on which orthogonal view we belong to.)
 
         # (and which sequence of rotations (clock-wise/counter clock-wise) and swap-axes were clicked) <---- to be implemented
-        axislookup = [[None, 'v', 'h'],
-                      ['v', None, 'h'],
-                      ['v', 'h', None]]
-        axis_3d = axislookup[self.axis].index( direction[0])
+        #width, height = self.dataShape
+        #axislookup = [[None, 'v', 'h'],
+        #              ['v', None, 'h'],
+        #              ['v', 'h', None]]
+
+        axis_3d = self.axisLookup[self.axis].index( direction[0])
+
+        crop_extents_3d = self.crop_extents_model.crop_extents()
+        crop_extents_3d[axis_3d][index] = int(new_position)
+        self.crop_extents_model.set_crop_extents( crop_extents_3d )
+
+    def onRectLineMoved(self, direction, index, new_position):
+        # Which 3D axis does this crop line correspond to?
+        # (Depends on which orthogonal view we belong to.)
+
+        # (and which sequence of rotations (clock-wise/counter clock-wise) and swap-axes were clicked) <---- to be implemented
+
+        axis_3d = self.axisOrderLookup[self.axis].index( direction[0])
+
         crop_extents_3d = self.crop_extents_model.crop_extents()
         crop_extents_3d[axis_3d][index] = int(new_position)
         self.crop_extents_model.set_crop_extents( crop_extents_3d )
@@ -140,19 +208,31 @@ class CroppingMarkers( QGraphicsItem ):
         print "-----> CroppingMarkers.mousePressEvent"
         position = self.scene().data2scene.map( event.scenePos() )
         width, height = self.dataShape
+        posH0 = self._horizontal0.position
+        posH1 = self._horizontal1.position
+        posV0 = self._vertical0.position
+        posV1 = self._vertical1.position
 
-        positionX = int(position.x() + 0.5)
-        positionX = max( 0, positionX )
-        positionX = min( width, positionX )
+        positionV = int(position.x() + 0.5)
+        positionV = max( 0, positionV )
+        positionV = min( width, positionV )
 
-        positionY = int(position.y() + 0.5)
-        positionY = max( 0, positionY )
-        positionY = min( height, positionY )
+        positionH = int(position.y() + 0.5)
+        positionH = max( 0, positionH )
+        positionH = min( height, positionH )
 
-        self.onCropLineMoved( "horizontal", 1, positionY )
-        self.onCropLineMoved( "vertical", 1, positionX )
-        self.onCropLineMoved( "horizontal", 0, positionY )
-        self.onCropLineMoved( "vertical", 0, positionX )
+        if positionH >= posH0 and positionV >= posV0 and positionH <= posH1 and positionV <= posV1:
+            self.onRectLineMoved( "vertical", 0, positionV )
+            self.onRectLineMoved( "horizontal", 0, positionH )
+
+        if positionH < posH0:
+            self.onRectLineMoved( "horizontal", 0, positionH )
+        if positionV < posV0:
+            self.onRectLineMoved( "vertical", 0, positionV )
+        if positionH > posH1:
+            self.onRectLineMoved( "horizontal", 1, positionH )
+        if positionV > posV1:
+            self.onRectLineMoved( "vertical", 1, positionV )
 
         # Change the cursor to indicate "currently dragging"
         cursor = QCursor( Qt.SizeFDiagCursor )
@@ -162,16 +242,27 @@ class CroppingMarkers( QGraphicsItem ):
         position = self.scene().data2scene.map( event.scenePos() )
         width, height = self.dataShape
 
-        positionX = int(position.x() + 0.5)
-        positionX = max( 0, positionX )
-        positionX = min( width, positionX )
+        posH0 = self._horizontal0.position
+        posH1 = self._horizontal1.position
+        posV0 = self._vertical0.position
+        posV1 = self._vertical1.position
 
-        positionY = int(position.y() + 0.5)
-        positionY = max( 0, positionY )
-        positionY = min( height, positionY )
+        positionV = int(position.x() + 0.5)
+        positionV = max( 0, positionV )
+        positionV = min( width, positionV )
 
-        self.onCropLineMoved( "vertical", 1, positionX )
-        self.onCropLineMoved( "horizontal", 1, positionY )
+        positionH = int(position.y() + 0.5)
+        positionH = max( 0, positionH )
+        positionH = min( height, positionH )
+
+        #if positionH < posH0:
+        #    self.onRectLineMoved( "horizontal", 0, positionH )
+        #if positionV < posV0:
+        #    self.onRectLineMoved( "vertical", 0, positionV )
+        #if positionH > posH1:
+        #    self.onRectLineMoved( "horizontal", 1, positionH )
+        #if positionV > posV1:
+        #    self.onRectLineMoved( "vertical", 1, positionV )
 
         # Restore the cursor to its previous state.
         QApplication.instance().restoreOverrideCursor()
@@ -180,16 +271,21 @@ class CroppingMarkers( QGraphicsItem ):
         position = self.scene().data2scene.map( event.scenePos() )
         width, height = self.dataShape
 
-        positionX = int(position.x() + 0.5)
-        positionX = max( 0, positionX )
-        positionX = min( width, positionX )
+        posH0 = self._horizontal0.position
+        posH1 = self._horizontal1.position
+        posV0 = self._vertical0.position
+        posV1 = self._vertical1.position
 
-        positionY = int(position.y() + 0.5)
-        positionY = max( 0, positionY )
-        positionY = min( height, positionY )
+        positionV = int(position.x() + 0.5)
+        positionV = max( 0, positionV )
+        positionV = min( width, positionV )
 
-        self.onCropLineMoved( "vertical", 1, positionX )
-        self.onCropLineMoved( "horizontal", 1, positionY )
+        positionH = int(position.y() + 0.5)
+        positionH = max( 0, positionH )
+        positionH = min( height, positionH )
+
+        self.onRectLineMoved( "horizontal", 1, positionH )
+        self.onRectLineMoved( "vertical", 1, positionV )
 
     def paint(self, painter, option, widget=None):
         pass
@@ -202,70 +298,25 @@ def painter_context(painter):
     finally:
         painter.restore()
 
-class ExcludedRegionShading(QGraphicsItem):
-    def __init__(self, parent, crop_extents_model):
-        self._parent = parent
-        self._crop_extents_model = crop_extents_model
-        super( ExcludedRegionShading, self ).__init__( parent )
-        crop_extents_model.changed.connect( self.prepareGeometryChange )
-        
-    def boundingRect(self):
-        width, height = self._parent.dataShape
-        return QRectF(0.0, 0.0, width, height)
-    
-    def paint(self, painter, option, widget=None):
-        crop_extents_3d = self._crop_extents_model.crop_extents()
-        crop_extents = copy.deepcopy(crop_extents_3d)
-        crop_extents.pop(self._parent.axis)
-        
-        width, height = self._parent.dataShape
-        (left, right), (top, bottom) = crop_extents
-        
-        if None in (left, right, top, bottom, width, height):
-            # Don't paint if the crop settings aren't initialized yet.
-            return
-
-        # Black brush, 50% alpha
-        brush = QBrush( QColor(0,0,0,128) )
-        
-        rects = [ (0.0,    0.0, left,    top),
-                  (0.0,    top, left, bottom),
-                  (0.0, bottom, left, height),
-
-                  (left,    0.0, right,    top),
-                 #(left,    top, right, bottom), # Don't cover the middle.
-                  (left, bottom, right, height),
-
-                  (right,    0.0, width,    top),
-                  (right,    top, width, bottom),
-                  (right, bottom, width, height) ]
-        
-        with painter_context(painter):
-            t = painter.transform()
-            painter.setTransform(self.scene().data2scene * t)
-            
-            for rect_points in rects:
-                x1, y1, x2, y2 = rect_points
-                p1 = QPointF(x1,y1)
-                p2 = QPointF(x2,y2)
-                painter.fillRect( QRectF( p1, p2 ), brush )
-
 class CropLine(QGraphicsItem):
     """
     QGraphicsItem for a single line (horizontal or vertical) of the slice intersection.
     Must be a child of SliceIntersectionMarker.  It can be dragged to change the slicing position.
     """
-    def __init__(self, parent, direction, index):
+    def __init__(self, parent, direction, index, maxPosition, orientation=1, rotation=0):
         assert isinstance(parent, CroppingMarkers)
         assert direction in ('horizontal', 'vertical')
 
         self._parent = parent
-        self._direction = direction
-        self._index = index
+        self._direction = direction # horizontal/vertical
+        self._index = index # 0/1 (start/stop)
         QGraphicsItem.__init__(self, parent)
         self.setAcceptHoverEvents(True)
-        
         self._position = 0
+
+        self._maxPosition = maxPosition # width/height
+        self._orientation = orientation # 1/-1
+        self._rotation = rotation # -3,-2,-1,0,1,2,3
 
     @property
     def position(self):
@@ -328,9 +379,9 @@ class CropLine(QGraphicsItem):
                 painter.setPen( pen )
     
                 if self._direction == 'horizontal':
-                    painter.drawLine( QPointF(0.0, self.position), QPointF(width, self.position) )
+                    painter.drawLine( QPointF(0.0, self.position), QPointF(self._maxPosition, self.position) )
                 else:
-                    painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, height) )
+                    painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, self._maxPosition) )
 
     def hoverEnterEvent(self, event):
         # Change the cursor to indicate the line is draggable
@@ -343,32 +394,22 @@ class CropLine(QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         new_pos = self.scene().data2scene.map( event.scenePos() )
-        width, height = self._parent.dataShape
-        
+
         if self._direction == 'horizontal':
-            minPos = self._parent._horizontal0.position
-            maxPos = self._parent._horizontal1.position
+            print "horizontal"
             position = int(new_pos.y() + 0.5)
             position = max( 0, position )
-            position = min( height, position )
         else:
-            minPos = self._parent._vertical0.position
-            maxPos = self._parent._vertical1.position
+            print "vertical"
             position = int(new_pos.x() + 0.5)
             position = max( 0, position )
-            position = min( width, position )
 
-        if self._index==0:
-            if position >= maxPos:
-                self._parent.onCropLineMoved( self._direction, 1, position )
-                position -= 1
+        position = min( self._maxPosition, position )
 
-        if self._index==1:
-            if position <= minPos:
-                self._parent.onCropLineMoved( self._direction, 0, position )
-                position += 1
+        if self._orientation == -1:
+            position = maxPosition - position
 
-
+        print "----------> CropLine.mouseMoveEvent", self._direction, self._index, self._maxPosition, self._orientation, self._rotation
         self._parent.onCropLineMoved( self._direction, self._index, position )
 
     # Note: We must override these or else the default implementation  
@@ -380,7 +421,7 @@ class CropLine(QGraphicsItem):
     # def mouseReleaseEvent(self, event): pass
 
     def mousePressEvent(self, event):
-        print "CropLine.mousePressEvent"
+        print "----------> CropLine.mousePressEvent", self._direction, self._index, self._position, self._maxPosition, self._orientation, self._rotation
         # Change the cursor to indicate "currently dragging"
         cursor = QCursor( Qt.ClosedHandCursor )
         QApplication.instance().setOverrideCursor( cursor )
@@ -388,7 +429,65 @@ class CropLine(QGraphicsItem):
     def mouseReleaseEvent(self, event):
         # Restore the cursor to its previous state.
         QApplication.instance().restoreOverrideCursor()
-        
+
+class ExcludedRegionShading(QGraphicsItem):
+    def __init__(self, parent, crop_extents_model):
+        self._parent = parent
+        self._crop_extents_model = crop_extents_model
+        super( ExcludedRegionShading, self ).__init__( parent )
+        crop_extents_model.changed.connect( self.prepareGeometryChange )
+
+    def boundingRect(self):
+        width, height = self._parent.dataShape
+        return QRectF(0.0, 0.0, width, height)
+
+    def paint(self, painter, option, widget=None):
+        crop_extents_3d = self._crop_extents_model.crop_extents()
+        crop_extents = copy.deepcopy(crop_extents_3d)
+        crop_extents.pop(self._parent.axis)
+
+        width, height = self._parent.dataShape
+        (left, right), (top, bottom) = crop_extents
+
+        if None in (left, right, top, bottom, width, height):
+            # Don't paint if the crop settings aren't initialized yet.
+            print "DONT PAINT: Don't paint if the crop settings aren't initialized yet."
+            return
+
+        # Black brush, 50% alpha
+        brush = QBrush( QColor(0,0,0,128) )
+
+        rects = [ (0.0,    0.0, left,    top),
+                  (0.0,    top, left, bottom),
+                  (0.0, bottom, left, height),
+
+                  (left,    0.0, right,    top),
+                 #(left,    top, right, bottom), # Don't cover the middle.
+                  (left, bottom, right, height),
+
+                  (right,    0.0, width,    top),
+                  (right,    top, width, bottom),
+                  (right, bottom, width, height) ]
+
+        with painter_context(painter):
+            t = painter.transform()
+            painter.setTransform(self.scene().data2scene * t)
+
+            for rect_points in rects:
+                x1, y1, x2, y2 = rect_points
+                p1 = QPointF(x1,y1)
+                p2 = QPointF(x2,y2)
+                painter.fillRect( QRectF( p1, p2 ), brush )
+
+            # paint the roi rectangle
+            x1, y1, x2, y2 = (left,    top, right, bottom)
+            p1 = QPointF(x1,y1)
+            p2 = QPointF(x2,y2)
+            # Black brush, 0% alpha
+            brush = QBrush( QColor(0,0,0,0) )
+            painter.fillRect( QRectF( p1, p2 ), brush )
+            #print "PAINT", self._parent.axis
+
 def determine_pen_thickness_in_scene( scene, cosmetic_thickness ):
     """
     scene: ImageScene2D

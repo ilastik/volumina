@@ -225,6 +225,9 @@ class VolumeEditor( QObject ):
 
         self.layerStack.layerAdded.connect( self._onLayerAdded )
 
+        for v in self.imageViews:
+            self.shapeChanged.connect(v._croppingMarkers.setDefaultValues)
+
     def _reset(self):
         for s in self.imageScenes:
             s.reset()
@@ -269,6 +272,7 @@ class VolumeEditor( QObject ):
         imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTXC, self._sync_along ))
         imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTYC, self._sync_along ))
         imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTZC, self._sync_along ))
+
         return imagepumps
 
     def _initView3d( self ):
