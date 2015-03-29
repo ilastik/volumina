@@ -87,13 +87,6 @@ class ImageView2D(QGraphicsView):
         #hud.rotRightButtonClicked.connect(self._onRotateRight)
         #hud.swapAxesButtonClicked.connect(self._onSwapAxes)
 
-        hud.swapAxesButtonClicked.connect(self._croppingMarkers._onSwapAxesButtonClicked)
-
-        hud.rotLeftButtonClicked.connect(self._croppingMarkers._onRotLeftButtonClicked)
-
-        hud.rotRightButtonClicked.connect(self._croppingMarkers._onRotRightButtonClicked)
-
-
     def __init__(self, parent, cropModel, imagescene2d):
         """
         Constructs a view upon a ImageScene2D

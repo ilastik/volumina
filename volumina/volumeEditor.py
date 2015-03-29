@@ -225,9 +225,6 @@ class VolumeEditor( QObject ):
 
         self.layerStack.layerAdded.connect( self._onLayerAdded )
 
-        for v in self.imageViews:
-            self.shapeChanged.connect(v._croppingMarkers.setDefaultValues)
-
     def _reset(self):
         for s in self.imageScenes:
             s.reset()

@@ -20,6 +20,8 @@ from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor, QBrush, QCol
 
 class CropExtentsModel( QObject ):
     changed = pyqtSignal( object )  # list of start/stop coords indexed by axis
+                                    # Note: There is no required ordering for start/stop
+                                    #       (i.e. start could be greater than stop)
 
     def __init__(self, parent):
         super( CropExtentsModel, self ).__init__( parent )
@@ -95,26 +97,17 @@ class CroppingMarkers( QGraphicsItem ):
         # Add shading item first so crop lines are drawn on top.
         self._shading_item = ExcludedRegionShading( self, self.crop_extents_model )
 
-        self._northLine = CropLine(self, 'horizontal', 0, 1)
-        self._southLine = CropLine(self, 'horizontal', 1, 1)
-        self._westLine = CropLine(self, 'vertical', 0, 1)
-        self._eastLine = CropLine(self, 'vertical', 1, 1)
+        self._horizontal0 = CropLine(self, 'horizontal', 0)
+        self._horizontal1 = CropLine(self, 'horizontal', 1)
+        self._vertical0 = CropLine(self, 'vertical', 0)
+        self._vertical1 = CropLine(self, 'vertical', 1)
 
         self.crop_extents_model.changed.connect( self.onExtentsChanged )
+        self._mouseMoveStartCornerH = 0
+        self._mouseMoveStartCornerV = 0
+        self._mouseMoveStartH = -1
+        self._mouseMoveStartV = -1
 
-        self.axisLookup = [[None, 'v', 'h'], # constant
-                           ['v', None, 'h'],
-                           ['v', 'h', None]]
-
-        self.axisOrderLookup = [[None, 'v', 'h'],
-                                ['v', None, 'h'],
-                                ['v', 'h', None]]
-
-        self.axisDirectionLookup = [[None,1,1],
-                                    [1,None,1],
-                                    [1,1,None]]
-
-        print "_____________CroppingMarkers______________",self
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
     @property
@@ -125,136 +118,53 @@ class CroppingMarkers( QGraphicsItem ):
         self._width = shape2D[0]
         self._height = shape2D[1]
 
-    def _onSwapAxesButtonClicked(self):
-        self._northLine._swapped *= -1
-        self._southLine._swapped *= -1
-        self._westLine._swapped *= -1
-        self._eastLine._swapped *= -1
+    @property
+    def mouseMoveStartH(self):
+        return self._mouseMoveStartH
+    @mouseMoveStartH.setter
+    def mouseMoveStartH(self, h):
+        self._mouseMoveStartH = h
 
-        self._northLine._maxPosition, self._westLine._maxPosition = self._westLine._maxPosition, self._northLine._maxPosition
-        self._southLine._maxPosition, self._eastLine._maxPosition = self._eastLine._maxPosition, self._southLine._maxPosition
-
-        self._northLine._length, self._westLine._length = self._westLine._length, self._northLine._length
-        self._southLine._length, self._eastLine._length = self._eastLine._length, self._southLine._length
-
-        self._northLine._position, self._westLine._position = self._westLine._position, self._northLine._position
-        self._southLine._position, self._eastLine._position = self._eastLine._position, self._southLine._position
-
-        print "..................................................>_onSwapAxesButtonClicked"
-
-    def _onRotRightButtonClicked(self):
-        #self._rotation = (self._rotation + 1) % 4
-        print "..................................................>_onRotRightButtonClicked"
-
-    def _onRotLeftButtonClicked(self):
-        print "..................................................>_onRotLeftButtonClicked"
-
-    def setDefaultValues(self):
-        width, height = self.dataShape
-        print "---width, height--->",width, height
-        self._northLine._maxPosition = height
-        self._southLine._maxPosition = height
-        self._westLine._maxPosition = width
-        self._eastLine._maxPosition = width
-
-        self._northLine._length = width
-        self._southLine._length = width
-        self._westLine._length = height
-        self._eastLine._length = height
-
-        if self.scene._swappedDefault:
-            #self._northLine._maxPosition = width
-            #self._southLine._maxPosition = width
-            #self._westLine._maxPosition = height
-            #self._eastLine._maxPosition = height
-
-            #self._northLine._length = height
-            #self._southLine._length = height
-            #self._westLine._length = width
-            #self._eastLine._length = width
-
-            self._northLine._direction = 'vertical'
-            self._southLine._direction = 'vertical'
-            self._westLine._direction = 'horizontal'
-            self._eastLine._direction = 'horizontal'
-
-            self._northLine._swapped = -1
-            self._southLine._swapped = -1
-            self._westLine._swapped = -1
-            self._eastLine._swapped = -1
-
-            #self._westLine.position, self._northLine.position = self._northLine.position, self._westLine.position
-            #self._eastLine.position, self._southLine.position = self._southLine.position, self._eastLine.position
-
-            #crop_extents = self.crop_extents_model.crop_extents()
-            #crop_extents.pop(self.axis)
-            #crop_extents[0][0] = self._westLine.position
-            #crop_extents[0][1] = self._eastLine.position
-            #crop_extents[1][0] = self._northLine.position
-            #crop_extents[1][1] = self._southLine.position
-
-            print "=====_northLine======> _swappedDefault",self._northLine
-            print "=====_southLine======> _swappedDefault",self._southLine
-            print "=====_westLine========> _swappedDefault",self._westLine
-            print "=====_eastLine========> _swappedDefault",self._eastLine
-        #else:
-            #self._northLine._maxPosition = width
-            #self._southLine._maxPosition = width
-            #self._westLine._maxPosition = height
-            #self._eastLine._maxPosition = height
+    @property
+    def mouseMoveStartV(self):
+        return self._mouseMoveStartV
+    @mouseMoveStartV.setter
+    def mouseMoveStartV(self, v):
+        self._mouseMoveStartV = v
 
     def onExtentsChanged(self, crop_extents_model ):
         crop_extents = crop_extents_model.crop_extents()
         crop_extents.pop(self.axis)
-        
-        self._westLine.position = crop_extents[0][0]
-        self._eastLine.position = crop_extents[0][1]
-        self._northLine.position = crop_extents[1][0]
-        self._southLine.position = crop_extents[1][1]
+
+        # By default, place cropping lines at 25% and 75%
+        self._vertical0.position = crop_extents[0][0]
+        self._vertical1.position = crop_extents[0][1]
+        self._horizontal0.position = crop_extents[1][0]
+        self._horizontal1.position = crop_extents[1][1]
+
         self.prepareGeometryChange()
 
-    def onCropLineMoved(self, line, direction, index, new_position):
+    def onCropLineMoved(self, direction, index, new_position):
         # Which 3D axis does this crop line correspond to?
         # (Depends on which orthogonal view we belong to.)
 
-        # (and which sequence of rotations (clock-wise/counter clock-wise) and swap-axes were clicked) <---- to be implemented
-        #width, height = self.dataShape
-        #axislookup = [[None, 'v', 'h'],
-        #              ['v', None, 'h'],
-        #              ['v', 'h', None]]
+        axislookup = [[None, 'v', 'h'],
+                      ['v', None, 'h'],
+                      ['v', 'h', None]]
 
-        axis_3d = self.axisLookup[self.axis].index( line._direction[0])
-
+        axis_3d = axislookup[self.axis].index(direction[0])
         crop_extents_3d = self.crop_extents_model.crop_extents()
 
-        #if line._direction == 'vertical':
-        #    crop_extents_3d[0][line._index] = int(new_position)
-        #else:
-        #    crop_extents_3d[1][line._index] = int(new_position)
-
-        crop_extents_3d[axis_3d][line._index] = int(new_position)
-        self.crop_extents_model.set_crop_extents( crop_extents_3d )
-
-    def onRectLineMoved(self, direction, index, new_position):
-        # Which 3D axis does this crop line correspond to?
-        # (Depends on which orthogonal view we belong to.)
-
-        # (and which sequence of rotations (clock-wise/counter clock-wise) and swap-axes were clicked) <---- to be implemented
-
-        axis_3d = self.axisOrderLookup[self.axis].index( direction[0])
-
-        crop_extents_3d = self.crop_extents_model.crop_extents()
         crop_extents_3d[axis_3d][index] = int(new_position)
         self.crop_extents_model.set_crop_extents( crop_extents_3d )
 
     def mousePressEvent(self, event):
-        print "-----> CroppingMarkers.mousePressEvent"
-        position = self.scene().data2scene.map( event.scenePos() )
+        position = self.scene.data2scene.map( event.scenePos() )
         width, height = self.dataShape
-        posH0 = self._northLine.position
-        posH1 = self._southLine.position
-        posV0 = self._westLine.position
-        posV1 = self._eastLine.position
+        posH0 = self._horizontal0.position
+        posH1 = self._horizontal1.position
+        posV0 = self._vertical0.position
+        posV1 = self._vertical1.position
 
         positionV = int(position.x() + 0.5)
         positionV = max( 0, positionV )
@@ -264,60 +174,102 @@ class CroppingMarkers( QGraphicsItem ):
         positionH = max( 0, positionH )
         positionH = min( height, positionH )
 
-        if positionH >= posH0 and positionV >= posV0 and positionH <= posH1 and positionV <= posV1:
-            self.onRectLineMoved( "vertical", 0, positionV )
-            self.onRectLineMoved( "horizontal", 0, positionH )
+        # outside corners
+        if positionH < posH0 and positionV < posV0:
+            self.onCropLineMoved( "vertical", 0, positionV )
+            self.onCropLineMoved( "horizontal", 0, positionH )
+            self._mouseMoveStartCornerH = 0
+            self._mouseMoveStartCornerV = 0
+        elif positionH > posH1 and positionV > posV1:
+            self.onCropLineMoved( "horizontal", 1, positionH )
+            self.onCropLineMoved( "vertical", 1, positionV )
+            self._mouseMoveStartCornerH = 1
+            self._mouseMoveStartCornerV = 1
+        elif positionH < posH0 and positionV > posV1:
+            self.onCropLineMoved( "vertical", 1, positionV )
+            self.onCropLineMoved( "horizontal", 0, positionH )
+            self._mouseMoveStartCornerH = 0
+            self._mouseMoveStartCornerV = 1
+        elif positionH > posH1 and positionV < posV0:
+            self.onCropLineMoved( "horizontal", 1, positionH )
+            self.onCropLineMoved( "vertical", 0, positionV )
+            self._mouseMoveStartCornerH = 1
+            self._mouseMoveStartCornerV = 0
 
-        if positionH < posH0:
-            self.onRectLineMoved( "horizontal", 0, positionH )
-        if positionV < posV0:
-            self.onRectLineMoved( "vertical", 0, positionV )
-        if positionH > posH1:
-            self.onRectLineMoved( "horizontal", 1, positionH )
-        if positionV > posV1:
-            self.onRectLineMoved( "vertical", 1, positionV )
+        # sides
+        elif positionH < posH0:
+            self.onCropLineMoved( "horizontal", 0, positionH )
+            self.mouseMoveStartH = positionH
+            self.mouseMoveStartV = positionV
+            self._mouseMoveStartCornerH = 0
+            if positionV - posV0 <= posV1 -positionV:
+                self._mouseMoveStartCornerV = 0
+            else:
+                self._mouseMoveStartCornerV = 1
+        elif positionV < posV0:
+            self.onCropLineMoved( "vertical", 0, positionV )
+            self.mouseMoveStartH = positionH
+            self.mouseMoveStartV = positionV
+            self._mouseMoveStartCornerV = 0
+            if positionH - posH0 <= posH1 -positionH:
+                self._mouseMoveStartCornerH = 0
+            else:
+                self._mouseMoveStartCornerH = 1
+        elif positionH > posH1:
+            self.onCropLineMoved( "horizontal", 1, positionH )
+            self.mouseMoveStartH = positionH
+            self.mouseMoveStartV = positionV
+            self._mouseMoveStartCornerH = 1
+            if positionV - posV0 <= posV1 -positionV:
+                self._mouseMoveStartCornerV = 0
+            else:
+                self._mouseMoveStartCornerV = 1
+        elif positionV > posV1:
+            self.onCropLineMoved( "vertical", 1, positionV )
+            self.mouseMoveStartH = positionH
+            self.mouseMoveStartV = positionV
+            self._mouseMoveStartCornerV = 1
+            if positionH - posH0 <= posH1 -positionH:
+                self._mouseMoveStartCornerH = 0
+            else:
+                self._mouseMoveStartCornerH = 1
+
+        # inside corners
+        elif positionH - posH0 <= posH1 - positionH and positionV - posV0 <= posV1 -positionV:
+            self.onCropLineMoved( "vertical", 0, positionV )
+            self.onCropLineMoved( "horizontal", 0, positionH )
+            self._mouseMoveStartCornerH = 0
+            self._mouseMoveStartCornerV = 0
+        elif positionH - posH0 > posH1 - positionH and positionV - posV0 <= posV1 -positionV:
+            self.onCropLineMoved( "vertical", 0, positionV )
+            self.onCropLineMoved( "horizontal", 1, positionH )
+            self._mouseMoveStartCornerH = 1
+            self._mouseMoveStartCornerV = 0
+        elif positionH - posH0 <= posH1 - positionH and positionV - posV0 > posV1 -positionV:
+            self.onCropLineMoved( "vertical", 1, positionV )
+            self.onCropLineMoved( "horizontal", 0, positionH )
+            self._mouseMoveStartCornerH = 0
+            self._mouseMoveStartCornerV = 1
+        else:
+            self.onCropLineMoved( "vertical", 1, positionV )
+            self.onCropLineMoved( "horizontal", 1, positionH )
+            self._mouseMoveStartCornerH = 1
+            self._mouseMoveStartCornerV = 1
 
         # Change the cursor to indicate "currently dragging"
-        cursor = QCursor( Qt.SizeFDiagCursor )
+        cursor = QCursor( Qt.ClosedHandCursor )
         QApplication.instance().setOverrideCursor( cursor )
 
     def mouseReleaseEvent(self, event):
-        position = self.scene().data2scene.map( event.scenePos() )
-        width, height = self.dataShape
-
-        posH0 = self._northLine.position
-        posH1 = self._southLine.position
-        posV0 = self._westLine.position
-        posV1 = self._eastLine.position
-
-        positionV = int(position.x() + 0.5)
-        positionV = max( 0, positionV )
-        positionV = min( width, positionV )
-
-        positionH = int(position.y() + 0.5)
-        positionH = max( 0, positionH )
-        positionH = min( height, positionH )
-
-        #if positionH < posH0:
-        #    self.onRectLineMoved( "horizontal", 0, positionH )
-        #if positionV < posV0:
-        #    self.onRectLineMoved( "vertical", 0, positionV )
-        #if positionH > posH1:
-        #    self.onRectLineMoved( "horizontal", 1, positionH )
-        #if positionV > posV1:
-        #    self.onRectLineMoved( "vertical", 1, positionV )
+        self.mouseMoveStartH = -1
+        self.mouseMoveStartV = -1
 
         # Restore the cursor to its previous state.
         QApplication.instance().restoreOverrideCursor()
 
     def mouseMoveEvent(self, event):
-        position = self.scene().data2scene.map( event.scenePos() )
+        position = self.scene.data2scene.map( event.scenePos() )
         width, height = self.dataShape
-
-        posH0 = self._northLine.position
-        posH1 = self._southLine.position
-        posV0 = self._westLine.position
-        posV1 = self._eastLine.position
 
         positionV = int(position.x() + 0.5)
         positionV = max( 0, positionV )
@@ -327,8 +279,39 @@ class CroppingMarkers( QGraphicsItem ):
         positionH = max( 0, positionH )
         positionH = min( height, positionH )
 
-        self.onRectLineMoved( "horizontal", 1, positionH )
-        self.onRectLineMoved( "vertical", 1, positionV )
+        if self._mouseMoveStartCornerH == 0 and self._mouseMoveStartCornerV == 0:
+            if self._mouseMoveStartH >=0 and self._mouseMoveStartCornerV >= 0:
+                self.onCropLineMoved( "horizontal", 0, positionH )
+                self.onCropLineMoved( "vertical", 0, positionV )
+                self.mouseMoveStartH = -1
+                self.mouseMoveStartV = -1
+            self.onCropLineMoved( "horizontal", 1, positionH )
+            self.onCropLineMoved( "vertical", 1, positionV )
+
+        elif self._mouseMoveStartCornerH == 1 and self._mouseMoveStartCornerV == 0:
+            if self._mouseMoveStartH >=0 and self._mouseMoveStartCornerV >= 0:
+                self.onCropLineMoved( "horizontal", 1, positionH )
+                self.onCropLineMoved( "vertical", 0, positionV )
+                self._mouseMoveStartH = -1
+                self._mouseMoveStartV = -1
+            self.onCropLineMoved( "horizontal", 0, positionH )
+            self.onCropLineMoved( "vertical", 1, positionV )
+        elif self._mouseMoveStartCornerH == 0 and self._mouseMoveStartCornerV == 1:
+            if self._mouseMoveStartH >=0 and self._mouseMoveStartCornerV >= 0:
+                self.onCropLineMoved( "horizontal", 0, positionH )
+                self.onCropLineMoved( "vertical", 1, positionV )
+                self._mouseMoveStartH = -1
+                self._mouseMoveStartV = -1
+            self.onCropLineMoved( "horizontal", 1, positionH )
+            self.onCropLineMoved( "vertical", 0, positionV )
+        else:
+            if self._mouseMoveStartH >=0 and self._mouseMoveStartCornerV >= 0:
+                self.onCropLineMoved( "horizontal", 1, positionH )
+                self.onCropLineMoved( "vertical", 1, positionV )
+                self._mouseMoveStartH = -1
+                self._mouseMoveStartV = -1
+            self.onCropLineMoved( "horizontal", 0, positionH )
+            self.onCropLineMoved( "vertical", 0, positionV )
 
     def paint(self, painter, option, widget=None):
         pass
@@ -340,152 +323,6 @@ def painter_context(painter):
         yield
     finally:
         painter.restore()
-
-class CropLine(QGraphicsItem):
-    """
-    QGraphicsItem for a single line (horizontal or vertical) of the slice intersection.
-    Must be a child of SliceIntersectionMarker.  It can be dragged to change the slicing position.
-    """
-    def __init__(self, parent, direction, index, maxPosition=0, length=0, swapped=1, rotation=0, orientation=1):
-        assert isinstance(parent, CroppingMarkers)
-        assert direction in ('horizontal', 'vertical')
-
-        self._parent = parent
-        self._direction = direction # horizontal/vertical
-        self._index = index # 0/1 (start/stop)
-        QGraphicsItem.__init__(self, parent)
-        self.setAcceptHoverEvents(True)
-        self._position = 0
-
-        self._maxPosition = maxPosition # width/height
-        self._length = length # height/width
-        self._swapped = swapped # 1/-1
-        self._rotation = rotation # -3,-2,-1,0,1,2,3
-        self._orientation = orientation # 1/-1
-
-    @property
-    def position(self):
-        return self._position
-    
-    @position.setter
-    def position(self, new_position):
-        self._position = new_position
-        self.setToolTip( "{}".format( int(new_position) ) )
-        self.prepareGeometryChange()
-        self.update()
-
-    def boundingRect(self):
-        parent = self._parent
-        #width, height = parent._width, parent._height
-        pen_width_in_view = parent.PEN_THICKNESS
-        pen_width_in_scene = determine_pen_thickness_in_scene( self.scene(), pen_width_in_view )
-        
-        # Return a bounding rect that's a little larger than the actual line.
-        # This makes it easier to grab with the mouse.
-        line_thickness = 3*pen_width_in_scene
-        
-        if self._direction == 'horizontal':
-            if self._swapped == 1:
-                return self.scene().data2scene.mapRect( QRectF( 0, self._position - line_thickness/2.0, self._length, line_thickness ) )
-            else:
-                return self.scene().data2scene.mapRect( QRectF( self._position - line_thickness/2.0, 0, line_thickness, self._length ) )
-        else:
-            if self._swapped == 1:
-                return self.scene().data2scene.mapRect( QRectF( self._position - line_thickness/2.0, 0, line_thickness, self._length ) )
-            else:
-                return self.scene().data2scene.mapRect( QRectF( 0, self._position - line_thickness/2.0, self._length, line_thickness ) )
-
-    def paint(self, painter, option, widget=None):
-        """
-        Paint a single line of the slice intersection marker.
-        """
-        #width = self._parent._width
-        #height = self._parent._height
-        thickness = self._parent.PEN_THICKNESS
-
-        # Our pen thickness is consistent across zoom levels because the pen is "cosmetic"
-        # However, that doesn't ensure a consistent-size dash pattern.
-        # Determine the inverse scaling factor from scene to view to set a consistent dash pattern at all scales.
-        view = self.scene().views()[0]
-        inverted_transform, has_inverse = view.transform().inverted()
-        dash_length = 5 * inverted_transform.m11()
-        dash_length = max( 0.5, dash_length )
-
-        # Draw the line with two pens to get a black-and-white dashed line.
-        pen_white = QPen( Qt.white, thickness )
-        pen_white.setDashPattern([dash_length, dash_length])
-        pen_white.setCosmetic(True)
-
-        pen_black = QPen( Qt.black, thickness )
-        pen_black.setDashPattern([dash_length, dash_length])
-        pen_black.setCosmetic(True)
-        pen_black.setDashOffset(dash_length)
-
-        with painter_context(painter):
-            t = painter.transform()
-            painter.setTransform(self.scene().data2scene * t)
-
-            # Draw the line with two pens to get a black-and-white dashed line.
-            for pen in [pen_white, pen_black]:
-                painter.setPen( pen )
-    
-                if self._direction == 'horizontal':
-                    if self._swapped == 1:
-                        painter.drawLine( QPointF(0.0, self.position), QPointF(self._length, self.position) )
-                    else:
-                        painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, self._length) )
-                else:
-                    if self._swapped == 1:
-                        painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, self._length) )
-                    else:
-                        painter.drawLine( QPointF(0.0, self.position), QPointF(self._length, self.position) )
-
-    def hoverEnterEvent(self, event):
-        # Change the cursor to indicate the line is draggable
-        cursor = QCursor( Qt.OpenHandCursor )
-        QApplication.instance().setOverrideCursor( cursor )
-    
-    def hoverLeaveEvent(self, event):
-        # Restore the cursor to its previous state.
-        QApplication.instance().restoreOverrideCursor()
-
-    def mouseMoveEvent(self, event):
-        new_pos = self.scene().data2scene.map( event.scenePos() )
-
-        if self._direction == 'horizontal':
-            print "horizontal"
-            position = int(new_pos.y() + 0.5)
-            position = max( 0, position )
-        else:
-            print "vertical"
-            position = int(new_pos.x() + 0.5)
-            position = max( 0, position )
-
-        position = min( self._maxPosition, position )
-
-        if self._orientation == -1:
-            position = self._maxPosition - position
-
-        print "----------> CropLine.mouseMoveEvent", self._direction, self._index, self._maxPosition, self._length, self._orientation, self._rotation
-        self._parent.onCropLineMoved( self, self._direction, self._index, position )
-
-    # Note: We must override these or else the default implementation  
-    #  prevents the mouseMoveEvent() override from working.
-    # If we didn't have actual work to do in these functions, 
-    #  we'd just use empty implementations:
-    # 
-    # def mousePressEvent(self, event): pass
-    # def mouseReleaseEvent(self, event): pass
-
-    def mousePressEvent(self, event):
-        print "----------> CropLine.mousePressEvent", self, self._direction, self._index, self._position, self._maxPosition, self._length, self._swapped, self._rotation, self._orientation
-        # Change the cursor to indicate "currently dragging"
-        cursor = QCursor( Qt.ClosedHandCursor )
-        QApplication.instance().setOverrideCursor( cursor )
-        
-    def mouseReleaseEvent(self, event):
-        # Restore the cursor to its previous state.
-        QApplication.instance().restoreOverrideCursor()
 
 class ExcludedRegionShading(QGraphicsItem):
     def __init__(self, parent, crop_extents_model):
@@ -544,6 +381,170 @@ class ExcludedRegionShading(QGraphicsItem):
             brush = QBrush( QColor(0,0,0,0) )
             painter.fillRect( QRectF( p1, p2 ), brush )
             #print "PAINT", self._parent.axis
+
+class CropLine(QGraphicsItem):
+    """
+    QGraphicsItem for a single line (horizontal or vertical) of the slice intersection.
+    Must be a child of SliceIntersectionMarker.  It can be dragged to change the slicing position.
+    """
+    def __init__(self, parent, direction, index):
+        assert isinstance(parent, CroppingMarkers)
+        assert direction in ('horizontal', 'vertical')
+
+        self._parent = parent
+        self._direction = direction
+        self._index = index
+        QGraphicsItem.__init__(self, parent)
+        self.setAcceptHoverEvents(True)
+        self._position = 0
+        self._line_thickness = 1
+
+    @property
+    def position(self):
+        return self._position
+    
+    @position.setter
+    def position(self, new_position):
+        self._position = new_position
+        self.setToolTip( "{}".format( int(new_position) ) )
+        self.prepareGeometryChange()
+        self.update()
+
+    def boundingRect(self):
+        parent = self._parent
+        width, height = parent._width, parent._height
+        pen_width_in_view = parent.PEN_THICKNESS
+        pen_width_in_scene = determine_pen_thickness_in_scene( self.scene(), pen_width_in_view )
+        
+        # Return a bounding rect that's a little larger than the actual line.
+        # This makes it easier to grab with the mouse.
+        line_thickness = 3*pen_width_in_scene
+        self._line_thickness = 4*line_thickness
+
+        if self._direction == 'horizontal':
+            return self.scene().data2scene.mapRect( QRectF( 0, self._position - line_thickness/2.0, width, line_thickness ) )
+        else:
+            return self.scene().data2scene.mapRect( QRectF( self._position - line_thickness/2.0, 0, line_thickness, height ) )
+
+    def paint(self, painter, option, widget=None):
+        """
+        Paint a single line of the slice intersection marker.
+        """
+        width = self._parent._width
+        height = self._parent._height
+        thickness = self._parent.PEN_THICKNESS
+
+        # Our pen thickness is consistent across zoom levels because the pen is "cosmetic"
+        # However, that doesn't ensure a consistent-size dash pattern.
+        # Determine the inverse scaling factor from scene to view to set a consistent dash pattern at all scales.
+        view = self.scene().views()[0]
+        inverted_transform, has_inverse = view.transform().inverted()
+        dash_length = 5 * inverted_transform.m11()
+        dash_length = max( 0.5, dash_length )
+
+        # Draw the line with two pens to get a black-and-white dashed line.
+        pen_white = QPen( Qt.white, thickness )
+        pen_white.setDashPattern([dash_length, dash_length])
+        pen_white.setCosmetic(True)
+
+        pen_black = QPen( Qt.black, thickness )
+        pen_black.setDashPattern([dash_length, dash_length])
+        pen_black.setCosmetic(True)
+        pen_black.setDashOffset(dash_length)
+
+        with painter_context(painter):
+            t = painter.transform()
+            painter.setTransform(self.scene().data2scene * t)
+
+            # Draw the line with two pens to get a black-and-white dashed line.
+            for pen in [pen_white, pen_black]:
+                painter.setPen( pen )
+    
+                if self._direction == 'horizontal':
+                    painter.drawLine( QPointF(0.0, self.position), QPointF(width, self.position) )
+                else:
+                    painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, height) )
+
+    def hoverEnterEvent(self, event):
+        new_pos = self.scene().data2scene.map( event.scenePos() )
+        width, height = self._parent.dataShape
+
+        if self._direction == 'vertical':
+            position = int(new_pos.y() + 0.5)
+            position = max( 0, position )
+            position = min(height, position)
+        else:
+            position = int(new_pos.x() + 0.5)
+            position = max( 0, position )
+            position = min( width, position)
+
+        # Change the cursor to indicate the line is draggable
+        cursor = QCursor( Qt.OpenHandCursor )
+        QApplication.instance().setOverrideCursor( cursor )
+    
+    def hoverLeaveEvent(self, event):
+        # Restore the cursor to its previous state.
+        QApplication.instance().restoreOverrideCursor()
+
+    def mouseMoveEvent(self, event):
+        new_pos = self.scene().data2scene.map( event.scenePos() )
+        width, height = self._parent.dataShape
+
+        posH0 = self._parent._horizontal0.position
+        posH1 = self._parent._horizontal1.position
+        posV0 = self._parent._vertical0.position
+        posV1 = self._parent._vertical1.position
+
+        positionH = int(new_pos.y() + 0.5)
+        positionH = max( 0, positionH )
+        positionH = min(height, positionH)
+
+        positionV = int(new_pos.x() + 0.5)
+        positionV = max( 0, positionV )
+        positionV = min( width, positionV)
+
+        if posH0 == 0 and self._index == 1 and positionH < 1:
+            positionH = 1
+        if posV0 == 0 and self._index == 1 and positionV < 1:
+            positionV = 1
+        if posH1 == height and self._index == 0 and positionH > height - 1:
+            positionH = height - 1
+        if posV1 == width and self._index == 0 and positionV > width - 1:
+            positionV = width - 1
+
+        if self._direction == 'horizontal' and abs(self._parent._vertical0._position - positionV ) <= self._line_thickness:
+            self._parent.onCropLineMoved( self._direction, self._index, positionH )
+            self._parent.onCropLineMoved( 'vertical', 0, positionV )
+        elif self._direction == 'horizontal' and abs(self._parent._vertical1._position - positionV ) <= self._line_thickness:
+            self._parent.onCropLineMoved( self._direction, self._index, positionH )
+            self._parent.onCropLineMoved( 'vertical', 1, positionV )
+        elif self._direction == 'vertical' and abs(self._parent._horizontal0._position - positionH ) <= self._line_thickness:
+            self._parent.onCropLineMoved( self._direction, self._index, positionV )
+            self._parent.onCropLineMoved( 'horizontal', 0, positionH )
+        elif self._direction == 'vertical' and abs(self._parent._horizontal1._position - positionH ) <= self._line_thickness:
+            self._parent.onCropLineMoved( self._direction, self._index, positionV )
+            self._parent.onCropLineMoved( 'horizontal', 1, positionH )
+        elif self._direction == 'horizontal':
+            self._parent.onCropLineMoved( self._direction, self._index, positionH )
+        else:
+            self._parent.onCropLineMoved( self._direction, self._index, positionV )
+
+    # Note: We must override these or else the default implementation  
+    #  prevents the mouseMoveEvent() override from working.
+    # If we didn't have actual work to do in these functions, 
+    #  we'd just use empty implementations:
+    # 
+    # def mousePressEvent(self, event): pass
+    # def mouseReleaseEvent(self, event): pass
+
+    def mousePressEvent(self, event):
+        # Change the cursor to indicate "currently dragging"
+        cursor = QCursor( Qt.ClosedHandCursor )
+        QApplication.instance().setOverrideCursor( cursor )
+
+    def mouseReleaseEvent(self, event):
+        # Restore the cursor to its previous state.
+        QApplication.instance().restoreOverrideCursor()
 
 def determine_pen_thickness_in_scene( scene, cosmetic_thickness ):
     """
