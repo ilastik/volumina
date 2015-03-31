@@ -62,6 +62,7 @@ class WysiwygExportOptionsDlg(QDialog):
 
         # properties
         self.along = self.view.scene()._along
+        self.swap_axis = 1 in self.along  # "if first axis ('x') is in self.along. I.e. top right YZ-widget
         self.inputAxes = ['t','x','y','z','c']
         self.shape = self.view.scene()._posModel.shape5D
         self.sliceAxes = [i for i in range(len(self.inputAxes)) if not i in self.along]
@@ -135,7 +136,11 @@ class WysiwygExportOptionsDlg(QDialog):
         stop[self.sliceAxes[0]] = rect.right()
         start[self.sliceAxes[1]] = rect.top()
         stop[self.sliceAxes[1]] = rect.bottom()
-        
+
+        if self.swap_axis:
+            start[2], start[3] = start[3], start[2]
+            stop[2], stop[3] = stop[3], stop[2]
+
         # set class attributes
         self.roi_start = tuple(start)
         self.roi_stop = tuple(stop)

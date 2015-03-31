@@ -430,7 +430,7 @@ class ImageScene2D(QGraphicsScene):
         Wait until all tiles in the scene have been 100% rendered.
         If sceneRectF is None, use the viewport rect.
         If sceneRectF is an invalid QRectF(), then wait for all tiles.
-        Note: This is useful for testing only.  If called from the GUI thread, the GUI thread will block until all tiles are rendered!
+        Note: If called from the GUI thread, the GUI thread will block until all tiles are rendered!
         """
         # If this is the main thread, keep repainting (otherwise we'll deadlock).
         if threading.current_thread().name == "MainThread":
