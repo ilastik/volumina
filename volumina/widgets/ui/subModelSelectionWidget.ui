@@ -19,8 +19,8 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QGridLayout" name="gridLayout_5">
+   <item row="0" column="0">
     <widget class="QWidget" name="widget_t" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -101,7 +101,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="1" column="0">
     <widget class="QWidget" name="widget_x" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -182,7 +182,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="2" column="0">
     <widget class="QWidget" name="widget_y" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -263,7 +263,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="3" column="0">
     <widget class="QWidget" name="widget_z" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -347,14 +347,10 @@
      </layout>
     </widget>
    </item>
-   <item>
-    <widget class="QListView" name="_subModelListView">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-    </widget>
+   <item row="4" column="0">
+    <widget class="CropListView" name="_cropListView"/>
    </item>
-   <item>
+   <item row="5" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer">
@@ -370,7 +366,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="ApplyButton">
+      <widget class="QPushButton" name="NewCropButton">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -378,7 +374,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>New Sub-Model</string>
+        <string>New Crop</string>
        </property>
       </widget>
      </item>
@@ -399,6 +395,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CropListView</class>
+   <extends>QTableView</extends>
+   <header>ilastik.widgets.cropListView</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
