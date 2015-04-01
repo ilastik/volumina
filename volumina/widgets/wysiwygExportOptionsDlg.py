@@ -62,12 +62,12 @@ class WysiwygExportOptionsDlg(QDialog):
 
         # properties
         self.along = self.view.scene()._along
-        self.swap_axis = 1 in self.along  # "if first axis ('x') is in self.along. I.e. top right YZ-widget
+        reverse = -1 if self.view.scene().is_swapped else 1
         self.inputAxes = ['t','x','y','z','c']
         self.shape = self.view.scene()._posModel.shape5D
-        self.sliceAxes = [i for i in range(len(self.inputAxes)) if not i in self.along]
+        self.sliceAxes = [i for i in range(len(self.inputAxes)) if not i in self.along][::reverse]
         self.sliceCoords = ''.join([a for i,a in enumerate(self.inputAxes) 
-                                    if not i in self.along])
+                                    if not i in self.along])[::reverse]
 
         # Init child widgets
         self._initSubregionWidget()
@@ -137,9 +137,6 @@ class WysiwygExportOptionsDlg(QDialog):
         start[self.sliceAxes[1]] = rect.top()
         stop[self.sliceAxes[1]] = rect.bottom()
 
-        if self.swap_axis:
-            start[2], start[3] = start[3], start[2]
-            stop[2], stop[3] = stop[3], stop[2]
 
         # set class attributes
         self.roi_start = tuple(start)
@@ -340,9 +337,6 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         slice_axes = self.dlg.sliceAxes
         show_markers = self.dlg.showMarkers()
         folder, pattern, fileExt = self.dlg.getExportInfo()
-
-        if slice_axes[0] == 2 and slice_axes[1] == 3:
-            slice_axes[0], slice_axes[1] = slice_axes[1], slice_axes[0]
 
         # width and height of images
         w = stop[slice_axes[0]] - start[slice_axes[0]]

@@ -116,6 +116,15 @@ class ImageScene2D(QGraphicsScene):
     dirtyChanged = pyqtSignal()
 
     @property
+    def is_swapped(self):
+        """
+        Indicates whether the dimensions are swapped
+        swapping the axis will swap the dimensions and rotating the roi will swap the dimensions
+        :return: bool
+        """
+        return bool(self._swapped) != bool(self._rotation % 2)  # xor
+
+    @property
     def stackedImageSources(self):
         return self._stackedImageSources
 
