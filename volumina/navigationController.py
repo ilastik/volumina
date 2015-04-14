@@ -53,9 +53,9 @@ class NavigationInterpreter(QObject):
     def state( self ):
         return self._current_state
 
-    def __init__(self, navigationcontroler):
+    def __init__(self, navigationcontroller):
         QObject.__init__(self)
-        self._navCtrl = navigationcontroler
+        self._navCtrl = navigationcontroller
         self._current_state = self.FINAL
 
     def start( self ):
@@ -252,9 +252,9 @@ assert issubclass(NavigationInterpreter, InterpreterABC)
 # N a v i g a t i o n C o n t r o l e r                                        *
 #*******************************************************************************
 
-class NavigationControler(QObject):
+class NavigationController(QObject):
     """
-    Controler for navigating through the volume.
+    Controller for navigating through the volume.
 
     The NavigationContrler object listens to changes
     in a given PositionModel and updates three slice
@@ -387,7 +387,7 @@ class NavigationControler(QObject):
         '''
         for pump in self._imagePumps:
             if 2 not in pump.syncedSliceSources.getSyncAlong():
-                raise RuntimeError("NavigationControler.changeChannel: channel axis not synced in all image pumps; can't apply method")
+                raise RuntimeError("NavigationController.changeChannel: channel axis not synced in all image pumps; can't apply method")
         if self._model.shape is None:
             return
         for i in range(3):
@@ -503,7 +503,7 @@ class NavigationControler(QObject):
 
     def _updateSlice(self, num, axis):
         if num < 0 or num >= self._model.volumeExtent(axis):
-            raise Exception("NavigationControler._setSlice(): invalid slice number = %d not in range [0,%d)" % (num, self._model.volumeExtent(axis)))
+            raise Exception("NavigationController._setSlice(): invalid slice number = %d not in range [0,%d)" % (num, self._model.volumeExtent(axis)))
         #FIXME: Shouldnt the hud listen to the model changes itself?
         self._views[axis].hud.sliceSelector.setValue(num)
 

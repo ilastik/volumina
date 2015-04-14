@@ -1,6 +1,6 @@
 from PyQt4.QtCore import Qt, QEvent, QObject, QPoint
 import numpy as np
-from navigationControler import NavigationInterpreter, posView2D
+from navigationController import NavigationInterpreter, posView2D
 from volumina.layer import GrayscaleLayer
 
 
@@ -19,10 +19,10 @@ class ThresholdingInterpreter( QObject ):
     def state( self ):
         return self._current_state
 
-    def __init__( self, navigationControler, layerStack, posModel ):
+    def __init__( self, navigationController, layerStack, posModel ):
         QObject.__init__( self )
-        self._navCtrl = navigationControler
-        self._navIntr = NavigationInterpreter( navigationControler )
+        self._navCtrl = navigationController
+        self._navIntr = NavigationInterpreter( navigationController )
         self._layerStack = layerStack
         self._active_layer = None
         self._active_channel_idx = -1
