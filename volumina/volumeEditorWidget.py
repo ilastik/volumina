@@ -247,7 +247,7 @@ class VolumeEditorWidget(QWidget):
             self._setupVolumeExtent()
 
         self.editor.shapeChanged.connect(onShapeChanged)
-        
+
         self.updateGeometry()
         self.update()
         self.quadview.update()
