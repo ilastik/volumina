@@ -104,7 +104,7 @@ class CroppingMarkers( QGraphicsItem ):
         self._vertical1 = CropLine(self, 'vertical', 1)
 
         self.crop_extents_model.changed.connect( self.onExtentsChanged )
-        self.crop_extents_model.colorChanged.connect( self.onColorChanged )
+        #self.crop_extents_model.colorChanged.connect( self.onColorChanged )
         self._mouseMoveStartCornerH = -1
         self._mouseMoveStartCornerV = -1
         self._mouseMoveStartH = -1
@@ -168,10 +168,9 @@ class CroppingMarkers( QGraphicsItem ):
 
         self.prepareGeometryChange()
 
-    def onColorChanged(self):
-
-        self.prepareGeometryChange()
-        self.update()
+   #def onColorChanged(self):
+    #    self.prepareGeometryChange()
+    #    self.update()
 
     def onCropLineMoved(self, direction, index, new_position):
         # Which 3D axis does this crop line correspond to?
@@ -518,8 +517,8 @@ class CropLine(QGraphicsItem):
         dash_length = max( 0.5, dash_length )
 
         # Draw the line with two pens to get a black-and-white dashed line.
-        #pen_white = QPen( Qt.white, thickness )
-        pen_white = QPen( self._parent._cropColor, thickness )
+        pen_white = QPen( Qt.white, thickness )
+        #pen_white = QPen( self._parent._cropColor, thickness )
         pen_white.setDashPattern([dash_length, dash_length])
         pen_white.setCosmetic(True)
 
