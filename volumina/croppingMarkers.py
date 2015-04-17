@@ -22,7 +22,7 @@ class CropExtentsModel( QObject ):
     changed = pyqtSignal( object )  # list of start/stop coords indexed by axis
                                     # Note: There is no required ordering for start/stop
                                     #       (i.e. start could be greater than stop)
-    colorChanged = pyqtSignal( )
+    colorChanged = pyqtSignal(QColor)
 
     def __init__(self, parent):
         super( CropExtentsModel, self ).__init__( parent )
@@ -85,7 +85,9 @@ class CroppingMarkers( QGraphicsItem ):
         return QRectF(0.0, 0.0, width, height)
 
     def __init__(self, scene, axis, crop_extents_model):
+
         self._cropColor = Qt.white
+
         QGraphicsItem.__init__(self, scene=scene)
         self.setAcceptHoverEvents(True)
         self.scene = scene
@@ -104,7 +106,7 @@ class CroppingMarkers( QGraphicsItem ):
         self._vertical1 = CropLine(self, 'vertical', 1)
 
         self.crop_extents_model.changed.connect( self.onExtentsChanged )
-        #self.crop_extents_model.colorChanged.connect( self.onColorChanged )
+        self.crop_extents_model.colorChanged.connect( self.onColorChanged )
         self._mouseMoveStartCornerH = -1
         self._mouseMoveStartCornerV = -1
         self._mouseMoveStartH = -1
@@ -168,9 +170,10 @@ class CroppingMarkers( QGraphicsItem ):
 
         self.prepareGeometryChange()
 
-   #def onColorChanged(self):
-    #    self.prepareGeometryChange()
-    #    self.update()
+    def onColorChanged(self, color):
+        self._cropColor = color
+        self.prepareGeometryChange()
+        self.update()
 
     def onCropLineMoved(self, direction, index, new_position):
         # Which 3D axis does this crop line correspond to?
@@ -517,8 +520,8 @@ class CropLine(QGraphicsItem):
         dash_length = max( 0.5, dash_length )
 
         # Draw the line with two pens to get a black-and-white dashed line.
-        pen_white = QPen( Qt.white, thickness )
-        #pen_white = QPen( self._parent._cropColor, thickness )
+        #pen_white = QPen( Qt.white, thickness )
+        pen_white = QPen( self._parent._cropColor, thickness )
         pen_white.setDashPattern([dash_length, dash_length])
         pen_white.setCosmetic(True)
 
