@@ -517,7 +517,7 @@ class CropLine(QGraphicsItem):
         # Determine the inverse scaling factor from scene to view to set a consistent dash pattern at all scales.
         view = self.scene().views()[0]
         inverted_transform, has_inverse = view.transform().inverted()
-        dash_length = 5 * inverted_transform.m11()
+        dash_length = 4 / inverted_transform.m11()
         dash_length = max( 0.5, dash_length )
 
         # Draw the line with two pens to get a black-and-white dashed line.
