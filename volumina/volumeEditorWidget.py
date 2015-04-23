@@ -251,7 +251,6 @@ class VolumeEditorWidget(QWidget):
         self.updateGeometry()
         self.update()
         self.quadview.update()
-        
         if hasattr(self.editor.view3d, 'bUndock'):
             self.editor.view3d.bUndock.clicked.connect(partial(self.quadview.on_dock, self.quadview.dock2_ofSplitHorizontal2))
 

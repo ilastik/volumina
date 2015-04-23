@@ -163,12 +163,13 @@ class CroppingMarkers( QGraphicsItem ):
         crop_extents.pop(self.axis)
 
         # By default, place cropping lines at 25% and 75%
-        self._vertical0.position = crop_extents[0][0]
-        self._vertical1.position = crop_extents[0][1]
-        self._horizontal0.position = crop_extents[1][0]
-        self._horizontal1.position = crop_extents[1][1]
+        if not (None in crop_extents[0] or None in crop_extents[1]):
+            self._vertical0.position = crop_extents[0][0]
+            self._vertical1.position = crop_extents[0][1]
+            self._horizontal0.position = crop_extents[1][0]
+            self._horizontal1.position = crop_extents[1][1]
 
-        self.prepareGeometryChange()
+            self.prepareGeometryChange()
 
     def onColorChanged(self, color):
         self._cropColor = color
