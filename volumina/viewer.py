@@ -26,7 +26,7 @@ from volumina.pixelpipeline.datasources import *
 from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
-from volumina.navigationControler import NavigationInterpreter
+from volumina.navigationController import NavigationInterpreter
 from volumina import colortables
 
 from PyQt4.QtCore import QTimer, pyqtSignal
@@ -362,8 +362,8 @@ if __name__ == "__main__":
     
 #     class MyInterpreter(NavigationInterpreter):
 #         
-#         def __init__(self, navigationcontroler):
-#             NavigationInterpreter.__init__(self,navigationcontroler)
+#         def __init__(self, navigationcontroller):
+#             NavigationInterpreter.__init__(self,navigationcontroller)
 #     
 #         def onMouseMove_default( self, imageview, event ):
 #             if imageview._ticker.isActive():
