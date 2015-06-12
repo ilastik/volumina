@@ -29,6 +29,8 @@ from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
 from layercontextmenu import layercontextmenu
+from volumina.utility.qstring_codec import encode_from_qstring
+from volumina.utility.qstring_codec import decode_to_qstring
 
 class FractionSelectionBar( QWidget ):
     fractionChanged = pyqtSignal(float)
@@ -269,7 +271,8 @@ class LayerDelegate(QStyledItemDelegate):
             editor = LayerItemWidget(parent=parent)
             editor.is_editor = True
             # We set a custom objectName for debug and eventcapture testing purposes.
-            editor.setObjectName("LayerItemWidget_{}".format(layer.name))
+            objName = encode_from_qstring(layer.name)
+            editor.setObjectName("LayerItemWidget_{}".format(objName))
             editor.setAutoFillBackground(True)
             editor.setPalette( option.palette )
             editor.setBackgroundRole(QPalette.Highlight)
