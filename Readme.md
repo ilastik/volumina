@@ -1,7 +1,7 @@
 **Volumina** - Volume Slicing and Editing Library
 =============================================
 
-[Code coverage](http://ilastik.github.com/volumina/cover/index.html)
+[![Circle CI](https://circleci.com/gh/ilastik/volumina.svg?style=svg)](https://circleci.com/gh/ilastik/volumina)
 
 Installing
 ==========

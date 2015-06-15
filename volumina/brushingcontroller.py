@@ -23,13 +23,13 @@ from functools import partial
 from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
 from PyQt4.QtGui import QPen, QBrush, QApplication, QMouseEvent, QGraphicsLineItem
 
-from navigationControler import NavigationInterpreter
+from navigationController import NavigationInterpreter
 
 #*******************************************************************************
 # C r o s s h a i r C o n t r o l e r                                          *
 #*******************************************************************************
 
-class CrosshairControler(QObject):
+class CrosshairController(QObject):
     def __init__(self, brushingModel, imageViews):
         QObject.__init__(self, parent=None)
         self._brushingModel = brushingModel
@@ -65,11 +65,11 @@ class BrushingInterpreter( QObject ):
     def state( self ):
         return self._current_state
 
-    def __init__( self, navigationControler, brushingControler ):
+    def __init__( self, navigationController, brushingController ):
         QObject.__init__( self )
-        self._navCtrl = navigationControler
-        self._navIntr = NavigationInterpreter( navigationControler )
-        self._brushingCtrl = brushingControler
+        self._navCtrl = navigationController
+        self._navIntr = NavigationInterpreter( navigationController )
+        self._brushingCtrl = brushingController
         self._current_state = self.FINAL
         self._temp_erasing = False # indicates, if user pressed shift
                                    # for temporary erasing (in
@@ -244,7 +244,7 @@ class BrushingInterpreter( QObject ):
 # B r u s h i n g C o n t r o l e r                                            *
 #*******************************************************************************
 
-class BrushingControler(QObject):
+class BrushingController(QObject):
     wroteToSink     = pyqtSignal()
 
     def __init__(self, brushingModel, positionModel, dataSink):

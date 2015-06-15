@@ -37,10 +37,10 @@ from imageScene2D import ImageScene2D
 from imageView2D import ImageView2D
 from positionModel import PositionModel
 from croppingMarkers import CropExtentsModel
-from navigationControler import NavigationControler, NavigationInterpreter
-from brushingcontroler import BrushingInterpreter, BrushingControler, \
-                              CrosshairControler
-from thresholdingcontroler import ThresholdingInterpreter
+from navigationController import NavigationController, NavigationInterpreter
+from brushingcontroller import BrushingInterpreter, BrushingController, \
+                              CrosshairController
+from thresholdingcontroller import ThresholdingInterpreter
 from brushingmodel import BrushingModel
 from slicingtools import SliceProjection
 
@@ -190,17 +190,17 @@ class VolumeEditor( QObject ):
 
         # navigation control
         v3d = self.view3d if useVTK else None
-        self.navCtrl      = NavigationControler(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
+        self.navCtrl      = NavigationController(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
         # brushing control
         if crosshair:
-            self.crosshairControler = CrosshairControler(self.brushingModel, self.imageViews)
-        self.brushingControler = BrushingControler(self.brushingModel, self.posModel, labelsink)
-        self.brushingInterpreter = BrushingInterpreter(self.navCtrl, self.brushingControler)
+            self.crosshairController = CrosshairController(self.brushingModel, self.imageViews)
+        self.brushingController = BrushingController(self.brushingModel, self.posModel, labelsink)
+        self.brushingInterpreter = BrushingInterpreter(self.navCtrl, self.brushingController)
 
         for v in self.imageViews:
-            self.brushingControler._brushingModel.brushSizeChanged.connect(v._sliceIntersectionMarker._set_diameter)
+            self.brushingController._brushingModel.brushSizeChanged.connect(v._sliceIntersectionMarker._set_diameter)
 
         # thresholding control
         self.thresInterpreter = ThresholdingInterpreter(self.navCtrl, 
@@ -253,7 +253,7 @@ class VolumeEditor( QObject ):
         event.accept()
 
     def setLabelSink(self, labelsink):
-        self.brushingControler.setDataSink(labelsink)
+        self.brushingController.setDataSink(labelsink)
 
     ##
     ## private

@@ -438,9 +438,9 @@ class ColortableImageRequest( object ):
                             if a_new_dtype <= np.dtype(np.uint32):
                                  a = np.asanyarray(a, dtype=a_new_dtype)
                             else:
-                                assert(np.iinfo(a.dtype).max >= len(_colorTable),
-                                       "This is a very large colortable. If it is indeed needed, add a transparent"
-                                       " color at the beginning of the colortable for displaying masked arrays.")
+                                assert (np.iinfo(a.dtype).max >= len(_colorTable)), \
+                                       "This is a very large colortable. If it is indeed needed, add a transparent" + \
+                                       " color at the beginning of the colortable for displaying masked arrays."
 
                                 # Try to wrap the max value to a smaller value of the same color.
                                 a[a == np.iinfo(a.dtype).max] %= len(_colorTable)

@@ -26,7 +26,7 @@ from volumina.pixelpipeline.datasources import *
 from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
-from volumina.navigationControler import NavigationInterpreter
+from volumina.navigationController import NavigationInterpreter
 from volumina import colortables
 
 from PyQt4.QtCore import QTimer, pyqtSignal
@@ -240,9 +240,9 @@ class Viewer(QMainWindow):
         self.layerstack.append(layer)
         return layer
         
-    def addAlphaModulatedLayer(self, a, name=None):
+    def addAlphaModulatedLayer(self, a, name=None, **kwargs):
         source,self.dataShape = createDataSource(a,True)
-        layer = AlphaModulatedLayer(source)
+        layer = AlphaModulatedLayer(source, **kwargs)
         if name:
             layer.name = name
         self.layerstack.append(layer)
@@ -319,27 +319,51 @@ class Viewer(QMainWindow):
         return colors
         
 if __name__ == "__main__":
-    
     import sys
-    from lazyflow.operators import OpImageReader
-    from lazyflow.graph import Operator, OutputSlot, InputSlot
-    from lazyflow.graph import Graph
-    from vigra import VigraArray
-
     
     app = QApplication(sys.argv)
     viewer = Viewer()
     viewer.show()
     array1 = (numpy.random.random((1,100,100,100,5))) * 255
+
+    try:
+        import vigra
+    except:    
+        pass
+    else:
+        array1 = vigra.taggedView(array1, 'txyzc')
     viewer.addGrayscaleLayer(array1)
+
     array2 = (numpy.random.random((100,100,100,3))) * 255
     viewer.addRGBALayer(array2)
+
+    try:
+        import h5py
+    except:
+        pass
+    else:
+        f = h5py.File('/tmp/blabla.h5', 'w')
+        f['data'] = (numpy.random.random((1,100,100,100,4))) * 255
+        viewer.addGrayscaleLayer(f['data'], name='from_hdf5')    
+    
+    white_array = (numpy.ones((100,100,100,1))) * 255
+    viewer.addGrayscaleLayer(white_array, "white")
+    
+    array3 = (numpy.random.random((100,100,100,3))) * 255
+    red_layer = viewer.addAlphaModulatedLayer(array3[...,0], "array3-red", tintColor=QColor(255,0,0))
+    green_layer = viewer.addAlphaModulatedLayer(array3[...,1], "array3-green", tintColor=QColor(0,255,0))
+    blue_layer = viewer.addAlphaModulatedLayer(array3[...,2], "array3-blue", tintColor=QColor(0,0,255))
+
+    red_layer.opacity = 1.0
+    green_layer.opacity = 0.66
+    blue_layer.opacity = 0.33
+    
     viewer.raise_()
     
 #     class MyInterpreter(NavigationInterpreter):
 #         
-#         def __init__(self, navigationcontroler):
-#             NavigationInterpreter.__init__(self,navigationcontroler)
+#         def __init__(self, navigationcontroller):
+#             NavigationInterpreter.__init__(self,navigationcontroller)
 #     
 #         def onMouseMove_default( self, imageview, event ):
 #             if imageview._ticker.isActive():

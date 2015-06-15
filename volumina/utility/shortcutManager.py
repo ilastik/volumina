@@ -27,7 +27,7 @@ class ShortcutManager(object):
     # description (str): A user-friendly description of what this shortcut does
     # target_callable (callable): A Python callable that serves as the target for the shortcut when it is activated
     # context_widget (QWidget): A widget that can be used as a reference for deciding when the shortcut is enabled.
-    #                           The shortcut is enabled if this widget or any of its children have keyboard focus
+    #                           The shortcut is enabled if this widget is visible and enabled.
     # tooltip_widget (ObjectWithToolTipABC): (optional) Any object that fulfills the ObjectWithToolTipABC (see below).
     #                                        If provided, this object's tooltip will be updated to reflect the current shortcut key sequence.
     #                                        To omit this field, simply provide None
@@ -214,7 +214,8 @@ class ShortcutManager(object):
                     best_focus_candidates.append( (focused_child_depth, action_info ) )
 
             if len(best_focus_candidates) == 0:
-                logger.debug("Ignoring key sequence: {} because no targets have focus.".format( keytext ))
+                logger.warn("Ignoring key sequence: {} due to multiple candidate targets, none of which have keyboard focus: {}"
+                             .format( keytext, [action_info.group + ": " + action_info.name for action_info in candidate_actions] ) )
             elif len( best_focus_candidates ) == 1:
                 logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
                 best_focus_candidates[0][1].target_callable()
@@ -225,8 +226,8 @@ class ShortcutManager(object):
                     logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
                     best_focus_candidates[0][1].target_callable()
                 else:
-                    logger.debug( "Ignoring key sequence: {} due to multiple candidate targets:\n"
-                                  "{}".format( keytext, best_focus_candidates ) )
+                    logger.warn( "Ignoring key sequence: {} due to multiple candidate targets:\n"
+                                 "{}".format( keytext, best_focus_candidates ) )
 
     def _focused_widget_ancestor_index(self, widget):
         """

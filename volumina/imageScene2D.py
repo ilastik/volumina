@@ -116,6 +116,15 @@ class ImageScene2D(QGraphicsScene):
     dirtyChanged = pyqtSignal()
 
     @property
+    def is_swapped(self):
+        """
+        Indicates whether the dimensions are swapped
+        swapping the axis will swap the dimensions and rotating the roi will swap the dimensions
+        :return: bool
+        """
+        return bool(self._swapped) != bool(self._rotation % 2)  # xor
+
+    @property
     def stackedImageSources(self):
         return self._stackedImageSources
 
@@ -425,19 +434,22 @@ class ImageScene2D(QGraphicsScene):
             for through in self._bowWave(self._n_preemptive):
                 self._tileProvider.prefetch(sceneRectF, through)
 
-    def joinRenderingAllTiles(self, viewport_only=True):
+    def joinRenderingAllTiles(self, viewport_only=True, rect=None):
         """
         Wait until all tiles in the scene have been 100% rendered.
         If sceneRectF is None, use the viewport rect.
         If sceneRectF is an invalid QRectF(), then wait for all tiles.
-        Note: This is useful for testing only.  If called from the GUI thread, the GUI thread will block until all tiles are rendered!
+        Note: If called from the GUI thread, the GUI thread will block until all tiles are rendered!
         """
         # If this is the main thread, keep repainting (otherwise we'll deadlock).
         if threading.current_thread().name == "MainThread":
             if viewport_only:
                 sceneRectF = self.views()[0].viewportRect()
             else:
-                sceneRectF = QRectF() # invalid QRectF means 'get all tiles'
+                if rect is None or not isinstance(rect, QRectF):
+                    sceneRectF = QRectF() # invalid QRectF means 'get all tiles'
+                else:
+                    sceneRectF = rect
             self._tileProvider.waitForTiles(sceneRectF)
         else:
             self._allTilesCompleteEvent.wait()

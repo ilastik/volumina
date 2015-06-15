@@ -171,14 +171,14 @@ class DataExportOptionsDlg(QDialog):
         self.roiWidget.initWithExtents( inputAxes, shape, start, stop )
         
         def _handleRoiChange(newstart, newstop):
+            if not opDataExport.Input.ready():
+                # Can happen if we're still listening to slot changes after we've been closed.
+                return
             # Unfortunately, we have to handle a special case here:
             # If the user's previous subregion produced a singleton axis,
             #  then he may have dropped that axis using the 'transpose' edit box.
             # However, if the user is now manipulating the roi again, we need to check to see if that singleton axis was expanded.
             # If it was, then we need to reset the axis order again.  It's no longer valid to drop the axis (it's not a singleton any more.)
-            if not opDataExport.Input.ready():
-                # Can happen if we're still listening to slot changes after we've been closed.
-                return
             tagged_input_shape = opDataExport.Input.meta.getTaggedShape()
             tagged_output_shape = opDataExport.ImageToExport.meta.getTaggedShape()
             missing_axes = set( tagged_input_shape.keys() ) - set( tagged_output_shape.keys() )

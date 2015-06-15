@@ -55,11 +55,22 @@ class TestLayerWidget( ut.TestCase ):
     
     def impl(self):
         try:
+            # Change the visibility of the *selected* layer
+            self.o2.visible = False
+
+            # Make sure the GUI is caught up on paint events
+            QApplication.processEvents()
+            
+            # We must sleep for the screenshot to be right.
+            time.sleep(0.1) 
+
+            self.w.repaint()
+
             # Capture the window before we change anything
             beforeImg = QPixmap.grabWindow( self.w.winId() ).toImage()
             
             # Change the visibility of the *selected* layer
-            self.o2.visible = False
+            self.o2.visible = True
             
             self.w.repaint()
             
@@ -109,6 +120,7 @@ class TestLayerWidget( ut.TestCase ):
         self.lh.addWidget(self.view)
         self.w.setGeometry(100, 100, 300, 300)
         self.w.show()
+        self.w.raise_()
 
         # Run the test within the GUI event loop
         QTimer.singleShot(500, self.impl )
