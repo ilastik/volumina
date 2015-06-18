@@ -122,8 +122,8 @@ def layercontextmenu( layer, pos, parent=None ):
         export = QAction("Export...",menu)
         export.setStatusTip("Export Layer...")
         export.triggered.connect( partial( get_settings_and_export_layer, layer, menu ) )
+        menu.addAction(export)
 
-    menu.addAction(export)
     menu.addSeparator()
     _add_actions( layer, menu )
 
