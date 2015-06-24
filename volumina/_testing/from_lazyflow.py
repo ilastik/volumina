@@ -33,29 +33,6 @@ except ImportError as e:
 import numpy as np
 import time
 
-class Op5ifyer(Operator):
-    name = "5Difyer"
-
-    inputSlots = [InputSlot("Input", stype="ndarray")]
-    outputSlots = [OutputSlot("Output", stype="ndarray")]
-
-    def setupOutputs(self):
-        shape = self.inputs["Input"].meta.shape
-        assert len(shape) == 3
-        outShape = (1,) + shape[0:2] + (1,) + (shape[2],)
-        self.outputs["Output"].meta.shape = outShape
-        self.outputs["Output"].meta.dtype = self.inputs["Input"].meta.dtype
-        self.outputs["Output"].meta.axistags = self.inputs["Input"].meta.axistags
-        
-
-    def execute(self, slot, subindex, roi, result):
-        key = roi.toSlice()
-        assert key[0] == slice(0,1,None)
-        assert key[-2] == slice(0,1,None)
-        req = self.inputs["Input"][key[1:-2] + (key[-1],)].writeInto(result[0,:,:,0,:])
-        req.wait()
-        return result
-
 class OpDelay(OpArrayPiper):
     def __init__( self, g, delay_factor = 0.000001 ):
         super(OpDelay, self).__init__(graph=g)
