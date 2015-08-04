@@ -36,15 +36,6 @@ from PyQt4.uic import loadUi
 import os
 import random
 
-_has_lazyflow = True
-try:
-    from lazyflow.operators.adaptors import Op5ifyer
-except ImportError as e:
-    exceptStr = str(e)
-    _has_lazyflow = False
-from volumina.adaptors import Array5d
-
-
 #******************************************************************************
 # C l i c k a b l e S e g m e n t a t i o n L a y e r                         * 
 #******************************************************************************

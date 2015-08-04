@@ -32,12 +32,15 @@ class SlotMetaInfoDisplayWidget(QWidget):
     def __init__(self, parent):
         super( SlotMetaInfoDisplayWidget, self ).__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + '.ui', self)
+        self._slot = None
     
     def initSlot(self, slot):
-        self._slot = slot
-        slot.notifyMetaChanged( self._refresh )
-        if slot.ready():
-            self._refresh()
+        if self._slot is not slot:
+            if self._slot: 
+                self._slot.unregisterMetaChanged( self._refresh )
+            self._slot = slot
+            slot.notifyMetaChanged( self._refresh )
+        self._refresh()
     
     def _refresh(self, *args):
         if self._slot.ready():

@@ -169,9 +169,9 @@ class GrayscaleImageRequest( object ):
         if a.dtype == np.uint64 or a.dtype == np.int64:
             warnings.warn("Truncating 64-bit pixels for display")
             if a.dtype == np.uint64:
-                a = np.asanyarray(np.uint32)
+                a = np.asanyarray(a, np.uint32)
             elif a.dtype == np.int64:
-                a = np.asanyarray(np.int32)
+                a = np.asanyarray(a, np.int32)
 
         has_no_mask = not np.ma.is_masked(a)
 
