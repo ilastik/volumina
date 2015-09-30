@@ -22,10 +22,10 @@
 from functools import partial
 
 #PyQt
-from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
+from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize, QString
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy
+                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy, QSlider, QPushButton
 
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
@@ -435,6 +435,7 @@ class QuadStatusBar(QHBoxLayout):
         QHBoxLayout.__init__(self, parent)
         self.setContentsMargins(0,4,0,0)
         self.setSpacing(0)
+        self.timeControlFontSize = 16
 
     def showXYCoordinates(self):
         self.zLabel.setHidden(True)
@@ -490,11 +491,46 @@ class QuadStatusBar(QHBoxLayout):
 
         self.addSpacing(20)
 
-        self.timeLabel = QLabel("Time:")
+        self.timeSpinBox = DelayedSpinBox(750)
+
+        self.timeStartButton = QPushButton("Start Time")
+        self.addWidget(self.timeStartButton)
+        self.timeStartButton.clicked.connect(self._onTimeStartButtonClicked)
+
+        self.timeSlider = QSlider(Qt.Horizontal)
+        self.timeSlider.setFixedWidth(300)
+        self.addWidget(self.timeSlider)
+        self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
+
+        self.timeEndButton = QPushButton("End Time")
+        self.addWidget(self.timeEndButton)
+        self.timeEndButton.clicked.connect(self._onTimeEndButtonClicked)
+
+        self.timeLabel = QLabel("       Time:")
         self.addWidget(self.timeLabel)
 
-        self.timeSpinBox = DelayedSpinBox(750)
+        timeControlFont = self.timeSpinBox.font()
+        if self.timeControlFontSize > timeControlFont.pointSize():
+            timeControlFont.setPixelSize(self.timeControlFontSize)
+            self.timeStartButton.setFont(timeControlFont)
+            self.timeEndButton.setFont(timeControlFont)
+            self.timeLabel.setFont(timeControlFont)
+            self.timeSpinBox.setFont(timeControlFont)
+
         self.addWidget(self.timeSpinBox)
+        self.timeSpinBox.delayedValueChanged.connect(self._onTimeSpinBoxChanged)
+
+    def _onTimeStartButtonClicked(self):
+        self.timeSpinBox.setValue(self.timeSpinBox.minimum())
+
+    def _onTimeEndButtonClicked(self):
+        self.timeSpinBox.setValue(self.timeSpinBox.maximum())
+
+    def _onTimeSpinBoxChanged(self):
+        self.timeSlider.setValue(self.timeSpinBox.value())
+
+    def _onTimeSliderChanged(self):
+        self.timeSpinBox.setValue(self.timeSlider.value())
 
     def _handlePositionBoxValueChanged(self, axis, value):
         new_position = [self.xSpinBox.value(), self.ySpinBox.value(), self.zSpinBox.value()]
@@ -507,11 +543,13 @@ class QuadStatusBar(QHBoxLayout):
         self.xSpinBox.setMaximum(shape5Dmax[1]-1)
         self.ySpinBox.setMaximum(shape5Dmax[2]-1)
         self.zSpinBox.setMaximum(shape5Dmax[3]-1)
+        self.timeSlider.setMaximum(shape5Dmax[0]-1)
 
         self.timeSpinBox.setValue(shape5DcropMin[0])
         self.xSpinBox.setValue(shape5DcropMin[1])
         self.ySpinBox.setValue(shape5DcropMin[2])
         self.zSpinBox.setValue(shape5DcropMin[3])
+        self.timeSlider.setValue(shape5DcropMin[0])
 
     def setMouseCoords(self, x, y, z):
         self.xSpinBox.setValueWithoutSignal(x)
