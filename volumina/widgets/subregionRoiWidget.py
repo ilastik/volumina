@@ -23,6 +23,8 @@ import collections
 from PyQt4.QtCore import Qt, pyqtSignal, QEvent
 from PyQt4.QtGui import QSpinBox, QTableWidget, QTableWidgetItem
 
+DEFAULT_MAX_EXTENT = 999999
+
 class RoiSpinBox(QSpinBox):
     """
     QSpinBox with a special display when it's disabled.
@@ -115,8 +117,9 @@ class SubregionRoiWidget( QTableWidget ):
 
             # Init min/max spinboxes
             default_start = tagged_start[axis_key] or 0
-            default_stop = tagged_stop[axis_key] or extent
+            default_stop = tagged_stop[axis_key] or extent or DEFAULT_MAX_EXTENT
 
+            extent = extent or DEFAULT_MAX_EXTENT
             startBox = RoiSpinBox(self, 0, extent-1, 0 )
             stopBox = RoiSpinBox(self, 1, extent, extent )
 
