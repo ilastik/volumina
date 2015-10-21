@@ -22,7 +22,7 @@
 import os
 from PyQt4.QtGui import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
 from volumina.utility import decode_to_qstring
-from pydvid.gui.contents_browser import ContentsBrowser
+from libdvid.gui.contents_browser import ContentsBrowser
 from lazyflow.utility import isUrl
 
 class DvidVolumeExportOptionsWidget(QWidget):    
@@ -70,7 +70,7 @@ class DvidVolumeExportOptionsWidget(QWidget):
         # FIXME don't hardcode hostname list
         browser = ContentsBrowser( ["localhost:8000"], mode="specify_new", parent=self )
         if browser.exec_() == ContentsBrowser.Accepted:
-            hostname, dataset_index, data_name, node_uuid = browser.get_selection()
+            hostname, dataset_index, data_name, node_uuid, typename = browser.get_selection()
 
             url = "http://{hostname}/api/node/{node_uuid}/{data_name}".format( **locals() )
             self._urlSlot.setValue( url )
