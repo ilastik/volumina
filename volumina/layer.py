@@ -468,12 +468,12 @@ class ColortableLayer( NormalizableLayer ):
         self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, zeroIsTransparent)
         
     def isDifferentEnough(self, other_layer):
-            
-        if other_layer._colorTable != self._colorTable:
+        if (type(other_layer) != type(self)):
             return True
-        if other_layer.datasources != self.datasources:
-            return True
-        return False
+        different = False
+        different |= (other_layer._colorTable != self._colorTable)
+        different |= (other_layer.datasources != self.datasources)
+        return different
         
 
     def __init__( self, datasource , colorTable, normalize=False, direct=False ):
