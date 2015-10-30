@@ -495,7 +495,8 @@ class QuadStatusBar(QHBoxLayout):
         self.timeStartButton.clicked.connect(self._onTimeStartButtonClicked)
 
         self.timeSlider = QSlider(Qt.Horizontal)
-        self.timeSlider.setFixedWidth(300)
+        self.timeSlider.setMinimumWidth(50)
+        self.timeSlider.setMaximumWidth(300)
         self.addWidget(self.timeSlider)
         self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
 
