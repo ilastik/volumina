@@ -412,13 +412,10 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     label.setPixmap(pixmap)
 
     spinbox = DelayedSpinBox(750)
-    #spinbox.setAttribute(Qt.WA_TransparentForMouseEvents, False)
-    #spinbox.setEnabled(True)
     spinbox.setAlignment(Qt.AlignCenter)
     spinbox.setToolTip("{0} Spin Box".format(name))
     spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
     spinbox.setMaximumHeight(20)
-    #spinbox.setMaximum(999999)
     font = spinbox.font()
     font.setPixelSize(14)
     spinbox.setFont(font)
@@ -547,10 +544,52 @@ class QuadStatusBar(QHBoxLayout):
                 self.timeSpinBox.setValue(self.parent().parent().parent().editor.posModel.shape5D[0]-1)
 
     def _onTimeSpinBoxChanged(self):
-        self.timeSlider.setValue(self.timeSpinBox.value())
+        try:
+            minValueT = self.parent().parent().parent().parent().topLevelOperatorView.MinValueT.value
+            maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.MaxValueT.value
+        except:
+            try:
+                minValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
+                        self.parent().parent().parent().parent()._drawer.cropListModel[
+                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][0]
+                maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
+                        self.parent().parent().parent().parent()._drawer.cropListModel[
+                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][1]
+            except:
+                minValueT = 0
+                maxValueT = self.parent().parent().parent().editor.posModel.shape5D[0]-1
+
+        if minValueT > self.timeSpinBox.value():
+            self.timeSlider.setValue(minValueT)
+        elif maxValueT < self.timeSpinBox.value():
+            self.timeSlider.setValue(maxValueT)
+        elif minValueT <= self.timeSpinBox.value() and self.timeSpinBox.value() <= maxValueT:
+            self.timeSlider.setValue(self.timeSpinBox.value())
 
     def _onTimeSliderChanged(self):
-        self.timeSpinBox.setValue(self.timeSlider.value())
+        try:
+            minValueT = self.parent().parent().parent().parent().topLevelOperatorView.MinValueT.value
+            maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.MaxValueT.value
+        except:
+            try:
+                minValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
+                        self.parent().parent().parent().parent()._drawer.cropListModel[
+                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][0]
+                maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
+                        self.parent().parent().parent().parent()._drawer.cropListModel[
+                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][1]
+            except:
+                minValueT = 0
+                maxValueT = self.parent().parent().parent().editor.posModel.shape5D[0]-1
+
+        if minValueT > self.timeSlider.value():
+            self.timeSpinBox.setValue(minValueT)
+            self.timeSlider.setValue(minValueT)
+        elif self.timeSlider.value() > maxValueT:
+            self.timeSpinBox.setValue(maxValueT)
+            self.timeSlider.setValue(maxValueT)
+        elif minValueT <= self.timeSlider.value() and self.timeSlider.value() <= maxValueT:
+            self.timeSpinBox.setValue(self.timeSlider.value())
 
     def _handlePositionBoxValueChanged(self, axis, value):
         new_position = [self.xSpinBox.value(), self.ySpinBox.value(), self.zSpinBox.value()]
