@@ -435,7 +435,7 @@ class QuadStatusBar(QHBoxLayout):
         QHBoxLayout.__init__(self, parent)
         self.setContentsMargins(0,4,0,0)
         self.setSpacing(0)
-        self.timeControlFontSize = 16
+        self.timeControlFontSize = 12
 
     def showXYCoordinates(self):
         self.zLabel.setHidden(True)
@@ -521,10 +521,30 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSpinBox.delayedValueChanged.connect(self._onTimeSpinBoxChanged)
 
     def _onTimeStartButtonClicked(self):
-        self.timeSpinBox.setValue(self.timeSpinBox.minimum())
+        try: # cropping applet
+            self.timeSpinBox.setValue(
+                self.parent().parent().parent().parent().topLevelOperatorView.MinValueT.value) # opCropSelection
+        except:
+            try: # annotations applet
+                self.timeSpinBox.setValue(
+                    self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
+                        self.parent().parent().parent().parent()._drawer.cropListModel[
+                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][0])
+            except:
+                self.timeSpinBox.setValue(0)
 
     def _onTimeEndButtonClicked(self):
-        self.timeSpinBox.setValue(self.timeSpinBox.maximum())
+        try: # cropping applet
+            self.timeSpinBox.setValue(
+                self.parent().parent().parent().parent().topLevelOperatorView.MaxValueT.value)
+        except:
+            try: # annotations applet
+                self.timeSpinBox.setValue(
+                    self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
+                        self.parent().parent().parent().parent()._drawer.cropListModel[
+                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][1])
+            except:
+                self.timeSpinBox.setValue(self.parent().parent().parent().editor.posModel.shape5D[0]-1)
 
     def _onTimeSpinBoxChanged(self):
         self.timeSlider.setValue(self.timeSpinBox.value())
