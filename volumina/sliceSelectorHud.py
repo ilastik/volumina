@@ -470,6 +470,7 @@ class QuadStatusBar(QHBoxLayout):
         self.addSpacing(10)
 
         self.busyIndicator = QProgressBar()
+        self.busyIndicator.setMaximumWidth(200)
         self.busyIndicator.setMaximum(0)
         self.busyIndicator.setMinimum(0)
         self.busyIndicator.setVisible(False)
@@ -490,17 +491,19 @@ class QuadStatusBar(QHBoxLayout):
 
         self.timeSpinBox = DelayedSpinBox(750)
 
-        self.timeStartButton = QPushButton("Start Time")
+        self.timeStartButton = QPushButton("Start")
         self.addWidget(self.timeStartButton)
         self.timeStartButton.clicked.connect(self._onTimeStartButtonClicked)
 
         self.timeSlider = QSlider(Qt.Horizontal)
-        self.timeSlider.setMinimumWidth(50)
-        self.timeSlider.setMaximumWidth(300)
+        self.timeSlider.setMinimumWidth(10)
+        self.timeSlider.setMaximumWidth(200)
         self.addWidget(self.timeSlider)
         self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
 
-        self.timeEndButton = QPushButton("End Time")
+        self.timeEndButton = QPushButton("End")
+        self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
+        self.timeStartButton.setFixedWidth(4*self.timeControlFontSize)
         self.addWidget(self.timeEndButton)
         self.timeEndButton.clicked.connect(self._onTimeEndButtonClicked)
 
