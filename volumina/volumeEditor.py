@@ -154,7 +154,7 @@ class VolumeEditor( QObject ):
         ## base components
         ##
         self.layerStack = layerStackModel
-        self.posModel = PositionModel()
+        self.posModel = PositionModel(self)
         self.brushingModel = BrushingModel()
         self.cropModel = CropExtentsModel( self )
 

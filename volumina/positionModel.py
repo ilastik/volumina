@@ -83,6 +83,7 @@ class PositionModel(QObject):
         self._time       = 0
         self._channel    = 0
         self._shape5D    = [0,0,0,0,0]
+        self._parent = parent
 
         """
         Index of the currently active view in [0,1,2].

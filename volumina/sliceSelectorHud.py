@@ -168,7 +168,7 @@ class SpinBoxImageView(QHBoxLayout):
         font.setPixelSize(fontSize)
         self.spinBox.setFont(font)
         self.do_draw()
-
+        self._parentView = parentView
     def do_draw(self):
         r, g, b, a = self.foregroundColor.getRgb()
         rgb = "rgb({0},{1},{2})".format(r, g, b)
@@ -187,10 +187,26 @@ class SpinBoxImageView(QHBoxLayout):
         self.spinBox.setSuffix("/" + str(value))
 
     def on_upLabel(self):
-        self.spinBox.setValue(self.spinBox.value() + 1)
+
+        try:
+            roi_3d = self._parentView._croppingMarkers.crop_extents_model.get_roi_3d()
+            maxValue = roi_3d[1][self._parentView.axis]
+        except:
+            maxValue = self._parentView.posModel._parent.dataShape[self._parentView.axis+1]
+
+        if self.spinBox.value() < maxValue - 1:
+            self.spinBox.setValue(self.spinBox.value() + 1)
 
     def on_downLabel(self):
-        self.spinBox.setValue(self.spinBox.value() - 1)
+
+        try:
+            roi_3d = self._parentView._croppingMarkers.crop_extents_model.get_roi_3d()
+            minValue = roi_3d[0][self._parentView.axis]
+        except:
+            minValue = 0
+
+        if self.spinBox.value() > minValue:
+            self.spinBox.setValue(self.spinBox.value() - 1)
 
 
 def setupFrameStyle( frame ):

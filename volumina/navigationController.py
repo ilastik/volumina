@@ -419,10 +419,18 @@ class NavigationController(QObject):
         if delta == 0:
             return
         newSlice = self._model.slicingPos[axis] + delta
-        
+
+        try:
+            roi_3d = self._model.parent().cropModel.get_roi_3d()
+            minValue = roi_3d[0][axis]
+            maxValue = roi_3d[1][axis]
+        except:
+            minValue = 0
+            maxValue = self._model.volumeExtent(axis)
+
         #sanitize
-        newSlice = 0 if newSlice < 0 else newSlice
-        newSlice = self._model.volumeExtent(axis)-1 if newSlice >= self._model.volumeExtent(axis) else newSlice
+        newSlice = minValue if newSlice < minValue else newSlice
+        newSlice = maxValue-1 if newSlice >= maxValue else newSlice
 
         newPos = copy.copy(self._model.slicingPos)
         newPos[axis] = newSlice
