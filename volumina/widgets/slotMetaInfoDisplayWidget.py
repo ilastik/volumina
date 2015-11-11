@@ -21,6 +21,7 @@
 ###############################################################################
 import os
 
+import sip
 from PyQt4 import uic
 from PyQt4.QtGui import QWidget
 
@@ -50,9 +51,10 @@ class SlotMetaInfoDisplayWidget(QWidget):
         else:
             shape = axes = dtype = ""
 
-        self.shapeEdit.setText( str(shape) )
-        self.axisOrderEdit.setText( axes )
-        self.dtypeEdit.setText( dtype )
+        if not sip.isdeleted(self.shapeEdit):
+            self.shapeEdit.setText( str(shape) )
+            self.axisOrderEdit.setText( axes )
+            self.dtypeEdit.setText( dtype )
 
 if __name__ == "__main__":
     import numpy
