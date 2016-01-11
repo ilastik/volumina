@@ -165,6 +165,8 @@ class Layer( QObject ):
         
     def isDifferentEnough(self, other_layer):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
+        if type(other_layer) != type(self):
+            return True
         if other_layer.datasources != self.datasources:
             return True
         if other_layer.numberOfChannels != self.numberOfChannels:
@@ -468,12 +470,13 @@ class ColortableLayer( NormalizableLayer ):
         self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, zeroIsTransparent)
         
     def isDifferentEnough(self, other_layer):
-        if (type(other_layer) != type(self)):
+        if type(other_layer) != type(self):
             return True
-        different = False
-        different |= (other_layer._colorTable != self._colorTable)
-        different |= (other_layer.datasources != self.datasources)
-        return different
+        if other_layer._colorTable != self._colorTable:
+            return True
+        if other_layer.datasources != self.datasources:
+            return True
+        return False
         
 
     def __init__( self, datasource , colorTable, normalize=False, direct=False ):
