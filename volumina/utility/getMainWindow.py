@@ -23,6 +23,6 @@ def getMainWindow():
         top_level_widgets = main_windows
 
     # Now return the biggest widget we found.
-    sizes = map( lambda w: w.width() * w.height(), main_windows )
-    biggest_widget = max(zip(sizes, main_windows))[1]
+    sizes = map( lambda w: w.width() * w.height(), top_level_widgets )
+    biggest_widget = max(zip(sizes, top_level_widgets))[1]
     return biggest_widget
