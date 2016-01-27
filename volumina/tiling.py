@@ -361,18 +361,9 @@ class _TilesCache( object ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCache.caches[stack_id][(layer_id,tile_id)]
 
-    def setLayer( self, stack_id, layer_id, tile_id, img ):
-        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
-
-
     def layerDirty(self, stack_id, layer_id, tile_id ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)]
-
-    def setLayerDirty( self, stack_id, layer_id, tile_id, b ):
-        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
 
     def setLayerDirtyAllStacks( self, layer_id, tile_id, b ):
         """
@@ -398,11 +389,6 @@ class _TilesCache( object ):
     def layerTimestamp(self, stack_id, layer_id, tile_id ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]
-
-    def setLayerTimestamp( self, stack_id, layer_id, tile_id, time):
-        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = time
-
 
     def addStack( self, stack_id ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
