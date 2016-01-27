@@ -26,7 +26,7 @@ from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, QPolyg
                         QGraphicsItemGroup, QGraphicsLineItem, QGraphicsTextItem, QGraphicsPolygonItem, \
                         QGraphicsRectItem
 
-from volumina.tiling import Tiling, TileProvider, TiledImageLayer
+from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.imagepump import StackedImageSources
 
@@ -131,7 +131,6 @@ class ImageScene2D(QGraphicsScene):
     @stackedImageSources.setter
     def stackedImageSources(self, s):
         self._stackedImageSources = s
-        s.sizeChanged.connect(self._onSizeChanged)
 
     @property
     def showTileOutlines(self):
@@ -227,7 +226,6 @@ class ImageScene2D(QGraphicsScene):
         self.scene2data, isInvertible = self.data2scene.inverted()
         self._setSceneRect()
         self._tiling.data2scene = self.data2scene
-        self._tileProvider._onSizeChanged()
         QGraphicsScene.invalidate(self, self.sceneRect())
 
     @property
@@ -301,7 +299,6 @@ class ImageScene2D(QGraphicsScene):
         self.resetAxes(finish=False)
 
         self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name)
-        self._brushingLayer  = TiledImageLayer(self._tiling)
 
         self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
@@ -363,9 +360,6 @@ class ImageScene2D(QGraphicsScene):
         self._allTilesCompleteEvent = threading.Event()
         self.dirty = False
 
-    def _onSizeChanged(self):
-        self._brushingLayer  = TiledImageLayer(self._tiling)
-
     def drawForeground(self, painter, rect):
         if self._tiling is None:
             return
@@ -373,12 +367,6 @@ class ImageScene2D(QGraphicsScene):
         tile_nos = self._tiling.intersected(rect)
 
         for tileId in tile_nos:
-            p = self._brushingLayer[tileId]
-            if p.dataVer == p.imgVer:
-                continue
-
-            p.paint(painter) #access to the underlying image patch is serialized
-
             ## draw tile outlines
             if self._showTileOutlines:
                 # Dashed black line

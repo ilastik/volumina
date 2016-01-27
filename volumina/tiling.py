@@ -145,54 +145,6 @@ def get_render_pool():
         renderer_pool = RenderTaskExecutor(6)
     return renderer_pool
 
-#*******************************************************************************
-# I m a g e T i l e                                                            *
-#*******************************************************************************
-
-class ImageTile(object):
-    def __init__(self, rect):
-        self._mutex = QMutex()
-        self.image  = QImage(rect.width(), rect.height(),
-                             QImage.Format_ARGB32_Premultiplied)
-        self.image.fill(0x00000000)
-
-        self._topLeft = rect.topLeft()
-
-        # Whenever the underlying data changes, the data version is incremented.
-        # By comparing the data version to the image and request version, it can
-        # be determined if the content of this tile is recent or needs to be
-        # re-computed.
-
-        # version of the data
-        self.dataVer = 0
-
-        # version of self.image
-        #
-        # If self.imgVer < self.dataVer, the image needs to be re-computed
-        # from the new data.
-        self.imgVer  = -1
-
-        # version of the request that has been generated to update the contents
-        # of self.image
-        #
-        # If self.reqVer == self.dataVer, a request is currently running that will
-        # eventually replace self.image with the new data.
-        self.reqVer  = -2
-
-    def clear(self):
-        self.image.fill(0)
-
-    def paint(self, painter):
-        self.lock()
-        painter.drawImage(self._topLeft, self.image)
-        self.unlock()
-
-    def lock(self):
-        self._mutex.lock()
-    def unlock(self):
-        self._mutex.unlock()
-
-
 class Tiling(object):
     '''Tiling.__init__()
 
@@ -305,27 +257,6 @@ class Tiling(object):
 
     def __len__(self):
         return len(self.imageRectFs)
-
-#*******************************************************************************
-# T i l e d I m a g e L a y e r                                                *
-#*******************************************************************************
-
-class TiledImageLayer(object):
-    """
-    Used for the brushing layer in ImageScene2d.
-    """
-    def __init__(self, tiling):
-        self._imageTiles = {}
-        self._tiling = tiling
-
-    def __getitem__(self, i):
-        if i not in self._imageTiles.keys():
-            self._imageTiles[i] = ImageTile(self._tiling.imageRects[i])
-        return self._imageTiles[i]
-
-    def __iter__(self):
-        for i in range(len(self._tiling)):
-            yield self[i]
 
 class _MultiCache( object ):
     def __init__( self, first_uid, default_factory=lambda:None,
