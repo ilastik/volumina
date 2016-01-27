@@ -67,14 +67,6 @@ class ArrayRequest( object ):
     def submit( self ):
         pass
         
-    # callback( result = result, **kwargs )
-    def notify( self, callback, **kwargs ):
-        t = threading.Thread(target=self._doNotify, args=( callback, kwargs ))
-        t.start()
-
-    def _doNotify( self, callback, kwargs ):
-        result = self.wait()
-        callback(result, **kwargs)
 assert issubclass(ArrayRequest, RequestABC)
 
 #*******************************************************************************
@@ -241,11 +233,6 @@ if _has_lazyflow:
         def cancel( self ):
             self._req.cancel()
     
-        def submit( self ):
-            self._req.submit()
-    
-        def notify( self, callback, **kwargs ):
-            self._req.notify_finished( partial(callback, (), **kwargs) )
     assert issubclass(LazyflowRequest, RequestABC)
 
     #*******************************************************************************
@@ -397,9 +384,6 @@ class ConstantRequest( object ):
     def adjustPriority(self, delta):
         pass        
         
-    # callback( result = result, **kwargs )
-    def notify( self, callback, **kwargs ):
-        callback(self._result, **kwargs)
 assert issubclass(ConstantRequest, RequestABC)
 
 #*******************************************************************************
@@ -473,14 +457,6 @@ class MinMaxUpdateRequest( object ):
         self._update_func(rawData)
         return self._result
     
-    # callback( result = result, **kwargs )
-    def notify( self, callback, **kwargs ):
-        def handleResult(rawResult):
-            self._result =  rawResult
-            self._update_func(rawResult)
-            callback( self._result, **kwargs )
-        self._rawRequest.notify( handleResult )
-
     def getResult(self):
         return self._result
 

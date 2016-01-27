@@ -111,10 +111,8 @@ class GrayscaleImageSourceTest( ImageSourcesTestBase ):
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
-        def check(result, codon):
-            self.assertEqual(codon, "unique")
-            self.assertTrue(type(result) == QImage)
-        imr.notify(check, codon="unique")
+        result = imr.wait()
+        self.assertTrue(type(result) == QImage)
 
     def testSetDirty( self ):
         def checkAllDirty( rect ):
@@ -152,18 +150,15 @@ class GrayscaleImageSourceTest2( ImageSourcesTestBase ):
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
-        def check(result, codon):
-            self.assertEqual(codon, "unique")
-            self.assertTrue(type(result) == QImage)
+        result = imr.wait()
+        self.assertTrue(type(result) == QImage)
 
-            result_array = qimage2ndarray.byte_view(result)
+        result_array = qimage2ndarray.byte_view(result)
 
-            assert((result_array[:10, :, -1] == 255).all())
-            assert((result_array[-10:, :, -1] == 255).all())
-            assert((result_array[:, :10, -1] == 255).all())
-            assert((result_array[:, -10:, -1] == 255).all())
-
-        imr.notify(check, codon="unique")
+        assert((result_array[:10, :, -1] == 255).all())
+        assert((result_array[-10:, :, -1] == 255).all())
+        assert((result_array[:, :10, -1] == 255).all())
+        assert((result_array[:, -10:, -1] == 255).all())
 
     def testSetDirty( self ):
         def checkAllDirty( rect ):
@@ -198,11 +193,8 @@ class AlphaModulatedImageSourceTest( ImageSourcesTestBase ):
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
-        def check(result, codon):
-            self.assertEqual(codon, "unique")
-            self.assertTrue(type(result) == QImage)
-
-        imr.notify(check, codon="unique")
+        result = imr.wait()
+        self.assertTrue(type(result) == QImage)
 
     def testSetDirty( self ):
         def checkAllDirty( rect ):
@@ -240,24 +232,20 @@ class AlphaModulatedImageSourceTest2( ImageSourcesTestBase ):
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
-        def check(result, codon):
-            self.assertEqual(codon, "unique")
-            self.assertTrue(type(result) == QImage)
+        result = imr.wait()
+        self.assertTrue(type(result) == QImage)
 
-
-            result_view = qimage2ndarray.byte_view(result)
-            if sys.byteorder == "little":
-                self.assertTrue((result_view[:1, :, 3] == 0).all())
-                self.assertTrue((result_view[-1:, :, 3] == 0).all())
-                self.assertTrue((result_view[:, :1, 3] == 0).all())
-                self.assertTrue((result_view[:, -1:, 3] == 0).all())
-            else:
-                self.assertTrue((result_view[:1, :, 0] == 0).all())
-                self.assertTrue((result_view[-1:, :, 0] == 0).all())
-                self.assertTrue((result_view[:, :1, 0] == 0).all())
-                self.assertTrue((result_view[:, -1:, 0] == 0).all())
-
-        imr.notify(check, codon="unique")
+        result_view = qimage2ndarray.byte_view(result)
+        if sys.byteorder == "little":
+            self.assertTrue((result_view[:1, :, 3] == 0).all())
+            self.assertTrue((result_view[-1:, :, 3] == 0).all())
+            self.assertTrue((result_view[:, :1, 3] == 0).all())
+            self.assertTrue((result_view[:, -1:, 3] == 0).all())
+        else:
+            self.assertTrue((result_view[:1, :, 0] == 0).all())
+            self.assertTrue((result_view[-1:, :, 0] == 0).all())
+            self.assertTrue((result_view[:, :1, 0] == 0).all())
+            self.assertTrue((result_view[:, -1:, 0] == 0).all())
 
     def testSetDirty( self ):
         def checkAllDirty( rect ):
@@ -303,23 +291,21 @@ class ColortableImageSourceTest( ImageSourcesTestBase ):
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
-        def check(result, codon):
-            self.assertEqual(codon, "unique")
-            self.assertTrue(type(result) == QImage)
-            img = QImage(7,6, QImage.Format_ARGB32)
-            for i in range(7):
-                img.setPixel(i, 0, QColor(255,0,0).rgba())
-                img.setPixel(i, 1, QColor(255,0,0).rgba())
+        result = imr.wait()
+        
+        self.assertTrue(type(result) == QImage)
+        img = QImage(7,6, QImage.Format_ARGB32)
+        for i in range(7):
+            img.setPixel(i, 0, QColor(255,0,0).rgba())
+            img.setPixel(i, 1, QColor(255,0,0).rgba())
 
-                img.setPixel(i, 2, QColor(0,255,0).rgba())
-                img.setPixel(i, 3, QColor(0,255,0).rgba())
+            img.setPixel(i, 2, QColor(0,255,0).rgba())
+            img.setPixel(i, 3, QColor(0,255,0).rgba())
 
-                img.setPixel(i, 4, QColor(0,0,255).rgba())
-                img.setPixel(i, 5, QColor(0,0,255).rgba())
-            assert img.size() == result.size()
-            assert img == result
-
-        imr.notify(check, codon="unique")
+            img.setPixel(i, 4, QColor(0,0,255).rgba())
+            img.setPixel(i, 5, QColor(0,0,255).rgba())
+        assert img.size() == result.size()
+        assert img == result
 
     def testSetDirty( self ):
         def checkAllDirty( rect ):
@@ -365,24 +351,22 @@ class ColortableImageSourceTest2( ImageSourcesTestBase ):
 
     def testRequest( self ):
         imr = self.ims.request(QRect(0,0,512,512))
-        def check(result, codon):
-            self.assertEqual(codon, "unique")
-            self.assertTrue(type(result) == QImage)
-            img = QImage(7,6, QImage.Format_ARGB32)
-            for i in range(7):
-                img.setPixel(i, 0, QColor(255,0,0,255).rgba())
-                img.setPixel(i, 1, QColor(0,0,0,0).rgba())
+        result = imr.wait()
 
-                img.setPixel(i, 2, QColor(0,255,0,255).rgba())
-                img.setPixel(i, 3, QColor(0,0,0,0).rgba())
+        self.assertTrue(type(result) == QImage)
+        img = QImage(7,6, QImage.Format_ARGB32)
+        for i in range(7):
+            img.setPixel(i, 0, QColor(255,0,0,255).rgba())
+            img.setPixel(i, 1, QColor(0,0,0,0).rgba())
 
-                img.setPixel(i, 4, QColor(0,0,255,255).rgba())
-                img.setPixel(i, 5, QColor(0,0,0,0).rgba())
+            img.setPixel(i, 2, QColor(0,255,0,255).rgba())
+            img.setPixel(i, 3, QColor(0,0,0,0).rgba())
 
-            assert img.size() == result.size()
-            assert img == result
+            img.setPixel(i, 4, QColor(0,0,255,255).rgba())
+            img.setPixel(i, 5, QColor(0,0,0,0).rgba())
 
-        imr.notify(check, codon="unique")
+        assert img.size() == result.size()
+        assert img == result
 
     def testSetDirty( self ):
         def checkAllDirty( rect ):
@@ -454,7 +438,7 @@ class RGBAImageSourceTest( ImageSourcesTestBase ):
         self.assertTrue( ims_opaque.isOpaque() )
         ims_notopaque = RGBAImageSource( self.red, self.green, self.blue, ConstantSource(), RGBALayer(self.red, self.green, self.blue, alpha_missing_value = 100) )
         self.assertFalse( ims_notopaque.isOpaque() )
-        
+    
 
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *

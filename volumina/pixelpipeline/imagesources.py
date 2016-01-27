@@ -211,14 +211,6 @@ class GrayscaleImageRequest( object ):
             
         return img
             
-    def notify( self, callback, **kwargs ):
-        self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
-    
-    def _onNotify( self, result, package ):
-        img = self.toImage()
-        callback = package[0]
-        kwargs = package[1]
-        callback( img, **kwargs )
 assert issubclass(GrayscaleImageRequest, RequestABC)
 
 #*******************************************************************************
@@ -305,15 +297,7 @@ class AlphaModulatedImageRequest( object ):
             self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
             
         return img
-            
-    def notify( self, callback, **kwargs ):
-        self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
     
-    def _onNotify( self, result, package ):
-        img = self.toImage()
-        callback = package[0]
-        kwargs = package[1]
-        callback( img, **kwargs )
 assert issubclass(AlphaModulatedImageRequest, RequestABC)
 
 #*******************************************************************************
@@ -479,15 +463,7 @@ class ColortableImageRequest( object ):
             self.logger.debug("toImage (%dx%d) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), tTOT, tAR, tWAIT, tImg))
 
         return img 
-            
-    def notify( self, callback, **kwargs ):
-        self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
     
-    def _onNotify( self, result, package ):
-        img = self.toImage()
-        callback = package[0]
-        kwargs = package[1]
-        callback( img, **kwargs )
 assert issubclass(ColortableImageRequest, RequestABC)
 
 #*******************************************************************************
@@ -564,20 +540,6 @@ class RGBAImageRequest( object ):
         img = array2qimage(self._data)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
 
-    def notify( self, callback, **kwargs ):
-        for i in xrange(4):
-            self._requests[i].notify(self._onNotify, package = (i, callback, kwargs))
-
-    def _onNotify( self, result, package ):
-        channel = package[0]
-        self._requestsFinished[channel] = True
-        if all(self._requestsFinished):
-            img = self.toImage()
-        
-            callback = package[1]
-            kwargs = package[2]
-            callback( img, **kwargs )
-
 assert issubclass(RGBAImageRequest, RequestABC)
 
 
@@ -601,8 +563,4 @@ class RandomImageRequest( object ):
         img = gray2qimage(d)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
-    def notify( self, callback, **kwargs ):
-        img = self.wait()
-        callback( img, **kwargs )
-
 assert issubclass(RandomImageRequest, RequestABC)

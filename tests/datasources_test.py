@@ -50,15 +50,6 @@ class GenericArraySourceTest:
         requested = self.source.request(slicing).wait()
         self.assertTrue(np.all(requested == self.raw[slicing]))
 
-    def testRequestNotify( self ):
-        slicing = self.slicing
-        request = self.source.request(slicing)
-        
-        def check(result, codon):
-            self.assertTrue(np.all(result == self.raw[slicing]))
-            self.assertEqual(codon, "unique")
-        request.notify(check, codon="unique")
-
     def testSetDirty( self ):
         self.signal_emitted = False
 
@@ -110,15 +101,6 @@ class RelabelingArraySourceTest( ut.TestCase, GenericArraySourceTest ):
         requested = self.source.request(slicing).wait()
         assert requested.ndim == 5
         self.assertTrue(np.all(requested.flatten() == np.arange(1,6, dtype=np.uint32)))
-
-    def testRequestNotify( self ):
-        slicing = (slice(0,5),slice(None), slice(None), slice(None), slice(None))
-        request = self.source.request(slicing)
-        
-        def check(result, codon):
-            self.assertTrue(np.all(result.flatten() == np.arange(1,6, dtype=np.uint32)))
-            self.assertEqual(codon, "unique")
-        request.notify(check, codon="unique")
 
     def testSetDirty( self ):
         self.signal_emitted = False
