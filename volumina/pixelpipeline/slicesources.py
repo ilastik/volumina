@@ -55,6 +55,9 @@ class SliceRequest( object ):
     def adjustPriority(self, delta):
         self._ar.adjustPriority(delta)
         return self
+    
+    def handednessSwitched(self):
+        return self._sp.handednessSwitched()
 
 assert issubclass(SliceRequest, RequestABC)
 
