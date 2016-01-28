@@ -32,6 +32,7 @@ from volumina.pixelpipeline.imagepump import StackedImageSources
 
 import datetime
 import threading
+from collections import defaultdict
 
 #*******************************************************************************
 # D i r t y I n d i c a t o r                                                  *
@@ -179,7 +180,9 @@ class ImageScene2D(QGraphicsScene):
         # t1 : do axis swap
         t1 = QTransform()
         if self._swapped:
-            t1 = QTransform(0, 1, 0, 1, 0, 0, 0, 0, 1)
+            t1 = QTransform(0, 1, 0,
+                            1, 0, 0,
+                            0, 0, 1)
             h, w = w, h
 
         # t2 : do rotation
@@ -359,6 +362,11 @@ class ImageScene2D(QGraphicsScene):
         
         self._allTilesCompleteEvent = threading.Event()
         self.dirty = False
+        
+        # We manually keep track of the tile-wise QGraphicsItems that
+        # we've added to the scene in this dict, otherwise we would need
+        # to use O(N) lookups for every tile by calling QGraphicsScene.items()
+        self.tile_graphicsitems = defaultdict(set) # [Tile.id] -> set(QGraphicsItems)
 
     def drawForeground(self, painter, rect):
         if self._tiling is None:
@@ -401,6 +409,24 @@ class ImageScene2D(QGraphicsScene):
             #See also ilastik issue #132 and tests/lazy_test.py
             if tile.qimg is not None:
                 painter.drawImage(tile.rectF, tile.qimg)
+
+            # The tile also contains a list of any QGraphicsItems that were produced by the layers.
+            # If there are any new ones, add them to the scene.
+            new_items = set(tile.qgraphicsitems) - self.tile_graphicsitems[tile.id]
+            obsolete_items = self.tile_graphicsitems[tile.id] - set(tile.qgraphicsitems)
+            for g_item in obsolete_items:
+                self.tile_graphicsitems[tile.id].remove(g_item)
+                self.removeItem(g_item)
+            for g_item in new_items:
+                self.tile_graphicsitems[tile.id].add(g_item)
+                self.addItem(g_item)
+                
+                # For some reason, the QImage transform is special, and we can't re-use it here.
+                # The data2scene transform is correct here.
+                # I do not understand what the heck is going on with the QTransform
+                # in this class and also the Tiling class.
+                g_item.setTransform(self.data2scene)
+            
             if tile.progress < 1.0:
                 allComplete = False
             if self._showTileProgress:

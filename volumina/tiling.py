@@ -26,13 +26,14 @@ import collections
 import threading
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
+import warnings
 
 #SciPy
 import numpy
 
 #PyQt
 from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
-from PyQt4.QtGui import QImage, QPainter, QTransform
+from PyQt4.QtGui import QImage, QPainter, QTransform, QGraphicsItem
 
 #volumina
 from patchAccessor import PatchAccessor
@@ -105,11 +106,21 @@ class RenderTask(_WorkItem):
 
             if self.timestamp > layerTimestamp:
                 img = self.image_req.wait()
-                img = img.transformed(self.transform)
                 try:
                     with self.cache:
+                        if isinstance(img, QImage):
+                            img = img.transformed(self.transform)
+                        elif isinstance(img, QGraphicsItem):
+                            # FIXME: It *seems* like applying the same transform to QGraphicsItems makes sense here,
+                            #        but for some strange reason it isn't right.
+                            #        For now, this transform gets overridden anyway in ImageScene2D.drawBackground.
+                            img.setTransform(self.transform)
+                        else:
+                            assert False, "Unexpected image type: {}".format( type(img) )
+
                         self.cache.updateTileIfNecessary(self.stack_id,
                             self.ims, self.tile_nr, self.timestamp, img)
+                        
                 except KeyError:
                     pass
 
@@ -322,6 +333,8 @@ class _TilesCache( object ):
         
         tileCache: A cache of 'tiles', i.e. the blended QImage objects 
                    that were created by combining all QImage layers from layerCache for a given patch.
+                   (The QGraphicsItem layers do not contribute to the composite tiles in the tileCache.
+                   They are merely stored.)
 
         layerCacheDirty: A cache of dirty bits for all layers in layerCache
         layerCacheTimestamp: A cache of timestamps to track how recently each layer was needed.
@@ -343,7 +356,7 @@ class _TilesCache( object ):
         # [stack_id][tile_id] -> bool
         self._tileCacheDirty = _MultiCache(default_factory=lambda: True, **kwargs)
         
-        # [stack_id][(ims, tile_id)] -> QImage
+        # [stack_id][(ims, tile_id)] -> QImage or QGraphicsItem
         self._layerCache = _MultiCache(**kwargs)
         
         # [stack_id][(ims, tile_id)] -> bool
@@ -380,6 +393,7 @@ class _TilesCache( object ):
             occluded = numpy.asarray(stack_occluded)
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
             if numpy.count_nonzero(visibleAndNotOccluded) > 0:
+
                 dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)]
                                        for ims in self._sims.viewImageSources()])
                 num = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)
@@ -403,6 +417,21 @@ class _TilesCache( object ):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         for stack_id in self._tileCacheDirty.caches:
             self._tileCacheDirty.caches[stack_id][tile_id] = b
+
+    def graphicsitem_layers(self, stack_id, tile_id):
+        """
+        Return a list of the 'layers' in the cache that are of type QGraphicsItem.
+        Unlike the QImage layers, the QGraphicsItem layers are not composited into the 'tile'. 
+        """
+        assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
+
+        warnings.warn("FIXME: This is a slow way to look for the items we want.\n"
+                      "_TilesCache._layerCache should be a dict-of-dict-of-dict for faster lookup!")
+        qgraphicsitems = []
+        for (layer_id, t_id), img in self._layerCache.caches[stack_id].iteritems():
+            if t_id == tile_id and isinstance(img, QGraphicsItem):
+                qgraphicsitems.append(img)
+        return qgraphicsitems
 
     def setAllTilesDirty( self ):
         """
@@ -472,11 +501,25 @@ class _TilesCache( object ):
             self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
             self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = False
             self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = req_timestamp
-            self._tileCacheDirty.caches[stack_id][tile_id] = True
+
+            # The 'tile' cache conly consists of composited QImages
+            # 'layers' that are QGraphicsItems don't contribute to the 'tile'.
+            if isinstance(img, QImage):
+                self._tileCacheDirty.caches[stack_id][tile_id] = True
 
 
 class TileProvider( QObject ):
-    Tile = collections.namedtuple('Tile', 'id qimg rectF progress tiling')
+    """
+    
+    """
+    
+    Tile = collections.namedtuple('Tile', ['id',             # tile number
+                                           'qimg',           # composited tile as a QImage
+                                           'qgraphicsitems', # list of QGraphicsItems to be displayed over the tile
+                                           'rectF',          # The patch dimensions (see Tiling class, above)
+                                           'progress'])      # How 'complete' the composite tile is
+                                                             # (depending on how many layers are still dirty)
+    
     sceneRectChanged = pyqtSignal( QRectF )
 
     @property
@@ -546,12 +589,13 @@ class TileProvider( QObject ):
         for tile_no in tile_nos:
             with self._cache:
                 qimg, progress = self._cache.tile(stack_id, tile_no)
+                qgraphicsitems = self._cache.graphicsitem_layers(stack_id, tile_no)
             yield TileProvider.Tile(
                 tile_no,
                 qimg,
+                qgraphicsitems,
                 QRectF(self.tiling.imageRects[tile_no]),
-                progress,
-                self.tiling)
+                progress)
 
     def waitForTiles(self, rectF=QRectF()):
         """
@@ -678,7 +722,15 @@ class TileProvider( QObject ):
                             
                             with TileTimer() as timer:
                                 img = ims_req.wait()
-                                img = img.transformed(transform)
+    
+                                if isinstance(img, QImage):
+                                    img = img.transformed(self.transform)
+                                elif isinstance(img, QGraphicsItem):
+                                    # FIXME: Apparently this transform isn't right.
+                                    #        For now, it gets overridden anyway in ImageScene2D.drawBackground.
+                                    img.setTransform(self.transform)
+                                else:
+                                    assert False, "Unexpected image type: {}".format( type(img) )
 
                             ims._layer.timePerTile(timer.seconds,
                                                    self.tiling.imageRects[tile_no])
@@ -709,7 +761,11 @@ class TileProvider( QObject ):
 
             with self._cache:
                 patch = self._cache.layer(stack_id, layerImageSource, tile_nr )
-            if patch is not None:
+            
+            # patch might be a QGraphicsItem instead of QImage,
+            # in which case it is handled separately,
+            # not composited into the tile.
+            if patch is not None and isinstance(patch, QImage):
                 if qimg is None:
                     qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
                     qimg.fill(0xffffffff) # Use a hex constant instead.

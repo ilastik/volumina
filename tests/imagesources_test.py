@@ -30,15 +30,14 @@ import numpy
 
 #PyQt
 from PyQt4.QtCore import QRect
-from PyQt4.QtGui import QImage
-from PyQt4.QtGui import QColor
+from PyQt4.QtGui import QImage, QGraphicsItem, QColor
 
 import qimage2ndarray
 
 #volumina
 import volumina._testing
 from volumina.pixelpipeline.imagesources import GrayscaleImageSource, AlphaModulatedImageSource, RGBAImageSource, \
-    ColortableImageSource
+    ColortableImageSource, DummyItemSource
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.layer import GrayscaleLayer, AlphaModulatedLayer, RGBALayer, ColortableLayer
 
@@ -439,7 +438,27 @@ class RGBAImageSourceTest( ImageSourcesTestBase ):
         ims_notopaque = RGBAImageSource( self.red, self.green, self.blue, ConstantSource(), RGBALayer(self.red, self.green, self.blue, alpha_missing_value = 100) )
         self.assertFalse( ims_notopaque.isOpaque() )
     
+class TestGraphicsItems(ut.TestCase):
+    
+    def test(self):
+        raw = numpy.load(os.path.join(volumina._testing.__path__[0], 'lena.npy')).astype( numpy.uint32 )
+        ars = _ArraySource2d(raw)
+        ims = DummyItemSource(ars)
+        req = ims.request( QRect( 0, 0, 256, 256 ) )
+        item = req.wait()
+        assert isinstance(item, QGraphicsItem)
 
+        DEBUG = False
+        if DEBUG:        
+            from PyQt4.QtGui import QApplication, QGraphicsView, QGraphicsScene
+            app = QApplication([])
+            scene = QGraphicsScene()
+            scene.addItem(item)
+            view = QGraphicsView(scene)
+            view.show()
+            view.raise_()         
+            app.exec_()
+        
 #*******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
 #*******************************************************************************

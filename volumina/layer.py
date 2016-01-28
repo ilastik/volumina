@@ -558,3 +558,15 @@ class RGBALayer( NormalizableLayer ):
         # disect data
         l = RGBALayer()
         return l
+
+##
+## GraphicsItem layers
+##
+class DummyGraphicsItemLayer( Layer ):
+    def __init__(self, datasource):
+        super( DummyGraphicsItemLayer, self ).__init__( [datasource] )
+
+class DummyRasterItemLayer( Layer ):
+    def __init__(self, datasource):
+        super( DummyRasterItemLayer, self ).__init__( [datasource] )
+    

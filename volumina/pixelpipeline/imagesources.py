@@ -564,3 +564,99 @@ class RandomImageRequest( object ):
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
 assert issubclass(RandomImageRequest, RequestABC)
+
+
+##
+## Sources that produce QGraphicsItems isntead of QImages
+##
+
+from PyQt4.QtCore import Qt, QRect, QRectF, QSize
+from PyQt4.QtGui import QGraphicsItem, QColor, QPen, QGraphicsLineItem
+from contextlib import contextmanager
+ 
+@contextmanager
+def painter_context(painter):
+    try:
+        painter.save()
+        yield
+    finally:
+        painter.restore()
+ 
+class DummyItem( QGraphicsItem ):
+    def __init__(self, rectf, parent=None):
+        super( DummyItem, self ).__init__( parent )
+        self.rectf = rectf
+        self.line = QGraphicsLineItem( self.rectf.x(),
+                                       self.rectf.y(),
+                                       self.rectf.x() + self.rectf.width(),
+                                       self.rectf.y() + self.rectf.height(),
+                                       parent=self )
+    
+     
+    def boundingRect(self):
+        return self.rectf
+     
+    def paint(self, painter, option, widget=None):
+        with painter_context(painter):
+            pen = QPen(painter.pen())
+            pen.setWidth(10.0)
+            pen.setColor( QColor(255,0,0) )
+            painter.setPen(pen)
+            shrunken_rectf = self.rectf.adjusted(10,10,-10,-10)
+            painter.drawRoundedRect(shrunken_rectf, 50, 50, Qt.RelativeSize)
+    
+    def mousePressEvent(self, event):
+        print "You clicked on rect: {}".format( self.rectf )
+
+    def mouseReleaseEvent(self, event):
+        pass
+ 
+class DummyItemRequest(object):
+    def __init__(self, arrayreq, rect):
+        self.rect = rect
+        self._arrayreq = arrayreq
+    
+    def wait(self):
+        array_data = self._arrayreq.wait()
+        # Here's where we would do something with the data...
+        assert array_data.shape == (self.rect.width(), self.rect.height())
+        return DummyItem(QRectF(self.rect))
+
+class DummyRasterRequest(object):
+    """
+    For stupid tests.
+    Uses DummyItem, but rasterizes it to turn it into a QImage.
+    """
+    def __init__(self, arrayreq, rect):
+        self.rectf = QRectF(rect)
+        self._arrayreq = arrayreq
+    
+    def wait(self):
+        array_data = self._arrayreq.wait()
+        rectf = self.rectf
+        if array_data.handedness_switched: # array_data should be of type slicingtools.ProjectedArray
+            rectf = QRectF(rectf.height(), rectf.width())
+        
+        from PyQt4.QtGui import QPainter
+        img = QImage( QSize( self.rectf.width(), self.rectf.height() ), QImage.Format_ARGB32_Premultiplied)
+        img.fill(0xffffffff)
+        p = QPainter(img)
+        p.drawImage(0,0, img)
+        DummyItem(self.rectf).paint(p, None)
+        return img
+
+class DummyRasterItemSource(ImageSource):
+    def request( self, qrect, along_through=None ):
+        return DummyRasterRequest(qrect)
+
+class DummyItemSource(ImageSource):
+    def __init__( self, arraySource2D ):
+        super( DummyItemSource, self ).__init__()
+        self._arraySource2D = arraySource2D
+        
+    def request( self, qrect, along_through=None ):
+        assert isinstance(qrect, QRect)
+        s = rect2slicing(qrect)
+        arrayreq = self._arraySource2D.request(s, along_through)
+        return DummyItemRequest(arrayreq, qrect)
+ 
