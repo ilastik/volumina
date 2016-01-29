@@ -97,7 +97,8 @@ if __name__ == "__main__":
     btn.clicked.connect( showShortcuts )
     mainLayout.addWidget(btn)
     mainWindow.setLayout(mainLayout)
-    mainWindow.show()    
+    mainWindow.show()
+    mainWindow.raise_()    
 
     def trigger(name):
         print "Shortcut triggered:",name
