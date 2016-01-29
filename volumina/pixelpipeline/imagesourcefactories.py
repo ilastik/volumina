@@ -23,10 +23,12 @@ import copy
 from volumina.multimethods import multimethod
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer, \
                                AlphaModulatedLayer, ClickableColortableLayer, \
-                               DummyGraphicsItemLayer, DummyRasterItemLayer
+                               DummyGraphicsItemLayer, DummyRasterItemLayer, \
+                               SegmentationEdgesLayer
 from imagesources import GrayscaleImageSource, ColortableImageSource, \
                          RGBAImageSource, AlphaModulatedImageSource, \
-                         DummyItemSource, DummyRasterItemSource
+                         DummyItemSource, DummyRasterItemSource, \
+                         SegmentationEdgesItemSource
                          
 from datasources import ConstantSource
 
@@ -88,3 +90,8 @@ def createImageSource( layer, datasources2d ):
 @multimethod(DummyRasterItemLayer, list)
 def createImageSource( layer, datasources2d ):
     return DummyRasterItemSource()
+
+@multimethod(SegmentationEdgesLayer, list)
+def createImageSource( layer, datasources2d ):
+    assert len(datasources2d) == 1
+    return SegmentationEdgesItemSource(datasources2d[0])

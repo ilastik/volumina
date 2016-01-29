@@ -660,3 +660,26 @@ class DummyItemSource(ImageSource):
         arrayreq = self._arraySource2D.request(s, along_through)
         return DummyItemRequest(arrayreq, qrect)
  
+
+from volumina.utility import SegmentationEdgesItem
+class SegmentationEdgesItemSource(ImageSource):
+    def __init__( self, arraySource2D ):
+        super( SegmentationEdgesItemSource, self ).__init__()
+        self._arraySource2D = arraySource2D
+        
+    def request( self, qrect, along_through=None ):
+        assert isinstance(qrect, QRect)
+        s = rect2slicing(qrect)
+        arrayreq = self._arraySource2D.request(s, along_through)
+        return SegmentationEdgesItemRequest(arrayreq, qrect)
+
+class SegmentationEdgesItemRequest(object):
+    def __init__(self, arrayreq, rect):
+        self.rect = rect
+        self._arrayreq = arrayreq
+    
+    def wait(self):
+        array_data = self._arrayreq.wait()
+        assert array_data.shape == (self.rect.width(), self.rect.height())
+        return SegmentationEdgesItem(array_data)
+

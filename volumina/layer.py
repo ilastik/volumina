@@ -569,4 +569,9 @@ class DummyGraphicsItemLayer( Layer ):
 class DummyRasterItemLayer( Layer ):
     def __init__(self, datasource):
         super( DummyRasterItemLayer, self ).__init__( [datasource] )
+
+class SegmentationEdgesLayer( Layer ):
+    def __init__(self, datasource):
+        super( SegmentationEdgesLayer, self ).__init__( [datasource] )
+
     

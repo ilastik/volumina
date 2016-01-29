@@ -50,8 +50,9 @@ class SingleEdgeItem( QGraphicsPathItem ):
     Must be owned by a SegmentationEdgesItem object
     """
     default_pen = QPen()
-    default_pen.setColor(Qt.yellow)
     default_pen.setCosmetic(True)
+    default_pen.setCapStyle(Qt.RoundCap)
+    default_pen.setColor(Qt.yellow)
     default_pen.setWidth(3)
 
     highlighted_pen = QPen(default_pen)
