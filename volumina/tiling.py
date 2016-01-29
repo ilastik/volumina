@@ -533,7 +533,7 @@ class TileProvider( QObject ):
 
     def __init__( self, tiling, stackedImageSources, cache_size=100,
                   request_queue_size=100000, n_threads=2,
-                  layerIdChange_means_dirty=False, parent=None ):
+                  parent=None ):
         """
         Keyword Arguments:
         cache_size                -- maximal number of encountered stacks
@@ -543,8 +543,6 @@ class TileProvider( QObject ):
         n_threads                 -- maximal number of request threads; this determines the
                                      maximal number of simultaneously running requests
                                      to the pixelpipeline (default: 2)
-        layerIdChange_means_dirty -- layerId changes invalidate the cache; by default only
-                                     stackId changes do that (default False)
         parent                    -- QObject
     
         """
@@ -557,7 +555,6 @@ class TileProvider( QObject ):
         self._cache_size = cache_size
         self._request_queue_size = request_queue_size
         self._n_threads = n_threads
-        self._layerIdChange_means_dirty = layerIdChange_means_dirty
 
         self._current_stack_id = self._sims.stackId
         self._cache = _TilesCache(self._current_stack_id, self._sims,
@@ -569,8 +566,6 @@ class TileProvider( QObject ):
         self._sims.sizeChanged.connect(self._onSizeChanged)
         self._sims.orderChanged.connect(self._onOrderChanged)
         self._sims.stackIdChanged.connect(self._onStackIdChanged)
-        if self._layerIdChange_means_dirty:
-            self._sims.layerIdChanged.connect(self._onLayerIdChanged)
 
         self._keepRendering = True
 
@@ -829,10 +824,6 @@ class TileProvider( QObject ):
                 self._cache.addStack( newId )
         self._current_stack_id = newId
         self.sceneRectChanged.emit(QRectF())
-
-    def _onLayerIdChanged( self, ims, oldId, newId ):
-        if self._layerIdChange_means_dirty:
-            self._onLayerDirty( ims, QRect() )
 
     def _onVisibleChanged(self, ims, visible):
         """
