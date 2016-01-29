@@ -425,7 +425,8 @@ class ImageScene2D(QGraphicsScene):
                 # The data2scene transform is correct here.
                 # I do not understand what the heck is going on with the QTransform
                 # in this class and also the Tiling class.
-                g_item.setTransform(self.data2scene)
+                g_item.setTransform(QTransform.fromTranslate(tile.rectF.left(), tile.rectF.top()), combine=True)
+                g_item.setTransform(self.data2scene, combine=True)
             
             if tile.progress < 1.0:
                 allComplete = False

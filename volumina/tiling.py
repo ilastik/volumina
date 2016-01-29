@@ -111,10 +111,11 @@ class RenderTask(_WorkItem):
                         if isinstance(img, QImage):
                             img = img.transformed(self.transform)
                         elif isinstance(img, QGraphicsItem):
-                            # FIXME: It *seems* like applying the same transform to QGraphicsItems makes sense here,
-                            #        but for some strange reason it isn't right.
-                            #        For now, this transform gets overridden anyway in ImageScene2D.drawBackground.
-                            img.setTransform(self.transform)
+                            # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
+                            #        makes sense here, but for some strange reason it isn't right.
+                            #        For now we leave this line out, and let the ImageScene2D handle the tranformations.
+                            #img.setTransform(self.transform, combine=True)
+                            pass
                         else:
                             assert False, "Unexpected image type: {}".format( type(img) )
 
@@ -726,9 +727,11 @@ class TileProvider( QObject ):
                                 if isinstance(img, QImage):
                                     img = img.transformed(self.transform)
                                 elif isinstance(img, QGraphicsItem):
-                                    # FIXME: Apparently this transform isn't right.
-                                    #        For now, it gets overridden anyway in ImageScene2D.drawBackground.
-                                    img.setTransform(self.transform)
+                                    # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
+                                    #        makes sense here, but for some strange reason it isn't right.
+                                    #        For now we leave this line out, and let the ImageScene2D handle the tranformations.
+                                    #img.setTransform(self.transform, combine=True)
+                                    pass
                                 else:
                                     assert False, "Unexpected image type: {}".format( type(img) )
 
