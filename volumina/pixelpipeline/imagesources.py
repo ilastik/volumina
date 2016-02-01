@@ -676,8 +676,9 @@ class SegmentationEdgesItemSource(ImageSource):
         
         super( SegmentationEdgesItemSource, self ).__init__()
         self._arraySource2D = arraySource2D
+        self._arraySource2D.isDirty.connect(self.setDirty)
         self._layer = layer
-        
+
     def request( self, qrect, along_through=None ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
