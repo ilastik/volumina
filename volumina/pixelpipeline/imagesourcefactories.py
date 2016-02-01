@@ -94,4 +94,4 @@ def createImageSource( layer, datasources2d ):
 @multimethod(SegmentationEdgesLayer, list)
 def createImageSource( layer, datasources2d ):
     assert len(datasources2d) == 1
-    return SegmentationEdgesItemSource(datasources2d[0])
+    return SegmentationEdgesItemSource(layer, datasources2d[0])

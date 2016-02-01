@@ -25,6 +25,7 @@ import numpy
 from PyQt4.QtCore import QObject, pyqtSignal, QString
 from PyQt4.QtGui import QColor
 
+from volumina.utility import SignalingDefaultDict
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource, HaloAdjustedDataSource
@@ -571,6 +572,17 @@ class DummyRasterItemLayer( Layer ):
         super( DummyRasterItemLayer, self ).__init__( [datasource] )
 
 class SegmentationEdgesLayer( Layer ):
+
+    @property
+    def colortable(self):
+        """
+        Items in the colortable can be added/replaced/deleted, but the
+        colortable object itself cannot be overwritten with a different dict object.
+        The SegmentationEdgesItem(s) associated witht this layer will react
+        immediately to any changes you make to this colortable dict.
+        """
+        return self._colortable
+
     def __init__(self, datasource):
         # 1-pixel offset in the right/down directions
         halo_start_delta = (0,0,0,0,0)
@@ -578,3 +590,18 @@ class SegmentationEdgesLayer( Layer ):
         
         adjusted_datasource = HaloAdjustedDataSource(datasource, halo_start_delta, halo_stop_delta)
         super( SegmentationEdgesLayer, self ).__init__( [adjusted_datasource] )
+
+        # Changes to this colortable will be detected automatically in the QGraphicsItem
+        self._colortable = SignalingDefaultDict(parent=None, default_factory=lambda:None)
+
+    def handle_edge_clicked(self, id_pair):
+        """
+        Handles clicks from our associated SegmentationEdgesItem(s)
+        id_pair: The edge that was clicked.
+        """
+        # For now, simple debug functionality: change to a random color.
+        # Please verify in the viewer that edges spanning multiple tiles changed color
+        # together, even though only one of the tiles was clicked.
+        random_color = QColor( *list( numpy.random.randint(0,255,(3,)) ) )
+        print "setting {} to {}".format( id_pair, hex(random_color.rgba()) )
+        self.colortable[id_pair] = random_color

@@ -663,20 +663,25 @@ class DummyItemSource(ImageSource):
 
 from volumina.utility import SegmentationEdgesItem
 class SegmentationEdgesItemSource(ImageSource):
-    def __init__( self, arraySource2D ):
+    def __init__( self, layer, arraySource2D ):
+        from volumina.layer import SegmentationEdgesLayer
+        assert isinstance(layer, SegmentationEdgesLayer)
+        
         super( SegmentationEdgesItemSource, self ).__init__()
         self._arraySource2D = arraySource2D
+        self._layer = layer
         
     def request( self, qrect, along_through=None ):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         arrayreq = self._arraySource2D.request(s, along_through)
-        return SegmentationEdgesItemRequest(arrayreq, qrect)
+        return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect)
 
 class SegmentationEdgesItemRequest(object):
-    def __init__(self, arrayreq, rect):
+    def __init__(self, arrayreq, layer, rect):
         self.rect = rect
         self._arrayreq = arrayreq
+        self._layer = layer
     
     def wait(self):
         array_data = self._arrayreq.wait()
@@ -685,5 +690,11 @@ class SegmentationEdgesItemRequest(object):
         # with a halo so that the QGraphicsItem can display edges on tile borders.
         #assert array_data.shape == (self.rect.width(), self.rect.height())
 
-        graphics_item = SegmentationEdgesItem(array_data)
+        # All SegmentationEdgesItem(s) associated with this layer will share a common colortable.
+        # They react immediately when the colortable is updated.
+        graphics_item = SegmentationEdgesItem(array_data, self._layer.colortable)
         
+        # When the item is clicked, the layer is notified.
+        graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )
+        return graphics_item
+
