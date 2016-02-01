@@ -803,6 +803,15 @@ class TileProvider( QObject ):
         Called when one of the image sources we depend on has become dirty.
         Mark the appropriate entries in our tile/layer caches as dirty.
         """
+        # Clip the dataRect to the boundaries of the tiling, to ensure 
+        # that the 'fast path' below is active when appropriate.
+        # (datasources are permitted to mark wider dirty regions than the
+        # scene boundaries, but the roi outside the scene bounds is just ignored.)
+        tileshape = self.tiling.sliceShape
+        datastart = (max(0, dataRect.left()), max(0, dataRect.top()))
+        datastop = (min(tileshape[0], dataRect.right()), min(tileshape[1], dataRect.bottom()))
+        dataRect = QRect( datastart[0], datastart[1], datastop[0], datastop[1] )
+        
         sceneRect = self.tiling.data2scene.mapRect(dataRect)
         if dirtyImgSrc not in self._sims.viewImageSources():
             return
