@@ -172,8 +172,6 @@ class ImageView2D(QGraphicsView):
         #self.hiddenCursor = QCursor(Qt.ArrowCursor)
 
     def _onRotateLeft(self):
-        print "-----------------------------------------------------------------------------------------------------"
-        print "_onRotateLeft", self._croppingMarkers.axisOrderLookup, self._croppingMarkers.axisDirectionLookup,self.axis
         rowInd = self.axis
         colInd1 = (rowInd+1)%3
         colInd2 = (rowInd+2)%3
@@ -184,11 +182,8 @@ class ImageView2D(QGraphicsView):
 
         self._croppingMarkers.axisDirectionLookup[rowInd][colInd1] *= -1
         self._croppingMarkers.axisDirectionLookup[rowInd][colInd2] *= -1
-        print "_onRotateLeft", self._croppingMarkers.axisOrderLookup, self._croppingMarkers.axisDirectionLookup
 
     def _onRotateRight(self):
-        print "-----------------------------------------------------------------------------------------------------"
-        print "_onRotateRight", self._croppingMarkers.axisOrderLookup, self._croppingMarkers.axisDirectionLookup,self.axis
         rowInd = self.axis
         colInd1 = (rowInd+1)%3
         colInd2 = (rowInd+2)%3
@@ -199,11 +194,8 @@ class ImageView2D(QGraphicsView):
 
         self._croppingMarkers.axisDirectionLookup[rowInd][colInd1] *= -1
         self._croppingMarkers.axisDirectionLookup[rowInd][colInd2] *= -1
-        print "_onRotateRight", self._croppingMarkers.axisOrderLookup, self._croppingMarkers.axisDirectionLookup
 
     def _onSwapAxes(self):
-        print "-----------------------------------------------------------------------------------------------------"
-        print "_onSwapAxes", self._croppingMarkers.axisOrderLookup, self._croppingMarkers.axisDirectionLookup,self.axis
         rowInd = self.axis
         colInd1 = (rowInd+1)%3
         colInd2 = (rowInd+2)%3
@@ -211,7 +203,6 @@ class ImageView2D(QGraphicsView):
         tmp = self._croppingMarkers.axisOrderLookup[rowInd][colInd1]
         self._croppingMarkers.axisOrderLookup[rowInd][colInd1] = self._croppingMarkers.axisOrderLookup[rowInd][colInd2]
         self._croppingMarkers.axisOrderLookup[rowInd][colInd2] = tmp
-        print "_onSwapAxes", self._croppingMarkers.axisOrderLookup, self._croppingMarkers.axisDirectionLookup
 
     def showCropLines(self, visible):
         self._croppingMarkers.setVisible(visible)
