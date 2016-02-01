@@ -1,4 +1,5 @@
 from collections import defaultdict
+import threading
 import logging
 
 from PyQt4.Qt import pyqtSignal
@@ -29,9 +30,8 @@ class SegmentationEdgesItem( QGraphicsObject ):
         super(SegmentationEdgesItem, self).__init__(parent=parent)
         self.setFlag(QGraphicsObject.ItemHasNoContents)
         
-        # For proper signals/slots behavior, it is critical that this object lives in the 'main' thread,
-        # even if it was constructed in a different thread.
-        self.moveToThread(QApplication.instance().thread())
+        assert threading.current_thread().name == 'MainThread', \
+            "SegmentationEdgesItem objects may only be created in the main thread."
         
         assert isinstance(edge_colortable, SignalingDefaultDict)
         self.edge_colortable = edge_colortable

@@ -38,6 +38,7 @@ from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte
 from asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import cfg
+from volumina.utility import execute_in_main_thread
 import numpy as np
 
 _has_vigra = True
@@ -627,7 +628,18 @@ class DummyItemRequest(object):
         array_data = self._arrayreq.wait()
         # Here's where we would do something with the data...
         assert array_data.shape == (self.rect.width(), self.rect.height())
-        return DummyItem(QRectF(self.rect))
+        return execute_in_main_thread(DummyItem, QRectF(self.rect))
+
+class DummyItemSource(ImageSource):
+    def __init__( self, arraySource2D ):
+        super( DummyItemSource, self ).__init__()
+        self._arraySource2D = arraySource2D
+        
+    def request( self, qrect, along_through=None ):
+        assert isinstance(qrect, QRect)
+        s = rect2slicing(qrect)
+        arrayreq = self._arraySource2D.request(s, along_through)
+        return DummyItemRequest(arrayreq, qrect)
 
 class DummyRasterRequest(object):
     """
@@ -656,17 +668,6 @@ class DummyRasterItemSource(ImageSource):
     def request( self, qrect, along_through=None ):
         return DummyRasterRequest(qrect)
 
-class DummyItemSource(ImageSource):
-    def __init__( self, arraySource2D ):
-        super( DummyItemSource, self ).__init__()
-        self._arraySource2D = arraySource2D
-        
-    def request( self, qrect, along_through=None ):
-        assert isinstance(qrect, QRect)
-        s = rect2slicing(qrect)
-        arrayreq = self._arraySource2D.request(s, along_through)
-        return DummyItemRequest(arrayreq, qrect)
- 
 
 from volumina.utility import SegmentationEdgesItem
 class SegmentationEdgesItemSource(ImageSource):
@@ -697,15 +698,19 @@ class SegmentationEdgesItemRequest(object):
     def wait(self):
         array_data = self._arrayreq.wait()
         
-        # This assertion isn't necessarily valid, because the array request might be expanded
+        # We can't make this assertion, because the array request might be expanded
         # with a halo so that the QGraphicsItem can display edges on tile borders.
         #assert array_data.shape == (self.rect.width(), self.rect.height())
 
-        # All SegmentationEdgesItem(s) associated with this layer will share a common colortable.
-        # They react immediately when the colortable is updated.
-        graphics_item = SegmentationEdgesItem(array_data, self._layer.colortable)
-        
-        # When the item is clicked, the layer is notified.
-        graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )
-        return graphics_item
+        def create():
+            # All SegmentationEdgesItem(s) associated with this layer will share a common colortable.
+            # They react immediately when the colortable is updated.
+            graphics_item = SegmentationEdgesItem(array_data, self._layer.colortable)
 
+            # When the item is clicked, the layer is notified.
+            graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )
+            return graphics_item
+       
+        # We're probably running in a non-main thread right now,
+        # but we're only allowed to create QGraphicsItemObjects in the main thread.
+        return execute_in_main_thread(create)

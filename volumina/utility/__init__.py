@@ -25,6 +25,7 @@ from singleton import Singleton
 from preferencesManager import PreferencesManager
 from shortcutManager import ShortcutManager
 from shortcutManagerDlg import ShortcutManagerDlg
+from volumina.utility.thunkEvent import execute_in_main_thread
 from qstring_codec import encode_from_qstring, decode_to_qstring
 from volumina.utility.edge_coords import edge_coords_along_axis, edge_coords_nd
 from volumina.utility.signalingDefaultDict import SignalingDefaultDict
