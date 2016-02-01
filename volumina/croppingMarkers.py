@@ -65,7 +65,15 @@ class CropExtentsModel( QObject ):
         # Set the extents as a roi
         self.set_crop_extents( zip( *roi ) )
 
-    def set_volume_shape_3d(self, starts, stops):
+    def set_volume_shape_3d(self, shape3d):
+        # Since the volume size changed,
+        # reset the crop extents to a reasonable default.
+        for i in range(3):
+            self._crop_extents[i][0] = 0
+            self._crop_extents[i][1] = shape3d[i]
+        self.changed.emit( self )
+
+    def set_volume_shape_3d_cropped(self, starts, stops):
         # Since the volume size changed,
         # reset the crop extents to a reasonable default.
         for i in range(3):
