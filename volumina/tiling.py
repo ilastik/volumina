@@ -752,9 +752,28 @@ class TileProvider( QObject ):
         """
         qimg = None
         p = None
-        for i, v in enumerate(reversed(self._sims)):
-            visible, layerOpacity, layerImageSource = v
-            if not visible:
+        for i, (visible, layerOpacity, layerImageSource) in enumerate(reversed(self._sims)):
+            image_type = layerImageSource.image_type()
+            if issubclass(image_type, QGraphicsItem):
+                with self._cache:
+                    patch = self._cache.layer(stack_id, layerImageSource, tile_nr )
+                if patch is not None:
+                    assert isinstance(patch, image_type), \
+                        "This ImageSource is producing a type of image that is not consistent with it's declared image_type()"
+                    # This is a QGraphicsItem, so we don't blend it into the final tile.
+                    # (The ImageScene will just draw it on top of everything.)
+                    # But this is a convenient place to update the opacity/visible state.
+                    if patch.opacity() != layerOpacity or patch.isVisible() != visible:
+                        patch.setOpacity(layerOpacity)
+                        patch.setVisible(visible)
+                    patch.setZValue(i)  # The sims ("stacked image sources") are ordered from 
+                                        # top-to-bottom (see imagepump.py), but in Qt,
+                                        # higher Z-values are shown on top.
+                                        # Note that the current loop is iterating in reverse order.
+                continue
+
+            # No need to fetch non-visible image tiles.
+            if not visible or layerOpacity == 0.0:
                 continue
 
             with self._cache:
@@ -763,7 +782,10 @@ class TileProvider( QObject ):
             # patch might be a QGraphicsItem instead of QImage,
             # in which case it is handled separately,
             # not composited into the tile.
-            if patch is not None and isinstance(patch, QImage):
+
+            if patch is not None:
+                assert isinstance(patch, QImage), \
+                    "Unknown tile layer type: {}. Expected QImage or QGraphicsItem".format(type(patch))
                 if qimg is None:
                     qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
                     qimg.fill(0xffffffff) # Use a hex constant instead.

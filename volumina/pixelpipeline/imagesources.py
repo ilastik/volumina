@@ -70,6 +70,13 @@ class ImageSource( QObject ):
         self._opaque = guarantees_opaqueness
         self.direct = direct
 
+    def image_type(self):
+        """
+        Image sources must declare what type of "image" they will produce.
+        The two allowed types are QImage and QGraphicsItems (and subclasses).
+        """
+        return QImage
+
     def request( self, rect, along_through=None ):
         raise NotImplementedError
 
@@ -676,6 +683,9 @@ class SegmentationEdgesItemSource(ImageSource):
         s = rect2slicing(qrect)
         arrayreq = self._arraySource2D.request(s, along_through)
         return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect)
+
+    def image_type(self):
+        return SegmentationEdgesItem
 
 class SegmentationEdgesItemRequest(object):
     def __init__(self, arrayreq, layer, rect):
