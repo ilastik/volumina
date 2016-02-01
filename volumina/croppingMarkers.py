@@ -115,6 +115,7 @@ class CroppingMarkers( QGraphicsItem ):
         self._editable = editable
 
         QGraphicsItem.__init__(self, scene=scene)
+        self.setFlag(QGraphicsItem.ItemHasNoContents);
         self.setAcceptHoverEvents(True)
         self.scene = scene
         self.axis = axis
