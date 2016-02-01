@@ -617,7 +617,13 @@ class QuadStatusBar(QHBoxLayout):
         new_position[changed_axis] = value
         self.positionChanged.emit(*new_position)
 
-    def updateShape5D(self, shape5Dmax, shape5DcropMin):
+    def updateShape5D(self, shape5D):
+        self.timeSpinBox.setMaximum(shape5D[0]-1)
+        self.xSpinBox.setMaximum(shape5D[1]-1)
+        self.ySpinBox.setMaximum(shape5D[2]-1)
+        self.zSpinBox.setMaximum(shape5D[3]-1)
+
+    def updateShape5Dcropped(self, shape5DcropMin, shape5Dmax):
         self.timeSpinBox.setMaximum(shape5Dmax[0]-1)
         self.xSpinBox.setMaximum(shape5Dmax[1]-1)
         self.ySpinBox.setMaximum(shape5Dmax[2]-1)

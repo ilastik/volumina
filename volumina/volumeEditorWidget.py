@@ -242,7 +242,7 @@ class VolumeEditorWidget(QWidget):
                 self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
             else:
                 cropMin = (self.editor.posModel.time,self.editor.cropModel._crop_extents[0][0],self.editor.cropModel._crop_extents[1][0],self.editor.cropModel._crop_extents[2][0],0)
-                self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D,cropMin)
+                self.quadViewStatusBar.updateShape5Dcropped(cropMin,self.editor.posModel.shape5D)
 
             self._setupVolumeExtent()
 
