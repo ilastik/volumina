@@ -34,6 +34,7 @@ import numpy as np
 _has_lazyflow = True
 try:
     import lazyflow.operators.opReorderAxes
+    from lazyflow.roi import sliceToRoi, roiToSlice
 except:
     _has_lazyflow = False
 
@@ -42,6 +43,7 @@ try:
     import vigra
 except ImportError:
     _has_vigra = False
+
 
 #*******************************************************************************
 # A r r a y R e q u e s t                                                      *
@@ -306,7 +308,11 @@ if _has_lazyflow:
             if not is_pure_slicing(slicing):
                 raise Exception('LazyflowSource: slicing is not pure')
             assert self._op5 is not None, "Underlying operator is None.  Are you requesting from a datasource that has been cleaned up already?"
-            return LazyflowRequest( self._op5, slicing, self._priority, objectName=self.objectName() )
+
+            start, stop = sliceToRoi(slicing, self._op5.Output.meta.shape)
+            clipped_roi = np.maximum(start, (0,0,0,0,0)), np.minimum(stop, self._op5.Output.meta.shape)
+            clipped_slicing = roiToSlice(*clipped_roi)
+            return LazyflowRequest( self._op5, clipped_slicing, self._priority, objectName=self.objectName() )
     
         def _setDirtyLF(self, slot, roi):
             self.setDirty(roi.toSlice())
@@ -632,6 +638,9 @@ class HaloAdjustedDataSource( QObject ):
         return not ( self == other )
 
     def _expand_slicing_with_halo(self, slicing):
+        start = [s.start for s in slicing]
+        stop = [s.stop for s in slicing]
+        
         return tuple( slice(s.start+halo_start, s.stop+halo_stop)
                       for (s, halo_start, halo_stop) in zip( slicing,
                                     self.halo_start_delta,
