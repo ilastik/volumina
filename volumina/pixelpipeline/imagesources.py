@@ -680,6 +680,10 @@ class SegmentationEdgesItemRequest(object):
     
     def wait(self):
         array_data = self._arrayreq.wait()
-        assert array_data.shape == (self.rect.width(), self.rect.height())
-        return SegmentationEdgesItem(array_data)
+        
+        # This assertion isn't necessarily valid, because the array request might be expanded
+        # with a halo so that the QGraphicsItem can display edges on tile borders.
+        #assert array_data.shape == (self.rect.width(), self.rect.height())
 
+        graphics_item = SegmentationEdgesItem(array_data)
+        

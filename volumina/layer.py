@@ -27,7 +27,7 @@ from PyQt4.QtGui import QColor
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
-from volumina.pixelpipeline.datasources import MinMaxSource 
+from volumina.pixelpipeline.datasources import MinMaxSource, HaloAdjustedDataSource
 
 from volumina.utility import decode_to_qstring, encode_from_qstring
 
@@ -572,6 +572,9 @@ class DummyRasterItemLayer( Layer ):
 
 class SegmentationEdgesLayer( Layer ):
     def __init__(self, datasource):
-        super( SegmentationEdgesLayer, self ).__init__( [datasource] )
-
-    
+        # 1-pixel offset in the right/down directions
+        halo_start_delta = (0,0,0,0,0)
+        halo_stop_delta = (0,1,1,1,0)
+        
+        adjusted_datasource = HaloAdjustedDataSource(datasource, halo_start_delta, halo_stop_delta)
+        super( SegmentationEdgesLayer, self ).__init__( [adjusted_datasource] )
