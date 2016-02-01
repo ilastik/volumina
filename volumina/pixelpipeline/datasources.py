@@ -315,7 +315,8 @@ if _has_lazyflow:
             return LazyflowRequest( self._op5, clipped_slicing, self._priority, objectName=self.objectName() )
     
         def _setDirtyLF(self, slot, roi):
-            self.setDirty(roi.toSlice())
+            clipped_roi = np.maximum(roi.start, (0,0,0,0,0)), np.minimum(roi.stop, self._op5.Output.meta.shape)
+            self.setDirty( roiToSlice(*clipped_roi) )
     
         def setDirty( self, slicing):
             if not is_pure_slicing(slicing):
@@ -592,7 +593,7 @@ class HaloAdjustedDataSource( QObject ):
         """
         super(HaloAdjustedDataSource, self).__init__(parent)
         self._rawSource = rawSource
-        self._rawSource.isDirty.connect( self.isDirty )
+        self._rawSource.isDirty.connect( self.setDirty )
         self._rawSource.numberOfChannelsChanged.connect( self.numberOfChannelsChanged )
         
         assert all(s <= 0 for s in halo_start_delta), "Halo start should be non-positive"
@@ -638,9 +639,6 @@ class HaloAdjustedDataSource( QObject ):
         return not ( self == other )
 
     def _expand_slicing_with_halo(self, slicing):
-        start = [s.start for s in slicing]
-        stop = [s.stop for s in slicing]
-        
         return tuple( slice(s.start+halo_start, s.stop+halo_stop)
                       for (s, halo_start, halo_stop) in zip( slicing,
                                     self.halo_start_delta,
