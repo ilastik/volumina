@@ -106,24 +106,23 @@ class RenderTask(_WorkItem):
 
             if self.timestamp > layerTimestamp:
                 img = self.image_req.wait()
-                try:
-                    with self.cache:
-                        if isinstance(img, QImage):
-                            img = img.transformed(self.transform)
-                        elif isinstance(img, QGraphicsItem):
-                            # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
-                            #        makes sense here, but for some strange reason it isn't right.
-                            #        For now we leave this line out, and let the ImageScene2D handle the tranformations.
-                            #img.setTransform(self.transform, combine=True)
-                            pass
-                        else:
-                            assert False, "Unexpected image type: {}".format( type(img) )
+                if isinstance(img, QImage):
+                    img = img.transformed(self.transform)
+                elif isinstance(img, QGraphicsItem):
+                    # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
+                    #        makes sense here, but for some strange reason it isn't right.
+                    #        For now we leave this line out, and let the ImageScene2D handle the tranformations.
+                    #img.setTransform(self.transform, combine=True)
+                    pass
+                else:
+                    assert False, "Unexpected image type: {}".format( type(img) )
 
+                with self.cache:
+                    try:
                         self.cache.updateTileIfNecessary(self.stack_id,
                             self.ims, self.tile_nr, self.timestamp, img)
-                        
-                except KeyError:
-                    pass
+                    except KeyError:
+                        pass
 
                 if self.stack_id == self.tile_provider._current_stack_id \
                         and self.cache is self.tile_provider._cache:
@@ -393,8 +392,7 @@ class _TilesCache( object ):
             visible = numpy.asarray(stack_visible)
             occluded = numpy.asarray(stack_occluded)
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
-            if numpy.count_nonzero(visibleAndNotOccluded) > 0:
-
+            if visibleAndNotOccluded.any():
                 dirty = numpy.asarray([self._layerCacheDirty.caches[stack_id][(ims, tile_id)]
                                        for ims in self._sims.viewImageSources()])
                 num = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)
