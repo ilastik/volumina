@@ -22,15 +22,14 @@
 import colorsys
 import numpy
 
-from PyQt4.QtCore import QObject, pyqtSignal, QString
+from PyQt4.QtCore import Qt, QObject, pyqtSignal, QString
 from PyQt4.QtGui import QColor
 
-from volumina.utility import SignalingDefaultDict
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource, HaloAdjustedDataSource
 
-from volumina.utility import decode_to_qstring, encode_from_qstring
+from volumina.utility import decode_to_qstring, encode_from_qstring, SignalingDefaultDict
 
 from functools import partial
 
@@ -583,7 +582,7 @@ class SegmentationEdgesLayer( Layer ):
         """
         return self._colortable
 
-    def __init__(self, datasource):
+    def __init__(self, datasource, default_color = QColor( Qt.yellow )):
         # 1-pixel offset in the right/down directions
         halo_start_delta = (0,0,0,0,0)
         halo_stop_delta = (0,1,1,1,0)
@@ -592,7 +591,7 @@ class SegmentationEdgesLayer( Layer ):
         super( SegmentationEdgesLayer, self ).__init__( [adjusted_datasource] )
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
-        self._colortable = SignalingDefaultDict(parent=None, default_factory=lambda:None)
+        self._colortable = SignalingDefaultDict(parent=None, default_factory=lambda:default_color )
 
     def handle_edge_clicked(self, id_pair):
         """
