@@ -86,10 +86,6 @@ class ImageView2D(QGraphicsView):
 
         scene.axesChanged.connect(hud.setAxes)
 
-        #hud.rotLeftButtonClicked.connect(self._onRotateLeft)
-        #hud.rotRightButtonClicked.connect(self._onRotateRight)
-        #hud.swapAxesButtonClicked.connect(self._onSwapAxes)
-
     def __init__(self, parent, cropModel, imagescene2d):
         """
         Constructs a view upon a ImageScene2D
@@ -170,39 +166,6 @@ class ImageView2D(QGraphicsView):
         self._hiddenCursor = QCursor(Qt.BlankCursor)
         # For screen recording BlankCursor doesn't work
         #self.hiddenCursor = QCursor(Qt.ArrowCursor)
-
-    def _onRotateLeft(self):
-        rowInd = self.axis
-        colInd1 = (rowInd+1)%3
-        colInd2 = (rowInd+2)%3
-
-        tmp = self._croppingMarkers.axisOrderLookup[rowInd][colInd1]
-        self._croppingMarkers.axisOrderLookup[rowInd][colInd1] = self._croppingMarkers.axisOrderLookup[rowInd][colInd2]
-        self._croppingMarkers.axisOrderLookup[rowInd][colInd2] = tmp
-
-        self._croppingMarkers.axisDirectionLookup[rowInd][colInd1] *= -1
-        self._croppingMarkers.axisDirectionLookup[rowInd][colInd2] *= -1
-
-    def _onRotateRight(self):
-        rowInd = self.axis
-        colInd1 = (rowInd+1)%3
-        colInd2 = (rowInd+2)%3
-
-        tmp = self._croppingMarkers.axisOrderLookup[rowInd][colInd1]
-        self._croppingMarkers.axisOrderLookup[rowInd][colInd1] = self._croppingMarkers.axisOrderLookup[rowInd][colInd2]
-        self._croppingMarkers.axisOrderLookup[rowInd][colInd2] = tmp
-
-        self._croppingMarkers.axisDirectionLookup[rowInd][colInd1] *= -1
-        self._croppingMarkers.axisDirectionLookup[rowInd][colInd2] *= -1
-
-    def _onSwapAxes(self):
-        rowInd = self.axis
-        colInd1 = (rowInd+1)%3
-        colInd2 = (rowInd+2)%3
-
-        tmp = self._croppingMarkers.axisOrderLookup[rowInd][colInd1]
-        self._croppingMarkers.axisOrderLookup[rowInd][colInd1] = self._croppingMarkers.axisOrderLookup[rowInd][colInd2]
-        self._croppingMarkers.axisOrderLookup[rowInd][colInd2] = tmp
 
     def showCropLines(self, visible):
         self._croppingMarkers.setVisible(visible)
