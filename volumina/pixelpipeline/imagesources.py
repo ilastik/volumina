@@ -703,9 +703,9 @@ class SegmentationEdgesItemRequest(object):
         #assert array_data.shape == (self.rect.width(), self.rect.height())
 
         def create():
-            # All SegmentationEdgesItem(s) associated with this layer will share a common colortable.
-            # They react immediately when the colortable is updated.
-            graphics_item = SegmentationEdgesItem(array_data, self._layer.colortable)
+            # All SegmentationEdgesItem(s) associated with this layer will share a common pen table.
+            # They react immediately when the pen table is updated.
+            graphics_item = SegmentationEdgesItem(array_data, self._layer.pen_table)
 
             # When the item is clicked, the layer is notified.
             graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )

@@ -23,7 +23,7 @@ import colorsys
 import numpy
 
 from PyQt4.QtCore import Qt, QObject, pyqtSignal, QString
-from PyQt4.QtGui import QColor
+from PyQt4.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
@@ -572,17 +572,23 @@ class DummyRasterItemLayer( Layer ):
 
 class SegmentationEdgesLayer( Layer ):
 
+    DEFAULT_PEN = QPen()
+    DEFAULT_PEN.setCosmetic(True)
+    DEFAULT_PEN.setCapStyle(Qt.RoundCap)
+    DEFAULT_PEN.setColor(Qt.white)
+    DEFAULT_PEN.setWidth(3)
+
     @property
-    def colortable(self):
+    def pen_table(self):
         """
         Items in the colortable can be added/replaced/deleted, but the
         colortable object itself cannot be overwritten with a different dict object.
         The SegmentationEdgesItem(s) associated witht this layer will react
         immediately to any changes you make to this colortable dict.
         """
-        return self._colortable
+        return self._pen_table
 
-    def __init__(self, datasource, default_color = QColor( Qt.yellow )):
+    def __init__(self, datasource, default_pen=DEFAULT_PEN):
         # 1-pixel offset in the right/down directions
         halo_start_delta = (0,0,0,0,0)
         halo_stop_delta = (0,1,1,1,0)
@@ -591,16 +597,19 @@ class SegmentationEdgesLayer( Layer ):
         super( SegmentationEdgesLayer, self ).__init__( [adjusted_datasource] )
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
-        self._colortable = SignalingDefaultDict(parent=None, default_factory=lambda:default_color )
+        self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
 
     def handle_edge_clicked(self, id_pair):
         """
-        Handles clicks from our associated SegmentationEdgesItem(s)
+        Handles clicks from our associated SegmentationEdgesItem(s).
+        (See connection made in SegmentationEdgesItemRequest.) 
+        
         id_pair: The edge that was clicked.
         """
         # For now, simple debug functionality: change to a random color.
         # Please verify in the viewer that edges spanning multiple tiles changed color
         # together, even though only one of the tiles was clicked.
         random_color = QColor( *list( numpy.random.randint(0,255,(3,)) ) )
-        print "setting {} to {}".format( id_pair, hex(random_color.rgba()) )
-        self.colortable[id_pair] = random_color
+        pen = QPen(self.pen_table[id_pair])
+        pen.setColor(random_color)
+        self.pen_table[id_pair] = pen
