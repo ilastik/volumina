@@ -88,7 +88,7 @@ class CropExtentsModel( QObject ):
 
     def set_time_shape(self, time):
         # Since the volume size changed,
-        # reset the crop extents to a reasonable default.
+        # reset the crop times to a reasonable default.
         self._crop_times = [0,time]
         self.changed.emit( self )
 
@@ -103,7 +103,7 @@ class CropExtentsModel( QObject ):
     
     def set_time_shape_cropped(self, startT, stopT):
         # Since the volume size changed,
-        # reset the crop extents to a reasonable default.
+        # reset the crop times to a reasonable default.
         self._crop_times[0] = startT
         self._crop_times[1] = stopT
 
