@@ -129,6 +129,7 @@ class VolumeEditor( QObject ):
 
         if self.cropModel._crop_extents[0][0] == None or self.cropModel.cropZero():
             self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
+        self.cropModel.set_time_shape_cropped(0,s[0])
 
         #for 2D images, disable the slice intersection marker
         x = numpy.sum(numpy.asarray(s[1:4]) == 1) 

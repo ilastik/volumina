@@ -105,6 +105,7 @@ class VolumeEditorWidget(QWidget):
         for i in range(3):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i],i)
+        self.editor.navCtrl.changeTime(self.editor.cropModel._crop_times[0])
 
     def init(self, volumina):
         self.editor = volumina

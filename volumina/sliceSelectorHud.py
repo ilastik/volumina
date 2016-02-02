@@ -538,46 +538,15 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSpinBox.delayedValueChanged.connect(self._onTimeSpinBoxChanged)
 
     def _onTimeStartButtonClicked(self):
-        try: # cropping applet
-            self.timeSpinBox.setValue(
-                self.parent().parent().parent().parent().topLevelOperatorView.MinValueT.value) # opCropSelection
-        except:
-            try: # annotations applet
-                self.timeSpinBox.setValue(
-                    self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
-                        self.parent().parent().parent().parent()._drawer.cropListModel[
-                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][0])
-            except:
-                self.timeSpinBox.setValue(0)
+        self.timeSpinBox.setValue(self.parent().parent().parent().editor.cropModel.get_roi_t()[0])
 
     def _onTimeEndButtonClicked(self):
-        try: # cropping applet
-            self.timeSpinBox.setValue(
-                self.parent().parent().parent().parent().topLevelOperatorView.MaxValueT.value)
-        except:
-            try: # annotations applet
-                self.timeSpinBox.setValue(
-                    self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
-                        self.parent().parent().parent().parent()._drawer.cropListModel[
-                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][1])
-            except:
-                self.timeSpinBox.setValue(self.parent().parent().parent().editor.posModel.shape5D[0]-1)
+        self.timeSpinBox.setValue(self.parent().parent().parent().editor.cropModel.get_roi_t()[1])
 
     def _onTimeSpinBoxChanged(self):
-        try:
-            minValueT = self.parent().parent().parent().parent().topLevelOperatorView.MinValueT.value
-            maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.MaxValueT.value
-        except:
-            try:
-                minValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
-                        self.parent().parent().parent().parent()._drawer.cropListModel[
-                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][0]
-                maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
-                        self.parent().parent().parent().parent()._drawer.cropListModel[
-                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][1]
-            except:
-                minValueT = 0
-                maxValueT = self.parent().parent().parent().editor.posModel.shape5D[0]-1
+        editor = self.parent().parent().parent().editor
+        minValueT = editor.cropModel.get_roi_t()[0]
+        maxValueT = editor.cropModel.get_roi_t()[1]
 
         if minValueT > self.timeSpinBox.value():
             self.timeSlider.setValue(minValueT)
@@ -587,20 +556,8 @@ class QuadStatusBar(QHBoxLayout):
             self.timeSlider.setValue(self.timeSpinBox.value())
 
     def _onTimeSliderChanged(self):
-        try:
-            minValueT = self.parent().parent().parent().parent().topLevelOperatorView.MinValueT.value
-            maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.MaxValueT.value
-        except:
-            try:
-                minValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
-                        self.parent().parent().parent().parent()._drawer.cropListModel[
-                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][0]
-                maxValueT = self.parent().parent().parent().parent().topLevelOperatorView.Crops.value[
-                        self.parent().parent().parent().parent()._drawer.cropListModel[
-                            self.parent().parent().parent().parent()._selectedRow ].name ]["time"][1]
-            except:
-                minValueT = 0
-                maxValueT = self.parent().parent().parent().editor.posModel.shape5D[0]-1
+        minValueT = self.parent().parent().parent().editor.cropModel.get_roi_t()[0]
+        maxValueT = self.parent().parent().parent().editor.cropModel.get_roi_t()[1]
 
         if minValueT > self.timeSlider.value():
             self.timeSpinBox.setValue(minValueT)

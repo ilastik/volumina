@@ -38,6 +38,8 @@ class CropExtentsModel( QObject ):
     def __init__(self, parent):
         super( CropExtentsModel, self ).__init__( parent )
         self._crop_extents = [ [None, None], [None, None], [None, None] ]
+        self._crop_times = [None,None]
+
         self._editable = True
 
         self.editableChanged.connect( self.onEditableChanged)
@@ -60,10 +62,21 @@ class CropExtentsModel( QObject ):
         roi = zip( *ordered_extents )
         return roi
 
+    def get_roi_t(self):
+        """
+        Returns the t roi: [ t1, t2 ]
+        """
+        return self._crop_times
+
     def set_roi_3d(self, roi):
         # Convenience function.
         # Set the extents as a roi
         self.set_crop_extents( zip( *roi ) )
+
+    def set_roi_t(self, timeRange):
+        # Convenience function.
+        # Set the crop times
+        self.set_crop_times( timeRange )
 
     def set_volume_shape_3d(self, shape3d):
         # Since the volume size changed,
@@ -71,6 +84,12 @@ class CropExtentsModel( QObject ):
         for i in range(3):
             self._crop_extents[i][0] = 0
             self._crop_extents[i][1] = shape3d[i]
+        self.changed.emit( self )
+
+    def set_time_shape(self, time):
+        # Since the volume size changed,
+        # reset the crop extents to a reasonable default.
+        self._crop_times = [0,time]
         self.changed.emit( self )
 
     def set_volume_shape_3d_cropped(self, starts, stops):
@@ -82,14 +101,30 @@ class CropExtentsModel( QObject ):
 
         self.changed.emit( self )
     
+    def set_time_shape_cropped(self, startT, stopT):
+        # Since the volume size changed,
+        # reset the crop extents to a reasonable default.
+        self._crop_times[0] = startT
+        self._crop_times[1] = stopT
+
+        self.changed.emit( self )
+
     def crop_extents(self):
         return copy.deepcopy(self._crop_extents)
     
+    def crop_times(self):
+        return copy.deepcopy(self._crop_times)
+
     def set_crop_extents(self, crop_extents):
         assert len(crop_extents) == 3
         for e in crop_extents:
             assert len(e) == 2
         self._crop_extents = map(list, crop_extents) # Ensure lists, not tuples
+        self.changed.emit( self )
+
+    def set_crop_times(self, crop_times):
+        assert len(crop_times) == 2
+        self._crop_times = [crop_times[0],crop_times[1]]
         self.changed.emit( self )
 
     def cropZero(self):
