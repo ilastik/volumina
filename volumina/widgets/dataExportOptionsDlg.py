@@ -171,7 +171,7 @@ class DataExportOptionsDlg(QDialog):
         self.roiWidget.initWithExtents( inputAxes, shape, start, stop )
         
         def _handleRoiChange(newstart, newstop):
-            if not opDataExport.Input.ready():
+            if not self.isVisible() or not opDataExport.Input.ready():
                 # Can happen if we're still listening to slot changes after we've been closed.
                 return
             # Unfortunately, we have to handle a special case here:
