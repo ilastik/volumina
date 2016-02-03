@@ -39,10 +39,18 @@ class CropExtentsModel( QObject ):
         super( CropExtentsModel, self ).__init__( parent )
         self._crop_extents = [ [None, None], [None, None], [None, None] ]
         self._crop_times = [None,None]
+        self._scroll_time_outside_crop = False
 
         self._editable = True
 
         self.editableChanged.connect( self.onEditableChanged)
+
+    def set_scroll_time_outside_crop(self,flag):
+        self._scroll_time_outside_crop = flag
+        self.changed.emit( self )
+
+    def get_scroll_time_outside_crop(self):
+        return self._scroll_time_outside_crop
 
     def onEditableChanged(self, flag):
         self._editable = flag
@@ -114,6 +122,9 @@ class CropExtentsModel( QObject ):
     
     def crop_times(self):
         return copy.deepcopy(self._crop_times)
+
+    def crop_scroll_time_outside_crop(self):
+        return copy.deepcopy(self._crop_scroll_time_outside_crop)
 
     def set_crop_extents(self, crop_extents):
         assert len(crop_extents) == 3
@@ -461,8 +472,13 @@ class ExcludedRegionShading(QGraphicsItem):
     def __init__(self, parent, crop_extents_model):
         self._parent = parent
         self._crop_extents_model = crop_extents_model
+        self._paint_full_frame = False
+
         super( ExcludedRegionShading, self ).__init__( parent )
         crop_extents_model.changed.connect( self.prepareGeometryChange )
+
+    def set_paint_full_frame(self,flag):
+        self._paint_full_frame = flag
 
     def boundingRect(self):
         width, height = self._parent.dataShape
@@ -483,17 +499,20 @@ class ExcludedRegionShading(QGraphicsItem):
         # Black brush, 50% alpha
         brush = QBrush( QColor(0,0,0,128) )
 
-        rects = [ (0.0,    0.0, left,    top),
-                  (0.0,    top, left, bottom),
-                  (0.0, bottom, left, height),
+        rects = [
+            (0.0,    0.0, left,    top),
+            (0.0,    top, left, bottom),
+            (0.0, bottom, left, height),
+            (left,    0.0, right,    top)]
 
-                  (left,    0.0, right,    top),
-                 #(left,    top, right, bottom), # Don't cover the middle.
-                  (left, bottom, right, height),
+        if self._crop_extents_model.get_scroll_time_outside_crop() and self._paint_full_frame:
+            rects += [(left,    top, right, bottom)] # middle.
 
-                  (right,    0.0, width,    top),
-                  (right,    top, width, bottom),
-                  (right, bottom, width, height) ]
+        rects += [
+            (left, bottom, right, height),
+            (right,    0.0, width,    top),
+            (right,    top, width, bottom),
+            (right, bottom, width, height) ]
 
         with painter_context(painter):
             t = painter.transform()
@@ -504,14 +523,6 @@ class ExcludedRegionShading(QGraphicsItem):
                 p1 = QPointF(x1,y1)
                 p2 = QPointF(x2,y2)
                 painter.fillRect( QRectF( p1, p2 ), brush )
-
-            # paint the roi rectangle
-            #x1, y1, x2, y2 = (left,    top, right, bottom)
-            #p1 = QPointF(x1,y1)
-            #p2 = QPointF(x2,y2)
-            ## Black brush, 0% alpha
-            #brush = QBrush( QColor(0,0,0,0) )
-            #painter.fillRect( QRectF( p1, p2 ), brush )
 
 class CropLine(QGraphicsItem):
     """

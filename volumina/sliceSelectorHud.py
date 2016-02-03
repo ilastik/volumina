@@ -545,28 +545,44 @@ class QuadStatusBar(QHBoxLayout):
 
     def _onTimeSpinBoxChanged(self):
         editor = self.parent().parent().parent().editor
-        minValueT = editor.cropModel.get_roi_t()[0]
-        maxValueT = editor.cropModel.get_roi_t()[1]
+        cropModel = editor.cropModel
+        minValueT = cropModel.get_roi_t()[0]
+        maxValueT = cropModel.get_roi_t()[1]
 
-        if minValueT > self.timeSpinBox.value():
-            self.timeSlider.setValue(minValueT)
-        elif maxValueT < self.timeSpinBox.value():
-            self.timeSlider.setValue(maxValueT)
-        elif minValueT <= self.timeSpinBox.value() and self.timeSpinBox.value() <= maxValueT:
+        if cropModel.get_scroll_time_outside_crop():
+            if minValueT > self.timeSpinBox.value() or maxValueT < self.timeSpinBox.value():
+                for imgView in editor.imageViews:
+                    imgView._croppingMarkers._shading_item.set_paint_full_frame(True)
+            else:
+                for imgView in editor.imageViews:
+                    imgView._croppingMarkers._shading_item.set_paint_full_frame(False)
             self.timeSlider.setValue(self.timeSpinBox.value())
+        else:
+            for imgView in editor.imageViews:
+                imgView._croppingMarkers._shading_item.set_paint_full_frame(False)
+            if minValueT > self.timeSpinBox.value():
+                self.timeSlider.setValue(minValueT)
+            elif maxValueT < self.timeSpinBox.value():
+                self.timeSlider.setValue(maxValueT)
+            elif minValueT <= self.timeSpinBox.value() and self.timeSpinBox.value() <= maxValueT:
+                self.timeSlider.setValue(self.timeSpinBox.value())
 
     def _onTimeSliderChanged(self):
-        minValueT = self.parent().parent().parent().editor.cropModel.get_roi_t()[0]
-        maxValueT = self.parent().parent().parent().editor.cropModel.get_roi_t()[1]
+        cropModel = self.parent().parent().parent().editor.cropModel
+        minValueT = cropModel.get_roi_t()[0]
+        maxValueT = cropModel.get_roi_t()[1]
 
-        if minValueT > self.timeSlider.value():
-            self.timeSpinBox.setValue(minValueT)
-            self.timeSlider.setValue(minValueT)
-        elif self.timeSlider.value() > maxValueT:
-            self.timeSpinBox.setValue(maxValueT)
-            self.timeSlider.setValue(maxValueT)
-        elif minValueT <= self.timeSlider.value() and self.timeSlider.value() <= maxValueT:
+        if cropModel.get_scroll_time_outside_crop():
             self.timeSpinBox.setValue(self.timeSlider.value())
+        else:
+            if minValueT > self.timeSlider.value():
+                self.timeSpinBox.setValue(minValueT)
+                self.timeSlider.setValue(minValueT)
+            elif self.timeSlider.value() > maxValueT:
+                self.timeSpinBox.setValue(maxValueT)
+                self.timeSlider.setValue(maxValueT)
+            elif minValueT <= self.timeSlider.value() and self.timeSlider.value() <= maxValueT:
+                self.timeSpinBox.setValue(self.timeSlider.value())
 
     def _handlePositionBoxValueChanged(self, axis, value):
         new_position = [self.xSpinBox.value(), self.ySpinBox.value(), self.zSpinBox.value()]
