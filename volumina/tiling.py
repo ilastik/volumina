@@ -502,11 +502,18 @@ class _TilesCache( object ):
             self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
             self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = False
             self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = req_timestamp
-
-            # The 'tile' cache conly consists of composited QImages
-            # 'layers' that are QGraphicsItems don't contribute to the 'tile'.
-            if isinstance(img, QImage):
-                self._tileCacheDirty.caches[stack_id][tile_id] = True
+            
+            # FIXME: We are currently keeping track of only 1 dirty bit.
+            #        It is set if any layer in the tile is dirty, regardless of 
+            #        whether or not that layer is a QImage or QGraphicsItem
+            #        This means that when a QGraphicsItem becomes dirty, the 
+            #        layer stack is re-blended.  It's a waste of time, because 
+            #        none of the raster layers changed (they were all clean and 
+            #        haven't changed since the last time the tile was blended.)
+            #        We could fix this inefficiency by tracking 2 dirty bits, for 
+            #        QImage layers and QGraphicsLayers, respectively, and checking
+            #        those bits in _renderTile()
+            self._tileCacheDirty.caches[stack_id][tile_id] = True
 
 
 class TileProvider( QObject ):
