@@ -104,6 +104,8 @@ class RenderTask(_WorkItem):
             except KeyError:
                 pass
 
+            tile_rect = QRectF( self.tile_provider.tiling.imageRects[self.tile_nr] )
+
             if self.timestamp > layerTimestamp:
                 img = self.image_req.wait()
                 if isinstance(img, QImage):
@@ -111,9 +113,10 @@ class RenderTask(_WorkItem):
                 elif isinstance(img, QGraphicsItem):
                     # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
                     #        makes sense here, but for some strange reason it isn't right.
-                    #        For now we leave this line out, and let the ImageScene2D handle the tranformations.
-                    #img.setTransform(self.transform, combine=True)
-                    pass
+                    #        For QGraphicsItems, it seems obvious that this is the correct transform.
+                    #        I do not understand the formula that produces self.transform, which is used for QImage tiles.
+                    img.setTransform(QTransform.fromTranslate(tile_rect.left(), tile_rect.top()), combine=True)
+                    img.setTransform(self.tile_provider.tiling.data2scene, combine=True)
                 else:
                     assert False, "Unexpected image type: {}".format( type(img) )
 
@@ -126,8 +129,7 @@ class RenderTask(_WorkItem):
 
                 if self.stack_id == self.tile_provider._current_stack_id \
                         and self.cache is self.tile_provider._cache:
-                    self.tile_provider.sceneRectChanged.emit( QRectF(
-                        self.tile_provider.tiling.imageRects[self.tile_nr]))
+                    self.tile_provider.sceneRectChanged.emit( tile_rect )
         except BaseException:
             sys.excepthook( *sys.exc_info() )
 

@@ -420,14 +420,7 @@ class ImageScene2D(QGraphicsScene):
             for g_item in new_items:
                 self.tile_graphicsitems[tile.id].add(g_item)
                 self.addItem(g_item)
-                
-                # For some reason, the QImage transform is special, and we can't re-use it here.
-                # The data2scene transform is correct here.
-                # I do not understand what the heck is going on with the QTransform
-                # in this class and also the Tiling class.
-                g_item.setTransform(QTransform.fromTranslate(tile.rectF.left(), tile.rectF.top()), combine=True)
-                g_item.setTransform(self.data2scene, combine=True)
-            
+
             if tile.progress < 1.0:
                 allComplete = False
             if self._showTileProgress:
