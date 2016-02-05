@@ -10,14 +10,61 @@ except ImportError:
     _pandas_available = False
     warnings.warn("pandas not available. edge_coords functions will be slower.")
 
+def edge_ids( label_img, axes=None ):
+    """
+    Find all edges in the given label volume and return the edge ids
+    (u,v) where u and v are segment ids.  For all ids (u,v), u < v.
+    """
+    if axes is None:
+        axes = range(label_img.ndim)
+
+    all_edge_ids = []
+
+    for axis in axes:
+        if axis < 0:
+            axis += label_img.ndim
+        assert label_img.ndim > axis
+        if label_img.shape[axis] == 1:
+            continue
+
+        up_slicing = ((slice(None),) * axis) + (np.s_[:-1],)
+        down_slicing = ((slice(None),) * axis) + (np.s_[1:],)
+
+        edge_mask = (label_img[up_slicing] != label_img[down_slicing])
+        num_edges = np.count_nonzero(edge_mask)
+        edge_ids = np.ndarray(shape=(num_edges, 2), dtype=np.uint32 )
+        edge_ids[:, 0] = label_img[up_slicing][edge_mask]
+        edge_ids[:, 1] = label_img[down_slicing][edge_mask]
+        edge_ids.sort(axis=1)
+        all_edge_ids.append(edge_ids)
+
+    if _pandas_available:
+        all_dfs = []
+        for edge_ids in all_edge_ids:
+            df = pd.DataFrame({'id1' : edge_ids[:,0],
+                               'id2' : edge_ids[:,1]})
+            df.drop_duplicates(inplace=True)
+            all_dfs.append( df )
+
+        combined_df = pd.concat(all_dfs)
+        combined_df.drop_duplicates(inplace=True)
+        return list(combined_df[['id1', 'id2']].itertuples(index=False))
+    else:
+        unique_edge_ids = set()
+        for edge_ids in all_edge_ids:
+            unique_edge_ids.update( map(tuple, edge_ids) )
+        return set(map(tuple, unique_edge_ids))
+
 def edge_coords_along_axis( label_img, axis ):
     """
-    Find the edges between label segments along a particular axis, e.g. if axis=-1
+    Find the edges between label segments along a particular axis
     Return all edges as keys in a dict, along with the list of coordinates that belong to the edge.
     
     Returns a dict of edges -> coordinate lists
     That is: { (id1, id2) : [coord, coord, coord, coord...] }
     
+    For all edge ids (id1, id2), id1 < id2.
+
     Where:
         - id1 is always less than id2
         - for each 'coord', len(coord) == label_img.ndim
@@ -93,8 +140,12 @@ if __name__ == "__main__":
 
     from lazyflow.utility import Timer
     with Timer() as timer:
-        edge_coords_nd(watershed)
+        #ec = edge_coords_nd(watershed)
+        ids = edge_ids(watershed)
     print "Time was: {}".format( timer.seconds() )
+
+    #print len(set( ec[0].keys() + ec[1].keys() + ec[2].keys() ))
+    print len(ids)
 
 #     labels_img = np.load('/Users/bergs/workspace/ilastik-meta/ilastik/seg-slice-256.npy')
 #     assert labels_img.dtype == np.uint32
