@@ -182,8 +182,8 @@ class CroppingMarkers( QGraphicsItem ):
 
         self.crop_extents_model.changed.connect( self.onExtentsChanged )
         self.crop_extents_model.colorChanged.connect( self.onColorChanged )
-        self._mouseMoveStartCornerH = -1
-        self._mouseMoveStartCornerV = -1
+
+        # keeping track which line started mouse move
         self._mouseMoveStartH = -1
         self._mouseMoveStartV = -1
         self._fractionOfDistance = 1
@@ -217,20 +217,6 @@ class CroppingMarkers( QGraphicsItem ):
     @mouseMoveStartV.setter
     def mouseMoveStartV(self, v):
         self._mouseMoveStartV = v
-
-    @property
-    def mouseMoveStartCornerH(self):
-        return self._mouseMoveStartCornerH
-    @mouseMoveStartCornerH.setter
-    def mouseMoveStartCornerH(self, h):
-        self._mouseMoveStartCornerH = h
-
-    @property
-    def mouseMoveStartCornerV(self):
-        return self._mouseMoveStartCornerV
-    @mouseMoveStartCornerV.setter
-    def mouseMoveStartCornerV(self, v):
-        self._mouseMoveStartCornerV = v
 
     def onEditableChanged(self, flag):
         self._editable = flag
@@ -268,7 +254,12 @@ class CroppingMarkers( QGraphicsItem ):
         self.crop_extents_model.set_crop_extents( crop_extents_3d )
 
     def mousePressEvent(self, event):
-
+        """
+            Moving a corner or line, in this priority order.
+            The line(s) indices that started the move are stored in:
+            self.mouseMoveStartH and
+            self.mouseMoveStartV
+        """
         if self._editable:
             position = self.scene.data2scene.map( event.scenePos() )
             width, height = self.dataShape
@@ -297,22 +288,22 @@ class CroppingMarkers( QGraphicsItem ):
             if distV0*distV0+distH0*distH0 < dist:
                 self.onCropLineMoved( "vertical", 0, positionV )
                 self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerH = 0
+                self.mouseMoveStartH = 0
                 self.mouseMoveStartCornerV = 0
             elif distV1*distV1+distH1*distH1 < dist:
                 self.onCropLineMoved( "vertical", 1, positionV )
                 self.onCropLineMoved( "horizontal", 1, positionH )
-                self.mouseMoveStartCornerH = 1
+                self.mouseMoveStartH = 1
                 self.mouseMoveStartCornerV = 1
             elif distV0*distV0+distH1*distH1 < dist:
                 self.onCropLineMoved( "vertical", 0, positionV )
                 self.onCropLineMoved( "horizontal", 1, positionH )
-                self.mouseMoveStartCornerH = 1
+                self.mouseMoveStartH = 1
                 self.mouseMoveStartCornerV = 0
             elif distV1*distV1+distH0*distH0 < dist:
                 self.onCropLineMoved( "vertical", 1, positionV )
                 self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerH = 0
+                self.mouseMoveStartH = 0
                 self.mouseMoveStartCornerV = 1
 
             # lines
@@ -338,13 +329,17 @@ class CroppingMarkers( QGraphicsItem ):
         if self._editable:
             self.mouseMoveStartH = -1
             self.mouseMoveStartV = -1
-            self.mouseMoveStartCornerH = -1
-            self.mouseMoveStartCornerV = -1
 
             # Restore the cursor to its previous state.
             QApplication.instance().restoreOverrideCursor()
 
     def mouseMoveEvent(self, event):
+        """
+        Moving a corner or line.
+        The line(s) indices that started the move are stored in:
+            self.mouseMoveStartH and
+            self.mouseMoveStartV
+        """
 
         if self._editable:
             position = self.scene.data2scene.map( event.scenePos() )
@@ -358,20 +353,20 @@ class CroppingMarkers( QGraphicsItem ):
             positionH = max( 0, positionH )
             positionH = min( height, positionH )
 
-            if self.mouseMoveStartCornerH == 0 and self.mouseMoveStartCornerV == 0:
+            if self.mouseMoveStartH == 0 and self.mouseMoveStartV == 0:
                 self.onCropLineMoved( "horizontal", 0, positionH )
                 self.onCropLineMoved( "vertical", 0, positionV )
-            elif self.mouseMoveStartCornerH == 1 and self.mouseMoveStartCornerV == 0:
+            elif self.mouseMoveStartH == 1 and self.mouseMoveStartV == 0:
                 self.onCropLineMoved( "horizontal", 1, positionH )
                 self.onCropLineMoved( "vertical", 0, positionV )
-            elif self.mouseMoveStartCornerH == 0 and self.mouseMoveStartCornerV == 1:
+            elif self.mouseMoveStartH == 0 and self.mouseMoveStartV == 1:
                 self.onCropLineMoved( "horizontal", 0, positionH )
                 self.onCropLineMoved( "vertical", 1, positionV )
-            elif self.mouseMoveStartCornerH == 1 and self.mouseMoveStartCornerV == 1:
+            elif self.mouseMoveStartH == 1 and self.mouseMoveStartV == 1:
                 self.onCropLineMoved( "horizontal", 1, positionH )
                 self.onCropLineMoved( "vertical", 1, positionV )
 
-            elif self.mouseMoveStartCornerH == -1 and self.mouseMoveStartCornerV == -1:
+            elif self.mouseMoveStartH == -1 or self.mouseMoveStartV == -1:
                 if self.mouseMoveStartH == 0:
                     self.onCropLineMoved( "horizontal", 0, positionH )
                 elif self.mouseMoveStartH == 1:
@@ -463,6 +458,7 @@ class CropLine(QGraphicsItem):
         self._position = 0
         self._line_thickness = 1
 
+        # keeping track which line started mouse move
         self._mouseMoveStartH = -1
         self._mouseMoveStartV = -1
 
@@ -561,7 +557,9 @@ class CropLine(QGraphicsItem):
             QApplication.instance().restoreOverrideCursor()
 
     def mouseMoveEvent(self, event):
-
+        """
+            Moving a line.
+        """
         if self._editable:
             new_pos = self.scene().data2scene.map( event.scenePos() )
             width, height = self._parent.dataShape
@@ -614,6 +612,9 @@ class CropLine(QGraphicsItem):
     # def mouseReleaseEvent(self, event): pass
 
     def mousePressEvent(self, event):
+        """
+            Selecting a line.
+        """
 
         if self._editable:
             new_pos = self.scene().data2scene.map( event.scenePos() )
