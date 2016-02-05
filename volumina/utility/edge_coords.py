@@ -1,5 +1,14 @@
 import numpy as np
+import warnings
 from collections import defaultdict
+from itertools import izip
+
+try:
+    _pandas_available = True
+    import pandas as pd
+except ImportError:
+    _pandas_available = False
+    warnings.warn("pandas not available. edge_coords functions will be slower.")
 
 def edge_coords_along_axis( label_img, axis ):
     """
@@ -13,8 +22,6 @@ def edge_coords_along_axis( label_img, axis ):
         - id1 is always less than id2
         - for each 'coord', len(coord) == label_img.ndim
         - the edge lies just to the RIGHT (or down, or whatever) of the coordinate
-    
-    TODO: Speed this up with either C++ or pandas.
     """
     if axis < 0:
         axis += label_img.ndim
@@ -26,23 +33,44 @@ def edge_coords_along_axis( label_img, axis ):
     down_slicing = ((slice(None),) * axis) + (np.s_[1:],)
 
     edge_mask = (label_img[up_slicing] != label_img[down_slicing])
-    up_ids = label_img[up_slicing][edge_mask]
-    down_ids = label_img[down_slicing][edge_mask]
-
-    edge_coords = np.asarray( np.nonzero(edge_mask), dtype=np.uint32 )
-    edge_coords = edge_coords.transpose()
+    
+    # Instead of using .transpose() here (which induces a copy),
+    # we use use a clever little trick: The arrays in the index
+    # tuple have a common base, and it's exactly what we want.
+    #edge_coords = np.transpose(np.nonzero(edge_mask))
+    edge_coords = np.nonzero(edge_mask)[0].base
     assert edge_coords.shape[1] == label_img.ndim
-    
-    id_pairs = np.concatenate((up_ids[None], down_ids[None]), axis=0)
-    id_pairs = id_pairs.transpose()
-    id_pairs = np.sort(id_pairs, axis=1)
-    assert id_pairs.shape[1] == 2
 
-    grouped_coords = defaultdict(list)
-    for id_pair, coords in zip(id_pairs, edge_coords):
-        grouped_coords[tuple(id_pair)].append(coords)
-    
-    return grouped_coords
+    edge_ids = np.ndarray(shape=(len(edge_coords), 2), dtype=np.uint32 )
+    edge_ids[:, 0] = label_img[up_slicing][edge_mask]
+    edge_ids[:, 1] = label_img[down_slicing][edge_mask]
+    edge_ids.sort(axis=1)
+
+    # pandas can do groupby 3x faster than pure-python,
+    # but pure-python is faster on tiny data (e.g. a couple 256*256 tiles)
+    if _pandas_available and len(edge_ids) > 10000:
+        df = pd.DataFrame({ 'id1' : edge_ids[:,0],
+                            'id2' : edge_ids[:,1],
+                            'coords' : NpIter(edge_coords) }) # This is much faster than list(edge_coords)
+        return df.groupby(['id1', 'id2'])['coords'].apply(np.asarray).to_dict()
+    else:
+        grouped_coords = defaultdict(list)
+        for id_pair, coords in izip( edge_ids, edge_coords ):
+            grouped_coords[tuple(id_pair)].append(coords)
+        return grouped_coords
+
+class NpIter(object):
+    # This class just exists because we don't want to copy edge_coords,
+    # but iter() objects don't support __len__, which pandas needs.
+    def __init__(self, a):
+        self.iter = iter(a)
+        self._len = len(a)
+
+    def __next__(self):
+        return self.iter.__next__()
+
+    def __len__(self):
+        return self._len
 
 def edge_coords_2d( label_img ):
     vertical_edge_coords = edge_coords_along_axis( label_img, 0 )
@@ -52,24 +80,25 @@ def edge_coords_2d( label_img ):
 def edge_coords_nd( label_img, axes=None ):
     if axes is None:
         axes = range(label_img.ndim)
-    
     result = []    
     for axis in axes:
         result.append( edge_coords_along_axis(label_img, axis) )
     return result
 
 if __name__ == "__main__":
-    labels_img = np.load('/Users/bergs/workspace/ilastik-meta/ilastik/seg-slice-256.npy')
-    assert labels_img.dtype == np.uint32
-    
-    vert_edges, horizontal_edges = edge_coords_nd(labels_img)
-    for id_pair, coords_list in horizontal_edges.iteritems():
-        print id_pair, ":", map(tuple, coords_list)
+    import h5py
+    watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/watershed-512.h5'
+    with h5py.File(watershed_path, 'r') as f:
+        watershed = f['watershed'][:256, :256, :256]
 
-    import zlib
-    import base64
-    buffer = np.getbuffer(labels_img)
-    compressed = zlib.compress(buffer)
-    encoded = base64.b64encode(compressed)
-    print len(encoded)
-    print encoded
+    from lazyflow.utility import Timer
+    with Timer() as timer:
+        edge_coords_nd(watershed)
+    print "Time was: {}".format( timer.seconds() )
+
+#     labels_img = np.load('/Users/bergs/workspace/ilastik-meta/ilastik/seg-slice-256.npy')
+#     assert labels_img.dtype == np.uint32
+#
+#     vert_edges, horizontal_edges = edge_coords_nd(labels_img)
+#     for id_pair, coords_list in horizontal_edges.iteritems():
+#         print id_pair, ":", coords_list
