@@ -23,7 +23,6 @@ from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
 from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
 
 import numpy
-import threading
 import os
 
 from crossHairCursor import CrossHairCursor
