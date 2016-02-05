@@ -152,8 +152,9 @@ class CroppingMarkers( QGraphicsItem ):
     PEN_THICKNESS = 1
 
     def boundingRect(self):
-        width, height = self.dataShape
-        return QRectF(0.0, 0.0, width, height)
+        # Return an empty rect to indicate 'no content'
+        # This 'item' is merely a parent node for child items
+        return QRectF()
 
     def __init__(self, scene, axis, crop_extents_model, editable=True):
 
@@ -456,9 +457,6 @@ class CroppingMarkers( QGraphicsItem ):
                     self.onCropLineMoved( "vertical", 0, positionV )
                 elif self.mouseMoveStartV == 1:
                     self.onCropLineMoved( "vertical", 1, positionV )
-
-    def paint(self, painter, option, widget=None):
-        pass
 
 @contextlib.contextmanager
 def painter_context(painter):
