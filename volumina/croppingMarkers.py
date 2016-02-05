@@ -186,7 +186,7 @@ class CroppingMarkers( QGraphicsItem ):
         self._mouseMoveStartCornerV = -1
         self._mouseMoveStartH = -1
         self._mouseMoveStartV = -1
-        self._fractionOfDistance = 3
+        self._fractionOfDistance = 1
     #be careful: QGraphicsItem has a shape() method, which
     #we cannot override, therefore we choose this name
     @property
@@ -291,118 +291,41 @@ class CroppingMarkers( QGraphicsItem ):
             distH1 = abs(positionH - posH1)
             distV = abs(posV1 - posV0)/self._fractionOfDistance
             distH = abs(posH1 - posH0)/self._fractionOfDistance
+            dist = distV*distV+distH*distH
 
-            # outside corners
-            if positionH < posH0 and positionV < posV0:
+            # corners
+            if distV0*distV0+distH0*distH0 < dist:
                 self.onCropLineMoved( "vertical", 0, positionV )
                 self.onCropLineMoved( "horizontal", 0, positionH )
                 self.mouseMoveStartCornerH = 0
                 self.mouseMoveStartCornerV = 0
-            elif positionH > posH1 and positionV > posV1:
-                self.onCropLineMoved( "horizontal", 1, positionH )
+            elif distV1*distV1+distH1*distH1 < dist:
                 self.onCropLineMoved( "vertical", 1, positionV )
+                self.onCropLineMoved( "horizontal", 1, positionH )
                 self.mouseMoveStartCornerH = 1
                 self.mouseMoveStartCornerV = 1
-            elif positionH < posH0 and positionV > posV1:
+            elif distV0*distV0+distH1*distH1 < dist:
+                self.onCropLineMoved( "vertical", 0, positionV )
+                self.onCropLineMoved( "horizontal", 1, positionH )
+                self.mouseMoveStartCornerH = 1
+                self.mouseMoveStartCornerV = 0
+            elif distV1*distV1+distH0*distH0 < dist:
                 self.onCropLineMoved( "vertical", 1, positionV )
                 self.onCropLineMoved( "horizontal", 0, positionH )
                 self.mouseMoveStartCornerH = 0
                 self.mouseMoveStartCornerV = 1
-            elif positionH > posH1 and positionV < posV0:
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.mouseMoveStartCornerH = 1
-                self.mouseMoveStartCornerV = 0
 
-            # sides ---> corners
-            elif positionH < posH0 and distV0 <= distV:
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerH = 0
-                self.mouseMoveStartCornerV = 0
-            elif positionH < posH0 and distV1 <= distV:
-                self.onCropLineMoved( "vertical", 1, positionV )
-                self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerH = 0
-                self.mouseMoveStartCornerV = 1
-            elif positionV < posV0 and distH0 <= distH:
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerV = 0
-                self.mouseMoveStartCornerH = 0
-            elif positionV < posV0 and distH1 <= distH:
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.mouseMoveStartCornerV = 0
-                self.mouseMoveStartCornerH = 1
-            elif positionH > posH1 and distV0 <= distV:
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.mouseMoveStartCornerH = 1
-                self.mouseMoveStartCornerV = 0
-            elif positionH > posH1 and distV1 <= distV:
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.onCropLineMoved( "vertical", 1, positionV )
-                self.mouseMoveStartCornerH = 1
-                self.mouseMoveStartCornerV = 1
-            elif positionV > posV1 and distH0 <= distH:
-                self.onCropLineMoved( "vertical", 1, positionV )
-                self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerV = 1
-                self.mouseMoveStartCornerH = 0
-            elif positionV > posV1 and distH1 <= distH:
-                self.onCropLineMoved( "vertical", 1, positionV )
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.mouseMoveStartCornerV = 1
-                self.mouseMoveStartCornerH = 1
-
-            # sides ---> lines
-            elif positionH < posH0:
+            # lines
+            elif distH0 < distH:
                 self.onCropLineMoved( "horizontal", 0, positionH )
                 self.mouseMoveStartH = 0
-            elif positionH > posH1:
+            elif distH1 < distH:
                 self.onCropLineMoved( "horizontal", 1, positionH )
                 self.mouseMoveStartH = 1
-            elif positionV < posV0:
+            elif distV0 < distV:
                 self.onCropLineMoved( "vertical", 0, positionV )
                 self.mouseMoveStartV = 0
-            elif positionV > posV1:
-                self.onCropLineMoved( "vertical", 1, positionV )
-                self.mouseMoveStartV = 1
-
-            # inside ---> corners
-            elif distH0 <= distH and distV0 <= distV:
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerH = 0
-                self.mouseMoveStartCornerV = 0
-            elif distH1 <= distH and distV0 <= distV:
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.mouseMoveStartCornerH = 1
-                self.mouseMoveStartCornerV = 0
-            elif distH0 <= distH and distV1 <= distV:
-                self.onCropLineMoved( "vertical", 1, positionV )
-                self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartCornerH = 0
-                self.mouseMoveStartCornerV = 1
-            elif distH1 <= distH and distV1 <= distV:
-                self.onCropLineMoved( "vertical", 1, positionV )
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.mouseMoveStartCornerH = 1
-                self.mouseMoveStartCornerV = 1
-
-            # inside ---> lines
-            elif posV0 <= positionV and positionV <= posV1 and distH >= distH0:
-                self.onCropLineMoved( "horizontal", 0, positionH )
-                self.mouseMoveStartH = 0
-            elif posV0 <= positionV and positionV <= posV1 and distH >= distH1:
-                self.onCropLineMoved( "horizontal", 1, positionH )
-                self.mouseMoveStartH = 1
-            elif posH0 <= positionH and positionH <= posH1 and distV >= distV0:
-                self.onCropLineMoved( "vertical", 0, positionV )
-                self.mouseMoveStartV = 0
-            elif posH0 <= positionH and positionH <= posH1 and distV >= distV1:
+            elif distV1 < distV:
                 self.onCropLineMoved( "vertical", 1, positionV )
                 self.mouseMoveStartV = 1
 
@@ -671,7 +594,7 @@ class CropLine(QGraphicsItem):
             elif self._direction == 'horizontal' and self.mouseMoveStartV == 1:
                 self._parent.onCropLineMoved( self._direction, self._index, positionH )
                 self._parent.onCropLineMoved( 'vertical', 1, positionV )
-            elif self._direction == 'vertical' and self.mouseMoveStartV == 0:
+            elif self._direction == 'vertical' and self.mouseMoveStartH == 0:
                 self._parent.onCropLineMoved( self._direction, self._index, positionV )
                 self._parent.onCropLineMoved( 'horizontal', 0, positionH )
             elif self._direction == 'vertical' and self.mouseMoveStartH == 1:
