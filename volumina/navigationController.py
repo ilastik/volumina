@@ -314,7 +314,6 @@ class NavigationController(QObject):
         self._endStackIndex   = 1
         self._view3d = view3d
         self._navigationEnabled = True
-
         self.axisColors = [QColor(255,0,0,255), QColor(0,255,0,255), QColor(0,0,255,255)]
 
     def moveCrosshair(self, newPos, oldPos):
@@ -420,10 +419,18 @@ class NavigationController(QObject):
         if delta == 0:
             return
         newSlice = self._model.slicingPos[axis] + delta
-        
+
+        try:
+            roi_3d = self._model.parent().cropModel.get_roi_3d()
+            minValue = roi_3d[0][axis]
+            maxValue = roi_3d[1][axis]
+        except:
+            minValue = 0
+            maxValue = self._model.volumeExtent(axis)
+
         #sanitize
-        newSlice = 0 if newSlice < 0 else newSlice
-        newSlice = self._model.volumeExtent(axis)-1 if newSlice >= self._model.volumeExtent(axis) else newSlice
+        newSlice = minValue if newSlice < minValue else newSlice
+        newSlice = maxValue-1 if newSlice >= maxValue else newSlice
 
         newPos = copy.copy(self._model.slicingPos)
         newPos[axis] = newSlice

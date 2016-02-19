@@ -22,10 +22,10 @@
 from functools import partial
 
 #PyQt
-from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
+from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize, QString
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy
+                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy, QSlider, QPushButton
 
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
@@ -133,7 +133,7 @@ class LabelButtons(QLabel):
 
 class SpinBoxImageView(QHBoxLayout):
     valueChanged = pyqtSignal(int)
-    def __init__(self, parentView, backgroundColor, foregroundColor,
+    def __init__(self, parentView, parent, backgroundColor, foregroundColor,
                  value, height, fontSize):
         QHBoxLayout.__init__(self)
         self.backgroundColor = backgroundColor
@@ -187,10 +187,28 @@ class SpinBoxImageView(QHBoxLayout):
         self.spinBox.setSuffix("/" + str(value))
 
     def on_upLabel(self):
-        self.spinBox.setValue(self.spinBox.value() + 1)
+
+        imgView = self.parent().parent().parent().parent()
+        try:
+            roi_3d = imgView._croppingMarkers.crop_extents_model.get_roi_3d()
+            maxValue = roi_3d[1][imgView.axis]
+        except:
+            maxValue = imgView.posModel.parent().dataShape[imgView.axis+1]
+
+        if self.spinBox.value() < maxValue - 1:
+            self.spinBox.setValue(self.spinBox.value() + 1)
 
     def on_downLabel(self):
-        self.spinBox.setValue(self.spinBox.value() - 1)
+
+        imgView = self.parent().parent().parent().parent()
+        try:
+            roi_3d = imgView._croppingMarkers.crop_extents_model.get_roi_3d()
+            minValue = roi_3d[0][imgView.axis]
+        except:
+            minValue = 0
+
+        if self.spinBox.value() > minValue:
+            self.spinBox.setValue(self.spinBox.value() - 1)
 
 
 def setupFrameStyle( frame ):
@@ -267,6 +285,7 @@ class ImageView2DHud(QWidget):
 
         self.axisLabel = self.createAxisLabel()
         self.sliceSelector = SpinBoxImageView(self.parent(),
+                                              self,
                                               backgroundColor,
                                               foregroundColor,
                                               value,
@@ -412,13 +431,10 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     label.setPixmap(pixmap)
 
     spinbox = DelayedSpinBox(750)
-    #spinbox.setAttribute(Qt.WA_TransparentForMouseEvents, False)
-    #spinbox.setEnabled(True)
     spinbox.setAlignment(Qt.AlignCenter)
     spinbox.setToolTip("{0} Spin Box".format(name))
     spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
     spinbox.setMaximumHeight(20)
-    #spinbox.setMaximum(999999)
     font = spinbox.font()
     font.setPixelSize(14)
     spinbox.setFont(font)
@@ -435,6 +451,7 @@ class QuadStatusBar(QHBoxLayout):
         QHBoxLayout.__init__(self, parent)
         self.setContentsMargins(0,4,0,0)
         self.setSpacing(0)
+        self.timeControlFontSize = 12
 
     def showXYCoordinates(self):
         self.zLabel.setHidden(True)
@@ -472,6 +489,7 @@ class QuadStatusBar(QHBoxLayout):
         self.addSpacing(10)
 
         self.busyIndicator = QProgressBar()
+        self.busyIndicator.setMaximumWidth(200)
         self.busyIndicator.setMaximum(0)
         self.busyIndicator.setMinimum(0)
         self.busyIndicator.setVisible(False)
@@ -490,11 +508,84 @@ class QuadStatusBar(QHBoxLayout):
 
         self.addSpacing(20)
 
-        self.timeLabel = QLabel("Time:")
+        self.timeSpinBox = DelayedSpinBox(750)
+
+        self.timeStartButton = QPushButton("Start")
+        self.addWidget(self.timeStartButton)
+        self.timeStartButton.clicked.connect(self._onTimeStartButtonClicked)
+
+        self.timeSlider = QSlider(Qt.Horizontal)
+        self.timeSlider.setMinimumWidth(10)
+        self.timeSlider.setMaximumWidth(200)
+        self.addWidget(self.timeSlider)
+        self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
+
+        self.timeEndButton = QPushButton("End")
+        self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
+        self.timeStartButton.setFixedWidth(4*self.timeControlFontSize)
+        self.addWidget(self.timeEndButton)
+        self.timeEndButton.clicked.connect(self._onTimeEndButtonClicked)
+
+        self.timeLabel = QLabel("       Time:")
         self.addWidget(self.timeLabel)
 
-        self.timeSpinBox = DelayedSpinBox(750)
+        timeControlFont = self.timeSpinBox.font()
+        if self.timeControlFontSize > timeControlFont.pointSize():
+            timeControlFont.setPixelSize(self.timeControlFontSize)
+            self.timeStartButton.setFont(timeControlFont)
+            self.timeEndButton.setFont(timeControlFont)
+            self.timeLabel.setFont(timeControlFont)
+            self.timeSpinBox.setFont(timeControlFont)
+
         self.addWidget(self.timeSpinBox)
+        self.timeSpinBox.delayedValueChanged.connect(self._onTimeSpinBoxChanged)
+
+    def _onTimeStartButtonClicked(self):
+        self.timeSpinBox.setValue(self.parent().parent().parent().editor.cropModel.get_roi_t()[0])
+
+    def _onTimeEndButtonClicked(self):
+        self.timeSpinBox.setValue(self.parent().parent().parent().editor.cropModel.get_roi_t()[1])
+
+    def _onTimeSpinBoxChanged(self):
+        editor = self.parent().parent().parent().editor
+        cropModel = editor.cropModel
+        minValueT = cropModel.get_roi_t()[0]
+        maxValueT = cropModel.get_roi_t()[1]
+
+        if cropModel.get_scroll_time_outside_crop():
+            if minValueT > self.timeSpinBox.value() or maxValueT < self.timeSpinBox.value():
+                for imgView in editor.imageViews:
+                    imgView._croppingMarkers._shading_item.set_paint_full_frame(True)
+            else:
+                for imgView in editor.imageViews:
+                    imgView._croppingMarkers._shading_item.set_paint_full_frame(False)
+            self.timeSlider.setValue(self.timeSpinBox.value())
+        else:
+            for imgView in editor.imageViews:
+                imgView._croppingMarkers._shading_item.set_paint_full_frame(False)
+            if minValueT > self.timeSpinBox.value():
+                self.timeSlider.setValue(minValueT)
+            elif maxValueT < self.timeSpinBox.value():
+                self.timeSlider.setValue(maxValueT)
+            elif minValueT <= self.timeSpinBox.value() and self.timeSpinBox.value() <= maxValueT:
+                self.timeSlider.setValue(self.timeSpinBox.value())
+
+    def _onTimeSliderChanged(self):
+        cropModel = self.parent().parent().parent().editor.cropModel
+        minValueT = cropModel.get_roi_t()[0]
+        maxValueT = cropModel.get_roi_t()[1]
+
+        if cropModel.get_scroll_time_outside_crop():
+            self.timeSpinBox.setValue(self.timeSlider.value())
+        else:
+            if minValueT > self.timeSlider.value():
+                self.timeSpinBox.setValue(minValueT)
+                self.timeSlider.setValue(minValueT)
+            elif self.timeSlider.value() > maxValueT:
+                self.timeSpinBox.setValue(maxValueT)
+                self.timeSlider.setValue(maxValueT)
+            elif minValueT <= self.timeSlider.value() and self.timeSlider.value() <= maxValueT:
+                self.timeSpinBox.setValue(self.timeSlider.value())
 
     def _handlePositionBoxValueChanged(self, axis, value):
         new_position = [self.xSpinBox.value(), self.ySpinBox.value(), self.zSpinBox.value()]
@@ -507,6 +598,19 @@ class QuadStatusBar(QHBoxLayout):
         self.xSpinBox.setMaximum(shape5D[1]-1)
         self.ySpinBox.setMaximum(shape5D[2]-1)
         self.zSpinBox.setMaximum(shape5D[3]-1)
+
+    def updateShape5Dcropped(self, shape5DcropMin, shape5Dmax):
+        self.timeSpinBox.setMaximum(shape5Dmax[0]-1)
+        self.xSpinBox.setMaximum(shape5Dmax[1]-1)
+        self.ySpinBox.setMaximum(shape5Dmax[2]-1)
+        self.zSpinBox.setMaximum(shape5Dmax[3]-1)
+        self.timeSlider.setMaximum(shape5Dmax[0]-1)
+
+        self.timeSpinBox.setValue(shape5DcropMin[0])
+        self.xSpinBox.setValue(shape5DcropMin[1])
+        self.ySpinBox.setValue(shape5DcropMin[2])
+        self.zSpinBox.setValue(shape5DcropMin[3])
+        self.timeSlider.setValue(shape5DcropMin[0])
 
     def setMouseCoords(self, x, y, z):
         self.xSpinBox.setValueWithoutSignal(x)

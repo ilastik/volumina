@@ -126,15 +126,17 @@ class VolumeEditor( QObject ):
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
-      
-        self.cropModel.set_volume_shape_3d(s[1:4])
-      
+
+        if self.cropModel._crop_extents[0][0] == None or self.cropModel.cropZero():
+            self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
+            self.cropModel.set_time_shape_cropped(0,s[0])
+
         #for 2D images, disable the slice intersection marker
         x = numpy.sum(numpy.asarray(s[1:4]) == 1) 
         self.navCtrl.indicateSliceIntersection = (x != 1)
         
         self.shapeChanged.emit()
-        
+
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
@@ -153,7 +155,7 @@ class VolumeEditor( QObject ):
         ## base components
         ##
         self.layerStack = layerStackModel
-        self.posModel = PositionModel()
+        self.posModel = PositionModel(self)
         self.brushingModel = BrushingModel()
         self.cropModel = CropExtentsModel( self )
 
@@ -266,6 +268,7 @@ class VolumeEditor( QObject ):
         imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTXC, self._sync_along ))
         imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTYC, self._sync_along ))
         imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTZC, self._sync_along ))
+
         return imagepumps
 
     def _initView3d( self ):
@@ -274,6 +277,7 @@ class VolumeEditor( QObject ):
             newPos = copy.deepcopy(self.posModel.slicingPos)
             newPos[pos] = num
             self.posModel.slicingPos = newPos
+
         view3d.changedSlice.connect(onSliceDragged)
         return view3d
 

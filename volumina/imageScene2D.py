@@ -168,7 +168,7 @@ class ImageScene2D(QGraphicsScene):
 
         """
         # TODO: this function works, but it is not elegant. There must
-        # be a simpler way to calculate the appropriate tranformation.
+        # be a simpler way to calculate the appropriate transformation.
 
         w, h = self.dataShape
         assert self._rotation in range(0, 4)

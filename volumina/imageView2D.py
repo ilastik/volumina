@@ -36,6 +36,7 @@ from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 
 class ImageView2D(QGraphicsView):
     focusChanged = pyqtSignal()
+
     """
     Shows a ImageScene2D to the user and allows for interactive
     scrolling, panning, zooming etc.
@@ -83,7 +84,6 @@ class ImageView2D(QGraphicsView):
         hud.exportButtonClicked.connect(self.exportImages)
 
         scene.axesChanged.connect(hud.setAxes)
-
 
     def __init__(self, parent, cropModel, imagescene2d):
         """
@@ -137,14 +137,14 @@ class ImageView2D(QGraphicsView):
         self._crossHairCursor = CrossHairCursor(self.scene())
         self._crossHairCursor.setZValue(99)
 
-        posModel = self.scene()._posModel
-        axis = self.scene()._along[1] - 1 # axis is 0,1,2 for X,Y,Z
-        self._sliceIntersectionMarker = SliceIntersectionMarker(self.scene(), axis, posModel)
+        self.posModel = self.scene()._posModel
+        self.axis = self.scene()._along[1] - 1 # axis is 0,1,2 for X,Y,Z
+        self._sliceIntersectionMarker = SliceIntersectionMarker(self.scene(), self.axis, self.posModel)
         self._sliceIntersectionMarker.setZValue(100)
 
         self._sliceIntersectionMarker.setVisible(True)
 
-        self._croppingMarkers = CroppingMarkers( self.scene(), axis, cropModel )
+        self._croppingMarkers = CroppingMarkers( self.scene(), self.axis, cropModel )
 
         #FIXME: this should be private, but is currently used from
         #       within the image scene renderer

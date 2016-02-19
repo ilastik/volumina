@@ -36,7 +36,7 @@ def decode_to_qstring(s, encoding=sys.getfilesystemencoding()):
     If not encoding is specified, use the same encoding as the filesystem.
     """
     # pyqt converts unicode to QString correctly.
-    assert isinstance(s, str)
+    assert isinstance(s, str) or isinstance(s, unicode)
     return QString( s.decode( encoding ) )
 
 
