@@ -50,7 +50,7 @@ _timerEater = __TimerEventEater()
 class VolumeEditorWidget(QWidget):
     def __init__( self, parent=None, editor=None ):
         super(VolumeEditorWidget, self).__init__(parent=parent)
-        
+
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setFocusPolicy(Qt.StrongFocus)
         
@@ -244,6 +244,12 @@ class VolumeEditorWidget(QWidget):
             else:
                 cropMin = (self.editor.posModel.time,self.editor.cropModel._crop_extents[0][0],self.editor.cropModel._crop_extents[1][0],self.editor.cropModel._crop_extents[2][0],0)
                 self.quadViewStatusBar.updateShape5Dcropped(cropMin,self.editor.posModel.shape5D)
+
+            timeDim = self.editor.posModel.shape5D[0]
+            if timeDim <= 1:
+                self.quadview.statusBar.hideTimeSlider(True)
+            else:
+                self.quadview.statusBar.hideTimeSlider(False)
 
             self._setupVolumeExtent()
 
