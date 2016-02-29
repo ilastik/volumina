@@ -469,10 +469,10 @@ class QuadStatusBar(QHBoxLayout):
     def setToolTipTimeButtonsCrop(self,croppingFlag=False):
         if croppingFlag==True:
             self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current crop.")
-            self.timeEndButton.setToolTip("Set the time coordinate to the beginning of the current crop.")
+            self.timeEndButton.setToolTip("Set the time coordinate to the end of the current crop.")
         else:
             self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current view.")
-            self.timeEndButton.setToolTip("Set the time coordinate to the beginning of the current view.")
+            self.timeEndButton.setToolTip("Set the time coordinate to the end of the current view.")
 
     def setToolTipTimeSliderCrop(self,croppingFlag=False):
         if croppingFlag==True:
