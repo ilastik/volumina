@@ -471,14 +471,14 @@ class QuadStatusBar(QHBoxLayout):
             self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current crop.")
             self.timeEndButton.setToolTip("Set the time coordinate to the end of the current crop.")
         else:
-            self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current view.")
-            self.timeEndButton.setToolTip("Set the time coordinate to the end of the current view.")
+            self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current dataset.")
+            self.timeEndButton.setToolTip("Set the time coordinate to the end of the current dataset.")
 
     def setToolTipTimeSliderCrop(self,croppingFlag=False):
         if croppingFlag==True:
             self.timeSlider.setToolTip("Choose the time coordinate of the current crop.")
         else:
-            self.timeSlider.setToolTip("Choose the time coordinate of the current view.")
+            self.timeSlider.setToolTip("Choose the time coordinate of the current dataset.")
 
     def createQuadViewStatusBar(self,
                                 xbackgroundColor, xforegroundColor,
@@ -536,15 +536,16 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSlider = QSlider(Qt.Horizontal)
         self.timeSlider.setMinimumWidth(10)
         self.timeSlider.setMaximumWidth(200)
-        self.timeSlider.setToolTip("Choose the time coordinate of the current view.")
+        self.setToolTipTimeSliderCrop()
         self.addWidget(self.timeSlider)
         self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
 
         self.timeEndButton = QPushButton("End")
         self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
-        self.timeEndButton.setToolTip("Set the time coordinate to the end of the current view.")
+
         self.timeStartButton.setFixedWidth(4*self.timeControlFontSize)
-        self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current view.")
+        
+        self.setToolTipTimeButtonsCrop()
         self.addWidget(self.timeEndButton)
         self.timeEndButton.clicked.connect(self._onTimeEndButtonClicked)
 
