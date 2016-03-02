@@ -50,7 +50,7 @@ _timerEater = __TimerEventEater()
 class VolumeEditorWidget(QWidget):
     def __init__( self, parent=None, editor=None ):
         super(VolumeEditorWidget, self).__init__(parent=parent)
-        
+
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setFocusPolicy(Qt.StrongFocus)
         
@@ -106,6 +106,12 @@ class VolumeEditorWidget(QWidget):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i],i)
         self.editor.navCtrl.changeTime(self.editor.cropModel._crop_times[0])
+
+        timeDim = self.editor.posModel.shape5D[0]
+        if timeDim <= 1:
+            self.quadview.statusBar.hideTimeSlider(True)
+        else:
+            self.quadview.statusBar.hideTimeSlider(False)
 
     def init(self, volumina):
         self.editor = volumina
