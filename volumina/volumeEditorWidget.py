@@ -100,6 +100,7 @@ class VolumeEditorWidget(QWidget):
         self.quadview.statusBar.timeSpinBox.setHidden(maxTime == 0)
         self.quadview.statusBar.timeSpinBox.setRange(0,maxTime)
         self.quadview.statusBar.timeSpinBox.setSuffix("/{}".format( maxTime ) )
+        self.quadview.statusBar.hideTimeSlider(maxTime == 0)
 
         cropMidPos = [(b+a)/2 for [a,b] in self.editor.cropModel._crop_extents]
         for i in range(3):
@@ -107,11 +108,6 @@ class VolumeEditorWidget(QWidget):
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i],i)
         self.editor.navCtrl.changeTime(self.editor.cropModel._crop_times[0])
 
-        timeDim = self.editor.posModel.shape5D[0]
-        if timeDim <= 1:
-            self.quadview.statusBar.hideTimeSlider(True)
-        else:
-            self.quadview.statusBar.hideTimeSlider(False)
 
     def init(self, volumina):
         self.editor = volumina
