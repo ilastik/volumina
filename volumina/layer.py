@@ -571,6 +571,10 @@ class DummyRasterItemLayer( Layer ):
         super( DummyRasterItemLayer, self ).__init__( [datasource] )
 
 class SegmentationEdgesLayer( Layer ):
+    """
+    A layer that displays segmentation edge boundaries using vector graphics.
+    (See imagesources.SegmentationEdgesItem.)
+    """
 
     DEFAULT_PEN = QPen()
     DEFAULT_PEN.setCosmetic(True)
@@ -589,6 +593,10 @@ class SegmentationEdgesLayer( Layer ):
         return self._pen_table
 
     def __init__(self, datasource, default_pen=DEFAULT_PEN):
+        """
+        datasource: A single-channel label image.
+        default_pen: The initial pen style for each edge.
+        """
         # 1-pixel offset in the right/down directions
         halo_start_delta = (0,0,0,0,0)
         halo_stop_delta = (0,1,1,1,0)
@@ -613,3 +621,35 @@ class SegmentationEdgesLayer( Layer ):
         pen = QPen(self.pen_table[id_pair])
         pen.setColor(random_color)
         self.pen_table[id_pair] = pen
+
+class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
+    """
+    Shows a set of user-labeled edges.
+    """
+    
+    labelChanged = pyqtSignal( tuple, int ) # id_pair, label_class
+    
+    def __init__(self, datasource, label_class_pens, initial_labels={}):
+        # Class 0 (no label) is the default pen
+        super(LabelableSegmentationEdgesLayer, self).__init__( datasource, default_pen=label_class_pens[0] )
+        self._label_class_pens = label_class_pens
+        self._edge_labels = defaultdict(lambda: 0, initial_labels)
+    
+    def handle_edge_clicked(self, id_pair):
+        """
+        Overridden from SegmentationEdgesLayer
+        """
+        num_classes = len(self._label_class_pens)
+        old_class = self._edge_labels[id_pair]
+        new_class = (old_label+1) % num_classes
+
+        # Update the display
+        self.pen_table[id_pair] = self._label_class_pens[new_class]
+
+        # For now, edge_labels dictionary will still contain 0-labeled edges.
+        # We could delete them, but why bother?
+        self._edge_labels[id_pair] = new_class
+        self.labelChanged.emit(id_pair, new_class)
+
+#     def update_edge_labels(self, new_edge_labels):
+        

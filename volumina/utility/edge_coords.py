@@ -134,15 +134,23 @@ def edge_coords_nd( label_img, axes=None ):
 
 if __name__ == "__main__":
     import h5py
-    watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/watershed-512.h5'
+    watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/watershed-256.h5'
+    #watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/watershed-512.h5'
     with h5py.File(watershed_path, 'r') as f:
-        watershed = f['watershed'][:256, :256, :256]
+        watershed = f['watershed'][:256, :256, :256, 0]
 
     from lazyflow.utility import Timer
     with Timer() as timer:
         #ec = edge_coords_nd(watershed)
         ids = edge_ids(watershed)
-    print "Time was: {}".format( timer.seconds() )
+    print "Python time was: {}".format( timer.seconds() )
+
+    import vigra
+    with Timer() as timer:
+        gridGraph = vigra.graphs.gridGraph(watershed.shape)
+        rag = vigra.graphs.regionAdjacencyGraph(gridGraph, watershed)
+        ids = rag.uvIds()
+    print "vigra time was: {}".format( timer.seconds() )
 
     #print len(set( ec[0].keys() + ec[1].keys() + ec[2].keys() ))
     print len(ids)
