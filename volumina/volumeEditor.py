@@ -139,7 +139,7 @@ class VolumeEditor( QObject ):
 
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
-        self.view3d.dataShape = s[1:4]
+        self.view3d.data_shape = s[1:4]
 
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
@@ -277,7 +277,9 @@ class VolumeEditor( QObject ):
         return imagepumps
 
     def _initView3d( self ):
-        view3d = OverviewScene()
+        from .view3d.pyqtgraph3d import View3D
+        view3d = View3D()
+
         def onSliceDragged(num, pos):
             newPos = copy.deepcopy(self.posModel.slicingPos)
             newPos[pos] = num

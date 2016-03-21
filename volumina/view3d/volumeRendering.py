@@ -67,7 +67,6 @@ def makeVolumeRenderingPipeline(in_volume):
     volume = vtk.vtkVolume()
     volume.SetMapper(volumeMapper)
     volume.SetProperty(volumeProperty)
-
     return dataImporter, colorFunc, volume, volumeMapper
 
 
