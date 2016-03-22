@@ -125,7 +125,7 @@ class VolumeEditor( QObject ):
         self.posModel.shape5D = s
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
-        self.view3d.data_shape = s[1:4]
+        self.view3d.shape = s[1:4]
 
         if self.cropModel._crop_extents[0][0] == None or self.cropModel.cropZero():
             self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
@@ -281,7 +281,7 @@ class VolumeEditor( QObject ):
             newPos[pos] = num
             self.posModel.slicingPos = newPos
 
-        view3d.changedSlice.connect(onSliceDragged)
+        view3d.slice_changed.connect(onSliceDragged)
         return view3d
 
     def _onLayerAdded( self, layer, row ):

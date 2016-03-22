@@ -1,0 +1,1 @@
+volumina/icons_rc.py
