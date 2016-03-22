@@ -7,70 +7,30 @@ from PyQt4.uic import loadUiType
 from pyqtgraph.opengl import GLViewWidget, MeshData, GLMeshItem, GLBoxItem
 from pyqtgraph.functions import isosurface
 
-
-mem = "__nope__"
-count = 0
-
-
-def printm(*args):
-    from sys import stdout
-    global count
-    global mem
-    if mem != args:
-        count = 0
-        stdout.write("\n")
-        for arg in args:
-            stdout.write(repr(arg))
-            stdout.write(" ")
-        stdout.write(" 00000")
-    count += 1
-    mem = args
-    stdout.write("\b\b\b\b\b\b {: 5}".format(count))
-    stdout.flush()
-
-
-def printm(*args):
-    print args
-
-
-class Printer(object):
-            def __str__(self):
-                return "<Printer {}>".format(self.name)
-
-            def __repr__(self):
-                return self.__str__()
-
-            def __init__(self, name):
-                self.name = name
-
-            def __getattr__(self, item):
-                name = "{}.{}".format(self, item)
-                printm("get", name)
-                return Printer(name)
-
-            def __getitem__(self, item):
-                name = "{}[{}]".format(self, repr(item))
-                printm(name)
-                return Printer(name)
-
-            def __call__(self, *args, **kwargs):
-                argn = ",".join(str(i) for i in args)
-                kwargn = ",".join("{}={}".format(*i) for i in kwargs.items())
-                name = "{}({})".format(self, argn, kwargn)
-                printm(name)
-                return Printer(name)
+from numpy import all as npall
 
 
 def labeling_to_mesh(labeling):
-    verts, faces = isosurface(labeling, level=0.5)
-    mesh = MeshData(verts, faces)
-    item = GLMeshItem(meshdata=mesh)
+    from datetime import datetime
+    from sys import stdout
+
+    start = datetime.now()
+    print "generate mesh... ",
+    stdout.flush()
+
+    vertices, faces = isosurface(labeling, level=0.5)
+    mesh = MeshData(vertices, faces)
+    color = [255, 0, 255, 255]
+    item = GLMeshItem(meshdata=mesh, color=color, smooth=True,
+                      shader="viewNormalColor")
+    print "{}s".format((datetime.now() - start).total_seconds())
     return item
 
 
 class View3D(QWidget):
     slice_changed = pyqtSignal(int, int)
-    reinitialized = pyqtSignal()
+    reinitialized = pyqtSignal()  # TODO: this is stupid
+    dock_status_changed = pyqtSignal(bool)
 
     def __init__(self, *args, **kwargs):
         super(QWidget, self).__init__(*args, **kwargs)
@@ -85,18 +45,23 @@ class View3D(QWidget):
 
     @staticmethod
     def _adjust_coords(x, y, z):
-        return -x, -z, -y
+        return z, y, x
 
-    def change_slice(self, slice_):
-        self._view.set_slice(*self._adjust_coords(*slice_))
+    @property
+    def shape(self):
+        return self._adjust_coords(*self._view.shape)
 
-    def __hasattr__(self, item):
-        printm("hasattr", item)
-        return GLViewWidget.__hasattr__(self, item)
+    @shape.setter
+    def shape(self, shape):
+        self._view.shape = self._adjust_coords(*shape)
 
-    def add_object(self, obj):
-        item = labeling_to_mesh(obj)
-        self._view.addItem(item)
+    @property
+    def slice(self):
+        return self._adjust_coords(*self._view.slice)
+
+    @slice.setter
+    def slice(self, slice_):
+        self._view.slice = self._adjust_coords(*slice_)
 
     @pyqtSlot(bool, name="on_toggle_slice_x_clicked")
     @pyqtSlot(bool, name="on_toggle_slice_y_clicked")
@@ -105,22 +70,11 @@ class View3D(QWidget):
         sender = self.sender()
         self._view.toggle_slice(str(sender.objectName()[-1]), down)
 
-    @property
-    def data_shape(self):
-        return self._view.shape
-
-    @data_shape.setter
-    def data_shape(self, shape):
-        self._view.shape = self._adjust_coords(*shape)
-
-    def add_volume(self, *args):
-        pass
+    @pyqtSlot(bool, name="on_dock_clicked")
+    def _on_dock_status_changed(self, status):
+        self.dock_status_changed.emit(status)
 
     # TODO: compatibility, remove
-    changedSlice = slice_changed
-    ChangeSlice = change_slice
-    AddVolume = add_volume
-
     @property
     def qvtk(self):
         return self
@@ -129,32 +83,35 @@ class View3D(QWidget):
     def renderer(self):
         return self
 
-    @property
-    def bUndock(self):
-        return self._ui.dock
+    def update(self):
+        super(View3D, self).update()
 
-    @property
-    def dataShape(self):
-        print("dataShape")
-        raise "FUCK YOU"
+    def set_volume(self, volume):
+        if npall(volume == 0):
+            self._view.toggle_mesh(False)
+        else:
+            item = labeling_to_mesh(volume)
+            self._view.set_mesh(item)
+
+    def toggle_volume(self, show):
+        self._view.toggle_mesh(show)
 
 
 class Slices(object):
-    BOX_COLOR = [0, 0, 0, 255]
-    AXIS_COLORS = ([255, 0, 0, 255],
-                   [0, 0, 255, 255],
-                   [0, 255, 0, 255])
+    BOX_COLORS = ([0, 0, 255, 255],
+                  [0, 255, 0, 255],
+                  [255, 0, 0, 255])
 
     def __init__(self, view):
         self._slices = [GLBoxItem() for _ in "xyz"]
         self._axes = [GLBoxItem() for _ in "xyz"]
         self._pos = [0, 0, 0]
-        for slice_ in self._slices:
+        for slice_, color in zip(self._slices, self.BOX_COLORS):
             slice_.setSize(0, 0, 0)
-            slice_.setColor(self.BOX_COLOR)  # black rgba
-        for axis, color in zip(self._axes, self.AXIS_COLORS):
+            slice_.setColor(color)
+        for axis in self._axes:
             axis.setSize(0, 0, 0)
-            axis.setColor(color)
+            axis.setColor([0, 0, 0, 255])
         self._x, self._y, self._z = self._slices
         self._xx, self._yy, self._zz = self._axes
         [view.addItem(item) for item in self]
@@ -199,13 +156,26 @@ class GLView(GLViewWidget):
         GLViewWidget.__init__(self, parent)
         self.setBackgroundColor([255, 255, 255])
         self._shape = (1, 1, 1)
-        self._slices = Slices(self)
+        self._slice = None
+        self._slice_planes = Slices(self)
+        self._mesh = None
 
-    def toggle_slice(self, axis, visible):
-        self._slices.toggle(axis, visible)
+    def set_mesh(self, mesh):
+        if self._mesh is not None:
+            self.removeItem(self._mesh)
+        self._mesh = mesh
+        self.addItem(mesh)
 
-    def set_slice(self, x, y, z):
-        self._slices.move_to(x, y, z)
+    def toggle_mesh(self, show):
+        self._mesh.setVisible(show)
+
+    @property
+    def slice(self):
+        return self._slice
+
+    @slice.setter
+    def slice(self, slice_):
+        self._slice_planes.move_to(*slice_)
 
     @property
     def shape(self):
@@ -213,16 +183,16 @@ class GLView(GLViewWidget):
 
     @shape.setter
     def shape(self, shape):
-        print "Shape", shape
         x, y, z = self._shape
         self.pan(-x / 2, -y / 2, -z / 2)
 
         self._shape = shape
         x, y, z = shape
 
-        self._slices.set_shape(x, y, z)
+        self._slice_planes.set_shape(x, y, z)
 
         self.pan(x / 2, y / 2, z / 2)
-        self.setCameraPosition(distance=-1.5 * min(x, y, z))
+        self.setCameraPosition(distance=1.5 * max(x, y, z))
 
-    # TODO: compatibility, remove
+    def toggle_slice(self, axis, visible):
+        self._slice_planes.toggle(axis, visible)

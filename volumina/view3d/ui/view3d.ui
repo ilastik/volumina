@@ -16,8 +16,15 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="0">
     <widget class="QToolButton" name="toggle_slice_x">
+     <property name="toolTip">
+      <string>Show x slicing plane</string>
+     </property>
      <property name="text">
       <string>x</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../icons.qrc">
+       <normaloff>:/icons/icons/x-axis.png</normaloff>:/icons/icons/x-axis.png</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -29,8 +36,19 @@
    </item>
    <item row="1" column="4">
     <widget class="QToolButton" name="dock">
+     <property name="toolTip">
+      <string>Dock/undock this view</string>
+     </property>
      <property name="text">
       <string>-&gt;</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../icons.qrc">
+       <normaloff>:/icons/icons/arrow_up.png</normaloff>
+       <activeoff>:/icons/icons/arrow_down.png</activeoff>
+       <activeon>:/icons/icons/arrow_down.png</activeon>
+       <selectedoff>:/icons/icons/arrow_down.png</selectedoff>
+       <selectedon>:/icons/icons/arrow_down.png</selectedon>:/icons/icons/arrow_up.png</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -39,8 +57,15 @@
    </item>
    <item row="1" column="2">
     <widget class="QToolButton" name="toggle_slice_z">
+     <property name="toolTip">
+      <string>Show z slicing plane</string>
+     </property>
      <property name="text">
       <string>z</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../icons.qrc">
+       <normaloff>:/icons/icons/z-axis.png</normaloff>:/icons/icons/z-axis.png</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -52,8 +77,15 @@
    </item>
    <item row="1" column="1">
     <widget class="QToolButton" name="toggle_slice_y">
+     <property name="toolTip">
+      <string>Show y slicing plane</string>
+     </property>
      <property name="text">
       <string>y</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../icons.qrc">
+       <normaloff>:/icons/icons/y-axis.png</normaloff>:/icons/icons/y-axis.png</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -65,8 +97,15 @@
    </item>
    <item row="1" column="3">
     <widget class="QToolButton" name="anaglyph">
+     <property name="toolTip">
+      <string>Show in anaglyph 3D</string>
+     </property>
      <property name="text">
       <string>B</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../icons.qrc">
+       <normaloff>:/icons/icons/3d_glasses.png</normaloff>:/icons/icons/3d_glasses.png</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -98,6 +137,8 @@
    <header location="global">volumina.view3d.pyqtgraph3d</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../../icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

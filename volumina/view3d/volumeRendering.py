@@ -106,6 +106,7 @@ class RenderingManager(object):
         self.labelmgr = LabelManager(NOBJECTS)
         self.ready = False
         self._cmap = {}
+        self._dirty = False
 
         def _handle_scene_init():
             self.setup( self._overview_scene.dataShape )
@@ -115,23 +116,26 @@ class RenderingManager(object):
     def setup(self, shape):
         shape = shape[::-1]
         self._volume = numpy.zeros(shape, dtype=numpy.uint8)
-        dataImporter, colorFunc, volume, volumeMapper = makeVolumeRenderingPipeline(self._volume)
-        self._overview_scene.qvtk.renderer.AddVolume(volume)
-        self._mapper = volumeMapper
-        self._volumeRendering = volume
-        self._dataImporter = dataImporter
-        self._colorFunc = colorFunc
+        #dataImporter, colorFunc, volume, volumeMapper = makeVolumeRenderingPipeline(self._volume)
+        #self._overview_scene.set_volume(self._volume)
+        #self._mapper = volumeMapper
+        #self._volumeRendering = volume
+        #self._dataImporter = dataImporter
+        #self._colorFunc = colorFunc
         self.ready = True
 
     def update(self):
         assert threading.current_thread().name == 'MainThread', \
             "RenderingManager.update() must be called from the main thread to avoid segfaults."
         for label, color in self._cmap.items():
-            self._colorFunc.AddRGBPoint(label, *color)
-        self._dataImporter.Modified()
-        self._volumeRendering.Update()
-        if self._overview_scene.qvtk is not None:
-            self._overview_scene.qvtk.update()
+        #    self._colorFunc.AddRGBPoint(label, *color)
+        #self._dataImporter.Modified()
+        #self._volumeRendering.Update()
+        if self._overview_scene.qvtk is not None and self._dirty:
+            #self._overview_scene.qvtk.update()
+            print "update"
+            self._overview_scene.set_volume(self._volume)
+            self._dirty = False
 
     def setColor(self, label, color):
         self._cmap[label] = color
@@ -145,7 +149,10 @@ class RenderingManager(object):
     def volume(self, value):
         # Must copy here because a reference to self._volume was stored in the pipeline (see setup())
         # store in reversed-transpose order to match the wireframe axes
-        self._volume[:] = numpy.transpose(value)
+        new_volume = numpy.transpose(value)
+        if numpy.any(new_volume != self._volume):
+            self._volume[:] = new_volume
+            self._dirty = True
 
     def addObject(self, color=None):
         label = self.labelmgr.request()
