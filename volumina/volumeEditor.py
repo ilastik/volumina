@@ -274,10 +274,8 @@ class VolumeEditor( QObject ):
         from .view3d.overview3d import Overview3D
         view3d = Overview3D()
 
-        def onSliceDragged(num, pos):
-            newPos = copy.deepcopy(self.posModel.slicingPos)
-            newPos[pos] = num
-            self.posModel.slicingPos = newPos
+        def onSliceDragged():
+            self.posModel.slicingPos = view3d.slice
 
         view3d.slice_changed.connect(onSliceDragged)
         return view3d
