@@ -14,7 +14,47 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0">
+   <item row="2" column="2">
+    <widget class="QToolButton" name="toggle_slice_z">
+     <property name="toolTip">
+      <string>Show z slicing plane</string>
+     </property>
+     <property name="text">
+      <string>z</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../icons.qrc">
+       <normaloff>:/icons/icons/z-axis.png</normaloff>:/icons/icons/z-axis.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QToolButton" name="toggle_slice_y">
+     <property name="toolTip">
+      <string>Show y slicing plane</string>
+     </property>
+     <property name="text">
+      <string>y</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../icons.qrc">
+       <normaloff>:/icons/icons/y-axis.png</normaloff>:/icons/icons/y-axis.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
     <widget class="QToolButton" name="toggle_slice_x">
      <property name="toolTip">
       <string>Show x slicing plane</string>
@@ -34,7 +74,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="4">
+   <item row="2" column="4">
     <widget class="QToolButton" name="dock">
      <property name="toolTip">
       <string>Dock/undock this view</string>
@@ -55,47 +95,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="2">
-    <widget class="QToolButton" name="toggle_slice_z">
-     <property name="toolTip">
-      <string>Show z slicing plane</string>
-     </property>
-     <property name="text">
-      <string>z</string>
-     </property>
-     <property name="icon">
-      <iconset resource="../../icons.qrc">
-       <normaloff>:/icons/icons/z-axis.png</normaloff>:/icons/icons/z-axis.png</iconset>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QToolButton" name="toggle_slice_y">
-     <property name="toolTip">
-      <string>Show y slicing plane</string>
-     </property>
-     <property name="text">
-      <string>y</string>
-     </property>
-     <property name="icon">
-      <iconset resource="../../icons.qrc">
-       <normaloff>:/icons/icons/y-axis.png</normaloff>:/icons/icons/y-axis.png</iconset>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="3">
+   <item row="2" column="3">
     <widget class="QToolButton" name="anaglyph">
      <property name="toolTip">
       <string>Show in anaglyph 3D</string>
@@ -112,7 +112,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="5">
+   <item row="2" column="5">
     <spacer name="button_spacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -127,6 +127,22 @@
    </item>
    <item row="0" column="0" colspan="6">
     <widget class="GLView" name="view"/>
+   </item>
+   <item row="1" column="0" colspan="6">
+    <widget class="QProgressBar" name="progress">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="maximum">
+      <number>0</number>
+     </property>
+     <property name="value">
+      <number>-1</number>
+     </property>
+     <property name="textVisible">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
