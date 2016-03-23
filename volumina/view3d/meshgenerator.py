@@ -4,6 +4,37 @@ from pyqtgraph.opengl import MeshData, GLMeshItem
 from PyQt4.QtCore import QThread, pyqtSignal
 
 
+def labeling_to_mesh(labeling):
+    """
+    Generate the isosurface of a labeling
+
+    :param numpy.ndarray labeling: the labeling to convert
+    :rtype: MeshData
+    """
+    vertices, faces = isosurface(labeling, level=0.5)
+    return MeshData(vertices, faces)
+
+
+def mesh_to_obj(mesh, path):
+    """
+    Write the mesh to .obj
+
+    :param MeshData mesh: the mesh to save
+    :param str path: the path for the file
+    """
+    with open(path, "w") as fout:
+        fout.write("o <placeholder>\n")
+
+        for vertex in mesh.vertexes():
+            fout.write("v {} {} {}\n".format(*vertex))
+
+        for normal in mesh.vertexNormals():
+            fout.write("vn {} {} {}\n".format(*normal))
+
+        for vertex, normal in zip(mesh.vertexes("faces"), mesh.vertexNormals("faces")):
+            fout.write("f {}//{} {}//{} {}//{}\n".format(sum(zip(vertex, normal), ())))
+
+
 class MeshGenerator(QThread):
     """
     This class wraps the mesh generation in a thread to avoid locking the ui.
@@ -32,9 +63,7 @@ class MeshGenerator(QThread):
         The labeling is converted into a mesh which is then wrapped in a GLMeshItem.
         After that the mesh_generated signal is emitted.
         """
-        vertices, faces = isosurface(self._labeling, level=0.5)
-        mesh = MeshData(vertices, faces)
-        color = [255, 0, 255, 255]
-        item = GLMeshItem(meshdata=mesh, color=color, smooth=True,
+        mesh = labeling_to_mesh(self._labeling)
+        item = GLMeshItem(meshdata=mesh, smooth=True,
                           shader="viewNormalColor")
         self.mesh_generated.emit(item)
