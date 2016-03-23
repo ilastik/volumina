@@ -48,12 +48,6 @@ from .slicingtools import SliceProjection
 import logging
 logger = logging.getLogger(__name__)
 
-useVTK = True
-try:
-    from .view3d.view3d import OverviewScene
-except:
-    logger.error( "Warning: could not import optional dependency VTK" )
-    useVTK = False
 
 #*******************************************************************************
 # V o l u m e E d i t o r                                                      *
@@ -178,7 +172,7 @@ class VolumeEditor( QObject ):
 
         self.imagepumps = self._initImagePumps()
 
-        self.view3d = self._initView3d() if useVTK else QWidget()
+        self.view3d = self._initView3d()
 
         names = ['x', 'y', 'z']
         for scene, name, pump in zip(self.imageScenes, names, self.imagepumps):
@@ -194,7 +188,7 @@ class VolumeEditor( QObject ):
         self.eventSwitch = EventSwitch(self.imageViews)
 
         # navigation control
-        v3d = self.view3d if useVTK else None
+        v3d = self.view3d
         self.navCtrl      = NavigationController(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
@@ -277,8 +271,8 @@ class VolumeEditor( QObject ):
         return imagepumps
 
     def _initView3d( self ):
-        from .view3d.pyqtgraph3d import View3D
-        view3d = View3D()
+        from .view3d.overview3d import Overview3D
+        view3d = Overview3D()
 
         def onSliceDragged(num, pos):
             newPos = copy.deepcopy(self.posModel.slicingPos)

@@ -134,7 +134,7 @@
   <customwidget>
    <class>GLView</class>
    <extends>QGraphicsView</extends>
-   <header location="global">volumina.view3d.pyqtgraph3d</header>
+   <header location="global">volumina.view3d.glview</header>
   </customwidget>
  </customwidgets>
  <resources>
