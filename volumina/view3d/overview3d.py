@@ -28,11 +28,11 @@ class Overview3D(QWidget):
         It displays the slicing planes and the labeling in 3d
 
     slots:
-        slice_changes: emitted when the user changes the slicing in the 3d view (not implemented right now)
+        slice_changed: emitted when the user changes the slicing in the 3d view
         reinitialized: probably obsolete, used to indicate to some containers that this view is ready?
         dock_status_changed: indicates that the dock button was toggled
     """
-    slice_changed = pyqtSignal(int, int)
+    slice_changed = pyqtSignal()
     reinitialized = pyqtSignal()  # TODO: this should not be necessary: remove
     dock_status_changed = pyqtSignal(bool)
 
@@ -48,26 +48,26 @@ class Overview3D(QWidget):
         self._mesh_generator_thread = None  # the thread need to be stored so it doesn't get destroyed when out of scope
 
         self.reinitialized.emit()  # TODO: this should not be necessary: remove
+        self._view.slice_changed.connect(self.slice_changed)
 
     @staticmethod
     def _adjust_axes(x, y, z):
         """
         The axes in ilastik are flipped so we need to adjust the order here.
+
+        Also round possible floats to integers as the 3d view may give back floats for the slices
         """
-        return z, y, x
+        return int(z), int(y), int(x)
 
-    @property
-    def shape(self):
-        return self._adjust_axes(*self._view.shape)
-
-    @shape.setter
-    def shape(self, shape):
+    def set_shape(self, shape):
         """
         Set the shape for the 3d view.
 
         When changed the slicing planes in the 3d view will be resized.
         """
         self._view.shape = self._adjust_axes(*shape)
+
+    shape = property(fset=set_shape)
 
     @property
     def slice(self):
