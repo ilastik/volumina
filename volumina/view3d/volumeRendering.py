@@ -131,9 +131,7 @@ class RenderingManager(object):
         #    self._colorFunc.AddRGBPoint(label, *color)
         #self._dataImporter.Modified()
         #self._volumeRendering.Update()
-        if self._overview_scene.qvtk is not None and self._dirty:
-            #self._overview_scene.qvtk.update()
-            print "update"
+        if self._dirty:
             self._overview_scene.set_volume(self._volume)
             self._dirty = False
 
