@@ -141,7 +141,7 @@ class RenderingManager(object):
     def volume(self):
         # We store the volume in reverse-transposed form, so un-transpose it when it is accessed.
         return numpy.transpose(self._volume)
-
+    count = 0
     @volume.setter
     def volume(self, value):
         # Must copy here because a reference to self._volume was stored in the pipeline (see setup())
@@ -150,6 +150,8 @@ class RenderingManager(object):
         if numpy.any(new_volume != self._volume):
             self._volume[:] = new_volume
             self._dirty = True
+            numpy.save(open("/home/nbuwen/numpy/volume_{}.npy".format(self.count), "w"), new_volume)
+            self.count += 1
 
     def addObject(self, color=None):
         label = self.labelmgr.request()

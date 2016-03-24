@@ -53,7 +53,10 @@ class SlicingPlanes(object):
         :param int y: the size of the data set in y direction
         :param int z: the size of the data set in z direction
         """
-        self._max = x - 1, y - 1, z - 1
+        x -= 1
+        y -= 1
+        z -= 1
+        self._max = x, y, z
 
         self._x.setSize(0, y, z)
         self._y.setSize(x, 0, z)
@@ -74,9 +77,6 @@ class SlicingPlanes(object):
         :param int y: the y coordinate
         :param int z: the z coordinate
         """
-        if x < 0 or y < 0 or z < 0 or x > self._max[0] or y > self._max[1] or z > self._max[2]:
-            return
-
         [item.resetTransform() for item in self]
 
         self._x.translate(x, 0, 0)
@@ -142,7 +142,12 @@ class SlicingPlanes(object):
         :param Tuple[float, float, float] coords: the x, y, z coordinates
         """
         pos = list(self._pos)
-        pos[self._selected_axis] += coords[self._selected_axis]
+        coord = pos[self._selected_axis] + int(coords[self._selected_axis])
+        if coord < 0:
+            coord = 0
+        elif coord > self._max[self._selected_axis]:
+            coord = self._max[self._selected_axis]
+        pos[self._selected_axis] = coord
         self.move_to(*pos)
 
     def has_selection(self):
