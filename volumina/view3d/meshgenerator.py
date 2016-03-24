@@ -1,4 +1,4 @@
-from skimage.measure import marching_cubes
+from skimage.measure import marching_cubes, correct_mesh_orientation
 
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
@@ -46,6 +46,7 @@ def labeling_to_mesh(labeling, labels):
         copy = labeling.copy()
         copy[copy != label] = 0
         vertices, faces = marching_cubes(copy, level=0.5)
+        faces = correct_mesh_orientation(copy, vertices, faces)
         yield label, MeshData(vertices, faces)
 
 
@@ -103,6 +104,6 @@ class MeshGenerator(QThread):
         """
         for label, mesh in labeling_to_mesh(self._labeling, self._labels):
             item = GLMeshItem(meshdata=mesh, smooth=True,
-                              shader="viewNormalColor")
+                              shader="toon")
             self.mesh_generated.emit(label, item)
         self.mesh_generated.emit(0, None)

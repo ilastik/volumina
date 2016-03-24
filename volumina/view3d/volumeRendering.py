@@ -21,57 +21,16 @@
 ###############################################################################
 from builtins import range
 from PyQt5.QtWidgets import QApplication
-import vtk
 import numpy
-import colorsys
+from colorsys import hsv_to_rgb
 # http://www.scipy.org/Cookbook/vtkVolumeRendering
-import threading
+from threading import current_thread
 
 from .meshgenerator import MeshGenerator
 
 NOBJECTS = 256
 BG_LABEL = 0
 CURRENT_LABEL = 1
-
-def makeVolumeRenderingPipeline(in_volume):
-    dataImporter = vtk.vtkImageImport()
-
-    if in_volume.dtype == numpy.uint8:
-        dataImporter.SetDataScalarTypeToUnsignedChar()
-    elif in_volume.dtype == numpy.uint16:
-        dataImporter.SetDataScalarTypeToUnsignedShort()
-    elif in_volume.dtype == numpy.int32:
-        dataImporter.SetDataScalarTypeToInt()
-    elif in_volume.dtype == numpy.int16:
-        dataImporter.SetDataScalarTypeToShort()
-    else:
-        raise RuntimeError("unknown data type %r of volume" % (in_volume.dtype,))
-
-    dataImporter.SetImportVoidPointer(in_volume, len(in_volume))
-    dataImporter.SetNumberOfScalarComponents(1)
-    extent = [0, in_volume.shape[2]-1, 0, in_volume.shape[1]-1, 0, in_volume.shape[0]-1]
-    dataImporter.SetDataExtent(*extent)
-    dataImporter.SetWholeExtent(*extent)
-
-    alphaChannelFunc = vtk.vtkPiecewiseFunction()
-    alphaChannelFunc.AddPoint(0, 0.0)
-    for i in range(1, NOBJECTS):
-        alphaChannelFunc.AddPoint(i, 1.0)
-
-    colorFunc = vtk.vtkColorTransferFunction()
-
-    volumeMapper = vtk.vtkSmartVolumeMapper()
-    volumeMapper.SetInputConnection(dataImporter.GetOutputPort())
-
-    volumeProperty = vtk.vtkVolumeProperty()
-    volumeProperty.SetColor(colorFunc)
-    volumeProperty.SetScalarOpacity(alphaChannelFunc)
-    volumeProperty.ShadeOn()
-
-    volume = vtk.vtkVolume()
-    volume.SetMapper(volumeMapper)
-    volume.SetProperty(volumeProperty)
-    return dataImporter, colorFunc, volume, volumeMapper
 
 
 class LabelManager(object):
@@ -130,7 +89,7 @@ class RenderingManager(object):
         self.ready = True
 
     def update(self):
-        assert threading.current_thread().name == 'MainThread', \
+        assert current_thread().name == 'MainThread', \
             "RenderingManager.update() must be called from the main thread to avoid segfaults."
 
         if not self._dirty:
@@ -174,10 +133,12 @@ class RenderingManager(object):
         """
         Slot for the mesh generated signal from the MeshGenerator
         """
-        assert threading.current_thread().name == 'MainThread'
+        assert current_thread().name == 'MainThread'
         if label == 0 and mesh is None:
             self._overview_scene.set_busy(False)
         else:
+            mesh.setColor(self._cmap[label] + (1,))
+            mesh.setShader("toon")
             self._overview_scene.add_object(label, mesh)
 
     def setColor(self, label, color):
@@ -201,7 +162,7 @@ class RenderingManager(object):
     def addObject(self, color=None):
         label = self.labelmgr.request()
         if color is None:
-            color = colorsys.hsv_to_rgb(numpy.random.random(), 1.0, 1.0)
+            color = hsv_to_rgb(numpy.random.random(), 1.0, 1.0)
         self.setColor(label, color)
         return label
 
