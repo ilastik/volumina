@@ -27,7 +27,11 @@ import colorsys
 # http://www.scipy.org/Cookbook/vtkVolumeRendering
 import threading
 
+from .meshgenerator import MeshGenerator
+
 NOBJECTS = 256
+BG_LABEL = 0
+CURRENT_LABEL = 1
 
 def makeVolumeRenderingPipeline(in_volume):
     dataImporter = vtk.vtkImageImport()
@@ -106,6 +110,7 @@ class RenderingManager(object):
         self.labelmgr = LabelManager(NOBJECTS)
         self.ready = False
         self._cmap = {}
+        self._mesh_thread = None
         self._dirty = False
 
         def _handle_scene_init():
@@ -127,13 +132,53 @@ class RenderingManager(object):
     def update(self):
         assert threading.current_thread().name == 'MainThread', \
             "RenderingManager.update() must be called from the main thread to avoid segfaults."
-        for label, color in self._cmap.items():
-        #    self._colorFunc.AddRGBPoint(label, *color)
-        #self._dataImporter.Modified()
-        #self._volumeRendering.Update()
-        if self._dirty:
-            self._overview_scene.set_volume(self._volume)
-            self._dirty = False
+
+        if not self._dirty:
+            return
+        self._dirty = False
+
+        # TODO: apparently there is no fixed relation between the labels and the object names in carving.
+        # TODO: Because of this the caching might not work correctly.
+        new_labels = set(numpy.unique(self._volume))
+        old_labels = self._overview_scene.visible_objects
+        try:
+            new_labels.remove(BG_LABEL)
+        except KeyError:
+            pass  # no error handling, because missing background does not matter
+
+        for label in old_labels - new_labels:
+            self._overview_scene.remove_object(label)
+
+        try:
+            old_labels.remove(CURRENT_LABEL)
+        except KeyError:
+            pass  # no error handling, because missing current label does not matter
+
+        labels_to_add = new_labels - old_labels
+        known = set(filter(self._overview_scene.has_object, labels_to_add))
+        generate = labels_to_add - known
+        try:
+            known.remove(CURRENT_LABEL)
+            generate.add(CURRENT_LABEL)
+        except KeyError:
+            pass  # no error handling, because missing current label does not matter
+
+        for label in known:
+            self._overview_scene.add_object(label)
+
+        if generate:
+            self._overview_scene.set_busy(True)
+            self._mesh_thread = MeshGenerator(self._on_mesh_generated, self._volume, generate)
+
+    def _on_mesh_generated(self, label, mesh):
+        """
+        Slot for the mesh generated signal from the MeshGenerator
+        """
+        assert threading.current_thread().name == 'MainThread'
+        if label == 0 and mesh is None:
+            self._overview_scene.set_busy(False)
+        else:
+            self._overview_scene.add_object(label, mesh)
 
     def setColor(self, label, color):
         self._cmap[label] = color
@@ -142,7 +187,7 @@ class RenderingManager(object):
     def volume(self):
         # We store the volume in reverse-transposed form, so un-transpose it when it is accessed.
         return numpy.transpose(self._volume)
-    count = 0
+
     @volume.setter
     def volume(self, value):
         # Must copy here because a reference to self._volume was stored in the pipeline (see setup())
@@ -151,8 +196,7 @@ class RenderingManager(object):
         if numpy.any(new_volume != self._volume):
             self._volume[:] = new_volume
             self._dirty = True
-            numpy.save(open("/home/nbuwen/numpy/volume_{}.npy".format(self.count), "w"), new_volume)
-            self.count += 1
+            self.update()
 
     def addObject(self, color=None):
         label = self.labelmgr.request()
@@ -168,45 +212,3 @@ class RenderingManager(object):
         self._volume[:] = 0
         self.labelmgr.free()
 
-if __name__ == "__main__":
-
-    # With almost everything else ready, its time to initialize the
-    # renderer and window, as well as creating a method for exiting
-    # the application
-    renderer = vtk.vtkRenderer()
-    renderWin = vtk.vtkRenderWindow()
-    renderWin.AddRenderer(renderer)
-    renderInteractor = vtk.vtkRenderWindowInteractor()
-    renderInteractor.SetRenderWindow(renderWin)
-    renderer.SetBackground(1, 1, 1) # white background
-    renderWin.SetSize(400, 400)
-
-    # A simple function to be called when the user decides to quit the
-    # application.
-    def exitCheck(obj, event):
-        if obj.GetEventPending() != 0:
-            obj.SetAbortRender(1)
-
-    # Tell the application to use the function as an exit check.
-    renderWin.AddObserver("AbortCheckEvent", exitCheck)
-
-    # create the rendering manager
-    mgr = RenderingManager(renderer)
-    mgr.setup((256, 256, 256))
-
-    # add some  squares
-    for x in (10, 200):
-        for y in (10, 200):
-            for z in (10, 200):
-                label = mgr.addObject()
-                mgr.volume[x:x+50, y:y+50, z:z+50] = label
-    mgr.update()
-
-    renderInteractor.Initialize()
-
-    # Because nothing will be rendered without any input, we order the
-    # first render manually before control is handed over to the
-    # main-loop.
-    renderWin.Render()
-
-    renderInteractor.Start()
