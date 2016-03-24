@@ -1,7 +1,36 @@
 from pyqtgraph.functions import isosurface
 from pyqtgraph.opengl import MeshData, GLMeshItem
+from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
 
 from PyQt4.QtCore import QThread, pyqtSignal
+
+
+ShaderProgram('toon', [
+    VertexShader("""
+        varying vec3 normal;
+
+        void main() {
+            normal = gl_Normal;
+            gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+            gl_FrontColor = gl_Color;
+            gl_BackColor = gl_Color;
+        }
+    """),
+    FragmentShader("""
+        uniform vec3 light = normalize(vec3(1.0, -1.0, -1.0));
+        varying vec3 normal;
+
+        void main() {
+            float intensity;
+
+            intensity = (dot(light, normalize(normal)) + 1) / 2;
+
+            gl_FragColor = max(round(intensity * 3), 0.3) / 3 * gl_Color / 2;
+            gl_FragColor += intensity / 2 * gl_Color;
+        }
+    """)
+])
 
 
 def labeling_to_mesh(labeling):
@@ -65,5 +94,5 @@ class MeshGenerator(QThread):
         """
         mesh = labeling_to_mesh(self._labeling)
         item = GLMeshItem(meshdata=mesh, smooth=True,
-                          shader="viewNormalColor")
+                          shader="toon")
         self.mesh_generated.emit(item)
