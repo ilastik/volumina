@@ -1,4 +1,7 @@
-from pyqtgraph.functions import isosurface
+from skimage.measure import marching_cubes
+
+from numpy import unique
+
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
 
@@ -33,15 +36,24 @@ ShaderProgram('toon', [
 ])
 
 
+colors = [
+    [1, 0, 0, 1],
+    [0, 1, 0, 1],
+    [0, 0, 1, 1],
+]
+
+
 def labeling_to_mesh(labeling):
     """
     Generate the isosurface of a labeling
 
     :param numpy.ndarray labeling: the labeling to convert
-    :rtype: MeshData
+    :rtype: Iterable[MeshData]
     """
-    vertices, faces = isosurface(labeling, level=0.5)
-    return MeshData(vertices, faces)
+    labels = list(unique(labeling))
+    for label in labels[int(labels[0] == 0):]:
+        vertices, faces = marching_cubes(labeling == label, level=0.5)
+        yield MeshData(vertices, faces, faceColors=colors[label])
 
 
 def mesh_to_obj(mesh, path):
@@ -92,7 +104,7 @@ class MeshGenerator(QThread):
         The labeling is converted into a mesh which is then wrapped in a GLMeshItem.
         After that the mesh_generated signal is emitted.
         """
-        mesh = labeling_to_mesh(self._labeling)
-        item = GLMeshItem(meshdata=mesh, smooth=True,
-                          shader="toon")
-        self.mesh_generated.emit(item)
+        for mesh in labeling_to_mesh(self._labeling):
+            item = GLMeshItem(meshdata=mesh, smooth=True,
+                              shader="viewNormalColor")
+            self.mesh_generated.emit(item)

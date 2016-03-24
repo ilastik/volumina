@@ -54,10 +54,8 @@ class Overview3D(QWidget):
     def _adjust_axes(x, y, z):
         """
         The axes in ilastik are flipped so we need to adjust the order here.
-
-        Also round possible floats to integers as the 3d view may give back floats for the slices
         """
-        return int(z), int(y), int(x)
+        return z, y, x
 
     def set_shape(self, shape):
         """
