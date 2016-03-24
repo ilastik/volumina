@@ -1,9 +1,13 @@
+from os.path import split, join
+
 from skimage.measure import marching_cubes, correct_mesh_orientation
 
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
 
 from PyQt4.QtCore import QThread, pyqtSignal
+from PyQt4.QtGui import QDialog
+from PyQt4.uic import loadUiType
 
 
 ShaderProgram('toon', [
@@ -50,15 +54,17 @@ def labeling_to_mesh(labeling, labels):
         yield label, MeshData(vertices, faces)
 
 
-def mesh_to_obj(mesh, path):
+def mesh_to_obj(mesh, path, name):
     """
     Write the mesh to .obj
 
     :param MeshData mesh: the mesh to save
     :param str path: the path for the file
+    :param str name: the name for the object
     """
+    # TODO: move objects to center
     with open(path, "w") as fout:
-        fout.write("o <placeholder>\n")
+        fout.write("o {}\n".format(name))
 
         for vertex in mesh.vertexes():
             fout.write("v {} {} {}\n".format(*vertex))
@@ -66,8 +72,8 @@ def mesh_to_obj(mesh, path):
         for normal in mesh.vertexNormals():
             fout.write("vn {} {} {}\n".format(*normal))
 
-        for vertex, normal in zip(mesh.vertexes("faces"), mesh.vertexNormals("faces")):
-            fout.write("f {}//{} {}//{} {}//{}\n".format(sum(zip(vertex, normal), ())))
+        for index in mesh.faces():
+            fout.write("f {0}//{0} {1}//{1} {2}//{2}\n".format(*(i + 1 for i in index)))
 
 
 class MeshGenerator(QThread):
@@ -107,3 +113,47 @@ class MeshGenerator(QThread):
                               shader="toon")
             self.mesh_generated.emit(label, item)
         self.mesh_generated.emit(0, None)
+
+
+class MeshGeneratorDialog(QDialog):
+    """
+    The Dialog to display the busy state when exporting .obj files
+
+    signals:
+        finished: emitted when the export is finished. Passes the generated MeshData
+    """
+    finished = pyqtSignal(object)
+
+    def __init__(self, parent=None):
+        super(MeshGeneratorDialog, self).__init__(parent)
+        form, _ = loadUiType(join(split(__file__)[0], "ui/extract.ui"))
+        self._ui = form()
+        self._ui.setupUi(self)
+
+        self._thread = None
+        self._mesh = None
+
+    def run(self, volume):
+        """
+        Start the export thread which will notify the dialog when finished.
+
+        :param numpy.ndarray volume: the volume to export
+        """
+        self._thread = MeshGenerator(self._mesh_generated, volume, [1])
+        self._thread.start()
+
+    def _mesh_generated(self, _, mesh):
+        """
+        The slot when the export is finished.
+
+        As the generator emits several times the result is
+        accumulated here to match the interface in the gui.
+        """
+        if mesh is None:
+            assert self._mesh is not None, "No mesh generated"
+            self._thread.wait()
+            self.finished.emit(self._mesh)
+            self.close()
+        else:
+            assert self._mesh is None, "Too many meshes generated"
+            self._mesh = mesh.opts["meshdata"]
