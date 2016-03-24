@@ -85,24 +85,41 @@ class Overview3D(QWidget):
         """
         self._view.slice = self._adjust_axes(*slice_)
 
-    def set_volume(self, volume):
+    def add_object(self, label, object_=None):
         """
-        Set the volume to render for the 3d view.
+        Add an object to the 3d view
 
-        Uses the volume to generate a mesh from it. The generation is moved to a separate thread.
-        While the thread is running the busy progress bar is shown on this window.
-        When the generation finished the mesh is displayed in the 3d view and the progress bar is hidden.
+        See glview.GLView.add_mesh for more details.
 
-        An empty volume will simply remove the current mesh.
-
-        :param numpy.ndarray volume: the volume containing the labels for each object and 0 for background
+        :param int label: the label to identify the object
+        :param Optional[GLMeshItem] object_: the object to add
         """
-        # noinspection PyTypeChecker
-        if np_all(volume == 0):
-            self._view.toggle_mesh(False)
-        else:
-            self._set_busy(True)
-            self._mesh_generator_thread = MeshGenerator(self._on_generator_finish, volume)
+        self._view.add_mesh(label, object_)
+
+    def remove_object(self, label):
+        """
+        Remove the object with the given label from the 3d view.
+
+        :param int label: the identifying label
+        """
+        self._view.remove_mesh(label)
+
+    def has_object(self, label):
+        """
+        Check if the object given by the label is cached
+
+        :rtype: bool
+        """
+        return self._view.is_cached(label)
+
+    @property
+    def visible_objects(self):
+        """
+        Get the label of all currently visible objects in the 3d view.
+
+        :rtype: Set[int]
+        """
+        return set(self._view.visible_meshes)
 
     @pyqtSlot(bool, name="on_toggle_slice_x_clicked")
     @pyqtSlot(bool, name="on_toggle_slice_y_clicked")
@@ -126,20 +143,11 @@ class Overview3D(QWidget):
         """
         self.dock_status_changed.emit(status)
 
-    def _set_busy(self, busy):
+    def set_busy(self, busy):
         """
-        Set the busy state for the viewer.
+        Set the busy state for this widget.
 
-        When busy the progress bar is shown.
+        Setting it to busy will show the progress bar.
+        :param bool busy: True or False for the busy state
         """
         self._progress.setVisible(busy)
-
-    def _on_generator_finish(self, mesh):
-        """
-        Slot for the mesh generator thread.
-
-        When the mesh generator finished this slot is called.
-        The busy state is cancelled and the generated mesh is send to the 3d view.
-        """
-        self._set_busy(False)
-        self._view.set_mesh(mesh)

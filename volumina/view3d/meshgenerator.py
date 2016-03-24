@@ -1,7 +1,5 @@
 from skimage.measure import marching_cubes
 
-from numpy import unique
-
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
 
@@ -36,24 +34,19 @@ ShaderProgram('toon', [
 ])
 
 
-colors = [
-    [1, 0, 0, 1],
-    [0, 1, 0, 1],
-    [0, 0, 1, 1],
-]
-
-
-def labeling_to_mesh(labeling):
+def labeling_to_mesh(labeling, labels):
     """
-    Generate the isosurface of a labeling
+    Generate the isosurface of a labeling.
 
     :param numpy.ndarray labeling: the labeling to convert
-    :rtype: Iterable[MeshData]
+    :param Iterable[int] labels: the labels to include
+    :rtype: Iterator[Tuple[int, MeshData]]
     """
-    labels = list(unique(labeling))
-    for label in labels[int(labels[0] == 0):]:
-        vertices, faces = marching_cubes(labeling == label, level=0.5)
-        yield MeshData(vertices, faces, faceColors=colors[label])
+    for label in labels:
+        copy = labeling.copy()
+        copy[copy != label] = 0
+        vertices, faces = marching_cubes(copy, level=0.5)
+        yield label, MeshData(vertices, faces)
 
 
 def mesh_to_obj(mesh, path):
@@ -81,30 +74,35 @@ class MeshGenerator(QThread):
     This class wraps the mesh generation in a thread to avoid locking the ui.
 
     signal:
-        mesh_generated: emitted when the generation finished, passed the generated mesh
+        mesh_generated: emitted when the generation finished, passes the label and generated mesh
     """
-    mesh_generated = pyqtSignal(object)
+    mesh_generated = pyqtSignal(int, object)
 
-    def __init__(self, receiver, labeling):
+    def __init__(self, receiver, labeling, labels):
         """
         Create the thread, connect the signals and start immediately
 
         :param Callable[[object], None] receiver: the slot to send the mesh to when finished
         :param numpy.ndarray labeling: the numpy array containing the labeling to convert into a mesh
+        :param Iterable[int] labels: the labels to include
         """
         super(MeshGenerator, self).__init__()
         self.mesh_generated.connect(receiver)
         self.start()
         self._labeling = labeling
+        self._labels = labels
 
     def run(self):
         """
         This does the actual mesh generation.
 
         The labeling is converted into a mesh which is then wrapped in a GLMeshItem.
-        After that the mesh_generated signal is emitted.
+        For each generated mesh the signal mesh_generated is emitted containing the label and mesh.
+
+        When finished the signal mesh_generated is emitted again with label 0 and mesh None
         """
-        for mesh in labeling_to_mesh(self._labeling):
+        for label, mesh in labeling_to_mesh(self._labeling, self._labels):
             item = GLMeshItem(meshdata=mesh, smooth=True,
                               shader="viewNormalColor")
-            self.mesh_generated.emit(item)
+            self.mesh_generated.emit(label, item)
+        self.mesh_generated.emit(0, None)

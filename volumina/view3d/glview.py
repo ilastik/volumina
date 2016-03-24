@@ -28,30 +28,56 @@ class GLView(GLViewWidget):
         self._shape = (1, 1, 1)
         self._slice_planes = SlicingPlanes(self)
         self._arrows = AxesSymbols(self)
-        self._mesh = None
 
         self._mouse_pos = None
 
-    def set_mesh(self, mesh):
-        """
-        Sets the mesh to render in this view
+        self._meshes = {}
 
-        The old mesh is remove first
-
-        :param GLMeshItem mesh: the mesh to render
+    def add_mesh(self, label, mesh=None):
         """
-        if self._mesh is not None:
-            self.removeItem(self._mesh)
-        self._mesh = mesh
-        self.addItem(mesh)
+        Add a mesh to the 3d view
 
-    def toggle_mesh(self, show):
-        """
-        Toggle the display of the mesh.
+        If the mesh is cached it is simply shown. Otherwise it needs to be provided by the
+        mesh parameter. The mesh parameter will always override the cached version if present.
 
-        :param bool show: True to show and False to hide
+        :param int label: the object's label
+        :param Optional[GLMeshItem] mesh: the mesh item to store/override
         """
-        self._mesh.setVisible(show)
+        if mesh is None:
+            self._meshes[label].show()
+        else:
+            if label in self._meshes:
+                self.removeItem(self._meshes[label])
+            self._meshes[label] = mesh
+            self.addItem(mesh)
+
+    def remove_mesh(self, label):
+        """
+        Removes the mesh by its label from the view.
+
+        It is cached so the next call to add_mesh will show it again
+
+        :param int label: the object's label
+        """
+        self._meshes[label].hide()
+
+    def is_cached(self, label):
+        """
+        Check if the given label is cached.
+
+        :param int label: the label to check
+        :rtype: bool
+        """
+        return label in self._meshes
+
+    @property
+    def visible_meshes(self):
+        """
+        Get the list of all visible meshes by label.
+
+        :rtype: List[int]
+        """
+        return [key for key, value in self._meshes.items() if value.visible()]
 
     @property
     def slice(self):
