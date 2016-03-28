@@ -91,6 +91,8 @@ class ArraySource( QObject ):
         self._array = None
 
     def dtype(self):
+        if isinstance(self._array.dtype, type):
+            return self._array.dtype
         return self._array.dtype.type
 
     def request( self, slicing ):

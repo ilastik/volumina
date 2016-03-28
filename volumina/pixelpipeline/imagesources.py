@@ -62,7 +62,7 @@ class ImageSource( QObject ):
 
     isDirty = pyqtSignal( QRect )
 
-    def __init__( self, guarantees_opaqueness = False, parent = None, direct=False ):
+    def __init__( self, name, guarantees_opaqueness = False, parent = None, direct=False ):
         ''' direct: whether this request will be computed synchronously in the GUI thread (direct=True)
                     or whether the request will be put on a worker queue to be computed in a worker thread
                     (direct=False).
@@ -70,6 +70,7 @@ class ImageSource( QObject ):
         super(ImageSource, self).__init__( parent = parent )
         self._opaque = guarantees_opaqueness
         self.direct = direct
+        self.name = name
 
     def image_type(self):
         """
@@ -120,7 +121,7 @@ class GrayscaleImageSource( ImageSource ):
     
     def __init__( self, arraySource2D, layer ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True, direct=layer.direct )
+        super(GrayscaleImageSource, self).__init__( layer.name, guarantees_opaqueness = True, direct=layer.direct )
         self._arraySource2D = arraySource2D
 
         self._layer = layer
@@ -228,7 +229,7 @@ assert issubclass(GrayscaleImageRequest, RequestABC)
 class AlphaModulatedImageSource( ImageSource ):
     def __init__( self, arraySource2D, layer ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(AlphaModulatedImageSource, self).__init__()
+        super(AlphaModulatedImageSource, self).__init__(layer.name)
         self._arraySource2D = arraySource2D
         self._layer = layer
 
@@ -320,7 +321,7 @@ class ColortableImageSource( ImageSource ):
         """ colorTable: a list of QRgba values """
 
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(ColortableImageSource, self).__init__(direct=layer.direct)
+        super(ColortableImageSource, self).__init__(layer.name, direct=layer.direct)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
 
@@ -493,7 +494,7 @@ class RGBAImageSource( ImageSource ):
         for channel in channels: 
                 assert isinstance(channel, SourceABC) , 'channel has wrong type: %s' % str(type(channel))
 
-        super(RGBAImageSource, self).__init__( guarantees_opaqueness = guarantees_opaqueness )
+        super(RGBAImageSource, self).__init__(layer.name,  guarantees_opaqueness = guarantees_opaqueness )
         self._channels = channels
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)
@@ -632,7 +633,7 @@ class DummyItemRequest(object):
 
 class DummyItemSource(ImageSource):
     def __init__( self, arraySource2D ):
-        super( DummyItemSource, self ).__init__()
+        super( DummyItemSource, self ).__init__('dummy item')
         self._arraySource2D = arraySource2D
         
     def request( self, qrect, along_through=None ):
@@ -675,7 +676,7 @@ class SegmentationEdgesItemSource(ImageSource):
         from volumina.layer import SegmentationEdgesLayer
         assert isinstance(layer, SegmentationEdgesLayer)
         
-        super( SegmentationEdgesItemSource, self ).__init__()
+        super( SegmentationEdgesItemSource, self ).__init__(layer.name)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._layer = layer
