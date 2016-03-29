@@ -189,7 +189,7 @@ class GrayscaleImageRequest( object ):
         #
         tImg = None
         if has_no_mask and _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
-            if self._normalize is None or \
+            if not self._normalize or \
                self._normalize[0] >= self._normalize[1] or \
                self._normalize == [0, 0]: #FIXME: fix volumina conventions
                 n = np.asarray([0, 255], dtype=a.dtype)
@@ -374,7 +374,7 @@ class ColortableImageRequest( object ):
         self._colorTable = colorTable
         self.direct = direct
         self._normalize = normalize
-        assert normalize is None or len(normalize) == 2
+        assert not normalize or len(normalize) == 2
 
     def wait(self):
         return self.toImage()

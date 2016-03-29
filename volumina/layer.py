@@ -287,7 +287,7 @@ class NormalizableLayer( Layer ):
     int -- lower threshold
     int -- upper threshold
     '''
-    normalizeChanged = pyqtSignal(int, int, int)
+    normalizeChanged = pyqtSignal()
 
     '''
     int -- datasource index
@@ -326,13 +326,10 @@ class NormalizableLayer( Layer ):
         if value is None:
             value = self._datasources[datasourceIdx]._bounds
             self._autoMinMax[datasourceIdx] = True
-        if value is False:
-            value = self._range[datasourceIdx]
-            self._autoMinMax[datasourceIdx] = False
         else:
             self._autoMinMax[datasourceIdx] = False
         self._normalize[datasourceIdx] = value 
-        self.normalizeChanged.emit(datasourceIdx, value[0], value[1])
+        self.normalizeChanged.emit()
 
     def __init__( self, datasources, range=None, normalize=None, direct=False ):
         """
