@@ -4,10 +4,6 @@ from PyQt4.QtGui import QWidget
 from PyQt4.QtCore import pyqtSignal, pyqtSlot
 from PyQt4.uic import loadUiType
 
-from numpy import all as np_all
-
-from .meshgenerator import MeshGenerator
-
 
 class Overview3D(QWidget):
     """
@@ -85,32 +81,40 @@ class Overview3D(QWidget):
         """
         self._view.slice = self._adjust_axes(*slice_)
 
-    def add_object(self, label, object_=None):
+    def add_object(self, name, object_=None):
         """
         Add an object to the 3d view
 
         See glview.GLView.add_mesh for more details.
 
-        :param int label: the label to identify the object
+        :param str name: the name to identify the object
         :param Optional[GLMeshItem] object_: the object to add
         """
-        self._view.add_mesh(label, object_)
+        self._view.add_mesh(name, object_)
 
-    def remove_object(self, label):
+    def remove_object(self, name):
         """
-        Remove the object with the given label from the 3d view.
+        Remove the object with the given name from the 3d view.
 
-        :param int label: the identifying label
+        :param str name: the identifying name
         """
-        self._view.remove_mesh(label)
+        self._view.remove_mesh(name)
 
-    def has_object(self, label):
+    def invalidate_object(self, name):
         """
-        Check if the object given by the label is cached
+        Remove the object with the given name fron the cache in the 3d view
+
+        :param str name: the identifying name
+        """
+        self._view.invalidate_cache(name)
+
+    def has_object(self, name):
+        """
+        Check if the object given by the name is cached
 
         :rtype: bool
         """
-        return self._view.is_cached(label)
+        return self._view.is_cached(name)
 
     @property
     def visible_objects(self):

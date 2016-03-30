@@ -28,9 +28,7 @@ from threading import current_thread
 
 from .meshgenerator import MeshGenerator
 
-NOBJECTS = 256
-BG_LABEL = 0
-CURRENT_LABEL = 1
+NO_OBJECTS = 256
 
 
 class LabelManager(object):
@@ -55,6 +53,7 @@ class LabelManager(object):
             self._used.remove(label)
             self._available.add(label)
 
+
 class RenderingManager(object):
     """Encapsulates the work of adding/removing objects to the
     rendered volume and setting their colors.
@@ -66,7 +65,7 @@ class RenderingManager(object):
     """
     def __init__(self, overview_scene):
         self._overview_scene = overview_scene
-        self.labelmgr = LabelManager(NOBJECTS)
+        self.labelmgr = LabelManager(NO_OBJECTS)
         self.ready = False
         self._cmap = {}
         self._mesh_thread = None
@@ -80,12 +79,7 @@ class RenderingManager(object):
     def setup(self, shape):
         shape = shape[::-1]
         self._volume = numpy.zeros(shape, dtype=numpy.uint8)
-        #dataImporter, colorFunc, volume, volumeMapper = makeVolumeRenderingPipeline(self._volume)
-        #self._overview_scene.set_volume(self._volume)
-        #self._mapper = volumeMapper
-        #self._volumeRendering = volume
-        #self._dataImporter = dataImporter
-        #self._colorFunc = colorFunc
+        self._mapping = {}
         self.ready = True
 
     def update(self):
@@ -96,38 +90,22 @@ class RenderingManager(object):
             return
         self._dirty = False
 
-        # TODO: apparently there is no fixed relation between the labels and the object names in carving.
-        # TODO: Because of this the caching might not work correctly.
         new_labels = set(numpy.unique(self._volume))
-        old_labels = self._overview_scene.visible_objects
-        try:
-            new_labels.remove(BG_LABEL)
-        except KeyError:
-            pass  # no error handling, because missing background does not matter
+        new_names = set(filter(None, (self._mapping.get(label) for label in new_labels)))
+        old_names = self._overview_scene.visible_objects
+        for name in old_names - new_names:
+            self._overview_scene.remove_object(name)
 
-        for label in old_labels - new_labels:
-            self._overview_scene.remove_object(label)
+        names_to_add = new_names - old_names
+        known = set(filter(self._overview_scene.has_object, names_to_add))
+        generate = set(self._mapping[name] for name in names_to_add - known)
 
-        try:
-            old_labels.remove(CURRENT_LABEL)
-        except KeyError:
-            pass  # no error handling, because missing current label does not matter
-
-        labels_to_add = new_labels - old_labels
-        known = set(filter(self._overview_scene.has_object, labels_to_add))
-        generate = labels_to_add - known
-        try:
-            known.remove(CURRENT_LABEL)
-            generate.add(CURRENT_LABEL)
-        except KeyError:
-            pass  # no error handling, because missing current label does not matter
-
-        for label in known:
-            self._overview_scene.add_object(label)
+        for name in known:
+            self._overview_scene.add_object(name)
 
         if generate:
             self._overview_scene.set_busy(True)
-            self._mesh_thread = MeshGenerator(self._on_mesh_generated, self._volume, generate)
+            self._mesh_thread = MeshGenerator(self._on_mesh_generated, self._volume, generate, self._mapping)
 
     def _on_mesh_generated(self, label, mesh):
         """
@@ -137,7 +115,7 @@ class RenderingManager(object):
         if label == 0 and mesh is None:
             self._overview_scene.set_busy(False)
         else:
-            mesh.setColor(self._cmap[label] + (1,))
+            mesh.setColor(self._cmap[self._mapping[label]] + (1,))
             mesh.setShader("toon")
             self._overview_scene.add_object(label, mesh)
 
@@ -153,9 +131,11 @@ class RenderingManager(object):
     def volume(self, value):
         # Must copy here because a reference to self._volume was stored in the pipeline (see setup())
         # store in reversed-transpose order to match the wireframe axes
-        new_volume = numpy.transpose(value)
-        if numpy.any(new_volume != self._volume):
+        new_volume, mapping = value
+        new_volume = numpy.transpose(new_volume)
+        if numpy.any(new_volume != self._volume) or mapping != self._mapping:
             self._volume[:] = new_volume
+            self._mapping = mapping
             self._dirty = True
             self.update()
 
@@ -168,6 +148,9 @@ class RenderingManager(object):
 
     def removeObject(self, label):
         self.labelmgr.free(label)
+
+    def invalidateObject(self, name):
+        self._overview_scene.invalidate_object(name)
 
     def clear(self, ):
         self._volume[:] = 0
