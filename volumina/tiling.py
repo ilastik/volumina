@@ -815,9 +815,17 @@ class TileProvider( QObject ):
         # (datasources are permitted to mark wider dirty regions than the
         # scene boundaries, but the roi outside the scene bounds is just ignored.)
         tileshape = self.tiling.sliceShape
-        datastart = (max(0, dataRect.left()), max(0, dataRect.top()))
-        datastop = (min(tileshape[0], dataRect.right()), min(tileshape[1], dataRect.bottom()))
-        dataRect = QRect( datastart[0], datastart[1], datastop[0], datastop[1] )
+
+        datastart = ( max(0, dataRect.left()),
+                      max(0, dataRect.top()) )
+
+        datastop = ( min(tileshape[0], dataRect.x() + dataRect.width()),  # Don't use right()!
+                     min(tileshape[1], dataRect.y() + dataRect.height())) # Don't use bottom()!
+
+        dataRect = QRect( datastart[0],
+                          datastart[1],
+                          datastop[0] - datastart[0],
+                          datastop[1] - datastart[1] )
         
         sceneRect = self.tiling.data2scene.mapRect(dataRect)
         if dirtyImgSrc not in self._sims.viewImageSources():
