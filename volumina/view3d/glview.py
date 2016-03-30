@@ -33,42 +33,54 @@ class GLView(GLViewWidget):
 
         self._meshes = {}
 
-    def add_mesh(self, label, mesh=None):
+    def add_mesh(self, name, mesh=None):
         """
         Add a mesh to the 3d view
 
         If the mesh is cached it is simply shown. Otherwise it needs to be provided by the
         mesh parameter. The mesh parameter will always override the cached version if present.
 
-        :param int label: the object's label
+        :param int name: the object's name
         :param Optional[GLMeshItem] mesh: the mesh item to store/override
         """
         if mesh is None:
-            self._meshes[label].show()
+            self._meshes[name].show()
         else:
-            if label in self._meshes:
-                self.removeItem(self._meshes[label])
-            self._meshes[label] = mesh
+            if name in self._meshes:
+                self.removeItem(self._meshes[name])
+            self._meshes[name] = mesh
             self.addItem(mesh)
 
-    def remove_mesh(self, label):
+    def remove_mesh(self, name):
         """
-        Removes the mesh by its label from the view.
+        Removes the mesh by its name from the view.
 
         It is cached so the next call to add_mesh will show it again
 
-        :param int label: the object's label
+        :param str name: the object's name
         """
-        self._meshes[label].hide()
+        self._meshes[name].hide()
 
-    def is_cached(self, label):
+    def is_cached(self, name):
         """
-        Check if the given label is cached.
+        Check if the given name is cached.
 
-        :param int label: the label to check
+        :param str name: the name to check
         :rtype: bool
         """
-        return label in self._meshes
+        return name in self._meshes
+
+    def invalidate_cache(self, name):
+        """
+        Remove the mesh by the given name from the cache to force an update.
+
+        Also removes the mesh from the scene.
+
+        :param str name: the name for the mesh
+        """
+        mesh = self._meshes.pop(name, None)
+        if mesh is not None:
+            self.removeItem(mesh)
 
     @property
     def visible_meshes(self):

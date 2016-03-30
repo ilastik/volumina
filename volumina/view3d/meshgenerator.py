@@ -81,37 +81,39 @@ class MeshGenerator(QThread):
     This class wraps the mesh generation in a thread to avoid locking the ui.
 
     signal:
-        mesh_generated: emitted when the generation finished, passes the label and generated mesh
+        mesh_generated: emitted when the generation finished, passes the label/name and generated mesh
     """
-    mesh_generated = pyqtSignal(int, object)
+    mesh_generated = pyqtSignal(object, object)
 
-    def __init__(self, receiver, labeling, labels):
+    def __init__(self, receiver, labeling, labels, name_mapping=None):
         """
         Create the thread, connect the signals and start immediately
 
         :param Callable[[object], None] receiver: the slot to send the mesh to when finished
         :param numpy.ndarray labeling: the numpy array containing the labeling to convert into a mesh
         :param Iterable[int] labels: the labels to include
+        :param Mapping[int, str] name_mapping: an optional mapping to rename the labels
         """
         super(MeshGenerator, self).__init__()
         self.mesh_generated.connect(receiver)
         self.start()
         self._labeling = labeling
         self._labels = labels
+        self._mapping = name_mapping or {}
 
     def run(self):
         """
         This does the actual mesh generation.
 
         The labeling is converted into a mesh which is then wrapped in a GLMeshItem.
-        For each generated mesh the signal mesh_generated is emitted containing the label and mesh.
+        For each generated mesh the signal mesh_generated is emitted containing the label/name and mesh.
 
         When finished the signal mesh_generated is emitted again with label 0 and mesh None
         """
         for label, mesh in labeling_to_mesh(self._labeling, self._labels):
             item = GLMeshItem(meshdata=mesh, smooth=True,
                               shader="toon")
-            self.mesh_generated.emit(label, item)
+            self.mesh_generated.emit(self._mapping.get(label, label), item)
         self.mesh_generated.emit(0, None)
 
 
