@@ -22,7 +22,6 @@
 from PyQt4.QtGui import QApplication
 import numpy
 from colorsys import hsv_to_rgb
-# http://www.scipy.org/Cookbook/vtkVolumeRendering
 from threading import current_thread
 
 from .meshgenerator import MeshGenerator
