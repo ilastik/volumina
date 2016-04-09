@@ -10,7 +10,7 @@ class SignalingDefaultDict( QObject ):
           which is used any time a value is updated, even for deleted items.
           When an item is deleted, the signal is emitted with the default_value.
           
-    TODO: Some dict functions are not implemented below:
+    TODO: Some dict functions are not implemented yet:
           - pop()
           - popitem()
           - setdefault()
@@ -24,18 +24,18 @@ class SignalingDefaultDict( QObject ):
         super( SignalingDefaultDict, self ).__init__(parent)
         self._dict = defaultdict(default_factory, *args, **kwargs)
         
-    def __len__(self): return len(self._dict)
-    def __getitem__(self, key): return self._dict[key]
-    def __iter__(self): return self._dict.__iter__()
-    def __contains__(self, key): return self._dict.__contains__(key)
-    def get(self, key, default=None): return self._dict.get(key, default)
-    def viewkeys(self): return self._dict.viewkeys()
-    def items(self): return self._dict.items()
-    def iteritems(self): return self._dict.iteritems()
-    def keys(self): return self._dict.keys()
-    def iterkeys(self): return self._dict.iterkeys()
-    def itervalues(self): return self._dict.itervalues()
-    def values(self): return self._dict.values()
+    def __len__(self):                 return len(self._dict)
+    def __getitem__(self, key):        return self._dict[key]
+    def __iter__(self):                return self._dict.__iter__()
+    def __contains__(self, key):       return self._dict.__contains__(key)
+    def get(self, key, default=None):  return self._dict.get(key, default)
+    def viewkeys(self):                return self._dict.viewkeys()
+    def items(self):                   return self._dict.items()
+    def iteritems(self):               return self._dict.iteritems()
+    def keys(self):                    return self._dict.keys()
+    def iterkeys(self):                return self._dict.iterkeys()
+    def itervalues(self):              return self._dict.itervalues()
+    def values(self):                  return self._dict.values()
 
     def __setitem__(self, key, value):
         if key not in self._dict or self._dict[key] != value:
