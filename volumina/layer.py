@@ -32,6 +32,7 @@ from volumina.pixelpipeline.datasources import MinMaxSource, HaloAdjustedDataSou
 from volumina.utility import decode_to_qstring, encode_from_qstring, SignalingDefaultDict
 
 from functools import partial
+from collections import defaultdict
 
 #*******************************************************************************
 # L a y e r                                                                    *
@@ -577,7 +578,7 @@ class SegmentationEdgesLayer( Layer ):
     DEFAULT_PEN.setCosmetic(True)
     DEFAULT_PEN.setCapStyle(Qt.RoundCap)
     DEFAULT_PEN.setColor(Qt.white)
-    DEFAULT_PEN.setWidth(3)
+    DEFAULT_PEN.setWidth(2)
 
     @property
     def pen_table(self):
@@ -632,13 +633,17 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
         self._label_class_pens = label_class_pens
         self._edge_labels = defaultdict(lambda: 0, initial_labels)
     
+        # Initialize the pens
+        for id_pair, label_class in self._edge_labels.items():
+            self.pen_table[id_pair] = self._label_class_pens[label_class]
+    
     def handle_edge_clicked(self, id_pair):
         """
         Overridden from SegmentationEdgesLayer
         """
         num_classes = len(self._label_class_pens)
         old_class = self._edge_labels[id_pair]
-        new_class = (old_label+1) % num_classes
+        new_class = (old_class+1) % num_classes
 
         # Update the display
         self.pen_table[id_pair] = self._label_class_pens[new_class]
