@@ -612,13 +612,15 @@ class SegmentationEdgesLayer( Layer ):
         
         id_pair: The edge that was clicked.
         """
-        # For now, simple debug functionality: change to a random color.
-        # Please verify in the viewer that edges spanning multiple tiles changed color
-        # together, even though only one of the tiles was clicked.
-        random_color = QColor( *list( numpy.random.randint(0,255,(3,)) ) )
-        pen = QPen(self.pen_table[id_pair])
-        pen.setColor(random_color)
-        self.pen_table[id_pair] = pen
+        DEBUG_BEHAVIOR = False
+        if DEBUG_BEHAVIOR:
+            # Simple debug functionality: change to a random color.
+            # Please verify in the viewer that edges spanning multiple tiles changed color
+            # together, even though only one of the tiles was clicked.
+            random_color = QColor( *list( numpy.random.randint(0,255,(3,)) ) )
+            pen = QPen(self.pen_table[id_pair])
+            pen.setColor(random_color)
+            self.pen_table[id_pair] = pen
 
 class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
     """
