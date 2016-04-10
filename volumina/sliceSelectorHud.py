@@ -483,7 +483,7 @@ class QuadStatusBar(QHBoxLayout):
         self.addSpacing(10)
 
         self.positionCheckBox = QCheckBox()
-        self.positionCheckBox.setChecked(True)
+        self.positionCheckBox.setChecked(False)
         self.positionCheckBox.setCheckable(True)
         self.positionCheckBox.setText("Position")
         self.addWidget(self.positionCheckBox)

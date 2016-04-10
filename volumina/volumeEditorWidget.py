@@ -211,6 +211,7 @@ class VolumeEditorWidget(QWidget):
         def toggleSliceIntersection(state):
             self.editor.navCtrl.indicateSliceIntersection = (state == Qt.Checked)
         self.quadview.statusBar.positionCheckBox.stateChanged.connect(toggleSliceIntersection)
+        toggleSliceIntersection( self.quadview.statusBar.positionCheckBox.checkState() )
 
         self.editor.posModel.cursorPositionChanged.connect(self._updateInfoLabels)
 

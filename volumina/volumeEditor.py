@@ -130,8 +130,9 @@ class VolumeEditor( QObject ):
         self.cropModel.set_volume_shape_3d(s[1:4])
       
         #for 2D images, disable the slice intersection marker
-        x = numpy.sum(numpy.asarray(s[1:4]) == 1) 
-        self.navCtrl.indicateSliceIntersection = (x != 1)
+        is_2D = (numpy.asarray(s[1:4]) == 1).any()
+        if is_2D:
+            self.navCtrl.indicateSliceIntersection = False
         
         self.shapeChanged.emit()
         
