@@ -22,7 +22,7 @@
 import colorsys
 import numpy
 
-from PyQt4.QtCore import Qt, QObject, pyqtSignal, QString
+from PyQt4.QtCore import Qt, QObject, pyqtSignal, QString, QTimer
 from PyQt4.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
@@ -627,15 +627,25 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
     Shows a set of user-labeled edges.
     """
     
-    labelChanged = pyqtSignal( tuple, int ) # id_pair, label_class
+    labelsChanged = pyqtSignal( dict ) # { id_pair, label_class }
     
-    def __init__(self, datasource, label_class_pens, initial_labels={}):
+    def __init__(self, datasource, label_class_pens, initial_labels={}, delay_ms=1000):
         # Class 0 (no label) is the default pen
         super(LabelableSegmentationEdgesLayer, self).__init__( datasource, default_pen=label_class_pens[0] )
+        self._delay_ms = delay_ms
         self._label_class_pens = label_class_pens
 
         # Initialize the labels and pens
         self.overwrite_edge_labels(initial_labels)
+        
+        self._buffered_updates = {}
+
+        # To avoid sending lots of single updates if the user is clicking quickly,
+        # we buffer the updates into a dict that is only sent after a brief delay.
+        self._timer = QTimer(self)
+        self._timer.setInterval(self._delay_ms)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect( self._signal_buffered_updates )
 
     def overwrite_edge_labels(self, new_edge_labels):
         self._edge_labels = defaultdict(lambda: 0, new_edge_labels)
@@ -660,7 +670,15 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
         # For now, edge_labels dictionary will still contain 0-labeled edges.
         # We could delete them, but why bother?
         self._edge_labels[id_pair] = new_class
-        self.labelChanged.emit(id_pair, new_class)
 
-#     def update_edge_labels(self, new_edge_labels):
+        # Buffer the update for listeners
+        self._buffered_updates[id_pair] = new_class
+        
+        # Reset the timer
+        self._timer.start()
+
+    def _signal_buffered_updates(self):
+        updates = self._buffered_updates
+        self._buffered_updates = {}
+        self.labelsChanged.emit( updates )
         
