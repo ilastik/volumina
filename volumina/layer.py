@@ -631,11 +631,18 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
         # Class 0 (no label) is the default pen
         super(LabelableSegmentationEdgesLayer, self).__init__( datasource, default_pen=label_class_pens[0] )
         self._label_class_pens = label_class_pens
-        self._edge_labels = defaultdict(lambda: 0, initial_labels)
-    
-        # Initialize the pens
+
+        # Initialize the labels and pens
+        self.overwrite_edge_labels(initial_labels)
+
+    def overwrite_edge_labels(self, new_edge_labels):
+        self._edge_labels = defaultdict(lambda: 0, new_edge_labels)
+
+        # Change the pens accordingly
+        pen_table = {}
         for id_pair, label_class in self._edge_labels.items():
-            self.pen_table[id_pair] = self._label_class_pens[label_class]
+            pen_table[id_pair] = self._label_class_pens[label_class]
+        self.pen_table.overwrite(pen_table)
     
     def handle_edge_clicked(self, id_pair):
         """
