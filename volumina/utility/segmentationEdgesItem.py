@@ -100,7 +100,13 @@ class SingleEdgeItem( QGraphicsPathItem ):
         self.setPath(path)
         
     def mousePressEvent(self, event):
+        event.accept()
         self.parent.handle_edge_clicked( self.id_pair )
+
+    ## Default implementation automatically already calls mousePressEvent()...
+    #def mouseDoubleClickEvent(self, event):
+    #    event.accept()
+    #    self.parent.handle_edge_clicked( self.id_pair )
         
 class defaultdict_with_key(defaultdict):
     """
@@ -118,7 +124,10 @@ if __name__ == "__main__":
 
     app = QApplication([])
 
-    labels_img = np.load('/Users/bergs/workspace/ilastik-meta/ilastik/seg-slice-256.npy')
+    import h5py
+    with h5py.File('/magnetic/data/multicut-testdata/2d/256/Superpixels.h5', 'r') as superpixels_f:
+        labels_img = superpixels_f['data'][:]
+        labels_img = labels_img[...,0] # drop channel
 
     default_pen = QPen()
     default_pen.setCosmetic(True)
@@ -130,7 +139,8 @@ if __name__ == "__main__":
     pen_table = SignalingDefaultDict(parent=None, default_factory=lambda:default_pen)
     edges_item = SegmentationEdgesItem(labels_img, pen_table)
 
-    def assign_random_color( id_pair ):
+    def assign_random_color( id_pair):
+        print "handling click..."
         pen = pen_table[id_pair]
         if pen:
             pen = QPen(pen)
