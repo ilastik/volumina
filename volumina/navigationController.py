@@ -199,6 +199,7 @@ class NavigationInterpreter(QObject):
         #before we call the context menu
         self.onMouseMove_default( imageview, event )
 
+        # If the user is clicking on an item in the scene, let it handle this event
         if len( self._itemsAt(imageview, event.pos()) ) > 0:
             return False
 
@@ -212,11 +213,13 @@ class NavigationInterpreter(QObject):
         itms = [x for x in itms if not ( \
                   isinstance(x, volumina.sliceIntersectionMarker.SliceIntersectionMarker) or \
                   isinstance(x, volumina.imageScene2D.DirtyIndicator) or \
-                  isinstance(x, volumina.crossHairCursor.CrossHairCursor) ) ]
+                  isinstance(x, volumina.crossHairCursor.CrossHairCursor) or \
+                  x is imageview.scene().dataRectItem ) ]
         return itms
 
     def onMouseDoubleClick_default( self, imageview, event ):
-        if len( self._itemsAt(imageview, event.pos()) ) == 0:
+        # If the user is clicking on an item in the scene, let it handle this event
+        if len( self._itemsAt(imageview, event.pos()) ) > 0:
             return False
 
         dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
