@@ -49,7 +49,7 @@ class SignalingDefaultDict( QObject ):
     def update(self, *other_dict, **other_kwargs):
         """
         Update the dict with the contents of the 'other' dict.
-        This will call the updated() signal several times (once per changed/added/deleted key).
+        This will call the updated() signal several times (once per changed/added key).
         """
         if other_dict:
             assert len(other_dict) == 1
@@ -75,6 +75,28 @@ class SignalingDefaultDict( QObject ):
         self._dict.clear()
         
         for key in keys:
+            self.updated.emit(key, self._dict.default_factory())
+
+    def overwrite(self, other):
+        """
+        Replace all values in self with the values from other.
+        This will call the updated() signal several times (once per changed/added/deleted key).
+        """
+        other_keys = set(other.keys())
+        original_keys = set(self._dict.keys())
+        
+        added_keys = other_keys - original_keys
+        
+        common_keys = original_keys.intersection(other_keys)
+        changed_keys = filter( lambda key: self._dict[key] != other[key], common_keys )
+        deleted_keys = original_keys - other_keys
+
+        self._dict = defaultdict(self._dict.default_factory, other)
+        
+        for key in changed_keys + list(added_keys):
+            self.updated.emit(key, self._dict[key])
+
+        for key in deleted_keys:
             self.updated.emit(key, self._dict.default_factory())
 
 if __name__ == "__main__":
