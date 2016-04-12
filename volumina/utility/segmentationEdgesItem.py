@@ -37,20 +37,13 @@ class SegmentationEdgesItem( QGraphicsObject ):
         self.edge_pen_table = edge_pen_table
         self.edge_pen_table.updated.connect( self.handle_updated_pen_table )
         
-        # Find edge coordinates.
-        # Note: 'x_axis' edges are those found when sweeping along the x axis.
-        #       That is, the line separating the two segments will be *vertical*.
-        assert label_img.ndim == 2
-        x_axis_edge_coords, y_axis_edge_coords = edge_coords_nd(label_img)
+        path_items = generate_path_items_for_labels(edge_pen_table, label_img)
+        self.set_path_items(path_items)
 
-        # Populate the path_items dict.
-        path_items = defaultdict_with_key(lambda id_pair: SingleEdgeItem(id_pair, self.edge_pen_table[id_pair], parent=self))
-        for id_pair, coords_list in x_axis_edge_coords.iteritems():
-            path_items[id_pair].add_edge_lines(coords_list, 'vertical')
-        for id_pair, coords_list in y_axis_edge_coords.iteritems():
-            path_items[id_pair].add_edge_lines(coords_list, 'horizontal')
-
+    def set_path_items(self, path_items):
         self.path_items = path_items
+        for path_item in path_items.values():
+            path_item.set_parent(self)
 
     def boundingRect(self):
         # Return an empty rect to indicate 'no content'.
@@ -66,16 +59,31 @@ class SegmentationEdgesItem( QGraphicsObject ):
         if path_item:
             path_item.setPen(pen)
 
+def generate_path_items_for_labels(edge_pen_table, label_img):
+    # Find edge coordinates.
+    # Note: 'x_axis' edges are those found when sweeping along the x axis.
+    #       That is, the line separating the two segments will be *vertical*.
+    assert label_img.ndim == 2
+    x_axis_edge_coords, y_axis_edge_coords = edge_coords_nd(label_img)
+
+    # Populate the path_items dict.
+    path_items = defaultdict_with_key(lambda id_pair: SingleEdgeItem(id_pair, edge_pen_table[id_pair]))
+    for id_pair, coords_list in x_axis_edge_coords.iteritems():
+        path_items[id_pair].add_edge_lines(coords_list, 'vertical')
+    for id_pair, coords_list in y_axis_edge_coords.iteritems():
+        path_items[id_pair].add_edge_lines(coords_list, 'horizontal')
+    
+    return path_items
+
 class SingleEdgeItem( QGraphicsPathItem ):
     """
     Represents a single edge between two superpixels.
     Must be owned by a SegmentationEdgesItem object
     """
     
-    def __init__(self, id_pair, initial_pen=None, parent=None):
-        assert isinstance(parent, SegmentationEdgesItem)
-        super( SingleEdgeItem, self ).__init__(parent)
-        self.parent = parent
+    def __init__(self, id_pair, initial_pen=None):
+        super( SingleEdgeItem, self ).__init__()
+        self.parent = None # Should be initialized with set_parent()
         self.id_pair = id_pair
 
         if not initial_pen:
@@ -102,6 +110,11 @@ class SingleEdgeItem( QGraphicsPathItem ):
     def mousePressEvent(self, event):
         event.accept()
         self.parent.handle_edge_clicked( self.id_pair )
+
+    def set_parent(self, parent):
+        assert isinstance(parent, SegmentationEdgesItem)
+        self.setParentItem(parent)
+        self.parent = parent
 
     ## Default implementation automatically already calls mousePressEvent()...
     #def mouseDoubleClickEvent(self, event):
