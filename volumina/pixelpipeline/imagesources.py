@@ -670,7 +670,7 @@ class DummyRasterItemSource(ImageSource):
         return DummyRasterRequest(qrect)
 
 
-from volumina.utility import SegmentationEdgesItem
+from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem, generate_path_items_for_labels
 class SegmentationEdgesItemSource(ImageSource):
     def __init__( self, layer, arraySource2D ):
         from volumina.layer import SegmentationEdgesLayer
@@ -703,10 +703,13 @@ class SegmentationEdgesItemRequest(object):
         # with a halo so that the QGraphicsItem can display edges on tile borders.
         #assert array_data.shape == (self.rect.width(), self.rect.height())
 
+        # Do the hard work outside the main thread: Construct the path items
+        path_items = generate_path_items_for_labels(self._layer.pen_table, array_data)
+
         def create():
             # All SegmentationEdgesItem(s) associated with this layer will share a common pen table.
             # They react immediately when the pen table is updated.
-            graphics_item = SegmentationEdgesItem(array_data, self._layer.pen_table)
+            graphics_item = SegmentationEdgesItem(path_items, self._layer.pen_table)
 
             # When the item is clicked, the layer is notified.
             graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )
@@ -714,4 +717,5 @@ class SegmentationEdgesItemRequest(object):
        
         # We're probably running in a non-main thread right now,
         # but we're only allowed to create QGraphicsItemObjects in the main thread.
+
         return execute_in_main_thread(create)

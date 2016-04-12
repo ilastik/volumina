@@ -3,7 +3,7 @@ import threading
 import logging
 
 from PyQt4.Qt import pyqtSignal
-from PyQt4.QtCore import Qt, QObject, QRectF
+from PyQt4.QtCore import Qt, QObject, QRectF, QPointF
 from PyQt4.QtGui import QApplication, QGraphicsObject, QGraphicsPathItem, QPainterPath, QPen, QColor
 
 from volumina.utility import SignalingDefaultDict, edge_coords_nd
@@ -16,10 +16,10 @@ class SegmentationEdgesItem( QGraphicsObject ):
     """
     edgeClicked = pyqtSignal( tuple ) # id_pair
     
-    def __init__(self, label_img, edge_pen_table, parent=None):
+    def __init__(self, path_items, edge_pen_table, parent=None):
         """
-        label_img: A 2D label image, whose edges will be located.
-                   Each edge will be shown as its own QGraphicsPathItem
+        path_items: A dict of { edge_id : SingleEdgeItem }
+                    Use generate_path_items_for_labels() to produce this dict.
         
         edge_pen_table: Must be of type SignalingDefaultDict, mapping from id_pair -> QPen.
                         May contain id_pair elements that are not present in the label_img.
@@ -36,8 +36,6 @@ class SegmentationEdgesItem( QGraphicsObject ):
         assert isinstance(edge_pen_table, SignalingDefaultDict)
         self.edge_pen_table = edge_pen_table
         self.edge_pen_table.updated.connect( self.handle_updated_pen_table )
-        
-        path_items = generate_path_items_for_labels(edge_pen_table, label_img)
         self.set_path_items(path_items)
 
     def set_path_items(self, path_items):
@@ -154,8 +152,9 @@ if __name__ == "__main__":
 
     # Changes to this pen table will be detected automatically in the QGraphicsItem
     pen_table = SignalingDefaultDict(parent=None, default_factory=lambda:default_pen)
-    edges_item = SegmentationEdgesItem(labels_img, pen_table)
-
+    path_items = generate_path_items_for_labels(pen_table, labels_img)
+    edges_item = SegmentationEdgesItem(path_items, pen_table)
+    
     def assign_random_color( id_pair):
         print "handling click..."
         pen = pen_table[id_pair]
