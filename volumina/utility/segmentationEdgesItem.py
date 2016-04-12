@@ -100,11 +100,15 @@ class SingleEdgeItem( QGraphicsPathItem ):
         path = QPainterPath(self.path())
         for (x,y) in coords_list: # volumina is in xyz order
             if line_orientation == 'horizontal':
-                path.moveTo(x,   y+1)
-                path.lineTo(x+1, y+1)
+                start = (x,   y+1)
+                end   = (x+1, y+1)
             else:
-                path.moveTo(x+1, y)
-                path.lineTo(x+1, y+1)
+                start = (x+1, y)
+                end   = (x+1, y+1)
+
+            if path.currentPosition() != QPointF(*start):
+                path.moveTo(*start)
+            path.lineTo(*end)
         self.setPath(path)
         
     def mousePressEvent(self, event):
