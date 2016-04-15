@@ -102,7 +102,8 @@ class RenderTask(_WorkItem):
                     layerTimestamp = self.cache.layerTimestamp(self.stack_id,
                         self.ims, self.tile_nr)
             except KeyError:
-                pass
+                # May not be a timestamp yet (especially when prefetching)
+                layerTimestamp = 0
 
             tile_rect = QRectF( self.tile_provider.tiling.imageRects[self.tile_nr] )
 
