@@ -93,18 +93,19 @@ def edge_coords_along_axis( label_img, axis ):
     edge_ids[:, 1] = label_img[down_slicing][edge_mask]
     edge_ids.sort(axis=1)
 
-    # pandas can do groupby 3x faster than pure-python,
-    # but pure-python is faster on tiny data (e.g. a couple 256*256 tiles)
-    if _pandas_available and len(edge_ids) > 10000:
-        df = pd.DataFrame({ 'id1' : edge_ids[:,0],
-                            'id2' : edge_ids[:,1],
-                            'coords' : NpIter(edge_coords) }) # This is much faster than list(edge_coords)
-        return df.groupby(['id1', 'id2'])['coords'].apply(np.asarray).to_dict()
-    else:
-        grouped_coords = defaultdict(list)
-        for id_pair, coords in izip( edge_ids, edge_coords ):
-            grouped_coords[tuple(id_pair)].append(coords)
-        return grouped_coords
+    # FIXME: This doesn't work any more...
+#     # pandas can do groupby 3x faster than pure-python,
+#     # but pure-python is faster on tiny data (e.g. a couple 256*256 tiles)
+#     if _pandas_available and len(edge_ids) > 10000:
+#         df = pd.DataFrame({ 'id1' : edge_ids[:,0],
+#                             'id2' : edge_ids[:,1],
+#                             'coords' : NpIter(edge_coords) }) # This is much faster than list(edge_coords)
+#         return df.groupby(['id1', 'id2'])['coords'].apply(np.asarray).to_dict()
+#     else:
+    grouped_coords = defaultdict(list)
+    for id_pair, coords in izip( edge_ids, edge_coords ):
+        grouped_coords[tuple(id_pair)].append(coords)
+    return grouped_coords
 
 class NpIter(object):
     # This class just exists because we don't want to copy edge_coords,
@@ -134,10 +135,13 @@ def edge_coords_nd( label_img, axes=None ):
 
 if __name__ == "__main__":
     import h5py
-    watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/watershed-256.h5'
-    #watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/watershed-512.h5'
+    #watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/watershed-256.h5'
+    watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/watershed-512.h5'
     with h5py.File(watershed_path, 'r') as f:
-        watershed = f['watershed'][:256, :256, :256, 0]
+        watershed = f['watershed'][:256, :256, :256]
+
+    n = NpIter( np.array([[10,20], [20,30], [30,40]]) )
+    print np.array(n)
 
     from lazyflow.utility import Timer
     with Timer() as timer:
