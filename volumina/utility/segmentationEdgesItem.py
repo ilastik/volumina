@@ -3,10 +3,10 @@ import threading
 import logging
 
 from PyQt4.Qt import pyqtSignal
-from PyQt4.QtCore import Qt, QObject, QRectF, QPointF
+from PyQt4.QtCore import Qt, QObject, QRectF, QPointF, QPoint
 from PyQt4.QtGui import QApplication, QGraphicsObject, QGraphicsPathItem, QPainterPath, QPen, QColor
 
-from volumina.utility import SignalingDefaultDict, edge_coords_nd
+from volumina.utility import SignalingDefaultDict, edge_coords_nd, simplify_line_segments
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class SegmentationEdgesItem( QGraphicsObject ):
         if path_item:
             path_item.setPen(pen)
 
-def generate_path_items_for_labels(edge_pen_table, label_img):
+def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tolerance=None):
     # Find edge coordinates.
     # Note: 'x_axis' edges are those found when sweeping along the x axis.
     #       That is, the line separating the two segments will be *vertical*.
@@ -65,12 +65,14 @@ def generate_path_items_for_labels(edge_pen_table, label_img):
     x_axis_edge_coords, y_axis_edge_coords = edge_coords_nd(label_img)
 
     # Populate the path_items dict.
-    path_items = defaultdict_with_key(lambda id_pair: SingleEdgeItem(id_pair, edge_pen_table[id_pair]))
-    for id_pair, coords_list in x_axis_edge_coords.iteritems():
-        path_items[id_pair].add_edge_lines(coords_list, 'vertical')
-    for id_pair, coords_list in y_axis_edge_coords.iteritems():
-        path_items[id_pair].add_edge_lines(coords_list, 'horizontal')
-    
+    path_items = {}
+    for id_pair in set(x_axis_edge_coords.keys() + y_axis_edge_coords.keys()):
+        horizontal_edge_coords = vertical_edge_coords = []
+        if id_pair in y_axis_edge_coords:
+            horizontal_edge_coords = y_axis_edge_coords[id_pair]
+        if id_pair in x_axis_edge_coords:
+            vertical_edge_coords = x_axis_edge_coords[id_pair]
+        path_items[id_pair] = SingleEdgeItem(id_pair, horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance, initial_pen=edge_pen_table[id_pair])
     return path_items
 
 class SingleEdgeItem( QGraphicsPathItem ):
@@ -79,7 +81,13 @@ class SingleEdgeItem( QGraphicsPathItem ):
     Must be owned by a SegmentationEdgesItem object
     """
     
-    def __init__(self, id_pair, initial_pen=None):
+    def __init__(self, id_pair, horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None, initial_pen=None):
+        """
+        simplify_with_tolerance: If None, no simplification.
+                                 If float, use as a tolerance constraint.
+                                 Giving 0.0 won't change the appearance of the path, but may reduce the
+                                 number of internal points it uses.
+        """
         super( SingleEdgeItem, self ).__init__()
         self.parent = None # Should be initialized with set_parent()
         self.id_pair = id_pair
@@ -93,20 +101,26 @@ class SingleEdgeItem( QGraphicsPathItem ):
 
         self.setPen(initial_pen)
     
-    def add_edge_lines(self, coords_list, line_orientation):
-        assert line_orientation in ('horizontal', 'vertical')
-        path = QPainterPath(self.path())
-        for (x,y) in coords_list: # volumina is in xyz order
-            if line_orientation == 'horizontal':
-                start = (x,   y+1)
-                end   = (x+1, y+1)
-            else:
-                start = (x+1, y)
-                end   = (x+1, y+1)
+        path = QPainterPath( self.path() )
 
-            if path.currentPosition() != QPointF(*start):
-                path.moveTo(*start)
-            path.lineTo(*end)
+        line_segments = []
+        for (x,y) in horizontal_edge_coords:
+            line_segments.append( ((x, y+1), (x+1, y+1)) )
+        for (x,y) in vertical_edge_coords:
+            line_segments.append( ((x+1, y), (x+1, y+1)) )
+
+        if simplify_with_tolerance is None:
+            for (start_point, end_point) in line_segments:
+                if QPointF(*start_point) != path.currentPosition():
+                    path.moveTo(*start_point)
+                path.lineTo(*end_point)
+        else:
+            segments = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
+            for segment in segments:
+                path.moveTo(*segment[0])
+                for end_point in segment[1:]:
+                    path.lineTo(*end_point)
+
         self.setPath(path)
         
     def mousePressEvent(self, event):
@@ -122,6 +136,14 @@ class SingleEdgeItem( QGraphicsPathItem ):
     #def mouseDoubleClickEvent(self, event):
     #    event.accept()
     #    self.parent.handle_edge_clicked( self.id_pair )
+
+def pop_matching(l, match_f):
+    for i, item in enumerate(l):
+        if match_f(item):
+            del l[i]
+            return item
+    return None
+    
         
 class defaultdict_with_key(defaultdict):
     """
@@ -134,8 +156,9 @@ class defaultdict_with_key(defaultdict):
         return ret
 
 if __name__ == "__main__":
+    import time
     import numpy as np
-    from PyQt4.QtGui import QApplication, QGraphicsView, QGraphicsScene
+    from PyQt4.QtGui import QApplication, QGraphicsView, QGraphicsScene, QTransform
 
     app = QApplication([])
 
@@ -152,7 +175,11 @@ if __name__ == "__main__":
 
     # Changes to this pen table will be detected automatically in the QGraphicsItem
     pen_table = SignalingDefaultDict(parent=None, default_factory=lambda:default_pen)
-    path_items = generate_path_items_for_labels(pen_table, labels_img)
+
+    start = time.time()
+    path_items = generate_path_items_for_labels(pen_table, labels_img, 0.5)
+    print "generate took {}".format(time.time() - start) # 52 ms
+
     edges_item = SegmentationEdgesItem(path_items, pen_table)
     
     def assign_random_color( id_pair):
@@ -170,7 +197,12 @@ if __name__ == "__main__":
     
     scene = QGraphicsScene()
     scene.addItem(edges_item)
+    
+    transform = QTransform()
+    transform.scale(5.0, 5.0)
+    
     view = QGraphicsView(scene)
+    view.setTransform(transform)
     view.show()
     view.raise_()         
     app.exec_()

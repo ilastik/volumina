@@ -704,7 +704,7 @@ class SegmentationEdgesItemRequest(object):
         #assert array_data.shape == (self.rect.width(), self.rect.height())
 
         # Do the hard work outside the main thread: Construct the path items
-        path_items = generate_path_items_for_labels(self._layer.pen_table, array_data)
+        path_items = generate_path_items_for_labels(self._layer.pen_table, array_data, None)
 
         def create():
             # All SegmentationEdgesItem(s) associated with this layer will share a common pen table.

@@ -600,7 +600,7 @@ class SegmentationEdgesLayer( Layer ):
         halo_stop_delta = (0,1,1,1,0)
         
         adjusted_datasource = HaloAdjustedDataSource(datasource, halo_start_delta, halo_stop_delta)
-        super( SegmentationEdgesLayer, self ).__init__( [adjusted_datasource] )
+        super( SegmentationEdgesLayer, self ).__init__( [adjusted_datasource], direct=True )
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
         self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
