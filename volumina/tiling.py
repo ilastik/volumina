@@ -26,6 +26,7 @@ import collections
 import threading
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
+from functools import partial
 import warnings
 
 #SciPy
@@ -42,7 +43,7 @@ from volumina.pixelpipeline.asyncabcs import IndeterminateRequestError
 from volumina.utility import log_exception
 
 from concurrent.futures.thread import ThreadPoolExecutor, _WorkItem
-from concurrent.futures import _base
+import concurrent.futures._base 
 import Queue
 
 import logging
@@ -67,109 +68,48 @@ class RenderTask(_WorkItem):
     A task object that executes requests for layer data (i.e. from ImageSource objects).
     Used by the global renderer_pool (a thread pool).
     """
-    def __init__(self, f, prefetch, timestamp,
-            tile_provider, ims, transform, tile_nr, stack_id, image_req,
-            cache):
-        super(RenderTask, self).__init__(f, self._render, [], {})
-
-        self.prefetch = prefetch
-        self.timestamp = timestamp
-
-        self.tile_provider = tile_provider
-        self.ims = ims
-        self.transform = transform
-        self.tile_nr = tile_nr
-        self.stack_id = stack_id
-        self.image_req = image_req
-        self.timestamp = timestamp
-        self.cache = cache
-
-    def _render(self, *args, **kwds):
-        """
-        Render tile.
-
-        Arguments are ignored. The function signature is preserved to
-        match the convention used in the base class.
-        """
-        # Make sure the current thread has a name that excepthooks will recognize
-        # (If this is a new thread in the threadpool, we need to set the name.)
-        if not threading.current_thread().name.startswith("TileProvider"):
-            threading.current_thread().name = "TileProvider-" + str( threading.current_thread().ident )
-        
-        try:
-            try:
-                with self.cache:
-                    layerTimestamp = self.cache.layerTimestamp(self.stack_id,
-                        self.ims, self.tile_nr)
-            except KeyError:
-                # May not be a timestamp yet (especially when prefetching)
-                layerTimestamp = 0
-
-            tile_rect = QRectF( self.tile_provider.tiling.imageRects[self.tile_nr] )
-
-            if self.timestamp > layerTimestamp:
-                img = self.image_req.wait()
-                if isinstance(img, QImage):
-                    img = img.transformed(self.transform)
-                elif isinstance(img, QGraphicsItem):
-                    # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
-                    #        makes sense here, but for some strange reason it isn't right.
-                    #        For QGraphicsItems, it seems obvious that this is the correct transform.
-                    #        I do not understand the formula that produces self.transform, which is used for QImage tiles.
-                    img.setTransform(QTransform.fromTranslate(tile_rect.left(), tile_rect.top()), combine=True)
-                    img.setTransform(self.tile_provider.tiling.data2scene, combine=True)
-                else:
-                    assert False, "Unexpected image type: {}".format( type(img) )
-
-                with self.cache:
-                    try:
-                        self.cache.updateTileIfNecessary(self.stack_id,
-                            self.ims, self.tile_nr, self.timestamp, img)
-                    except KeyError:
-                        pass
-
-                if self.stack_id == self.tile_provider._current_stack_id \
-                        and self.cache is self.tile_provider._cache:
-                    self.tile_provider.sceneRectChanged.emit( tile_rect )
-        except BaseException:
-            sys.excepthook( *sys.exc_info() )
+    def __init__(self, fut, func, priority):
+        super(RenderTask, self).__init__(fut, func, [], {})
+        self.priority = priority
 
     def __lt__(self, other):
         """
-        Compare two RenderTasks, where smallest has higher priority.
-
-        Regular render tasks have higher priority than prefetch tasks. A task
-        with higher timestamp has higher priority.
+        Compare two RenderTasks according to their priorities.
+        Smaller priority values go to the front of the queue.
         """
         assert isinstance(self, RenderTask) and isinstance(other, RenderTask), \
             "Can't compare {} with {}".format( type(self), type(other) )
-        res = cmp(self.prefetch, other.prefetch)
-        if res != 0:
-            return res
-        # note reversed order for timestamp
-        return cmp(other.timestamp, self.timestamp)
-
+        return self.priority < other.priority
 
 class RenderTaskExecutor(ThreadPoolExecutor):
     """
     The executor type for the render_pool
     (a thread pool for executing requests for layer data.)
+    
+    Differences from base class (ThreadPoolExecutor):
+      - self._work_queue is a PriorityQueue, not a plain Queue.Queue
+      - self.submit() creates a RenderTask (which has a less-than operator
+        and can therefore be prioritized), not a generic _WorkItem
     """
     def __init__(self, max_workers):
         super(RenderTaskExecutor, self).__init__(max_workers)
         self._work_queue = Queue.PriorityQueue()
 
-    def submit(self, *args):
+    def submit(self, func, priority):
+        """
+        Mostly copied from ThreadPoolExecutor.submit(), but here we replace '_WorkItem' with 'RenderTask'.
+        Also, we pass the 'prefetch' and 'timestamp' parameters.
+        """
         with self._shutdown_lock:
             if self._shutdown:
                 raise RuntimeError('cannot schedule new futures after shutdown')
 
-            f = _base.Future()
-            w = RenderTask(f, *args)
+            fut = concurrent.futures._base.Future()
+            w = RenderTask(fut, func, priority)
 
             self._work_queue.put(w)
             self._adjust_thread_count()
-            return f
+            return fut
 
 
 renderer_pool = None
@@ -713,10 +653,15 @@ class TileProvider( QObject ):
                         sys.excepthook( *sys.exc_info() )
                     else:
                         if not ims.direct or prefetch:
+                            timestamp = time.time()
+                            func = partial( self._render_async, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache )
+
+                            # Tasks with 'smaller' priority values are processed first.
+                            # We want non-prefetch tasks to take priority (False < True)
+                            # and then more recent tasks to take priority (more recent -> process first)
+                            priority = (prefetch, -timestamp)
                             pool = get_render_pool()
-                            pool.submit(prefetch, time.time(),
-                                    self, ims, transform, tile_no,
-                                    stack_id, ims_req, self._cache)
+                            pool.submit(func, priority)
                         else:
                             # The ImageSource 'ims' is fast (it has the
                             # direct flag set to true) so we process
@@ -805,6 +750,53 @@ class TileProvider( QObject ):
             p.end()
 
         return qimg
+
+    def _render_async(self, timestamp, ims, transform, tile_nr, stack_id, image_req, cache):
+        """
+        Render tile, to be called from within a RenderTask
+        """
+        # Make sure the current thread has a name that excepthooks will recognize
+        # (If this is a new thread in the threadpool, we need to set the name.)
+        if not threading.current_thread().name.startswith("TileProvider"):
+            threading.current_thread().name = "TileProvider-" + str( threading.current_thread().ident )
+        
+        try:
+            try:
+                with cache:
+                    layerTimestamp = cache.layerTimestamp(stack_id, ims, tile_nr)
+            except KeyError:
+                # May not be a timestamp yet (especially when prefetching)
+                layerTimestamp = 0
+
+            tile_rect = QRectF( self.tiling.imageRects[tile_nr] )
+
+            if timestamp > layerTimestamp:
+                img = image_req.wait()
+                if isinstance(img, QImage):
+                    img = img.transformed(transform)
+                elif isinstance(img, QGraphicsItem):
+                    # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
+                    #        makes sense here, but for some strange reason it isn't right.
+                    #        For QGraphicsItems, it seems obvious that this is the correct transform.
+                    #        I do not understand the formula that produces transform, which is used for QImage tiles.
+                    img.setTransform(QTransform.fromTranslate(tile_rect.left(), tile_rect.top()), combine=True)
+                    img.setTransform(self.tiling.data2scene, combine=True)
+                else:
+                    assert False, "Unexpected image type: {}".format( type(img) )
+
+                with cache:
+                    try:
+                        cache.updateTileIfNecessary(stack_id, ims, tile_nr, timestamp, img)
+                    except KeyError:
+                        pass
+
+                if stack_id == self._current_stack_id \
+                        and cache is self._cache:
+                    self.sceneRectChanged.emit( tile_rect )
+        except BaseException:
+            sys.excepthook( *sys.exc_info() )
+
+
     
     def _onLayerDirty(self, dirtyImgSrc, dataRect ):
         """
