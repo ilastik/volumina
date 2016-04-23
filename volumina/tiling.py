@@ -40,14 +40,37 @@ from PyQt4.QtGui import QImage, QPainter, QTransform, QGraphicsItem
 from patchAccessor import PatchAccessor
 import volumina
 from volumina.pixelpipeline.asyncabcs import IndeterminateRequestError
-from volumina.utility import log_exception
-
-from concurrent.futures.thread import ThreadPoolExecutor, _WorkItem
-import concurrent.futures._base 
-import Queue
+from volumina.utility import log_exception, PrioritizedThreadPoolExecutor
 
 import logging
 logger = logging.getLogger(__name__)
+
+# If lazyflow is installed, use that threadpool.
+try:
+    from lazyflow.request import Request
+    USE_LAZYFLOW_THREADPOOL = True
+except ImportError:
+    USE_LAZYFLOW_THREADPOOL = False
+
+def submit_to_threadpool(fn, priority):
+    if USE_LAZYFLOW_THREADPOOL:
+        # Tiling requests are less prioritized than most requests.
+        root_priority = [1] + list(priority)
+        req = Request(fn, root_priority)
+        req.submit()
+    else:
+        get_render_pool().submit(fn, priority)
+
+renderer_pool = None
+def get_render_pool():
+    """
+    Return the global thread pool for requesting layer data from ImageSource objects.
+    (Create it first if necessary.)
+    """
+    global renderer_pool
+    if renderer_pool is None:
+        renderer_pool = PrioritizedThreadPoolExecutor(6)
+    return renderer_pool
 
 
 @contextmanager
@@ -61,68 +84,6 @@ def TileTimer():
 
 class TileTime(object):
     seconds = 0.0
-
-
-class PrioritizedTask(_WorkItem):
-    """
-    A task object that executes requests for layer data (i.e. from ImageSource objects).
-    Used by the global renderer_pool (a thread pool).
-    """
-    def __init__(self, fut, func, priority):
-        super(PrioritizedTask, self).__init__(fut, func, [], {})
-        self.priority = priority
-
-    def __lt__(self, other):
-        """
-        Compare two PrioritizedTasks according to their priorities.
-        Smaller priority values go to the front of the queue.
-        """
-        assert isinstance(self, PrioritizedTask) and isinstance(other, PrioritizedTask), \
-            "Can't compare {} with {}".format( type(self), type(other) )
-        return self.priority < other.priority
-
-class PrioritizedThreadPoolExecutor(ThreadPoolExecutor):
-    """
-    The executor type for the render_pool
-    (a thread pool for executing requests for layer data.)
-    
-    Differences from base class (ThreadPoolExecutor):
-      - self._work_queue is a PriorityQueue, not a plain Queue.Queue
-      - self.submit() creates a PrioritizedTask (which has a less-than operator
-        and can therefore be prioritized), not a generic _WorkItem
-    """
-    def __init__(self, max_workers):
-        super(PrioritizedThreadPoolExecutor, self).__init__(max_workers)
-        self._work_queue = Queue.PriorityQueue()
-
-    def submit(self, func, priority):
-        """
-        Mostly copied from ThreadPoolExecutor.submit(), but here we replace '_WorkItem' with 'PrioritizedTask'.
-        Also, we pass the 'prefetch' and 'timestamp' parameters.
-        """
-        with self._shutdown_lock:
-            if self._shutdown:
-                raise RuntimeError('cannot schedule new futures after shutdown')
-
-            fut = concurrent.futures._base.Future()
-            w = PrioritizedTask(fut, func, priority)
-
-            self._work_queue.put(w)
-            self._adjust_thread_count()
-            return fut
-
-
-renderer_pool = None
-
-def get_render_pool():
-    """
-    Return the global thread pool for requesting layer data from ImageSource objects.
-    (Create it first if necessary.)
-    """
-    global renderer_pool
-    if renderer_pool is None:
-        renderer_pool = PrioritizedThreadPoolExecutor(6)
-    return renderer_pool
 
 class Tiling(object):
     """
@@ -660,8 +621,7 @@ class TileProvider( QObject ):
                             # We want non-prefetch tasks to take priority (False < True)
                             # and then more recent tasks to take priority (more recent -> process first)
                             priority = (prefetch, -timestamp)
-                            pool = get_render_pool()
-                            pool.submit(func, priority)
+                            submit_to_threadpool( func, priority )
                         else:
                             # The ImageSource 'ims' is fast (it has the
                             # direct flag set to true) so we process
@@ -755,11 +715,6 @@ class TileProvider( QObject ):
         """
         Render tile, to be called from within the thread pool.
         """
-        # Make sure the current thread has a name that excepthooks will recognize
-        # (If this is a new thread in the threadpool, we need to set the name.)
-        if not threading.current_thread().name.startswith("TileProvider"):
-            threading.current_thread().name = "TileProvider-" + str( threading.current_thread().ident )
-        
         try:
             try:
                 with cache:

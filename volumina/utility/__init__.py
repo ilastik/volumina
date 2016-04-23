@@ -31,3 +31,4 @@ from volumina.utility.edge_coords import edge_coords_along_axis, edge_coords_nd
 from volumina.utility.simplify_line_segments import simplify_line_segments
 from volumina.utility.signalingDefaultDict import SignalingDefaultDict
 from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem
+from volumina.utility.prioritizedThreadPool import PrioritizedThreadPoolExecutor
