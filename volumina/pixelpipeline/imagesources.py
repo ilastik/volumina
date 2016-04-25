@@ -683,6 +683,8 @@ class SegmentationEdgesItemSource(ImageSource):
 
     def request( self, qrect, along_through=None ):
         assert isinstance(qrect, QRect)
+        # Widen request with a 1-pixel halo, to make sure edges on the tile borders are shown.
+        qrect = QRect( qrect.x(), qrect.y(), qrect.width()+1, qrect.height()+1 )
         s = rect2slicing(qrect)
         arrayreq = self._arraySource2D.request(s, along_through)
         return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect)

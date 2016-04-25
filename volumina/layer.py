@@ -27,7 +27,7 @@ from PyQt4.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
-from volumina.pixelpipeline.datasources import MinMaxSource, HaloAdjustedDataSource
+from volumina.pixelpipeline.datasources import MinMaxSource
 
 from volumina.utility import decode_to_qstring, encode_from_qstring, SignalingDefaultDict
 
@@ -595,12 +595,7 @@ class SegmentationEdgesLayer( Layer ):
         datasource: A single-channel label image.
         default_pen: The initial pen style for each edge.
         """
-        # 1-pixel offset in the right/down directions
-        halo_start_delta = (0,0,0,0,0)
-        halo_stop_delta = (0,1,1,1,0)
-        
-        adjusted_datasource = HaloAdjustedDataSource(datasource, halo_start_delta, halo_stop_delta)
-        super( SegmentationEdgesLayer, self ).__init__( [adjusted_datasource], direct=True )
+        super( SegmentationEdgesLayer, self ).__init__( [datasource], direct=True )
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
         self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
