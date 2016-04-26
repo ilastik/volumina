@@ -590,12 +590,12 @@ class SegmentationEdgesLayer( Layer ):
         """
         return self._pen_table
 
-    def __init__(self, datasource, default_pen=DEFAULT_PEN):
+    def __init__(self, datasource, default_pen=DEFAULT_PEN, direct=False):
         """
         datasource: A single-channel label image.
         default_pen: The initial pen style for each edge.
         """
-        super( SegmentationEdgesLayer, self ).__init__( [datasource], direct=True )
+        super( SegmentationEdgesLayer, self ).__init__( [datasource], direct=direct )
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
         self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
