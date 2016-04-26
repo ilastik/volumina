@@ -379,11 +379,11 @@ class ImageScene2D(QGraphicsScene):
         if self._tiling is None:
             return
 
-        tile_nos = self._tiling.intersected(rect)
+        if self._showTileOutlines:
+            tile_nos = self._tiling.intersected(rect)
 
-        for tileId in tile_nos:
+            for tileId in tile_nos:
             ## draw tile outlines
-            if self._showTileOutlines:
                 # Dashed black line
                 pen = QPen()
                 pen.setDashPattern([5,5])
