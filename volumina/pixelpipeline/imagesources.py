@@ -214,7 +214,7 @@ class GrayscaleImageRequest( object ):
             ret = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             tImg = 1000.0*(time.time()-tImg)
         
-        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+        if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0*(time.time()-t)
             self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
             
@@ -301,7 +301,7 @@ class AlphaModulatedImageRequest( object ):
             img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
             tImg = 1000.0*(time.time()-tImg)
        
-        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+        if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0*(time.time()-t)
             self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
             
@@ -467,7 +467,7 @@ class ColortableImageRequest( object ):
             img = colortable[a]
             img = array2qimage(img)
             
-        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+        if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0*(time.time()-t)
             self.logger.debug("toImage (%dx%d) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), tTOT, tAR, tWAIT, tImg))
 
