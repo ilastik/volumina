@@ -152,12 +152,6 @@ class Layer( QObject ):
            See ClickableColortableLayer for an example."""
         pass
 
-    def timePerTile( self, timeSec, tileRect ):
-        """Update the average time per tile with new data: the tile of size tileRect took timeSec seonds"""
-        #compute cumulative moving average
-        self._numTiles += 1
-        self.averageTimePerTile = (timeSec + (self._numTiles-1)*self.averageTimePerTile) / self._numTiles
-
     def toolTip(self):
         return self._toolTip
 
@@ -191,12 +185,6 @@ class Layer( QObject ):
         self._updateNumberOfChannels()
         for datasource in filter(None, self._datasources):
             datasource.numberOfChannelsChanged.connect( self._updateNumberOfChannels )
-
-        if self.direct:
-            #in direct mode, we calculate the average time per tile for debug purposes
-            #this is useful to identify which of your layers cause slowness
-            self.averageTimePerTile = 0.0
-            self._numTiles = 0
 
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)

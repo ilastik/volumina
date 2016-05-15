@@ -643,9 +643,6 @@ class TileProvider( QObject ):
                                 else:
                                     assert False, "Unexpected image type: {}".format( type(img) )
 
-                            ims._layer.timePerTile(timer.seconds,
-                                                   self.tiling.imageRects[tile_no])
-
                             with self._cache:
                                 self._cache.updateTileIfNecessary(
                                     stack_id, ims, tile_no, time.time(), img )
