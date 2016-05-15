@@ -577,81 +577,70 @@ class TileProvider( QObject ):
 
         try:
             with self._cache:
-                tile_dirty = self._cache.tileDirty( stack_id, tile_no )
-            if tile_dirty:
-                if not prefetch:
-                    with self._cache:
-                        self._cache.setTileDirty(stack_id, tile_no, False)
+                if not self._cache.tileDirty( stack_id, tile_no ):
+                    return
 
-                    # Blend all (available) layers into the composite tile
-                    # and store it in the tile cache.
-                    tile_img = self._renderTile( stack_id, tile_no )
-                    with self._cache:
-                        self._cache.setTile(stack_id, tile_no, tile_img,
-                                            self._sims.viewVisible(),
-                                            self._sims.viewOccluded())
+            if not prefetch:
+                with self._cache:
+                    self._cache.setTileDirty(stack_id, tile_no, False)
 
-                # refresh dirty layer tiles
-                for ims in self._sims.viewImageSources():
-                    with self._cache:
-                        layer_dirty = self._cache.layerDirty(stack_id, ims, tile_no)
+                # Blend all (available) layers into the composite tile
+                # and store it in the tile cache.
+                tile_img = self._renderTile( stack_id, tile_no )
+                with self._cache:
+                    self._cache.setTile(stack_id, tile_no, tile_img,
+                                        self._sims.viewVisible(),
+                                        self._sims.viewOccluded())
 
-                    # Don't bother fetching layers that are not visible or not dirty.
-                    if not ( layer_dirty and 
-                             not self._sims.isOccluded(ims) and
-                             self._sims.isVisible(ims) ):
-                        continue
+            # refresh dirty layer tiles
+            need_reblend = False
+            for ims in self._sims.viewImageSources():
+                with self._cache:
+                    layer_dirty = self._cache.layerDirty(stack_id, ims, tile_no)
 
-                    rect = self.tiling.imageRects[tile_no]
-                    dataRect = self.tiling.scene2data.mapRect(rect)
-                    try:
-                        ims_req = ims.request(dataRect, stack_id[1])
-                    except IndeterminateRequestError:
-                        # In ilastik, the viewer is still churning even as the user might be changing settings in the UI.
-                        # Settings changes can cause 'slot not ready' errors during graph setup.
-                        # Those errors are not really a problem, but we don't want to hide them from developers
-                        # So, we show the exception (in the log), but we don't kill the thread.
-                        sys.excepthook( *sys.exc_info() )
-                    else:
-                        if not ims.direct or prefetch:
-                            timestamp = time.time()
-                            func = partial( self._render_async, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache )
+                # Don't bother fetching layers that are not visible or not dirty.
+                if not ( layer_dirty and 
+                         not self._sims.isOccluded(ims) and
+                         self._sims.isVisible(ims) ):
+                    continue
 
-                            # Tasks with 'smaller' priority values are processed first.
-                            # We want non-prefetch tasks to take priority (False < True)
-                            # and then more recent tasks to take priority (more recent -> process first)
-                            priority = (prefetch, -timestamp)
-                            submit_to_threadpool( func, priority )
-                        else:
-                            # The ImageSource 'ims' is fast (it has the
-                            # direct flag set to true) so we process
-                            # the request synchronously here. This
-                            # improves the responsiveness for layers
-                            # that have the data readily available.
-                            
-                            with TileTimer() as timer:
-                                img = ims_req.wait()
-    
-                                if isinstance(img, QImage):
-                                    img = img.transformed(self.transform)
-                                elif isinstance(img, QGraphicsItem):
-                                    # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
-                                    #        makes sense here, but for some strange reason it isn't right.
-                                    #        For now we leave this line out, and let the ImageScene2D handle the tranformations.
-                                    #img.setTransform(self.transform, combine=True)
-                                    pass
-                                else:
-                                    assert False, "Unexpected image type: {}".format( type(img) )
+                rect = self.tiling.imageRects[tile_no]
+                dataRect = self.tiling.scene2data.mapRect(rect)
 
-                            with self._cache:
-                                self._cache.updateTileIfNecessary(
-                                    stack_id, ims, tile_no, time.time(), img )
+                try:
+                    ims_req = ims.request(dataRect, stack_id[1])
+                except IndeterminateRequestError:
+                    # In ilastik, the viewer is still churning even as the user might be changing settings in the UI.
+                    # Settings changes can cause 'slot not ready' errors during graph setup.
+                    # Those errors are not really a problem, but we don't want to hide them from developers
+                    # So, we show the exception (in the log), but we don't kill the thread.
+                    sys.excepthook( *sys.exc_info() )
+                    continue
 
-                            tile_img = self._renderTile( stack_id, tile_no )
-                            with self._cache:
-                                self._cache.setTile(stack_id, tile_no,
-                                                    tile_img, self._sims.viewVisible(),
-                                                    self._sims.viewOccluded() )
+                timestamp = time.time()
+                render_task_fn = partial( self._render_async, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache )
+
+                if ims.direct and not prefetch:
+                    # The ImageSource 'ims' is fast (it has the direct flag set to true),
+                    # so we process the request synchronously here.
+                    # This improves the responsiveness for layers that have the data readily available.
+                    render_task_fn()
+                    need_reblend = True
+                else:
+                    # Tasks with 'smaller' priority values are processed first.
+                    # We want non-prefetch tasks to take priority (False < True)
+                    # and then more recent tasks to take priority (more recent -> process first)
+                    priority = (prefetch, -timestamp)
+                    submit_to_threadpool( render_task_fn, priority )
+
+            if need_reblend:
+                # We synchronously fetched at least one direct layer.
+                # We can immediately re-blend the composite tile.
+                tile_img = self._renderTile( stack_id, tile_no )
+                with self._cache:
+                    self._cache.setTile(stack_id, tile_no,
+                                        tile_img, self._sims.viewVisible(),
+                                        self._sims.viewOccluded() )
         except KeyError:
             pass
 
