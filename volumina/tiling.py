@@ -92,7 +92,7 @@ class Tiling(object):
     """
 
     def __init__(self, sliceShape, data2scene=QTransform(),
-                 blockSize=256, overlap=0, overlap_draw=1e-3,
+                 blockSize=1024, overlap=0, overlap_draw=1e-3,
                  name="Unnamed Tiling"):
         """
         Args:
@@ -397,8 +397,7 @@ class _TilesCache( object ):
         self._layerCacheTimestamp.touch( stack_id )
 
 
-    def updateTileIfNecessary( self, stack_id, layer_id, tile_id,
-                               req_timestamp, img):
+    def updateTileIfNecessary( self, stack_id, layer_id, tile_id, req_timestamp, img):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         if req_timestamp > self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]:
             self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
@@ -414,13 +413,13 @@ class _TilesCache( object ):
             #        haven't changed since the last time the tile was blended.)
             #        We could fix this inefficiency by tracking 2 dirty bits, for 
             #        QImage layers and QGraphicsLayers, respectively, and checking
-            #        those bits in _renderTile()
+            #        those bits in _blendTile()
             self._tileCacheDirty.caches[stack_id][tile_id] = True
 
 
 class TileProvider( QObject ):
     """
-    
+    Note: Throughout this class, the terms 'layer', 'ImageSource', and 'ims' are used interchangeably.
     """
     
     Tile = collections.namedtuple('Tile', ['id',             # tile number
@@ -549,6 +548,8 @@ class TileProvider( QObject ):
 
     def _refreshTile( self, stack_id, tile_no, prefetch=False ):
         """
+        Trigger a refresh of a particular tile.
+        
         In the common case**, this function does the following:
         
         For every layer in the patch specified by (stackid, tile_no):
@@ -587,7 +588,7 @@ class TileProvider( QObject ):
 
                 # Blend all (available) layers into the composite tile
                 # and store it in the tile cache.
-                tile_img = self._renderTile( stack_id, tile_no )
+                tile_img = self._blendTile( stack_id, tile_no )
                 with self._cache:
                     self._cache.setTile(stack_id, tile_no, tile_img,
                                         self._sims.viewVisible(),
@@ -609,6 +610,7 @@ class TileProvider( QObject ):
                 dataRect = self.tiling.scene2data.mapRect(rect)
 
                 try:
+                    # Create the request object right now, from the main thread.
                     ims_req = ims.request(dataRect, stack_id[1])
                 except IndeterminateRequestError:
                     # In ilastik, the viewer is still churning even as the user might be changing settings in the UI.
@@ -619,25 +621,25 @@ class TileProvider( QObject ):
                     continue
 
                 timestamp = time.time()
-                render_task_fn = partial( self._render_async, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache )
+                fetch_fn = partial( self._fetch_tile_layer, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache )
 
                 if ims.direct and not prefetch:
                     # The ImageSource 'ims' is fast (it has the direct flag set to true),
                     # so we process the request synchronously here.
                     # This improves the responsiveness for layers that have the data readily available.
-                    render_task_fn()
+                    fetch_fn()
                     need_reblend = True
                 else:
                     # Tasks with 'smaller' priority values are processed first.
                     # We want non-prefetch tasks to take priority (False < True)
                     # and then more recent tasks to take priority (more recent -> process first)
                     priority = (prefetch, -timestamp)
-                    submit_to_threadpool( render_task_fn, priority )
+                    submit_to_threadpool( fetch_fn, priority )
 
             if need_reblend:
                 # We synchronously fetched at least one direct layer.
                 # We can immediately re-blend the composite tile.
-                tile_img = self._renderTile( stack_id, tile_no )
+                tile_img = self._blendTile( stack_id, tile_no )
                 with self._cache:
                     self._cache.setTile(stack_id, tile_no,
                                         tile_img, self._sims.viewVisible(),
@@ -645,7 +647,7 @@ class TileProvider( QObject ):
         except KeyError:
             pass
 
-    def _renderTile( self, stack_id, tile_nr): 
+    def _blendTile( self, stack_id, tile_nr): 
         """
         Blend all of the QImage layers of the patch
         specified by (stack_id, tile_nr) into a single QImage.
@@ -698,9 +700,28 @@ class TileProvider( QObject ):
 
         return qimg
 
-    def _render_async(self, timestamp, ims, transform, tile_nr, stack_id, image_req, cache):
+    def _fetch_tile_layer(self, timestamp, ims, transform, tile_nr, stack_id, ims_req, cache):
         """
-        Render tile, to be called from within the thread pool.
+        Fetch a single tile from a layer (ImageSource).
+        
+        Parameters
+        ----------
+        timestamp
+            The timestamp at which ims_req was created
+        ims
+            The layer (image source) we're fetching from
+        transform
+            The transform to apply to the fetched data, before storing it in the cache
+        tile_nr
+            The ID of the fetched tile
+        stack_id
+            The stack ID of the tile we're fetching (e.g. which T-slice and Z-slice this tile belongs to) 
+        ims_req
+            A request object (e.g. GrayscaleImageRequest) with a wait() method that produces an item of 
+            the appropriate type for the layer (i.e. either a QImage or a QGraphicsItem)
+        cache
+            The value of self._cache at the time the ims_req was created.
+            (The cache can be replaced occasionally. See TileProvider._onSizeChanged().)
         """
         try:
             try:
@@ -713,14 +734,14 @@ class TileProvider( QObject ):
             tile_rect = QRectF( self.tiling.imageRects[tile_nr] )
 
             if timestamp > layerTimestamp:
-                img = image_req.wait()
+                img = ims_req.wait()
                 if isinstance(img, QImage):
                     img = img.transformed(transform)
                 elif isinstance(img, QGraphicsItem):
                     # FIXME: It *seems* like applying the same transform to QImages and QGraphicsItems
                     #        makes sense here, but for some strange reason it isn't right.
                     #        For QGraphicsItems, it seems obvious that this is the correct transform.
-                    #        I do not understand the formula that produces transform, which is used for QImage tiles.
+                    #        I do not understand the formula that produces 'transform', which is used for QImage tiles.
                     img.setTransform(QTransform.fromTranslate(tile_rect.left(), tile_rect.top()), combine=True)
                     img.setTransform(self.tiling.data2scene, combine=True)
                 else:
