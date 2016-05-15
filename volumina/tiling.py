@@ -514,17 +514,17 @@ class TileProvider( QObject ):
             for tile in tiles:
                 finished &= tile.progress >= 1.0
 
-    def requestRefresh( self, rectF ):
+    def requestRefresh( self, rectF, stack_id=None, prefetch=False ):
         '''Requests tiles to be refreshed.
 
         Returns immediately. Call join() to wait for
         the end of the rendering.
 
         '''
+        stack_id = stack_id or self._current_stack_id
         tile_nos = self.tiling.intersected( rectF )
         for tile_no in tile_nos:
-            stack_id = self._current_stack_id
-            self._refreshTile( stack_id, tile_no )
+            self._refreshTile( stack_id, tile_no, prefetch )
 
     def prefetch( self, rectF, through ):
         '''Request fetching of tiles in advance.
@@ -536,15 +536,16 @@ class TileProvider( QObject ):
         order.
 
         '''
-        if self._cache_size > 1:
-            stack_id = (self._current_stack_id[0], enumerate(through))
-            with self._cache:
-                if stack_id not in self._cache:
-                    self._cache.addStack(stack_id)
-                    self._cache.touchStack( self._current_stack_id )
-            tile_nos = self.tiling.intersected( rectF )
-            for tile_no in tile_nos:
-                self._refreshTile( stack_id, tile_no, prefetch=True )
+        if self._cache_size == 0:
+            return
+
+        stack_id = (self._current_stack_id[0], enumerate(through))
+        with self._cache:
+            if stack_id not in self._cache:
+                self._cache.addStack(stack_id)
+                self._cache.touchStack( self._current_stack_id )
+
+        self.requestRefresh(rectF, stack_id, prefetch=True)
 
     def _refreshTile( self, stack_id, tile_no, prefetch=False ):
         """
