@@ -210,6 +210,7 @@ class _MultiCache( object ):
         self.add( first_uid, default_factory=default_factory)
 
     def add( self, uid, default_factory=lambda:None ):
+        assert isinstance(uid[1], tuple)
         if uid not in self.caches:
             cache = defaultdict(default_factory)
             self.caches[uid] = cache
@@ -563,7 +564,7 @@ class TileProvider( QObject ):
         if self.cache_size == 0:
             return
 
-        stack_id = (self._current_stack_id[0], enumerate(through))
+        stack_id = (self._current_stack_id[0], tuple(enumerate(through)))
         with self._cache:
             if stack_id not in self._cache:
                 self._cache.addStack(stack_id)
