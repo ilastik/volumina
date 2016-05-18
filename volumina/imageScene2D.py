@@ -444,8 +444,58 @@ class ImageScene2D(QGraphicsScene):
 
         # preemptive fetching
         if self._prefetching_enabled:
-            for through in self._bowWave(self._n_preemptive):
-                self._tileProvider.prefetch(sceneRectF, through)
+            upcoming_through_slices = self._bowWave(self._n_preemptive)
+            self.triggerPrefetch(sceneRectF, upcoming_through_slices, layers)
+
+    def triggerPrefetch(self, layer_indexes, time_range='current', spatial_axis_range='current', sceneRectF=None ):
+        """
+        Trigger a one-time prefetch for the given set of layers.
+        
+        TODO: I'm not 100% sure what happens here for layers with multiple channels.
+        
+        layer_indexes: list-of-ints, or None, which means 'all visible'.
+        time_range: (start_time, stop_time)
+        spatial_axis_range: (start_slice, stop_slice), meaning Z/Y/X depending on our projection (self.along)
+        sceneRectF: Used to determine which tiles to request.
+                    An invalid QRectF results in all tiles getting refreshed (visible or not).
+        """
+        # Process parameters
+        sceneRectF = sceneRectF or QRectF()
+
+        if time_range == 'current':
+            time_range = (self._posModel.slicingPos5D[0],
+                          self._posModel.slicingPos5D[0]+1)
+        elif time_range == 'all':
+            time_range = (0, self._posModel.shape5D[0])
+        else:
+            assert len(time_range) == 2
+            assert time_range[0] >= 0 and time_range[1] < self._posModel.shape5D[0]
+
+        spatial_axis = self._along[1]
+        if spatial_axis_range == 'current':
+            spatial_axis_range = (self._posModel.slicingPos5D[spatial_axis],
+                                  self._posModel.slicingPos5D[spatial_axis]+1)
+        elif spatial_axis_range == 'all':
+            spatial_axis_range = (0, self._posModel.shape5D[spatial_axis])
+        else:
+            assert len(spatial_axis_range) == 2
+            assert 0 <= spatial_axis_range[0] <  self._posModel.shape5D[spatial_axis]
+            assert 0 <  spatial_axis_range[1] <= self._posModel.shape5D[spatial_axis]
+
+        # Construct list of 'through' coordinates
+        through_list = []
+        for t in range( *time_range ):
+            for s in range( *spatial_axis_range ):
+                through_list.append( (t, s) )
+
+        # Make sure the tile cache is big enough to hold the prefetched data.
+        if self._tileProvider.cache_size < len(through_list):
+            self._tileProvider.set_cache_size( len(through_list) )
+
+        # Trigger prefetches
+        for through in through_list:
+            self._tileProvider.prefetch(sceneRectF, through, layer_indexes)
+        
 
     def joinRenderingAllTiles(self, viewport_only=True, rect=None):
         """

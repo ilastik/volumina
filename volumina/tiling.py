@@ -539,7 +539,7 @@ class TileProvider( QObject ):
             for tile in tiles:
                 finished &= tile.progress >= 1.0
 
-    def requestRefresh( self, rectF, stack_id=None, prefetch=False ):
+    def requestRefresh( self, rectF, stack_id=None, prefetch=False, layer_indexes=None ):
         '''Requests tiles to be refreshed.
 
         Returns immediately. Call join() to wait for
@@ -549,9 +549,9 @@ class TileProvider( QObject ):
         stack_id = stack_id or self._current_stack_id
         tile_nos = self.tiling.intersected( rectF )
         for tile_no in tile_nos:
-            self._refreshTile( stack_id, tile_no, prefetch )
+            self._refreshTile( stack_id, tile_no, prefetch, layer_indexes )
 
-    def prefetch( self, rectF, through ):
+    def prefetch( self, rectF, through, layer_indexes=None ):
         '''Request fetching of tiles in advance.
 
         Returns immediately. Prefetch will commence after all regular
@@ -570,9 +570,9 @@ class TileProvider( QObject ):
                 self._cache.addStack(stack_id)
                 self._cache.touchStack( self._current_stack_id )
 
-        self.requestRefresh(rectF, stack_id, prefetch=True)
+        self.requestRefresh(rectF, stack_id, prefetch=True, layer_indexes=layer_indexes)
 
-    def _refreshTile( self, stack_id, tile_no, prefetch=False ):
+    def _refreshTile( self, stack_id, tile_no, prefetch=False, layer_indexes=None ):
         """
         Trigger a refresh of a particular tile.
         
@@ -594,6 +594,10 @@ class TileProvider( QObject ):
              - For 'direct' layers, don't submit the request to the threadpool,
                just execute it immediately.
         """
+        layers = self._sims.viewImageSources()
+        if layer_indexes:
+            layers = map( lambda i: layers[i], layer_indexes )
+        
         if not self.axesSwapped:
             # Who came up with this transform?
             transform = QTransform(0,1,0,
@@ -622,7 +626,7 @@ class TileProvider( QObject ):
 
             # refresh dirty layer tiles
             need_reblend = False
-            for ims in self._sims.viewImageSources():
+            for ims in layers:
                 with self._cache:
                     layer_dirty = self._cache.layerDirty(stack_id, ims, tile_no)
 
@@ -661,6 +665,7 @@ class TileProvider( QObject ):
                     # and then more recent tasks to take priority (more recent -> process first)
                     priority = (prefetch, -timestamp)
                     submit_to_threadpool( fetch_fn, priority )
+                    
 
             if need_reblend:
                 # We synchronously fetched at least one direct layer.
