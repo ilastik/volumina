@@ -277,12 +277,10 @@ class ImageScene2D(QGraphicsScene):
         self._finishViewMatrixChange()
 
     def setCacheSize(self, cache_size):
-        if cache_size != self._tileProvider._cache_size:
-            self._tileProvider = TileProvider(self._tiling, self._stackedImageSources, cache_size=cache_size)
-            self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
+        self._tileProvider.set_cache_size(cache_size)
 
     def cacheSize(self):
-        return self._tileProvider._cache_size
+        return self._tileProvider.cache_size
 
     def setPrefetchingEnabled(self, enable):
         self._prefetching_enabled = enable

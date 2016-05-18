@@ -204,8 +204,7 @@ class _MultiCache( object ):
     """
     A utility class for caching items in a of a dict-of-dicts
     """
-    def __init__( self, first_uid, default_factory=lambda:None,
-                  maxcaches=None ):
+    def __init__( self, first_uid, default_factory=lambda:None, maxcaches=None ):
         self._maxcaches = maxcaches
         self.caches = OrderedDict()
         self.add( first_uid, default_factory=default_factory)
@@ -220,13 +219,18 @@ class _MultiCache( object ):
         # remove oldest cache, if necessary
         old_uid = None
         if self._maxcaches and len(self.caches) > self._maxcaches:
-            old_uid, v = self.caches.popitem(False) # removes item in LIFO order
+            old_uid, v = self.caches.popitem(False) # removes item in FIFO order
         return old_uid
 
     def touch( self, uid ):
         c = self.caches[uid]
         del self.caches[uid]
         self.caches[uid] = c
+
+    def set_maxcaches(self, newmax):
+        self._maxcaches = newmax
+        while len(self.caches) > self._maxcaches:
+            old_uid, v = self.caches.popitem(False) # removes item in FIFO order
 
 class _TilesCache( object ):
     """
@@ -250,6 +254,7 @@ class _TilesCache( object ):
     def __init__(self, first_stack_id, sims, maxstacks=None):
         self._lock = threading.Lock()
         self._sims = sims
+        self._maxstacks = maxstacks
 
         kwargs = {'first_uid' : first_stack_id,
                   'maxcaches' : maxstacks}
@@ -269,6 +274,20 @@ class _TilesCache( object ):
         # [stack_id][(ims, tile_id)] -> float
         self._layerCacheTimestamp = _MultiCache(default_factory=float, **kwargs)
         
+
+    @property
+    def maxstacks(self):
+        return self._maxstacks
+    
+    def set_maxstacks(self, maxstacks):
+        if self._maxstacks == maxstacks:
+            return
+        self._maxstacks = maxstacks
+        self._tileCache.set_maxcaches(self._maxstacks)
+        self._tileCacheDirty.set_maxcaches(self._maxstacks)
+        self._layerCache.set_maxcaches(self._maxstacks)
+        self._layerCacheDirty.set_maxcaches(self._maxstacks)
+        self._layerCacheTimestamp.set_maxcaches(self._maxstacks)
 
     def __enter__(self):
         self._lock.acquire()
@@ -460,13 +479,12 @@ class TileProvider( QObject ):
         self.tiling = tiling
         self.axesSwapped = False
         self._sims = stackedImageSources
-        self._cache_size = cache_size
         self._request_queue_size = request_queue_size
         self._n_threads = n_threads
 
         self._current_stack_id = self._sims.stackId
         self._cache = _TilesCache(self._current_stack_id, self._sims,
-                                  maxstacks=self._cache_size)
+                                  maxstacks=cache_size)
 
         self._sims.layerDirty.connect(self._onLayerDirty)
         self._sims.visibleChanged.connect(self._onVisibleChanged)
@@ -476,6 +494,13 @@ class TileProvider( QObject ):
         self._sims.stackIdChanged.connect(self._onStackIdChanged)
 
         self._keepRendering = True
+    
+    @property
+    def cache_size(self):
+        return self._cache.maxstacks
+    
+    def set_cache_size(self, new_size):
+        self._cache.set_maxstacks(new_size)
 
     def getTiles( self, rectF ):
         '''Get tiles in rect and request a refresh.
@@ -535,7 +560,7 @@ class TileProvider( QObject ):
         order.
 
         '''
-        if self._cache_size == 0:
+        if self.cache_size == 0:
             return
 
         stack_id = (self._current_stack_id[0], enumerate(through))
@@ -853,7 +878,7 @@ class TileProvider( QObject ):
         This is rare, but it means that the entire tile cache is obsolete.
         """
         self._cache = _TilesCache(self._current_stack_id, self._sims,
-                                  maxstacks=self._cache_size)
+                                  maxstacks=self.cache_size)
         self.sceneRectChanged.emit(QRectF())
 
     def _onOrderChanged(self):
