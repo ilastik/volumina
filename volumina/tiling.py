@@ -822,16 +822,14 @@ class TileProvider( QObject ):
             # This is a FAST PATH for quickly setting all tiles dirty.
             # (It makes a HUGE difference for very large tiling scenes.)
             with self._cache:
-                for ims in self._sims.viewImageSources():
-                    self._cache.setLayerDirtyAllTiles(ims)
+                self._cache.setLayerDirtyAllTiles(dirtyImgSrc)
                 if visibleAndNotOccluded:
                     self._cache.setAllTilesDirty()
         else:
             # Slow path: Mark intersecting tiles as dirty.
             with self._cache:
                 for tile_no in self.tiling.intersected(sceneRect):
-                    for ims in self._sims.viewImageSources():
-                        self._cache.setLayerDirtyAllStacks(ims, tile_no, True)
+                    self._cache.setLayerDirtyAllStacks(dirtyImgSrc, tile_no, True)
                     if visibleAndNotOccluded:
                         self._cache.setTileDirtyAllStacks(tile_no, True)
         if visibleAndNotOccluded:
