@@ -519,10 +519,8 @@ class ImageScene2D(QGraphicsScene):
 
 
     def _bowWave(self, n):
-        shape5d = self._posModel.shape5D
-        sl5d = self._posModel.slicingPos5D
-        through = [sl5d[self._along[i]] for i in xrange(3)]
-        t_max = [shape5d[self._along[i]] for i in xrange(3)]
+        through = [ self._posModel.slicingPos5D[axis] for axis in self._along[:-1] ]
+        t_max = [ self._posModel.shape5D[axis] for axis in self._along[:-1] ]
 
         BowWave = []
 
