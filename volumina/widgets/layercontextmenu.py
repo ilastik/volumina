@@ -129,10 +129,11 @@ def layercontextmenu( layer, pos, parent=None ):
 
     # Layer-custom context menu items
     menu.addSeparator()
-    for name, callback in layer.contexts:
-        action = QAction(name, menu)
-        action.triggered.connect(callback)
-        menu.addAction(action)
+    for item in layer.contexts:
+        if isinstance(item, QAction):
+            menu.addAction(item)
+        elif isinstance(item, QMenu):
+            menu.addMenu(item)
 
     menu.exec_(pos)
 
