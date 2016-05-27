@@ -43,6 +43,9 @@ class SegmentationEdgesItem( QGraphicsObject ):
         for path_item in path_items.values():
             path_item.set_parent(self)
 
+        # Cache the path item keys as a set
+        self.path_ids = set(path_items.keys())
+
     def boundingRect(self):
         # Return an empty rect to indicate 'no content'.
         # This 'item' is merely a parent node for child items.
@@ -52,10 +55,10 @@ class SegmentationEdgesItem( QGraphicsObject ):
     def handle_edge_clicked(self, id_pair):
         self.edgeClicked.emit( id_pair )
 
-    def handle_updated_pen_table(self, id_pair, pen):
-        path_item = self.path_items.get(id_pair) # use get() because it's a defaultdict
-        if path_item:
-            path_item.setPen(pen)
+    def handle_updated_pen_table(self, updated_path_ids):
+        updated_path_ids = self.path_ids.intersection(updated_path_ids)
+        for id_pair in updated_path_ids:
+            self.path_items[id_pair].setPen( self.edge_pen_table[id_pair] )
 
 def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tolerance=None):
     # Find edge coordinates.

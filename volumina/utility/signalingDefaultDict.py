@@ -17,7 +17,7 @@ class SignalingDefaultDict( QObject ):
           - viewvalues()
           - __missing__()
     """
-    updated = pyqtSignal(object, object)
+    updated = pyqtSignal(object) # set(updated_keys) 
     
     def __init__(self, parent, default_factory, *args, **kwargs):
         assert default_factory is not None, "You must provide a default_factory."
@@ -40,11 +40,11 @@ class SignalingDefaultDict( QObject ):
     def __setitem__(self, key, value):
         if key not in self._dict or self._dict[key] != value:
             self._dict[key] = value
-            self.updated.emit(key, value)
+            self.updated.emit( set([key]) )
     
     def __delitem__(self, key):
         del self._dict[key]
-        self.updated.emit(key, self._dict.default_factory())
+        self.updated.emit( set([key]) )
     
     def update(self, *other_dict, **other_kwargs):
         """
@@ -66,16 +66,12 @@ class SignalingDefaultDict( QObject ):
         changed_keys = filter( lambda key: self._dict[key] != other[key], common_keys )        
 
         self._dict.update(other)
-        
-        for key in changed_keys + list(added_keys):
-            self.updated.emit(key, self._dict[key])
+        self.updated.emit( set(changed_keys).union(added_keys) )
     
     def clear(self):
         keys = self._dict.keys()
         self._dict.clear()
-        
-        for key in keys:
-            self.updated.emit(key, self._dict.default_factory())
+        self.updated.emit( set(keys) )
 
     def overwrite(self, other):
         """
@@ -92,12 +88,7 @@ class SignalingDefaultDict( QObject ):
         deleted_keys = original_keys - other_keys
 
         self._dict = defaultdict(self._dict.default_factory, other)
-        
-        for key in changed_keys + list(added_keys):
-            self.updated.emit(key, self._dict[key])
-
-        for key in deleted_keys:
-            self.updated.emit(key, self._dict.default_factory())
+        self.updated.emit( set(changed_keys).union(added_keys).union(deleted_keys) )
 
 if __name__ == "__main__":
     from PyQt4.QtCore import QCoreApplication
@@ -117,8 +108,8 @@ if __name__ == "__main__":
     assert d.get('y', 100) == 100
 
     handled_items = []
-    def f(key, value):
-        handled_items.append( (key, value) )
+    def f(keys):
+        handled_items.extend( (k,d[k]) for k in keys )
     
     d.updated.connect(f)
     
@@ -126,7 +117,7 @@ if __name__ == "__main__":
     d['d'] = 4
     del d['a']
     
-    assert handled_items == [('b', 20), ('d', 4), ('a', 0)], \
+    assert set(handled_items) == {('b', 20), ('d', 4), ('a', 0)}, \
         "Got: {}".format( handled_items )
 
     handled_items = []
