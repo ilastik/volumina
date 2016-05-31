@@ -62,7 +62,6 @@ def mesh_to_obj(mesh, path, name):
     :param str path: the path for the file
     :param str name: the name for the object
     """
-    # TODO: move objects to center
     with open(path, "w") as fout:
         fout.write("o {}\n".format(name))
 
