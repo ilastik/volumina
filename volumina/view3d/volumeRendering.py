@@ -19,14 +19,13 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtGui import QApplication
 import numpy
 from colorsys import hsv_to_rgb
 from threading import current_thread
 
 from .meshgenerator import MeshGenerator
 
-NO_OBJECTS = 256
+NUM_OBJECTS = 256
 
 
 class LabelManager(object):
@@ -63,7 +62,7 @@ class RenderingManager(object):
     """
     def __init__(self, overview_scene):
         self._overview_scene = overview_scene
-        self.labelmgr = LabelManager(NO_OBJECTS)
+        self.labelmgr = LabelManager(NUM_OBJECTS)
         self.ready = False
         self._cmap = {}
         self._mesh_thread = None
