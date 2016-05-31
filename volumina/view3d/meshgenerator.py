@@ -1,6 +1,6 @@
 from os.path import split, join
 
-from skimage.measure import marching_cubes, correct_mesh_orientation
+from skimage.measure import marching_cubes
 
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
@@ -50,7 +50,7 @@ def labeling_to_mesh(labeling, labels):
         copy = labeling.copy()
         copy[copy != label] = 0
         vertices, faces = marching_cubes(copy, level=0.5)
-        faces = correct_mesh_orientation(copy, vertices, faces)
+        # faces = correct_mesh_orientation(copy, vertices, faces)
         yield label, MeshData(vertices, faces)
 
 
