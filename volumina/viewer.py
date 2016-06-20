@@ -260,7 +260,7 @@ class Viewer(QMainWindow):
     
     def addColorTableLayer(self, a, name=None, colortable=None, direct=False, clickFunctor=None):
         if colortable is None:
-            colortable = self._randomColors()
+            colortable = self._randomColors(16384)
         source,self.dataShape = createDataSource(a,True)
         if clickFunctor is None:
             layer = ColortableLayer(source, colortable, direct=direct)
