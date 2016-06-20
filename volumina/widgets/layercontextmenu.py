@@ -84,9 +84,6 @@ def _add_actions_colortablelayer( layer, menu ):
         dlg = LayerColortableDialog(layer, menu.parent())
         dlg.exec_()
         
-    adjColortableAction = QAction("Change colortable", menu)
-    adjColortableAction.triggered.connect(adjust_colortable_callback)
-    menu.addAction(adjColortableAction)
     if layer.colortableIsRandom:
         randomizeColors = QAction("Randomize colors", menu)
         randomizeColors.triggered.connect(layer.randomizeColors)
@@ -98,9 +95,7 @@ def _add_actions( layer, menu ):
     elif isinstance( layer, RGBALayer ):
         _add_actions_rgbalayer( layer, menu )
     elif isinstance( layer, ColortableLayer ) or isinstance( layer, ClickableColortableLayer ):
-        pass
-        #This feature is currently not implemented
-        #_add_actions_colortablelayer( layer, menu )
+        _add_actions_colortablelayer( layer, menu )
 
 def layercontextmenu( layer, pos, parent=None ):
     '''Show a context menu to manipulate properties of layer.
