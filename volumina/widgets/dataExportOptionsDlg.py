@@ -215,9 +215,11 @@ class DataExportOptionsDlg(QDialog):
         dtypes = collections.OrderedDict([ ( "unsigned 8-bit",   "uint8" ),
                                            ( "unsigned 16-bit", "uint16" ),
                                            ( "unsigned 32-bit", "uint32" ),
+                                           ( "unsigned 64-bit", "uint64" ),
                                            ( "signed 8-bit",     "int8" ),
                                            ( "signed 16-bit",   "int16" ),
                                            ( "signed 32-bit",   "int32" ),
+                                           ( "signed 64-bit",   "int64" ),
                                            ( "floating 32-bit", "float32" ),
                                            ( "floating 64-bit", "float64" ) ])
         for name, dtype in dtypes.items():
