@@ -449,7 +449,11 @@ class ColortableImageRequest( object ):
                 # Make masked values transparent.
                 a = np.ma.filled(a, 0)
 
-            vigra.colors.applyColortable(a, _colorTable, byte_view(img))
+            if a.dtype in (np.uint64, np.int64):
+                # FIXME: applyColortable() doesn't support 64-bit, so just truncate
+                a = a.astype(np.uint32)
+
+            vigra.colors.applyColortable(a.astype(np.uint32), _colorTable, byte_view(img))
             tImg = 1000.0*(time.time()-tImg)
 
         # Without vigra, do it the slow way 
