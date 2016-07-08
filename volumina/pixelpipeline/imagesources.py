@@ -192,9 +192,9 @@ class GrayscaleImageRequest( object ):
             if not self._normalize or \
                self._normalize[0] >= self._normalize[1] or \
                self._normalize == [0, 0]: #FIXME: fix volumina conventions
-                n = np.asarray([0, 255], dtype=a.dtype)
+                n = np.asarray([0, 255], dtype=np.float32)
             else:
-                n = np.asarray(self._normalize, dtype=a.dtype)
+                n = np.asarray(self._normalize, dtype=np.float32)
             tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
             if not a.flags['C_CONTIGUOUS']:
@@ -282,9 +282,9 @@ class AlphaModulatedImageRequest( object ):
             tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32_Premultiplied)
             tintColor = np.asarray([self._tintColor.redF(), self._tintColor.greenF(), self._tintColor.blueF()], dtype=np.float32);
-            normalize = np.asarray(self._normalize, dtype=a.dtype)
+            normalize = np.asarray(self._normalize, dtype=np.float32)
             if normalize[0] > normalize[1]:
-                normalize = None
+                normalize = np.array( (0.0, 255.0) ).astype( np.float32 )
             vigra.colors.alphamodulated2qimage_ARGB32Premultiplied(a, byte_view(img), tintColor, normalize) 
             tImg = 1000.0*(time.time()-tImg)
         else:
