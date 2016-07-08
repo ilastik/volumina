@@ -291,9 +291,9 @@ class AlphaModulatedImageRequest( object ):
                 self.logger.warning("using unoptimized conversion functions")
             tImg = time.time()
             d = a[..., None].repeat(4, axis=-1)
-            d[:,:,0] *= self._tintColor.redF()
-            d[:,:,1] *= self._tintColor.greenF()
-            d[:,:,2] *= self._tintColor.blueF()
+            d[:,:,0] = d[:,:,0]*self._tintColor.redF()
+            d[:,:,1] = d[:,:,1]*self._tintColor.greenF()
+            d[:,:,2] = d[:,:,2]*self._tintColor.blueF()
 
             normalize = self._normalize
             img = array2qimage(d, normalize)
@@ -447,7 +447,7 @@ class ColortableImageRequest( object ):
 
                         # Insert space for transparent color and shift labels up.
                         _colorTable = np.insert(_colorTable, 0, 0, axis=0)
-                        a += 1
+                        a = a+1
                     else:
                         # Make sure the first color is transparent.
                         _colorTable = _colorTable.copy()
