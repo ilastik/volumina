@@ -24,11 +24,15 @@ from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplicat
 
 import numpy
 import os
+import time
+import platform
 
 from crossHairCursor import CrossHairCursor
 from sliceIntersectionMarker import SliceIntersectionMarker
 from croppingMarkers import CroppingMarkers
 from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
+
+from PyQt4.QtOpenGL import QGLWidget
 
 #*******************************************************************************
 # I m a g e V i e w 2 D                                                        *
@@ -93,6 +97,12 @@ class ImageView2D(QGraphicsView):
         """
 
         QGraphicsView.__init__(self, parent)
+
+        # OpenGL speeds up drawing (especially for QGraphicsItems),
+        # but it doesn't work well on OSX.
+        if platform.system() != "Darwin":
+            self.setViewport(QGLWidget())
+        
         self.setScene(imagescene2d)
         self.mousePos = QPointF(0,0)
         # FIXME: These int members shadow QWidget.x() and QWidget.y(), which can lead to confusion when debugging...
@@ -165,6 +175,12 @@ class ImageView2D(QGraphicsView):
         self._hiddenCursor = QCursor(Qt.BlankCursor)
         # For screen recording BlankCursor doesn't work
         #self.hiddenCursor = QCursor(Qt.ArrowCursor)
+
+#     def paintEvent(self, event):
+#         start = time.time()
+#         super( ImageView2D, self ).paintEvent(event)
+#         print "painting took {} ms".format( int((time.time() - start)*1000) )
+
 
     def showCropLines(self, visible):
         self._croppingMarkers.setVisible(visible)

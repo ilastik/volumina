@@ -26,12 +26,13 @@ from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, QPolyg
                         QGraphicsItemGroup, QGraphicsLineItem, QGraphicsTextItem, QGraphicsPolygonItem, \
                         QGraphicsRectItem
 
-from volumina.tiling import Tiling, TileProvider, TiledImageLayer
+from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.imagepump import StackedImageSources
 
 import datetime
 import threading
+from collections import defaultdict
 
 #*******************************************************************************
 # D i r t y I n d i c a t o r                                                  *
@@ -131,7 +132,6 @@ class ImageScene2D(QGraphicsScene):
     @stackedImageSources.setter
     def stackedImageSources(self, s):
         self._stackedImageSources = s
-        s.sizeChanged.connect(self._onSizeChanged)
 
     @property
     def showTileOutlines(self):
@@ -180,7 +180,9 @@ class ImageScene2D(QGraphicsScene):
         # t1 : do axis swap
         t1 = QTransform()
         if self._swapped:
-            t1 = QTransform(0, 1, 0, 1, 0, 0, 0, 0, 1)
+            t1 = QTransform(0, 1, 0,
+                            1, 0, 0,
+                            0, 0, 1)
             h, w = w, h
 
         # t2 : do rotation
@@ -227,7 +229,6 @@ class ImageScene2D(QGraphicsScene):
         self.scene2data, isInvertible = self.data2scene.inverted()
         self._setSceneRect()
         self._tiling.data2scene = self.data2scene
-        self._tileProvider._onSizeChanged()
         QGraphicsScene.invalidate(self, self.sceneRect())
 
     @property
@@ -240,13 +241,20 @@ class ImageScene2D(QGraphicsScene):
         sw, sh = rect.width(), rect.height()
         self.setSceneRect(0, 0, sw, sh)
         
+        if self._dataRectItem is not None:
+            self.removeItem( self._dataRectItem )
+        
         #this property represent a parent to QGraphicsItems which should
         #be clipped to the data, such as temporary capped lines for brushing.
         #This works around ilastik issue #516.
-        self.dataRect = QGraphicsRectItem(0,0,sw,sh)
-        self.dataRect.setPen(QPen(QColor(0,0,0,0)))
-        self.dataRect.setFlag(QGraphicsItem.ItemClipsChildrenToShape)
-        self.addItem(self.dataRect)
+        self._dataRectItem = QGraphicsRectItem(0,0,sw,sh)
+        self._dataRectItem.setPen(QPen(QColor(0,0,0,0)))
+        self._dataRectItem.setFlag(QGraphicsItem.ItemClipsChildrenToShape)
+        self.addItem(self._dataRectItem)
+
+    @property
+    def dataRectItem(self):
+        return self._dataRectItem
 
     @property
     def dataShape(self):
@@ -269,12 +277,10 @@ class ImageScene2D(QGraphicsScene):
         self._finishViewMatrixChange()
 
     def setCacheSize(self, cache_size):
-        if cache_size != self._tileProvider._cache_size:
-            self._tileProvider = TileProvider(self._tiling, self._stackedImageSources, cache_size=cache_size)
-            self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
+        self._tileProvider.set_cache_size(cache_size)
 
     def cacheSize(self):
-        return self._tileProvider._cache_size
+        return self._tileProvider.cache_size
 
     def setPrefetchingEnabled(self, enable):
         self._prefetching_enabled = enable
@@ -301,7 +307,6 @@ class ImageScene2D(QGraphicsScene):
         self.resetAxes(finish=False)
 
         self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name)
-        self._brushingLayer  = TiledImageLayer(self._tiling)
 
         self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
@@ -332,7 +337,7 @@ class ImageScene2D(QGraphicsScene):
         self.allow_brushing = True
 
         self._dataShape = (0, 0)
-        self._dataRect = None #A QGraphicsRectItem (or None)
+        self._dataRectItem = None #A QGraphicsRectItem (or None)
         self._offsetX = 0
         self._offsetY = 0
         self.name = name
@@ -362,25 +367,21 @@ class ImageScene2D(QGraphicsScene):
         
         self._allTilesCompleteEvent = threading.Event()
         self.dirty = False
-
-    def _onSizeChanged(self):
-        self._brushingLayer  = TiledImageLayer(self._tiling)
+        
+        # We manually keep track of the tile-wise QGraphicsItems that
+        # we've added to the scene in this dict, otherwise we would need
+        # to use O(N) lookups for every tile by calling QGraphicsScene.items()
+        self.tile_graphicsitems = defaultdict(set) # [Tile.id] -> set(QGraphicsItems)
 
     def drawForeground(self, painter, rect):
         if self._tiling is None:
             return
 
-        tile_nos = self._tiling.intersected(rect)
+        if self._showTileOutlines:
+            tile_nos = self._tiling.intersected(rect)
 
-        for tileId in tile_nos:
-            p = self._brushingLayer[tileId]
-            if p.dataVer == p.imgVer:
-                continue
-
-            p.paint(painter) #access to the underlying image patch is serialized
-
+            for tileId in tile_nos:
             ## draw tile outlines
-            if self._showTileOutlines:
                 # Dashed black line
                 pen = QPen()
                 pen.setDashPattern([5,5])
@@ -413,6 +414,18 @@ class ImageScene2D(QGraphicsScene):
             #See also ilastik issue #132 and tests/lazy_test.py
             if tile.qimg is not None:
                 painter.drawImage(tile.rectF, tile.qimg)
+
+            # The tile also contains a list of any QGraphicsItems that were produced by the layers.
+            # If there are any new ones, add them to the scene.
+            new_items = set(tile.qgraphicsitems) - self.tile_graphicsitems[tile.id]
+            obsolete_items = self.tile_graphicsitems[tile.id] - set(tile.qgraphicsitems)
+            for g_item in obsolete_items:
+                self.tile_graphicsitems[tile.id].remove(g_item)
+                self.removeItem(g_item)
+            for g_item in new_items:
+                self.tile_graphicsitems[tile.id].add(g_item)
+                self.addItem(g_item)
+
             if tile.progress < 1.0:
                 allComplete = False
             if self._showTileProgress:
@@ -431,8 +444,58 @@ class ImageScene2D(QGraphicsScene):
 
         # preemptive fetching
         if self._prefetching_enabled:
-            for through in self._bowWave(self._n_preemptive):
-                self._tileProvider.prefetch(sceneRectF, through)
+            upcoming_through_slices = self._bowWave(self._n_preemptive)
+            self.triggerPrefetch(sceneRectF, upcoming_through_slices, layers)
+
+    def triggerPrefetch(self, layer_indexes, time_range='current', spatial_axis_range='current', sceneRectF=None ):
+        """
+        Trigger a one-time prefetch for the given set of layers.
+        
+        TODO: I'm not 100% sure what happens here for layers with multiple channels.
+        
+        layer_indexes: list-of-ints, or None, which means 'all visible'.
+        time_range: (start_time, stop_time)
+        spatial_axis_range: (start_slice, stop_slice), meaning Z/Y/X depending on our projection (self.along)
+        sceneRectF: Used to determine which tiles to request.
+                    An invalid QRectF results in all tiles getting refreshed (visible or not).
+        """
+        # Process parameters
+        sceneRectF = sceneRectF or QRectF()
+
+        if time_range == 'current':
+            time_range = (self._posModel.slicingPos5D[0],
+                          self._posModel.slicingPos5D[0]+1)
+        elif time_range == 'all':
+            time_range = (0, self._posModel.shape5D[0])
+        else:
+            assert len(time_range) == 2
+            assert time_range[0] >= 0 and time_range[1] < self._posModel.shape5D[0]
+
+        spatial_axis = self._along[1]
+        if spatial_axis_range == 'current':
+            spatial_axis_range = (self._posModel.slicingPos5D[spatial_axis],
+                                  self._posModel.slicingPos5D[spatial_axis]+1)
+        elif spatial_axis_range == 'all':
+            spatial_axis_range = (0, self._posModel.shape5D[spatial_axis])
+        else:
+            assert len(spatial_axis_range) == 2
+            assert 0 <= spatial_axis_range[0] <  self._posModel.shape5D[spatial_axis]
+            assert 0 <  spatial_axis_range[1] <= self._posModel.shape5D[spatial_axis]
+
+        # Construct list of 'through' coordinates
+        through_list = []
+        for t in range( *time_range ):
+            for s in range( *spatial_axis_range ):
+                through_list.append( (t, s) )
+
+        # Make sure the tile cache is big enough to hold the prefetched data.
+        if self._tileProvider.cache_size < len(through_list):
+            self._tileProvider.set_cache_size( len(through_list) )
+
+        # Trigger prefetches
+        for through in through_list:
+            self._tileProvider.prefetch(sceneRectF, through, layer_indexes)
+        
 
     def joinRenderingAllTiles(self, viewport_only=True, rect=None):
         """
@@ -456,10 +519,8 @@ class ImageScene2D(QGraphicsScene):
 
 
     def _bowWave(self, n):
-        shape5d = self._posModel.shape5D
-        sl5d = self._posModel.slicingPos5D
-        through = [sl5d[self._along[i]] for i in xrange(3)]
-        t_max = [shape5d[self._along[i]] for i in xrange(3)]
+        through = [ self._posModel.slicingPos5D[axis] for axis in self._along[:-1] ]
+        t_max = [ self._posModel.shape5D[axis] for axis in self._along[:-1] ]
 
         BowWave = []
 

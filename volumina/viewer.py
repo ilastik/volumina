@@ -292,6 +292,14 @@ class Viewer(QMainWindow):
     
     def addClickableSegmentationLayer(self, a, name=None, direct=False, colortable=None, reuseColors=True):
         return ClickableSegmentationLayer(a, self, name=name, direct=direct, colortable=colortable, reuseColors=reuseColors) 
+
+    def addSegmentationEdgesLayer(self, a, name=None, **kwargs):
+        source = createDataSource(a, False)
+        layer = SegmentationEdgesLayer(source, **kwargs)
+        layer.numberOfChannels = 1
+        layer.name = name
+        self.layerstack.append(layer)
+        return layer
         
     def _randomColors(self, M=256):
         """Generates a pleasing color table with M entries."""
@@ -308,46 +316,112 @@ class Viewer(QMainWindow):
         #for the first 16 objects, use some colors that are easily distinguishable
         colors[1:17] = colortables.default16 
         return colors
-        
+
 if __name__ == "__main__":
     import sys
     
     app = QApplication(sys.argv)
     viewer = Viewer()
     viewer.show()
-    array1 = (numpy.random.random((1,100,100,100,5))) * 255
 
-    try:
-        import vigra
-    except:    
-        pass
-    else:
-        array1 = vigra.taggedView(array1, 'txyzc')
-    viewer.addGrayscaleLayer(array1)
 
-    array2 = (numpy.random.random((100,100,100,3))) * 255
-    viewer.addRGBALayer(array2)
+#     array1 = (numpy.random.random((1,1000,1000,10,1))) * 255
+#     viewer.addGrayscaleLayer(array1)
+# 
+#     from volumina.layer import DummyGraphicsItemLayer
+#     source = createDataSource(array1,False)
+#     layer = DummyGraphicsItemLayer(source)
+#     layer.name = "DUMMY GRAPHICS"
+#     viewer.layerstack.append(layer)
 
-    try:
+    test = '2d'
+    if test == '2d':
+        from volumina.utility import SegmentationEdgesItem
+        labels_img = numpy.load('/Users/bergs/workspace/ilastik-meta/ilastik/seg-slice-256.npy')
+        viewer.addRandomColorsLayer(labels_img, 'labels')
+        #g_item = SegmentationEdgesItem(labels_img)
+        #viewer.editor.imageScenes[2].addItem(g_item)
+         
+        source = createDataSource(labels_img, False)
+        layer = SegmentationEdgesLayer(source)
+        layer.numberOfChannels = 1
+        layer.name = "Edges"
+        viewer.layerstack.append(layer)
+
+    if test == '3d':
+        os.chdir('/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol')    
+        
         import h5py
-    except:
-        pass
-    else:
-        f = h5py.File('/tmp/blabla.h5', 'w')
-        f['data'] = (numpy.random.random((1,100,100,100,4))) * 255
-        viewer.addGrayscaleLayer(f['data'], name='from_hdf5')    
+        print "Loading grayscale..."
+        grayscale_file = h5py.File('grayscale-512.h5', 'r')
+        grayscale_dset = grayscale_file['grayscale']
+        grayscale_zyx = grayscale_dset[...,0]
+        
+        print "Loading membranes..."
+        membranes_file = h5py.File('final-membranes-512.h5', 'r')
+        membranes_dset = membranes_file['membranes']
+        membranes_zyx = membranes_dset[...,0]
+        
+        print "Loading watershed..."
+        watershed_file = h5py.File('watershed-512.h5', 'r')
+        watershed_dset = watershed_file['watershed']
+        watershed_zyx = watershed_dset[:]
     
-    white_array = (numpy.ones((100,100,100,1))) * 255
-    viewer.addGrayscaleLayer(white_array, "white")
+        print "Loading segmentation..."
+        segmentation_file = h5py.File('segmentation-512.h5', 'r')
+        segmentation_dset = segmentation_file['segmentation']
+        segmentation_zyx = segmentation_dset[:]
     
-    array3 = (numpy.random.random((100,100,100,3))) * 255
-    red_layer = viewer.addAlphaModulatedLayer(array3[...,0], "array3-red", tintColor=QColor(255,0,0))
-    green_layer = viewer.addAlphaModulatedLayer(array3[...,1], "array3-green", tintColor=QColor(0,255,0))
-    blue_layer = viewer.addAlphaModulatedLayer(array3[...,2], "array3-blue", tintColor=QColor(0,0,255))
+        print "Adding raster layers..."
+        viewer.addGrayscaleLayer(grayscale_zyx.transpose(), 'grayscale')
+        viewer.addAlphaModulatedLayer(membranes_zyx.transpose(), 'membranes', tintColor=QColor(255,0,0))
+        viewer.addRandomColorsLayer(watershed_zyx.transpose(), 'watershed')
+        viewer.addRandomColorsLayer(segmentation_zyx.transpose(), 'segmentation')
+    
+        print "Adding vector layers..."
+        watershed_pen = QPen(SegmentationEdgesLayer.DEFAULT_PEN)
+        watershed_pen.setColor(Qt.yellow)
+        viewer.addSegmentationEdgesLayer(watershed_zyx.transpose(), 'watershed edges', default_pen=watershed_pen)
+    
+        segmentation_pen = QPen(SegmentationEdgesLayer.DEFAULT_PEN)
+        segmentation_pen.setColor(Qt.blue)
+        viewer.addSegmentationEdgesLayer(segmentation_zyx.transpose(), 'segmentation edges', default_pen=segmentation_pen)
+    
+    
+    #from PyQt4.QtGui import QGraphicsView
+    #viewer.editor.imageViews[2].setOptimizationFlag(QGraphicsView.DontAdjustForAntialiasing, True)
 
-    red_layer.opacity = 1.0
-    green_layer.opacity = 0.66
-    blue_layer.opacity = 0.33
+#     try:
+#         import vigra
+#     except:
+#         pass
+#     else:
+#         array1 = vigra.taggedView(array1, 'txyzc')
+#     viewer.addGrayscaleLayer(array1)
+# 
+#     array2 = (numpy.random.random((100,100,100,3))) * 255
+#     viewer.addRGBALayer(array2)
+# 
+#     try:
+#         import h5py
+#     except:
+#         pass
+#     else:
+#         f = h5py.File('/tmp/blabla.h5', 'w')
+#         f['data'] = (numpy.random.random((1,100,100,100,4))) * 255
+#         viewer.addGrayscaleLayer(f['data'], name='from_hdf5')    
+#     
+#     white_array = (numpy.ones((100,100,100,1))) * 255
+#     viewer.addGrayscaleLayer(white_array, "white")
+#     
+#     array3 = (numpy.random.random((100,100,100,3))) * 255
+#     red_layer = viewer.addAlphaModulatedLayer(array3[...,0], "array3-red", tintColor=QColor(255,0,0))
+#     green_layer = viewer.addAlphaModulatedLayer(array3[...,1], "array3-green", tintColor=QColor(0,255,0))
+#     blue_layer = viewer.addAlphaModulatedLayer(array3[...,2], "array3-blue", tintColor=QColor(0,0,255))
+# 
+#     red_layer.opacity = 1.0
+#     green_layer.opacity = 0.66
+#     blue_layer.opacity = 0.33
     
     viewer.raise_()
     

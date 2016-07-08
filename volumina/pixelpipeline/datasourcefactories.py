@@ -74,9 +74,50 @@ def createDataSource(source,withShape = False):
     return _createArrayDataSource(source, withShape)
 
 if hasH5py:
+    
+    class H5pyDset5DWrapper(object):
+        
+        def __init__(self, dset):
+            if len(dset.shape) == 2:
+                shape_5d = (1,) + dset.shape + (1,1)
+                real_axes = (1,2)
+            elif len(dset.shape) == 3 and dset.shape[2] <= 4:
+                shape_5d = (1,) + dset.shape[0:2] + (1,) + (dset.shape[2],)
+                real_axes = (1,2,4)
+            elif len(dset.shape) == 3:
+                shape_5d = (1,) + dset.shape + (1,)
+                real_axes = (1,2,3)
+            elif len(dset.shape) == 4:
+                shape_5d = (1,) + dset.shape
+                real_axes = (1,2,3,4)
+            elif len(dset.shape) == 5:
+                shape_5d = dset.shape
+                real_axes = (0,1,2,3,4)
+            else:
+                assert False, "Can't handle h5py.Datasets with {} axes".format( len(dset.shape) )
+            
+            self.dset = dset
+            self.dtype = dset.dtype
+            self.shape = shape_5d
+            self.real_axes = real_axes
+
+        def __getitem__(self, slicing_5d):
+            real_slicing = tuple(slicing_5d[i] for i in self.real_axes)
+            data = self.dset[real_slicing]
+            expanded_slicing = [None] * 5
+            for axis in self.real_axes:
+                expanded_slicing[axis] = slice(None)
+            return data[expanded_slicing]
+        
+    
     @multimethod(h5py.Dataset,bool)
-    def createDataSource(source,withShape = False):
-        return _createArrayDataSource(source, withShape)    
+    def createDataSource(dset,withShape = False):
+        dset_5d = H5pyDset5DWrapper(dset)
+        src = ArraySource(dset_5d)
+        if withShape:
+            return src, dset_5d.shape
+        else:
+            return src
 
 if hasVigra:
     @multimethod(vigra.VigraArray,bool)

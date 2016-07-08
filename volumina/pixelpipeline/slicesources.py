@@ -45,10 +45,6 @@ class SliceRequest( object ):
     def getResult(self):
         return self._sp(self._ar.getResult())
 
-    def notify( self, callback, **kwargs ):
-        self._ar.notify(self._onNotify, package = (callback, kwargs))
-        return self
-
     def cancel( self ):
         self._ar.cancel()
 
@@ -59,10 +55,10 @@ class SliceRequest( object ):
     def adjustPriority(self, delta):
         self._ar.adjustPriority(delta)
         return self
+    
+    def handednessSwitched(self):
+        return self._sp.handednessSwitched()
 
-    def _onNotify( self, result, package ):
-        callback, kwargs = package
-        callback(self._sp(result), **kwargs)
 assert issubclass(SliceRequest, RequestABC)
 
 #*******************************************************************************

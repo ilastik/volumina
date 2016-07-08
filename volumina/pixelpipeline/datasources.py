@@ -34,6 +34,7 @@ import numpy as np
 _has_lazyflow = True
 try:
     import lazyflow.operators.opReorderAxes
+    from lazyflow.roi import sliceToRoi, roiToSlice
 except:
     _has_lazyflow = False
 
@@ -42,6 +43,7 @@ try:
     import vigra
 except ImportError:
     _has_vigra = False
+
 
 #*******************************************************************************
 # A r r a y R e q u e s t                                                      *
@@ -67,14 +69,6 @@ class ArrayRequest( object ):
     def submit( self ):
         pass
         
-    # callback( result = result, **kwargs )
-    def notify( self, callback, **kwargs ):
-        t = threading.Thread(target=self._doNotify, args=( callback, kwargs ))
-        t.start()
-
-    def _doNotify( self, callback, kwargs ):
-        result = self.wait()
-        callback(result, **kwargs)
 assert issubclass(ArrayRequest, RequestABC)
 
 #*******************************************************************************
@@ -97,6 +91,8 @@ class ArraySource( QObject ):
         self._array = None
 
     def dtype(self):
+        if isinstance(self._array.dtype, type):
+            return self._array.dtype
         return self._array.dtype.type
 
     def request( self, slicing ):
@@ -241,11 +237,6 @@ if _has_lazyflow:
         def cancel( self ):
             self._req.cancel()
     
-        def submit( self ):
-            self._req.submit()
-    
-        def notify( self, callback, **kwargs ):
-            self._req.notify_finished( partial(callback, (), **kwargs) )
     assert issubclass(LazyflowRequest, RequestABC)
 
     #*******************************************************************************
@@ -319,10 +310,15 @@ if _has_lazyflow:
             if not is_pure_slicing(slicing):
                 raise Exception('LazyflowSource: slicing is not pure')
             assert self._op5 is not None, "Underlying operator is None.  Are you requesting from a datasource that has been cleaned up already?"
-            return LazyflowRequest( self._op5, slicing, self._priority, objectName=self.objectName() )
+
+            start, stop = sliceToRoi(slicing, self._op5.Output.meta.shape)
+            clipped_roi = np.maximum(start, (0,0,0,0,0)), np.minimum(stop, self._op5.Output.meta.shape)
+            clipped_slicing = roiToSlice(*clipped_roi)
+            return LazyflowRequest( self._op5, clipped_slicing, self._priority, objectName=self.objectName() )
     
         def _setDirtyLF(self, slot, roi):
-            self.setDirty(roi.toSlice())
+            clipped_roi = np.maximum(roi.start, (0,0,0,0,0)), np.minimum(roi.stop, self._op5.Output.meta.shape)
+            self.setDirty( roiToSlice(*clipped_roi) )
     
         def setDirty( self, slicing):
             if not is_pure_slicing(slicing):
@@ -397,9 +393,6 @@ class ConstantRequest( object ):
     def adjustPriority(self, delta):
         pass        
         
-    # callback( result = result, **kwargs )
-    def notify( self, callback, **kwargs ):
-        callback(self._result, **kwargs)
 assert issubclass(ConstantRequest, RequestABC)
 
 #*******************************************************************************
@@ -473,14 +466,6 @@ class MinMaxUpdateRequest( object ):
         self._update_func(rawData)
         return self._result
     
-    # callback( result = result, **kwargs )
-    def notify( self, callback, **kwargs ):
-        def handleResult(rawResult):
-            self._result =  rawResult
-            self._update_func(rawResult)
-            callback( self._result, **kwargs )
-        self._rawRequest.notify( handleResult )
-
     def getResult(self):
         return self._result
 
@@ -590,3 +575,74 @@ class MinMaxSource( QObject ):
 
 assert issubclass(MinMaxSource, SourceABC)
 
+
+class HaloAdjustedDataSource( QObject ):
+    """
+    A wrapper for other datasources.
+    For any datasource request, expands the requested ROI by a halo
+    and forwards the expanded request to the underlying datasouce object.
+    """
+    isDirty = pyqtSignal( object )
+    numberOfChannelsChanged = pyqtSignal(int)
+    
+    def __init__( self, rawSource, halo_start_delta, halo_stop_delta, parent=None ):
+        """
+        rawSource: The original datasource that we'll be requesting data from.
+        halo_start_delta: For example, to expand by 1 pixel in spatial dimensions only:
+                          (0,-1,-1,-1,0)
+        halo_stop_delta: For example, to expand by 1 pixel in spatial dimensions only:
+                          (0,1,1,1,0)
+        """
+        super(HaloAdjustedDataSource, self).__init__(parent)
+        self._rawSource = rawSource
+        self._rawSource.isDirty.connect( self.setDirty )
+        self._rawSource.numberOfChannelsChanged.connect( self.numberOfChannelsChanged )
+        
+        assert all(s <= 0 for s in halo_start_delta), "Halo start should be non-positive"
+        assert all(s >= 0 for s in halo_stop_delta), "Halo stop should be non-negative"
+        self.halo_start_delta = halo_start_delta
+        self.halo_stop_delta = halo_stop_delta
+
+    @property
+    def numberOfChannels(self):
+        return self._rawSource.numberOfChannels
+
+    def clean_up(self):
+        self._rawSource.clean_up()
+            
+    @property
+    def dataSlot(self):
+        if hasattr(self._rawSource, "_orig_outslot"):
+            return self._rawSource._orig_outslot
+        else:
+            return None
+            
+    def dtype(self):
+        return self._rawSource.dtype()
+    
+    def request( self, slicing ):
+        slicing_with_halo = self._expand_slicing_with_halo(slicing)
+        return self._rawSource.request(slicing_with_halo)
+
+    def setDirty( self, slicing ):
+        # FIXME: This assumes the halo is symmetric
+        slicing_with_halo = self._expand_slicing_with_halo(slicing)
+        self.isDirty.emit(slicing_with_halo)
+
+    def __eq__( self, other ):
+        equal = True
+        if other is None:
+            return False
+        equal &= isinstance( other, type(self) )
+        equal &= ( self._rawSource == other._rawSource )
+        return equal
+
+    def __ne__( self, other ):
+        return not ( self == other )
+
+    def _expand_slicing_with_halo(self, slicing):
+        return tuple( slice(s.start+halo_start, s.stop+halo_stop)
+                      for (s, halo_start, halo_stop) in zip( slicing,
+                                    self.halo_start_delta,
+                                    self.halo_stop_delta ) )
+    

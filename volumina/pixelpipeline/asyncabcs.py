@@ -49,14 +49,10 @@ class RequestABC:
     def wait( self ):
         ''' doc '''
 
-    @abstractmethod
-    def notify( self, callback, **kwargs ):
-        pass
-
     @classmethod
     def __subclasshook__(cls, C):
         if cls is RequestABC:
-            return True if _has_attributes(C, ['wait', 'notify']) else False
+            return True if _has_attributes(C, ['wait']) else False
         return NotImplemented
 
 

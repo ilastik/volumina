@@ -224,7 +224,7 @@ class BrushingInterpreter( QObject ):
         line.setPen(pen)
         
         imageview.scene().addItem(line)
-        line.setParentItem(imageview.scene().dataRect)
+        line.setParentItem(imageview.scene().dataRectItem)
 
         self._lineItems.append(line)
         self._brushingCtrl._brushingModel.moveTo(imageview.mousePos)

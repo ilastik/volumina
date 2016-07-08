@@ -38,6 +38,7 @@ from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte
 from asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import cfg
+from volumina.utility import execute_in_main_thread
 import numpy as np
 
 _has_vigra = True
@@ -61,7 +62,7 @@ class ImageSource( QObject ):
 
     isDirty = pyqtSignal( QRect )
 
-    def __init__( self, guarantees_opaqueness = False, parent = None, direct=False ):
+    def __init__( self, name, guarantees_opaqueness = False, parent = None, direct=False ):
         ''' direct: whether this request will be computed synchronously in the GUI thread (direct=True)
                     or whether the request will be put on a worker queue to be computed in a worker thread
                     (direct=False).
@@ -69,6 +70,14 @@ class ImageSource( QObject ):
         super(ImageSource, self).__init__( parent = parent )
         self._opaque = guarantees_opaqueness
         self.direct = direct
+        self.name = name
+
+    def image_type(self):
+        """
+        Image sources must declare what type of "image" they will produce.
+        The two allowed types are QImage and QGraphicsItems (and subclasses).
+        """
+        return QImage
 
     def request( self, rect, along_through=None ):
         raise NotImplementedError
@@ -112,7 +121,7 @@ class GrayscaleImageSource( ImageSource ):
     
     def __init__( self, arraySource2D, layer ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(GrayscaleImageSource, self).__init__( guarantees_opaqueness = True, direct=layer.direct )
+        super(GrayscaleImageSource, self).__init__( layer.name, guarantees_opaqueness = True, direct=layer.direct )
         self._arraySource2D = arraySource2D
 
         self._layer = layer
@@ -180,7 +189,7 @@ class GrayscaleImageRequest( object ):
         #
         tImg = None
         if has_no_mask and _has_vigra and hasattr(vigra.colors, 'gray2qimage_ARGB32Premultiplied'):
-            if self._normalize is None or \
+            if not self._normalize or \
                self._normalize[0] >= self._normalize[1] or \
                self._normalize == [0, 0]: #FIXME: fix volumina conventions
                 n = np.asarray([0, 255], dtype=a.dtype)
@@ -205,20 +214,12 @@ class GrayscaleImageRequest( object ):
             ret = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             tImg = 1000.0*(time.time()-tImg)
         
-        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+        if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0*(time.time()-t)
             self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
             
         return img
             
-    def notify( self, callback, **kwargs ):
-        self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
-    
-    def _onNotify( self, result, package ):
-        img = self.toImage()
-        callback = package[0]
-        kwargs = package[1]
-        callback( img, **kwargs )
 assert issubclass(GrayscaleImageRequest, RequestABC)
 
 #*******************************************************************************
@@ -228,7 +229,7 @@ assert issubclass(GrayscaleImageRequest, RequestABC)
 class AlphaModulatedImageSource( ImageSource ):
     def __init__( self, arraySource2D, layer ):
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(AlphaModulatedImageSource, self).__init__()
+        super(AlphaModulatedImageSource, self).__init__(layer.name)
         self._arraySource2D = arraySource2D
         self._layer = layer
 
@@ -300,20 +301,12 @@ class AlphaModulatedImageRequest( object ):
             img = img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
             tImg = 1000.0*(time.time()-tImg)
        
-        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+        if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0*(time.time()-t)
             self.logger.debug("toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg))
             
         return img
-            
-    def notify( self, callback, **kwargs ):
-        self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
     
-    def _onNotify( self, result, package ):
-        img = self.toImage()
-        callback = package[0]
-        kwargs = package[1]
-        callback( img, **kwargs )
 assert issubclass(AlphaModulatedImageRequest, RequestABC)
 
 #*******************************************************************************
@@ -328,7 +321,7 @@ class ColortableImageSource( ImageSource ):
         """ colorTable: a list of QRgba values """
 
         assert isinstance(arraySource2D, SourceABC), 'wrong type: %s' % str(type(arraySource2D))
-        super(ColortableImageSource, self).__init__(direct=layer.direct)
+        super(ColortableImageSource, self).__init__(layer.name, direct=layer.direct)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
 
@@ -381,7 +374,7 @@ class ColortableImageRequest( object ):
         self._colorTable = colorTable
         self.direct = direct
         self._normalize = normalize
-        assert normalize is None or len(normalize) == 2
+        assert not normalize or len(normalize) == 2
 
     def wait(self):
         return self.toImage()
@@ -456,7 +449,11 @@ class ColortableImageRequest( object ):
                 # Make masked values transparent.
                 a = np.ma.filled(a, 0)
 
-            vigra.colors.applyColortable(a, _colorTable, byte_view(img))
+            if a.dtype in (np.uint64, np.int64):
+                # FIXME: applyColortable() doesn't support 64-bit, so just truncate
+                a = a.astype(np.uint32)
+
+            vigra.colors.applyColortable(a.astype(np.uint32), _colorTable, byte_view(img))
             tImg = 1000.0*(time.time()-tImg)
 
         # Without vigra, do it the slow way 
@@ -474,20 +471,12 @@ class ColortableImageRequest( object ):
             img = colortable[a]
             img = array2qimage(img)
             
-        if self.logger.getEffectiveLevel() >= logging.DEBUG:
+        if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0*(time.time()-t)
             self.logger.debug("toImage (%dx%d) took %f msec. (array req: %f, wait: %f, img: %f)" % (img.width(), img.height(), tTOT, tAR, tWAIT, tImg))
 
         return img 
-            
-    def notify( self, callback, **kwargs ):
-        self._arrayreq.notify(self._onNotify, package = (callback, kwargs))
     
-    def _onNotify( self, result, package ):
-        img = self.toImage()
-        callback = package[0]
-        kwargs = package[1]
-        callback( img, **kwargs )
 assert issubclass(ColortableImageRequest, RequestABC)
 
 #*******************************************************************************
@@ -509,7 +498,7 @@ class RGBAImageSource( ImageSource ):
         for channel in channels: 
                 assert isinstance(channel, SourceABC) , 'channel has wrong type: %s' % str(type(channel))
 
-        super(RGBAImageSource, self).__init__( guarantees_opaqueness = guarantees_opaqueness )
+        super(RGBAImageSource, self).__init__(layer.name,  guarantees_opaqueness = guarantees_opaqueness )
         self._channels = channels
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)
@@ -564,20 +553,6 @@ class RGBAImageRequest( object ):
         img = array2qimage(self._data)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)        
 
-    def notify( self, callback, **kwargs ):
-        for i in xrange(4):
-            self._requests[i].notify(self._onNotify, package = (i, callback, kwargs))
-
-    def _onNotify( self, result, package ):
-        channel = package[0]
-        self._requestsFinished[channel] = True
-        if all(self._requestsFinished):
-            img = self.toImage()
-        
-            callback = package[1]
-            kwargs = package[2]
-            callback( img, **kwargs )
-
 assert issubclass(RGBAImageRequest, RequestABC)
 
 
@@ -601,8 +576,152 @@ class RandomImageRequest( object ):
         img = gray2qimage(d)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
             
-    def notify( self, callback, **kwargs ):
-        img = self.wait()
-        callback( img, **kwargs )
-
 assert issubclass(RandomImageRequest, RequestABC)
+
+
+##
+## Sources that produce QGraphicsItems isntead of QImages
+##
+
+from PyQt4.QtCore import Qt, QRect, QRectF, QSize
+from PyQt4.QtGui import QGraphicsItem, QColor, QPen, QGraphicsLineItem
+from contextlib import contextmanager
+ 
+@contextmanager
+def painter_context(painter):
+    try:
+        painter.save()
+        yield
+    finally:
+        painter.restore()
+ 
+class DummyItem( QGraphicsItem ):
+    def __init__(self, rectf, parent=None):
+        super( DummyItem, self ).__init__( parent )
+        self.rectf = rectf
+        self.line = QGraphicsLineItem( self.rectf.x(),
+                                       self.rectf.y(),
+                                       self.rectf.x() + self.rectf.width(),
+                                       self.rectf.y() + self.rectf.height(),
+                                       parent=self )
+    
+     
+    def boundingRect(self):
+        return self.rectf
+     
+    def paint(self, painter, option, widget=None):
+        with painter_context(painter):
+            pen = QPen(painter.pen())
+            pen.setWidth(10.0)
+            pen.setColor( QColor(255,0,0) )
+            painter.setPen(pen)
+            shrunken_rectf = self.rectf.adjusted(10,10,-10,-10)
+            painter.drawRoundedRect(shrunken_rectf, 50, 50, Qt.RelativeSize)
+    
+    def mousePressEvent(self, event):
+        print "You clicked on rect: {}".format( self.rectf )
+
+    def mouseReleaseEvent(self, event):
+        pass
+ 
+class DummyItemRequest(object):
+    def __init__(self, arrayreq, rect):
+        self.rect = rect
+        self._arrayreq = arrayreq
+    
+    def wait(self):
+        array_data = self._arrayreq.wait()
+        # Here's where we would do something with the data...
+        assert array_data.shape == (self.rect.width(), self.rect.height())
+        return execute_in_main_thread(DummyItem, QRectF(self.rect))
+
+class DummyItemSource(ImageSource):
+    def __init__( self, arraySource2D ):
+        super( DummyItemSource, self ).__init__('dummy item')
+        self._arraySource2D = arraySource2D
+        
+    def request( self, qrect, along_through=None ):
+        assert isinstance(qrect, QRect)
+        s = rect2slicing(qrect)
+        arrayreq = self._arraySource2D.request(s, along_through)
+        return DummyItemRequest(arrayreq, qrect)
+
+class DummyRasterRequest(object):
+    """
+    For stupid tests.
+    Uses DummyItem, but rasterizes it to turn it into a QImage.
+    """
+    def __init__(self, arrayreq, rect):
+        self.rectf = QRectF(rect)
+        self._arrayreq = arrayreq
+    
+    def wait(self):
+        array_data = self._arrayreq.wait()
+        rectf = self.rectf
+        if array_data.handedness_switched: # array_data should be of type slicingtools.ProjectedArray
+            rectf = QRectF(rectf.height(), rectf.width())
+        
+        from PyQt4.QtGui import QPainter
+        img = QImage( QSize( self.rectf.width(), self.rectf.height() ), QImage.Format_ARGB32_Premultiplied)
+        img.fill(0xffffffff)
+        p = QPainter(img)
+        p.drawImage(0,0, img)
+        DummyItem(self.rectf).paint(p, None)
+        return img
+
+class DummyRasterItemSource(ImageSource):
+    def request( self, qrect, along_through=None ):
+        return DummyRasterRequest(qrect)
+
+
+from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem, generate_path_items_for_labels
+class SegmentationEdgesItemSource(ImageSource):
+    def __init__( self, layer, arraySource2D ):
+        from volumina.layer import SegmentationEdgesLayer
+        assert isinstance(layer, SegmentationEdgesLayer)
+        
+        super( SegmentationEdgesItemSource, self ).__init__(layer.name)
+        self._arraySource2D = arraySource2D
+        self._arraySource2D.isDirty.connect(self.setDirty)
+        self._layer = layer
+
+    def request( self, qrect, along_through=None ):
+        assert isinstance(qrect, QRect)
+        # Widen request with a 1-pixel halo, to make sure edges on the tile borders are shown.
+        qrect = QRect( qrect.x(), qrect.y(), qrect.width()+1, qrect.height()+1 )
+        s = rect2slicing(qrect)
+        arrayreq = self._arraySource2D.request(s, along_through)
+        return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect)
+
+    def image_type(self):
+        return SegmentationEdgesItem
+
+class SegmentationEdgesItemRequest(object):
+    def __init__(self, arrayreq, layer, rect):
+        self.rect = rect
+        self._arrayreq = arrayreq
+        self._layer = layer
+    
+    def wait(self):
+        array_data = self._arrayreq.wait()
+        
+        # We can't make this assertion, because the array request might be expanded
+        # with a halo so that the QGraphicsItem can display edges on tile borders.
+        #assert array_data.shape == (self.rect.width(), self.rect.height())
+
+        # Do the hard work outside the main thread: Construct the path items
+        path_items = generate_path_items_for_labels(self._layer.pen_table, array_data, None)
+
+        def create():
+            # All SegmentationEdgesItem(s) associated with this layer will share a common pen table.
+            # They react immediately when the pen table is updated.
+            graphics_item = SegmentationEdgesItem(path_items, self._layer.pen_table)
+
+            # When the item is clicked, the layer is notified.
+            graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )
+            return graphics_item
+       
+        # We're probably running in a non-main thread right now,
+        # but we're only allowed to create QGraphicsItemObjects in the main thread.
+
+        return execute_in_main_thread(create)

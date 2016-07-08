@@ -133,9 +133,9 @@ class WysiwygExportOptionsDlg(QDialog):
                 start[i] = pos5d[i]
                 stop[i] = pos5d[i]+1
         start[self.sliceAxes[0]] = rect.left()
-        stop[self.sliceAxes[0]] = rect.right()
+        stop[self.sliceAxes[0]] = rect.left() + rect.width()
         start[self.sliceAxes[1]] = rect.top()
-        stop[self.sliceAxes[1]] = rect.bottom()
+        stop[self.sliceAxes[1]] = rect.top() + rect.height()
 
 
         # set class attributes

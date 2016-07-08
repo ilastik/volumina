@@ -22,16 +22,17 @@
 import colorsys
 import numpy
 
-from PyQt4.QtCore import QObject, pyqtSignal, QString
-from PyQt4.QtGui import QColor
+from PyQt4.QtCore import Qt, QObject, pyqtSignal, QString, QTimer
+from PyQt4.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
-from volumina.pixelpipeline.datasources import MinMaxSource 
+from volumina.pixelpipeline.datasources import MinMaxSource
 
-from volumina.utility import decode_to_qstring, encode_from_qstring
+from volumina.utility import decode_to_qstring, encode_from_qstring, SignalingDefaultDict
 
 from functools import partial
+from collections import defaultdict
 
 #*******************************************************************************
 # L a y e r                                                                    *
@@ -151,12 +152,6 @@ class Layer( QObject ):
            See ClickableColortableLayer for an example."""
         pass
 
-    def timePerTile( self, timeSec, tileRect ):
-        """Update the average time per tile with new data: the tile of size tileRect took timeSec seonds"""
-        #compute cumulative moving average
-        self._numTiles += 1
-        self.averageTimePerTile = (timeSec + (self._numTiles-1)*self.averageTimePerTile) / self._numTiles
-
     def toolTip(self):
         return self._toolTip
 
@@ -190,12 +185,6 @@ class Layer( QObject ):
         self._updateNumberOfChannels()
         for datasource in filter(None, self._datasources):
             datasource.numberOfChannelsChanged.connect( self._updateNumberOfChannels )
-
-        if self.direct:
-            #in direct mode, we calculate the average time per tile for debug purposes
-            #this is useful to identify which of your layers cause slowness
-            self.averageTimePerTile = 0.0
-            self._numTiles = 0
 
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
@@ -287,7 +276,7 @@ class NormalizableLayer( Layer ):
     int -- lower threshold
     int -- upper threshold
     '''
-    normalizeChanged = pyqtSignal(int, int, int)
+    normalizeChanged = pyqtSignal()
 
     '''
     int -- datasource index
@@ -326,13 +315,10 @@ class NormalizableLayer( Layer ):
         if value is None:
             value = self._datasources[datasourceIdx]._bounds
             self._autoMinMax[datasourceIdx] = True
-        if value is False:
-            value = self._range[datasourceIdx]
-            self._autoMinMax[datasourceIdx] = False
         else:
             self._autoMinMax[datasourceIdx] = False
         self._normalize[datasourceIdx] = value 
-        self.normalizeChanged.emit(datasourceIdx, value[0], value[1])
+        self.normalizeChanged.emit()
 
     def __init__( self, datasources, range=None, normalize=None, direct=False ):
         """
@@ -558,3 +544,124 @@ class RGBALayer( NormalizableLayer ):
         # disect data
         l = RGBALayer()
         return l
+
+##
+## GraphicsItem layers
+##
+class DummyGraphicsItemLayer( Layer ):
+    def __init__(self, datasource):
+        super( DummyGraphicsItemLayer, self ).__init__( [datasource] )
+
+class DummyRasterItemLayer( Layer ):
+    def __init__(self, datasource):
+        super( DummyRasterItemLayer, self ).__init__( [datasource] )
+
+class SegmentationEdgesLayer( Layer ):
+    """
+    A layer that displays segmentation edge boundaries using vector graphics.
+    (See imagesources.SegmentationEdgesItem.)
+    """
+
+    DEFAULT_PEN = QPen()
+    DEFAULT_PEN.setCosmetic(True)
+    DEFAULT_PEN.setCapStyle(Qt.RoundCap)
+    DEFAULT_PEN.setColor(Qt.white)
+    DEFAULT_PEN.setWidth(2)
+
+    @property
+    def pen_table(self):
+        """
+        Items in the colortable can be added/replaced/deleted, but the
+        colortable object itself cannot be overwritten with a different dict object.
+        The SegmentationEdgesItem(s) associated witht this layer will react
+        immediately to any changes you make to this colortable dict.
+        """
+        return self._pen_table
+
+    def __init__(self, datasource, default_pen=DEFAULT_PEN, direct=False):
+        """
+        datasource: A single-channel label image.
+        default_pen: The initial pen style for each edge.
+        """
+        super( SegmentationEdgesLayer, self ).__init__( [datasource], direct=direct )
+
+        # Changes to this colortable will be detected automatically in the QGraphicsItem
+        self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
+
+    def handle_edge_clicked(self, id_pair):
+        """
+        Handles clicks from our associated SegmentationEdgesItem(s).
+        (See connection made in SegmentationEdgesItemRequest.) 
+        
+        id_pair: The edge that was clicked.
+        """
+        DEBUG_BEHAVIOR = False
+        if DEBUG_BEHAVIOR:
+            # Simple debug functionality: change to a random color.
+            # Please verify in the viewer that edges spanning multiple tiles changed color
+            # together, even though only one of the tiles was clicked.
+            random_color = QColor( *list( numpy.random.randint(0,255,(3,)) ) )
+            pen = QPen(self.pen_table[id_pair])
+            pen.setColor(random_color)
+            self.pen_table[id_pair] = pen
+
+class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
+    """
+    Shows a set of user-labeled edges.
+    """
+    
+    labelsChanged = pyqtSignal( dict ) # { id_pair, label_class }
+    
+    def __init__(self, datasource, label_class_pens, initial_labels={}, delay_ms=1000):
+        # Class 0 (no label) is the default pen
+        super(LabelableSegmentationEdgesLayer, self).__init__( datasource, default_pen=label_class_pens[0] )
+        self._delay_ms = delay_ms
+        self._label_class_pens = label_class_pens
+
+        # Initialize the labels and pens
+        self.overwrite_edge_labels(initial_labels)
+        
+        self._buffered_updates = {}
+
+        # To avoid sending lots of single updates if the user is clicking quickly,
+        # we buffer the updates into a dict that is only sent after a brief delay.
+        self._timer = QTimer(self)
+        self._timer.setInterval(self._delay_ms)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect( self._signal_buffered_updates )
+
+    def overwrite_edge_labels(self, new_edge_labels):
+        self._edge_labels = defaultdict(lambda: 0, new_edge_labels)
+
+        # Change the pens accordingly
+        pen_table = {}
+        for id_pair, label_class in self._edge_labels.items():
+            pen_table[id_pair] = self._label_class_pens[label_class]
+        self.pen_table.overwrite(pen_table)
+    
+    def handle_edge_clicked(self, id_pair):
+        """
+        Overridden from SegmentationEdgesLayer
+        """
+        num_classes = len(self._label_class_pens)
+        old_class = self._edge_labels[id_pair]
+        new_class = (old_class+1) % num_classes
+
+        # Update the display
+        self.pen_table[id_pair] = self._label_class_pens[new_class]
+
+        # For now, edge_labels dictionary will still contain 0-labeled edges.
+        # We could delete them, but why bother?
+        self._edge_labels[id_pair] = new_class
+
+        # Buffer the update for listeners
+        self._buffered_updates[id_pair] = new_class
+        
+        # Reset the timer
+        self._timer.start()
+
+    def _signal_buffered_updates(self):
+        updates = self._buffered_updates
+        self._buffered_updates = {}
+        self.labelsChanged.emit( updates )
+        

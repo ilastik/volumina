@@ -216,6 +216,7 @@ class VolumeEditorWidget(QWidget):
         def toggleSliceIntersection(state):
             self.editor.navCtrl.indicateSliceIntersection = (state == Qt.Checked)
         self.quadview.statusBar.positionCheckBox.stateChanged.connect(toggleSliceIntersection)
+        toggleSliceIntersection( self.quadview.statusBar.positionCheckBox.checkState() )
 
         self.editor.posModel.cursorPositionChanged.connect(self._updateInfoLabels)
 
@@ -512,15 +513,14 @@ class VolumeEditorWidget(QWidget):
                 self.editor.cacheSize = spinBox.value()
         self._viewMenu.addAction( "Set layer cache size" ).triggered.connect(setCacheSize)
 
-        '''
-        #disabled for ilastik 1.0
         def enablePrefetching( enable ):
-            for scene in self.editor.imageScenes:
-                scene.setPrefetchingEnabled( enable )
+            # Enable for Z view only
+            self.editor.imageScenes[2].setPrefetchingEnabled( enable )
+#             for scene in self.editor.imageScenes:
+#                 scene.setPrefetchingEnabled( enable )
         actionUsePrefetching = self._viewMenu.addAction( "Use prefetching" )
         actionUsePrefetching.setCheckable(True)
         actionUsePrefetching.toggled.connect(enablePrefetching)
-        '''
 
         def blockGuiForRendering():
             for v in self.editor.imageViews:
