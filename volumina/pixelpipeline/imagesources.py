@@ -447,7 +447,7 @@ class ColortableImageRequest( object ):
 
                         # Insert space for transparent color and shift labels up.
                         _colorTable = np.insert(_colorTable, 0, 0, axis=0)
-                        a = a+1
+                        a[:] = a+1
                     else:
                         # Make sure the first color is transparent.
                         _colorTable = _colorTable.copy()
