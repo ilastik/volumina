@@ -188,7 +188,7 @@ class ShortcutManager(object):
         candidate_actions = []
         for index, (group, name) in enumerate(list(target_name_set)):
             instance_list = self._action_infos[group][name]
-            for action_info in instance_list:
+            for action_info in list(instance_list): # copy the list so we can modify it in the loop if necessary
                 try:
                     if action_info.context_widget.isVisible() and action_info.context_widget.isEnabled():
                         candidate_actions.append( action_info )
@@ -196,7 +196,7 @@ class ShortcutManager(object):
                     if 'has been deleted' in str(ex):
                         # This widget doesn't exist anymore.  
                         # Just remove it from our candidate list for next time.
-                        target_name_set.pop(index)
+                        instance_list.remove( action_info )
                     else:
                         raise
 
