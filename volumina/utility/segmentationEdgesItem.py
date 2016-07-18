@@ -132,18 +132,25 @@ class SingleEdgeItem( QGraphicsPathItem ):
         line_segments[len(horizontal_edge_coords):, 0, :] = vertical_edge_coords + (1,0)
         line_segments[len(horizontal_edge_coords):, 1, :] = vertical_edge_coords + (1,1)
     
-
-        if simplify_with_tolerance is None:
-            for (start_point, end_point) in line_segments:
-                if QPointF(*start_point) != path.currentPosition():
-                    path.moveTo(*start_point)
-                path.lineTo(*end_point)
+        USE_FAST = True
+        if USE_FAST:
+            line_segments = np.asarray( line_segments )
+            line_segments = line_segments.reshape( (-1, 2) )
+            path = arrayToQPath( line_segments[:,0], line_segments[:,1], connect='pairs' )
         else:
-            segments = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
-            for segment in segments:
-                path.moveTo(*segment[0])
-                for end_point in segment[1:]:
+            path = QPainterPath( self.path() )
+    
+            if simplify_with_tolerance is None:
+                for (start_point, end_point) in line_segments:
+                    if QPointF(*start_point) != path.currentPosition():
+                        path.moveTo(*start_point)
                     path.lineTo(*end_point)
+            else:
+                segments = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
+                for segment in segments:
+                    path.moveTo(*segment[0])
+                    for end_point in segment[1:]:
+                        path.lineTo(*end_point)
 
         self.setPath(path)
         
@@ -167,8 +174,7 @@ def pop_matching(l, match_f):
             del l[i]
             return item
     return None
-    
-        
+
 class defaultdict_with_key(defaultdict):
     """
     Like defaultdict, but calls default_factory(key) instead of default_factory()
@@ -178,6 +184,96 @@ class defaultdict_with_key(defaultdict):
             raise KeyError( key )
         ret = self[key] = self.default_factory(key)
         return ret
+
+##
+## Copied from PyQtGraph with slight modifications
+##
+from PyQt4 import QtGui, QtCore
+import struct
+def arrayToQPath(x, y, connect='all'):
+    """Convert an array of x,y coordinats to QPainterPath as efficiently as possible.
+    The *connect* argument may be 'all', indicating that each point should be
+    connected to the next; 'pairs', indicating that each pair of points
+    should be connected, or an array of int32 values (0 or 1) indicating
+    connections.
+    """
+
+    ## Create all vertices in path. The method used below creates a binary format so that all
+    ## vertices can be read in at once. This binary format may change in future versions of Qt,
+    ## so the original (slower) method is left here for emergencies:
+        #path.moveTo(x[0], y[0])
+        #if connect == 'all':
+            #for i in range(1, y.shape[0]):
+                #path.lineTo(x[i], y[i])
+        #elif connect == 'pairs':
+            #for i in range(1, y.shape[0]):
+                #if i%2 == 0:
+                    #path.lineTo(x[i], y[i])
+                #else:
+                    #path.moveTo(x[i], y[i])
+        #elif isinstance(connect, np.ndarray):
+            #for i in range(1, y.shape[0]):
+                #if connect[i] == 1:
+                    #path.lineTo(x[i], y[i])
+                #else:
+                    #path.moveTo(x[i], y[i])
+        #else:
+            #raise Exception('connect argument must be "all", "pairs", or array')
+
+    ## Speed this up using >> operator
+    ## Format is:
+    ##    numVerts(i4)   0(i4)
+    ##    x(f8)   y(f8)   0(i4)    <-- 0 means this vertex does not connect
+    ##    x(f8)   y(f8)   1(i4)    <-- 1 means this vertex connects to the previous vertex
+    ##    ...
+    ##    0(i4)
+    ##
+    ## All values are big endian--pack using struct.pack('>d') or struct.pack('>i')
+
+    path = QtGui.QPainterPath()
+
+    #profiler = debug.Profiler()
+    n = x.shape[0]
+    # create empty array, pad with extra space on either end
+    arr = np.empty(n+2, dtype=[('x', '>f8'), ('y', '>f8'), ('c', '>i4')])
+    # write first two integers
+    #profiler('allocate empty')
+    byteview = arr.view(dtype=np.ubyte)
+    byteview[:12] = 0
+    byteview.data[12:20] = struct.pack('>ii', n, 0)
+    #profiler('pack header')
+    # Fill array with vertex values
+    arr[1:-1]['x'] = x
+    arr[1:-1]['y'] = y
+
+    # decide which points are connected by lines
+    assert connect == 'pairs', \
+        "I modified this function and now 'pairs' is the only allowed 'connect' option."
+    arr[1:-1]['c'][::2] = 1
+    arr[1:-1]['c'][1::2] = 0
+
+    #profiler('fill array')
+    # write last 0
+    lastInd = 20*(n+1)
+    byteview.data[lastInd:lastInd+4] = struct.pack('>i', 0)
+    #profiler('footer')
+    # create datastream object and stream into path
+
+    ## Avoiding this method because QByteArray(str) leaks memory in PySide
+    #buf = QtCore.QByteArray(arr.data[12:lastInd+4])  # I think one unnecessary copy happens here
+
+    path.strn = byteview.data[12:lastInd+4] # make sure data doesn't run away
+    try:
+        buf = QtCore.QByteArray.fromRawData(path.strn)
+    except TypeError:
+        buf = QtCore.QByteArray(bytes(path.strn))
+    #profiler('create buffer')
+    ds = QtCore.QDataStream(buf)
+
+    ds >> path
+    #profiler('load')
+
+    return path
 
 if __name__ == "__main__":
     import time
