@@ -2,6 +2,8 @@ from collections import defaultdict
 import threading
 import logging
 
+import numpy as np
+
 from PyQt4.Qt import pyqtSignal
 from PyQt4.QtCore import Qt, QObject, QRectF, QPointF, QPoint
 from PyQt4.QtGui import QApplication, QGraphicsObject, QGraphicsPathItem, QPainterPath, QPen, QColor
@@ -103,14 +105,33 @@ class SingleEdgeItem( QGraphicsPathItem ):
             initial_pen.setWidth(3)
 
         self.setPen(initial_pen)
-    
-        path = QPainterPath( self.path() )
 
-        line_segments = []
-        for (x,y) in horizontal_edge_coords:
-            line_segments.append( ((x, y+1), (x+1, y+1)) )
-        for (x,y) in vertical_edge_coords:
-            line_segments.append( ((x+1, y), (x+1, y+1)) )
+        ## This is what we're doing, but the array-based code below is faster.
+        #
+        # line_segments = []
+        # for (x,y) in horizontal_edge_coords:
+        #     line_segments.append( ((x, y+1), (x+1, y+1)) )
+        # for (x,y) in vertical_edge_coords:
+        #     line_segments.append( ((x+1, y), (x+1, y+1)) )
+
+        # Same as above commented-out code, but faster
+        if horizontal_edge_coords:
+            horizontal_edge_coords = np.array(horizontal_edge_coords)
+        else:
+            horizontal_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
+            
+        if vertical_edge_coords:
+            vertical_edge_coords = np.array(vertical_edge_coords)
+        else:
+            vertical_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
+        
+        num_segments = len(horizontal_edge_coords) + len(vertical_edge_coords)
+        line_segments = np.zeros( (num_segments, 2, 2), dtype=np.uint32 )
+        line_segments[:len(horizontal_edge_coords), 0, :] = horizontal_edge_coords + (0,1)
+        line_segments[:len(horizontal_edge_coords), 1, :] = horizontal_edge_coords + (1,1)
+        line_segments[len(horizontal_edge_coords):, 0, :] = vertical_edge_coords + (1,0)
+        line_segments[len(horizontal_edge_coords):, 1, :] = vertical_edge_coords + (1,1)
+    
 
         if simplify_with_tolerance is None:
             for (start_point, end_point) in line_segments:
