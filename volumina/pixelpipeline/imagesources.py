@@ -709,10 +709,13 @@ class SegmentationEdgesItemRequest(object):
         # with a halo so that the QGraphicsItem can display edges on tile borders.
         #assert array_data.shape == (self.rect.width(), self.rect.height())
 
-        # Do the hard work outside the main thread: Construct the path items
-        path_items = generate_path_items_for_labels(self._layer.pen_table, array_data, None)
-
         def create():
+            # Construct the path items
+            # This *could* be done outside of this create() function (and thus outside of the main thread),
+            # but (1) that seems to cause crashes on shutdown,
+            # and (2) performance gets worse, not better.
+            path_items = generate_path_items_for_labels(self._layer.pen_table, array_data, None)
+
             # All SegmentationEdgesItem(s) associated with this layer will share a common pen table.
             # They react immediately when the pen table is updated.
             graphics_item = SegmentationEdgesItem(path_items, self._layer.pen_table)
