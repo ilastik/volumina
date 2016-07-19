@@ -14,7 +14,6 @@ class Overview3D(QWidget):
         toggle_slice_x: QToolButton, to toggle the display of the x slicing plane
         toggle_slice_y: QToolButton, to toggle the display of the y slicing plane
         toggle_slice_z: QToolButton, to toggle the display of the z slicing plane
-        anaglyph: QToolButton, to toggle anaglyph 3D mode (not implemented right now)
         dock: QToolButton, to toggle the docking status of the widget
     The progress bar:
         progress: QProgressBar
@@ -51,7 +50,7 @@ class Overview3D(QWidget):
         """
         The axes in ilastik are flipped so we need to adjust the order here.
         """
-        return z, y, x
+        return x, y, z
 
     def set_shape(self, shape):
         """

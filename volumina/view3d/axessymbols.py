@@ -37,9 +37,9 @@ class AxesSymbols(object):
 
         :param GLViewWidget view: the 3d view to add the planes to
         """
-        self._x = make_arrow([1, 0, 0, 1])
+        self._x = make_arrow([0, 0, 1, 1])
         self._y = make_arrow([0, 1, 0, 1])
-        self._z = make_arrow([0, 0, 1, 1])
+        self._z = make_arrow([1, 0, 0, 1])
         self._center = make_center()
 
         self._y.rotate(-90, 1, 0, 0)
