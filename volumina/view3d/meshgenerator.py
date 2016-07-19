@@ -1,6 +1,6 @@
 from os.path import split, join
 
-from skimage.measure import marching_cubes
+from numpy import where
 
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
@@ -8,6 +8,17 @@ from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
 from PyQt4.QtCore import QThread, pyqtSignal
 from PyQt4.QtGui import QDialog
 from PyQt4.uic import loadUiType
+
+
+try:
+    from marching_cubes import march
+except ImportError:
+    from skimage.measure import correct_mesh_orientation, marching_cubes
+    
+    def march(volume, _):
+        verts, faces = marching_cubes(volume, 1)
+        faces = correct_mesh_orientation(volume, verts, faces)
+        return verts, None, faces
 
 
 ShaderProgram('toon', [
@@ -23,35 +34,30 @@ ShaderProgram('toon', [
         }
     """),
     FragmentShader("""
-        uniform vec3 light = normalize(vec3(1.0, -1.0, -1.0));
         varying vec3 normal;
 
         void main() {
+            vec3 light = normalize(vec3(1.0, -1.0, -1.0));
             float intensity;
 
             intensity = (dot(light, normalize(normal)) + 1) / 2;
 
-            gl_FragColor = max(round(intensity * 3), 0.3) / 3 * gl_Color / 2;
-            gl_FragColor += intensity / 2 * gl_Color;
+            //gl_FragColor = max(round(intensity * 3), 0.3) / 3 * gl_Color / 2;
+            gl_FragColor = intensity * gl_Color;
         }
     """)
 ])
 
 
 def labeling_to_mesh(labeling, labels):
-    """
-    Generate the isosurface of a labeling.
 
-    :param numpy.ndarray labeling: the labeling to convert
-    :param Iterable[int] labels: the labels to include
-    :rtype: Iterator[Tuple[int, MeshData]]
-    """
     for label in labels:
-        copy = labeling.copy()
-        copy[copy != label] = 0
-        vertices, faces = marching_cubes(copy, level=0.5)
-        # faces = correct_mesh_orientation(copy, vertices, faces)
-        yield label, MeshData(vertices, faces)
+        vertices, normals, faces = march(where(labeling == label, 2, 0).astype(int).T, 4)
+        data = MeshData(vertices, faces)
+        if normals is not None:
+            data._vertexNormals = normals
+        
+        yield label, data
 
 
 def mesh_to_obj(mesh, path, name):

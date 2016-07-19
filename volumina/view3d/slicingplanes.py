@@ -10,9 +10,9 @@ class SlicingPlanes(object):
 
     :ivar Sequence[Sequence[int]] BOX_COLORS: the 3 colors for the boxes, e.g. [r, g, b, a]
     """
-    BOX_COLORS = ([0, 0, 255, 255],
+    BOX_COLORS = ([255, 0, 0, 255],
                   [0, 255, 0, 255],
-                  [255, 0, 0, 255])
+                  [0, 0, 255, 255])
 
     def __init__(self, view):
         """
