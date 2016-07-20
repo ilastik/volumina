@@ -62,23 +62,94 @@ class SegmentationEdgesItem( QGraphicsObject ):
         for id_pair in updated_path_ids:
             self.path_items[id_pair].setPen( self.edge_pen_table[id_pair] )
 
-def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tolerance=None):
+try:
+    from ilastiktools import edgeCoords2D
+    def edge_coords_nd(img):
+        return edgeCoords2D(img)
+except ImportError:
+    pass
+
+def painter_paths_for_labels( label_img, simplify_with_tolerance=None ):
     # Find edge coordinates.
     # Note: 'x_axis' edges are those found when sweeping along the x axis.
     #       That is, the line separating the two segments will be *vertical*.
     assert label_img.ndim == 2
     x_axis_edge_coords, y_axis_edge_coords = edge_coords_nd(label_img)
+    #x_axis_edge_coords, y_axis_edge_coords = edgeCoords2D(label_img)
 
     # Populate the path_items dict.
-    path_items = {}
+    painter_paths = {}
     for id_pair in set(x_axis_edge_coords.keys() + y_axis_edge_coords.keys()):
         horizontal_edge_coords = vertical_edge_coords = []
         if id_pair in y_axis_edge_coords:
             horizontal_edge_coords = y_axis_edge_coords[id_pair]
         if id_pair in x_axis_edge_coords:
             vertical_edge_coords = x_axis_edge_coords[id_pair]
-        path_items[id_pair] = SingleEdgeItem(id_pair, horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance, initial_pen=edge_pen_table[id_pair])
+        painter_paths[id_pair] = painter_path_from_edge_coords(horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance)
+    return painter_paths
+
+def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tolerance=None):
+    painter_paths = painter_paths_for_labels(label_img, simplify_with_tolerance)
+    
+    path_items = {}
+    for id_pair in painter_paths.keys():
+        path_items[id_pair] = SingleEdgeItem(id_pair, painter_paths[id_pair], initial_pen=edge_pen_table[id_pair])
     return path_items
+
+def painter_path_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None ):
+    """
+    simplify_with_tolerance: If None, no simplification.
+                             If float, use as a tolerance constraint.
+                             Giving 0.0 won't change the appearance of the path, but may reduce the
+                             number of internal points it uses.
+    """
+    ## This is what we're doing, but the array-based code below is faster.
+    #
+    # line_segments = []
+    # for (x,y) in horizontal_edge_coords:
+    #     line_segments.append( ((x, y+1), (x+1, y+1)) )
+    # for (x,y) in vertical_edge_coords:
+    #     line_segments.append( ((x+1, y), (x+1, y+1)) )
+
+    # Same as above commented-out code, but faster
+    if horizontal_edge_coords:
+        horizontal_edge_coords = np.array(horizontal_edge_coords)
+    else:
+        horizontal_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
+        
+    if vertical_edge_coords:
+        vertical_edge_coords = np.array(vertical_edge_coords)
+    else:
+        vertical_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
+    
+    num_segments = len(horizontal_edge_coords) + len(vertical_edge_coords)
+    line_segments = np.zeros( (num_segments, 2, 2), dtype=np.uint32 )
+    line_segments[:len(horizontal_edge_coords), 0, :] = horizontal_edge_coords + (0,1)
+    line_segments[:len(horizontal_edge_coords), 1, :] = horizontal_edge_coords + (1,1)
+    line_segments[len(horizontal_edge_coords):, 0, :] = vertical_edge_coords + (1,0)
+    line_segments[len(horizontal_edge_coords):, 1, :] = vertical_edge_coords + (1,1)
+
+    if simplify_with_tolerance is None:
+        USE_FAST = True
+        if USE_FAST:
+            line_segments = np.asarray( line_segments )
+            line_segments = line_segments.reshape( (-1, 2) )
+            path = arrayToQPath( line_segments[:,0], line_segments[:,1], connect='pairs' )
+        else:
+            path = QPainterPath( self.path() )
+            for (start_point, end_point) in line_segments:
+                if QPointF(*start_point) != path.currentPosition():
+                    path.moveTo(*start_point)
+                path.lineTo(*end_point)
+    else:
+        path = QPainterPath()
+        segments = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
+        for segment in segments:
+            path.moveTo(*segment[0])
+            for end_point in segment[1:]:
+                path.lineTo(*end_point)
+
+    return path
 
 class SingleEdgeItem( QGraphicsPathItem ):
     """
@@ -86,13 +157,7 @@ class SingleEdgeItem( QGraphicsPathItem ):
     Must be owned by a SegmentationEdgesItem object
     """
     
-    def __init__(self, id_pair, horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None, initial_pen=None):
-        """
-        simplify_with_tolerance: If None, no simplification.
-                                 If float, use as a tolerance constraint.
-                                 Giving 0.0 won't change the appearance of the path, but may reduce the
-                                 number of internal points it uses.
-        """
+    def __init__(self, id_pair, painter_path, initial_pen=None):
         super( SingleEdgeItem, self ).__init__()
         self.parent = None # Should be initialized with set_parent()
         self.id_pair = id_pair
@@ -105,54 +170,7 @@ class SingleEdgeItem( QGraphicsPathItem ):
             initial_pen.setWidth(3)
 
         self.setPen(initial_pen)
-
-        ## This is what we're doing, but the array-based code below is faster.
-        #
-        # line_segments = []
-        # for (x,y) in horizontal_edge_coords:
-        #     line_segments.append( ((x, y+1), (x+1, y+1)) )
-        # for (x,y) in vertical_edge_coords:
-        #     line_segments.append( ((x+1, y), (x+1, y+1)) )
-
-        # Same as above commented-out code, but faster
-        if horizontal_edge_coords:
-            horizontal_edge_coords = np.array(horizontal_edge_coords)
-        else:
-            horizontal_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
-            
-        if vertical_edge_coords:
-            vertical_edge_coords = np.array(vertical_edge_coords)
-        else:
-            vertical_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
-        
-        num_segments = len(horizontal_edge_coords) + len(vertical_edge_coords)
-        line_segments = np.zeros( (num_segments, 2, 2), dtype=np.uint32 )
-        line_segments[:len(horizontal_edge_coords), 0, :] = horizontal_edge_coords + (0,1)
-        line_segments[:len(horizontal_edge_coords), 1, :] = horizontal_edge_coords + (1,1)
-        line_segments[len(horizontal_edge_coords):, 0, :] = vertical_edge_coords + (1,0)
-        line_segments[len(horizontal_edge_coords):, 1, :] = vertical_edge_coords + (1,1)
-    
-        USE_FAST = True
-        if USE_FAST:
-            line_segments = np.asarray( line_segments )
-            line_segments = line_segments.reshape( (-1, 2) )
-            path = arrayToQPath( line_segments[:,0], line_segments[:,1], connect='pairs' )
-        else:
-            path = QPainterPath( self.path() )
-    
-            if simplify_with_tolerance is None:
-                for (start_point, end_point) in line_segments:
-                    if QPointF(*start_point) != path.currentPosition():
-                        path.moveTo(*start_point)
-                    path.lineTo(*end_point)
-            else:
-                segments = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
-                for segment in segments:
-                    path.moveTo(*segment[0])
-                    for end_point in segment[1:]:
-                        path.lineTo(*end_point)
-
-        self.setPath(path)
+        self.setPath(painter_path)
         
     def mousePressEvent(self, event):
         event.accept()
@@ -270,8 +288,10 @@ def arrayToQPath(x, y, connect='all'):
     #profiler('create buffer')
     ds = QtCore.QDataStream(buf)
 
-    ds >> path
+    def load_path():
+        ds >> path
     #profiler('load')
+    load_path()
 
     return path
 
@@ -297,13 +317,13 @@ if __name__ == "__main__":
     pen_table = SignalingDefaultDict(parent=None, default_factory=lambda:default_pen)
 
     start = time.time()
-    path_items = generate_path_items_for_labels(pen_table, labels_img, 0.5)
+    path_items = generate_path_items_for_labels(pen_table, labels_img, 0.7)
     print "generate took {}".format(time.time() - start) # 52 ms
 
     edges_item = SegmentationEdgesItem(path_items, pen_table)
     
     def assign_random_color( id_pair):
-        print "handling click..."
+        print "handling click: {}".format(id_pair)
         pen = pen_table[id_pair]
         if pen:
             pen = QPen(pen)
