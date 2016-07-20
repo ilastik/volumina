@@ -62,21 +62,14 @@ class SegmentationEdgesItem( QGraphicsObject ):
         for id_pair in updated_path_ids:
             self.path_items[id_pair].setPen( self.edge_pen_table[id_pair] )
 
-try:
-    from ilastiktools import edgeCoords2D
-    def edge_coords_nd(img):
-        return edgeCoords2D(img)
-except ImportError:
-    pass
-
-def painter_paths_for_labels( label_img, simplify_with_tolerance=None ):
+def painter_paths_for_labels_PURE_PYTHON( label_img, simplify_with_tolerance=None ):
     # Find edge coordinates.
     # Note: 'x_axis' edges are those found when sweeping along the x axis.
     #       That is, the line separating the two segments will be *vertical*.
     assert label_img.ndim == 2
     x_axis_edge_coords, y_axis_edge_coords = edge_coords_nd(label_img)
     #x_axis_edge_coords, y_axis_edge_coords = edgeCoords2D(label_img)
-
+  
     # Populate the path_items dict.
     painter_paths = {}
     for id_pair in set(x_axis_edge_coords.keys() + y_axis_edge_coords.keys()):
@@ -86,7 +79,31 @@ def painter_paths_for_labels( label_img, simplify_with_tolerance=None ):
         if id_pair in x_axis_edge_coords:
             vertical_edge_coords = x_axis_edge_coords[id_pair]
         painter_paths[id_pair] = painter_path_from_edge_coords(horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance)
+  
     return painter_paths
+
+try:
+    import vigra
+    from ilastiktools import line_segments_for_labels
+
+    def painter_paths_for_labels( label_img, simplify_with_tolerance=None ):
+        if simplify_with_tolerance is not None:
+            return painter_paths_for_labels_PURE_PYTHON(label_img, simplify_with_tolerance)
+        line_seg_lookup = line_segments_for_labels(vigra.taggedView(label_img, 'xy') )
+        painter_paths = {}
+        for edge_id, line_segments in line_seg_lookup.items():
+            point_list = line_segments.reshape(-1, 2)
+            painter_paths[edge_id] = arrayToQPath(point_list[:,0], point_list[:,1], connect='pairs')
+        return painter_paths
+
+except ImportError:
+    painter_paths_for_labels = painter_paths_for_labels_PURE_PYTHON
+
+try:
+    from ilastiktools import edgeCoords2D
+    edge_coords_nd = edgeCoords2D
+except ImportError:
+    pass
 
 def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tolerance=None):
     painter_paths = painter_paths_for_labels(label_img, simplify_with_tolerance)
@@ -312,7 +329,7 @@ if __name__ == "__main__":
     pen_table = SignalingDefaultDict(parent=None, default_factory=lambda:default_pen)
 
     start = time.time()
-    path_items = generate_path_items_for_labels(pen_table, labels_img, 0.7)
+    path_items = generate_path_items_for_labels(pen_table, labels_img, None)
     print "generate took {}".format(time.time() - start) # 52 ms
 
     edges_item = SegmentationEdgesItem(path_items, pen_table)
