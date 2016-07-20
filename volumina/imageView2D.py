@@ -98,12 +98,9 @@ class ImageView2D(QGraphicsView):
 
         QGraphicsView.__init__(self, parent)
 
-        # OpenGL speeds up drawing (especially for QGraphicsItems),
-        # but it doesn't work well on OSX.
-        
-        ## UPDATE: The Qt4 docs claim that Mac is the only platform with these problems,
-        ## but it seems to break the HUD on Windows, too.
-        if platform.system() == "Linux":
+        # We can't use OpenGL because the HUD doesn't render properly on top.
+        # Maybe this will be fixed in Qt5?
+        if False:
             self.setViewport(QGLWidget())
         
         self.setScene(imagescene2d)
