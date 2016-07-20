@@ -96,7 +96,7 @@ def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tole
         path_items[id_pair] = SingleEdgeItem(id_pair, painter_paths[id_pair], initial_pen=edge_pen_table[id_pair])
     return path_items
 
-def painter_path_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None ):
+def line_segments_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None ):
     """
     simplify_with_tolerance: If None, no simplification.
                              If float, use as a tolerance constraint.
@@ -129,26 +129,21 @@ def painter_path_from_edge_coords( horizontal_edge_coords, vertical_edge_coords,
     line_segments[len(horizontal_edge_coords):, 0, :] = vertical_edge_coords + (1,0)
     line_segments[len(horizontal_edge_coords):, 1, :] = vertical_edge_coords + (1,1)
 
-    if simplify_with_tolerance is None:
-        USE_FAST = True
-        if USE_FAST:
-            line_segments = np.asarray( line_segments )
-            line_segments = line_segments.reshape( (-1, 2) )
-            path = arrayToQPath( line_segments[:,0], line_segments[:,1], connect='pairs' )
-        else:
-            path = QPainterPath( self.path() )
-            for (start_point, end_point) in line_segments:
-                if QPointF(*start_point) != path.currentPosition():
-                    path.moveTo(*start_point)
-                path.lineTo(*end_point)
-    else:
-        path = QPainterPath()
-        segments = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
-        for segment in segments:
-            path.moveTo(*segment[0])
-            for end_point in segment[1:]:
-                path.lineTo(*end_point)
+    if simplify_with_tolerance is not None:
+        sequential_points = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
+        line_segments = []
+        for point_list in sequential_points:
+            # Since these points are already in order, doubling the size of the point list like this 
+            # is slightly inefficient, but it simplifies things because we can use the same QPath
+            # generation method.
+            line_segments += zip(point_list[:-1], point_list[1:])
+        line_segments = np.array(line_segments)
+    return line_segments
 
+def painter_path_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None ):
+    line_segments = line_segments_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance )
+    line_segments = line_segments.reshape( (-1, 2) )
+    path = arrayToQPath( line_segments[:,0], line_segments[:,1], connect='pairs' )
     return path
 
 class SingleEdgeItem( QGraphicsPathItem ):
