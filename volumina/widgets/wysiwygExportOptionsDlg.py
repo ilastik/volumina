@@ -36,7 +36,7 @@ else:
     from wand.image import Image
 
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
-
+from volumina.utility import PreferencesManager
 
 class WysiwygExportOptionsDlg(QDialog):
     TOO_MANY_PLACEHOLDER = "File pattern invalid! Pattern may not contain placeholder '{0}'. Use '{{{{{0}}}}}' instead."
@@ -80,11 +80,17 @@ class WysiwygExportOptionsDlg(QDialog):
         # See self.eventFilter()
         self.installEventFilter(self)
 
-        self.directoryEdit.setText(os.path.expanduser("~"))
+        default_location = PreferencesManager().get("WYSIWYG", "export directory",
+                                                    default=os.path.expanduser("~"))
+        self.directoryEdit.setText(default_location)
 
         # hide stack tiffs if Wand is not installed
         if wand is None:
             self.stack_tiffs_checkbox.setVisible(False)
+
+    def accept(self):
+        PreferencesManager().set("WYSIWYG", "export directory", str(self.directoryEdit.text()))
+        super( WysiwygExportOptionsDlg, self ).accept()
 
     def stack_tiffs(self):
         return wand is not None and \
