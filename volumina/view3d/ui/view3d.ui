@@ -23,7 +23,7 @@
       <string>y</string>
      </property>
      <property name="icon">
-      <iconset resource="../icons.qrc">
+      <iconset>
        <normaloff>:/icons/icons/y-axis.png</normaloff>:/icons/icons/y-axis.png</iconset>
      </property>
      <property name="checkable">
@@ -43,7 +43,7 @@
       <string>z</string>
      </property>
      <property name="icon">
-      <iconset resource="../../icons.qrc">
+      <iconset>
        <normaloff>:/icons/icons/z-axis.png</normaloff>:/icons/icons/z-axis.png</iconset>
      </property>
      <property name="checkable">
@@ -63,7 +63,7 @@
       <string>-&gt;</string>
      </property>
      <property name="icon">
-      <iconset resource="../../icons.qrc">
+      <iconset>
        <normaloff>:/icons/icons/arrow_up.png</normaloff>
        <activeoff>:/icons/icons/arrow_down.png</activeoff>
        <activeon>:/icons/icons/arrow_down.png</activeon>
@@ -84,7 +84,7 @@
       <string>x</string>
      </property>
      <property name="icon">
-      <iconset resource="../../icons.qrc">
+      <iconset>
        <normaloff>:/icons/icons/x-axis.png</normaloff>:/icons/icons/x-axis.png</iconset>
      </property>
      <property name="checkable">
@@ -136,8 +136,6 @@
    <header location="global">volumina.view3d.glview</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../../icons.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
