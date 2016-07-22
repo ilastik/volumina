@@ -445,7 +445,8 @@ class ImageScene2D(QGraphicsScene):
         # preemptive fetching
         if self._prefetching_enabled:
             upcoming_through_slices = self._bowWave(self._n_preemptive)
-            self.triggerPrefetch(sceneRectF, upcoming_through_slices, layers)
+            for through in upcoming_through_slices:
+                self._tileProvider.prefetch(sceneRectF, through, layer_indexes=None)
 
     def triggerPrefetch(self, layer_indexes, time_range='current', spatial_axis_range='current', sceneRectF=None ):
         """
