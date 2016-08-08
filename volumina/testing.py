@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from __future__ import division
 import numpy
 
 def meshgrid2(*arrs):
@@ -43,7 +44,7 @@ def meshgrid2(*arrs):
 
 def testVolume(N = 40):
     """generates viewable 3D data embedded in 5D"""
-    N2 = N/2
+    N2 = N//2
     X,Y,Z = meshgrid2(numpy.arange(N),numpy.arange(N),numpy.arange(N))
     s = (numpy.random.rand(1,N,N,N,1)*255).astype(numpy.uint8)
     s[0,(X-10)**2+(Y-10)**2+(Z-15)**2 < (N2-2)**2,0] = 0
@@ -53,13 +54,13 @@ def testVolume(N = 40):
 
 def TwoDtestVolume(N = 40):
     """generates viewable 2D data embedded in 5D"""
-    N2 = N/2
+    N2 = N//2
     X,Y,Z = meshgrid2(numpy.arange(N),numpy.arange(N),numpy.arange(N))
     s = (numpy.random.rand(1,N,N,N,1)*255).astype(numpy.uint8)
     s[0,(X-10)**2+(Y-10)**2+(Z-15)**2 < (N2-2)**2,0] = 0
     s[0,(X-30)**2+(Y-30)**2+(Z-30)**2 < (10)**2,0] = 128
     s[0,0:10,0:10,0:10,0] = 200
-    s=s[0,:,:,(N/2),0]
+    s=s[0,:,:,(N//2),0]
     return s
 
 

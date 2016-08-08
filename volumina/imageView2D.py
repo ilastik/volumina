@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from __future__ import division
 from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
 from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
 
@@ -244,14 +245,14 @@ class ImageView2D(QGraphicsView):
         y = abs(y)
         if x > y:
             if y > 0:
-                ax = int(x / y)
+                ax = x // y
                 if ax != 0:
                     return ax, 1
             else:
                 return x/a, 1
         if y > x:
             if x > 0:
-                ay = int(y/x)
+                ay = y//x
                 if ay != 0:
                     return 1, ay
             else:
@@ -349,10 +350,10 @@ if __name__ == '__main__':
 
     def cross(shape, width):
         c = numpy.zeros(shape)
-        w2 = shape[0]/2
-        h2 = shape[1]/2
-        c[0:shape[0], h2-width/2:h2+width/2] = 255
-        c[w2-width/2:w2+width/2, 0:shape[1]] = 255
+        w2 = shape[0]//2
+        h2 = shape[1]//2
+        c[0:shape[0], h2-width//2:h2+width//2] = 255
+        c[w2-width//2:w2+width//2, 0:shape[1]] = 255
         return c
 
     class ImageView2DTest(QMainWindow):
