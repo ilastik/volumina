@@ -470,9 +470,13 @@ class QuadStatusBar(QHBoxLayout):
         if croppingFlag==True:
             self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current crop.")
             self.timeEndButton.setToolTip("Set the time coordinate to the end of the current crop.")
+            self.timePreviousButton.setToolTip("Set the time coordinate to the previous time frame.")
+            self.timeNextButton.setToolTip("Set the time coordinate to the next time frame.")
         else:
             self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current dataset.")
             self.timeEndButton.setToolTip("Set the time coordinate to the end of the current dataset.")
+            self.timePreviousButton.setToolTip("Set the time coordinate to the previous time frame.")
+            self.timeNextButton.setToolTip("Set the time coordinate to the next time frame.")
 
     def setToolTipTimeSliderCrop(self,croppingFlag=False):
         if croppingFlag==True:
@@ -529,9 +533,14 @@ class QuadStatusBar(QHBoxLayout):
 
         self.timeSpinBox = DelayedSpinBox(750)
 
-        self.timeStartButton = QPushButton("Start")
+        self.timeStartButton = QPushButton("|<")
         self.addWidget(self.timeStartButton)
         self.timeStartButton.clicked.connect(self._onTimeStartButtonClicked)
+
+        self.timePreviousButton = QPushButton("<")
+        self.addWidget(self.timePreviousButton)
+        self.timePreviousButton.clicked.connect(self._onTimePreviousButtonClicked)
+        self.timePreviousButton.setFixedWidth(4*self.timeControlFontSize)
 
         self.timeSlider = QSlider(Qt.Horizontal)
         self.timeSlider.setMinimumWidth(10)
@@ -540,7 +549,12 @@ class QuadStatusBar(QHBoxLayout):
         self.addWidget(self.timeSlider)
         self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
 
-        self.timeEndButton = QPushButton("End")
+        self.timeNextButton = QPushButton(">")
+        self.addWidget(self.timeNextButton)
+        self.timeNextButton.clicked.connect(self._onTimeNextButtonClicked)
+        self.timeNextButton.setFixedWidth(4*self.timeControlFontSize)
+
+        self.timeEndButton = QPushButton(">|")
         self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
 
         self.timeStartButton.setFixedWidth(4*self.timeControlFontSize)
@@ -554,7 +568,7 @@ class QuadStatusBar(QHBoxLayout):
 
         timeControlFont = self.timeSpinBox.font()
         if self.timeControlFontSize > timeControlFont.pointSize():
-            timeControlFont.setPixelSize(self.timeControlFontSize)
+            timeControlFont.setPixelSize(2*self.timeControlFontSize)
             self.timeStartButton.setFont(timeControlFont)
             self.timeEndButton.setFont(timeControlFont)
             self.timeLabel.setFont(timeControlFont)
@@ -568,6 +582,14 @@ class QuadStatusBar(QHBoxLayout):
 
     def _onTimeEndButtonClicked(self):
         self.timeSpinBox.setValue(self.parent().parent().parent().editor.cropModel.get_roi_t()[1])
+
+    def _onTimePreviousButtonClicked(self):
+        self.timeSpinBox.setValue(self.timeSpinBox.value()-1)
+        #self.timeSlider.setValue(self.timeSpinBox.value())
+
+    def _onTimeNextButtonClicked(self):
+        self.timeSpinBox.setValue(self.timeSpinBox.value()+1)
+        #self.timeSlider.setValue(self.timeSpinBox.value())
 
     def _onTimeSpinBoxChanged(self):
         editor = self.parent().parent().parent().editor
