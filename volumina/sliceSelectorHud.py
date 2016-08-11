@@ -585,11 +585,9 @@ class QuadStatusBar(QHBoxLayout):
 
     def _onTimePreviousButtonClicked(self):
         self.timeSpinBox.setValue(self.timeSpinBox.value()-1)
-        #self.timeSlider.setValue(self.timeSpinBox.value())
 
     def _onTimeNextButtonClicked(self):
         self.timeSpinBox.setValue(self.timeSpinBox.value()+1)
-        #self.timeSlider.setValue(self.timeSpinBox.value())
 
     def _onTimeSpinBoxChanged(self):
         editor = self.parent().parent().parent().editor
