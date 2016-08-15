@@ -203,7 +203,7 @@ class ImageScene2D(QGraphicsScene):
             self._tileProvider.axesSwapped = self._swapped
         self.axesChanged.emit(self._rotation, self._swapped)
 
-    def rot90(self, transform, rect, direction):
+    def rot90(self, direction):
         """ direction: left ==> -1, right ==> +1"""
         assert direction in [-1, 1]
         self._rotation = (self._rotation + direction) % 4
@@ -214,11 +214,11 @@ class ImageScene2D(QGraphicsScene):
         self._newAxes()
 
     def _onRotateLeft(self):
-        self.rot90(self.data2scene, self.sceneRect(), -1)
+        self.rot90(-1)
         self._finishViewMatrixChange()
 
     def _onRotateRight(self):
-        self.rot90(self.data2scene, self.sceneRect(), 1)
+        self.rot90(1)
         self._finishViewMatrixChange()
 
     def _onSwapAxes(self):
