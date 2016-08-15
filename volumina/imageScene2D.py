@@ -229,6 +229,7 @@ class ImageScene2D(QGraphicsScene):
         self.scene2data, isInvertible = self.data2scene.inverted()
         self._setSceneRect()
         self._tiling.data2scene = self.data2scene
+        self._tileProvider._onSizeChanged()
         QGraphicsScene.invalidate(self, self.sceneRect())
 
     @property
