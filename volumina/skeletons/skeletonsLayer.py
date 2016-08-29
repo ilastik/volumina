@@ -94,6 +94,9 @@ class SkeletonsLayer(QGraphicsObject):
 
             c1 = e[0].color()
             c2 = e[1].color()
+            assert sys.version_info.major == 2, "Alert! This function has not been "\
+            "tested under python 3. Please remove this assertion and be wary of any "\
+            "strnage behavior you encounter"
             mixColor = QColor( (c1.red()+c2.red())//2,
                                (c1.green()+c2.green())//2,
                                (c1.blue()+c2.blue())//2 )
@@ -106,6 +109,9 @@ class SkeletonsLayer(QGraphicsObject):
         for theEdge, e in eIntersected:
             c1 = theEdge[0].color()
             c2 = theEdge[1].color()
+            assert sys.version_info.major == 2, "Alert! This function has not been "\
+            "tested under python 3. Please remove this assertion and be wary of any "\
+            "strnage behavior you encounter"
             mixColor = QColor( (c1.red()+c2.red())//2,
                                (c1.green()+c2.green())//2,
                                (c1.blue()+c2.blue())//2 )
