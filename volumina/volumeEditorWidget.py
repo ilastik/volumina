@@ -22,7 +22,7 @@
 #!/usr/bin/env python
 
 #Python
-from __future__ improt division
+from __future__ import division
 from functools import partial
 import copy
 

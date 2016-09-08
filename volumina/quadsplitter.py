@@ -178,6 +178,8 @@ class QuadView(QWidget):
     def _resizeEqual(self):
         if not all( [dock.isVisible() for dock in self.dockableContainer] ):
             return
+        assert sys.version_info.major == 2, "Alert! This function has not been tested "\
+        "under python 3. Please remove this assetion and be wary of any strnage behavior you encounter"
         w, h = self.size().width()-self.splitHorizontal1.handleWidth(), self.size().height()-self.splitVertical.handleWidth()
 
         self.splitVertical.setSizes([h/2, h/2])
