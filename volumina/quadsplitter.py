@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #!/usr/bin/env python
+from __future__ import division
 from PyQt4.QtCore import Qt, pyqtSignal, QEvent, QTimer
 from PyQt4.QtGui import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
 
@@ -177,6 +178,8 @@ class QuadView(QWidget):
     def _resizeEqual(self):
         if not all( [dock.isVisible() for dock in self.dockableContainer] ):
             return
+        assert sys.version_info.major == 2, "Alert! This function has not been tested "\
+        "under python 3. Please remove this assetion and be wary of any strnage behavior you encounter"
         w, h = self.size().width()-self.splitHorizontal1.handleWidth(), self.size().height()-self.splitVertical.handleWidth()
 
         self.splitVertical.setSizes([h/2, h/2])
@@ -192,13 +195,13 @@ class QuadView(QWidget):
             w2  = [docks[i].minimumSize().width() for i in [1,3] ]
             wLeft  = max(w1)
             wRight = max(w2)
-            if wLeft > wRight and wLeft > w/2:
+            if wLeft > wRight and wLeft > w//2:
                 wRight = w - wLeft
-            elif wRight >= wLeft and wRight > w/2:
+            elif wRight >= wLeft and wRight > w//2:
                 wLeft = w - wRight
             else:
-                wLeft = w/2
-                wRight = w/2
+                wLeft = w//2
+                wRight = w//2
             self.splitHorizontal1.setSizes([wLeft, wRight])
             self.splitHorizontal2.setSizes([wLeft, wRight])
         

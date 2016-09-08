@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #!/usr/bin/env python
+from __future__ import division
 from PyQt4.QtCore import pyqtSignal, QObject, Qt, QSize, QPointF, QRectF, \
                          QRect, QPoint, QSizeF
 from PyQt4.QtGui  import QPen, QGraphicsScene, QColor, \
@@ -154,13 +155,13 @@ class BrushingModel(QObject):
 
         # Now downsample: convert each 4x4 patch into a single pixel by summing and dividing
         ndarr = qimage2ndarray.rgb_view(tempi)[:,:,0].astype(int)
-        ndarr = ndarr.reshape( (ndarr.shape[0],) + (ndarr.shape[1]/4,) + (4,) )
+        ndarr = ndarr.reshape( (ndarr.shape[0],) + (ndarr.shape[1]//4,) + (4,) )
         ndarr = ndarr.sum(axis=-1)
         ndarr = ndarr.transpose()
-        ndarr = ndarr.reshape( (ndarr.shape[0],) + (ndarr.shape[1]/4,) + (4,) )
+        ndarr = ndarr.reshape( (ndarr.shape[0],) + (ndarr.shape[1]//4,) + (4,) )
         ndarr = ndarr.sum(axis=-1)
         ndarr = ndarr.transpose()
-        ndarr /= 4*4
+        ndarr //= 4*4
 
         downsample_threshold = (7./16)*255
         labels = numpy.where(ndarr>=downsample_threshold, numpy.uint8(self.drawnNumber), numpy.uint8(0))

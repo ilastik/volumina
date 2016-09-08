@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from __future__ import division
 from PyQt4.QtCore import QPointF, QRectF
 
 import numpy
@@ -49,7 +50,7 @@ class PatchAccessor():
 
         #last blocks can be very small -> merge them with the secondlast one
         self._cXend = size_x % self._blockSize
-        if self._cXend < self._blockSize / 3 and self._cXend != 0 and self._cX > 1:
+        if self._cXend < self._blockSize // 3 and self._cXend != 0 and self._cX > 1:
             self._cX -= 1
         else:
             self._cXend = 0
@@ -58,7 +59,7 @@ class PatchAccessor():
 
         #last blocks can be very small -> merge them with the secondlast one
         self._cYend = size_y % self._blockSize
-        if self._cYend < self._blockSize / 3 and self._cYend != 0 and self._cY > 1:
+        if self._cYend < self._blockSize // 3 and self._cYend != 0 and self._cY > 1:
             self._cY -= 1
         else:
             self._cYend = 0

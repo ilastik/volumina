@@ -23,6 +23,7 @@
 # Use this file to check that the colortable options in the layer context menu are working
 #
 
+from __future__ import division
 from volumina.api import Viewer
 from PyQt4.QtGui import QApplication, QColor, QKeySequence, QShortcut
 from PyQt4.QtGui import QPushButton
@@ -58,7 +59,7 @@ l1 = v.addGrayscaleLayer(raw, name="raw", direct=True)
 l1.visible = direct
 colortable = [QColor(0,0,0,0).rgba(), QColor(255,0,0).rgba(), QColor(0,255,0).rgba(), QColor(0,0,255).rgba()]
 
-s = ((raw/64)).astype(numpy.uint8)
+s = ((raw//64)).astype(numpy.uint8)
 def onClick(layer, pos5D, pos):
     print "here i am: ", pos5D, s[pos5D]
     
