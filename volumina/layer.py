@@ -382,6 +382,11 @@ class GrayscaleLayer( NormalizableLayer ):
     def window_leveling( self, wl ):
         self._window_leveling = wl
 
+    def isDifferentEnough(self, other_layer):
+        if super(GrayscaleLayer, self).isDifferentEnough(other_layer):
+            return True
+        return self._window_leveling != other_layer._window_leveling
+
     def __init__( self, datasource, range = None, normalize = None, direct=False, window_leveling=False):
         assert isinstance(datasource, SourceABC)
         super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
