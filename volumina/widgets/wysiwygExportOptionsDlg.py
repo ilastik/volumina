@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from __future__ import division
 from itertools import product
 from operator import mul, itemgetter
 import os
@@ -397,7 +398,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
             return
 
         tsteps = stop[0] - start[0] if "t" in iter_coords else 1
-        chunks = [iter(file_names)] * (len(file_names) / tsteps)
+        chunks = [iter(file_names)] * (len(file_names) // tsteps)
         depth_index = None
         depth_coord = None
         for index, name in zip(iter_axes, iter_coords):

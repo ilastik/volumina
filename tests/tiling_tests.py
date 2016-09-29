@@ -51,7 +51,7 @@ class TilingTest ( ut.TestCase ):
     def testLen( self ):
         for i in xrange(5):
             t = Tiling((100*i, 100), blockSize = 50)
-            self.assertEqual(len(t), (100*i*2)/50)
+            self.assertEqual(len(t), (100*i*2)//50)
 
     def testData2Scene(self):
         t = Tiling((0, 0))
