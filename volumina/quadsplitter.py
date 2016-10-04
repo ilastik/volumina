@@ -21,6 +21,7 @@
 ###############################################################################
 #!/usr/bin/env python
 from __future__ import division
+import sys
 from PyQt4.QtCore import Qt, pyqtSignal, QEvent, QTimer
 from PyQt4.QtGui import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
 
