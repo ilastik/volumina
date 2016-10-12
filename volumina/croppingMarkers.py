@@ -34,6 +34,7 @@ class CropExtentsModel( QObject ):
 
     def setEditable (self, flag):
         self._editable = flag
+        self.editableChanged.emit(flag)
 
     def __init__(self, parent):
         super( CropExtentsModel, self ).__init__( parent )
