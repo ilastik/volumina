@@ -544,15 +544,14 @@ class CropLine(QGraphicsItem):
                     painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, height) )
 
     def hoverEnterEvent(self, event):
-
-        if self._editable:
+        if self._parent._editable:
             # Change the cursor to indicate the line is draggable
             cursor = QCursor( Qt.OpenHandCursor )
             QApplication.instance().setOverrideCursor( cursor )
     
     def hoverLeaveEvent(self, event):
 
-        if self._editable:
+        if self._parent._editable:
             # Restore the cursor to its previous state.
             QApplication.instance().restoreOverrideCursor()
 
@@ -560,7 +559,7 @@ class CropLine(QGraphicsItem):
         """
             Moving a line.
         """
-        if self._editable:
+        if self._parent._editable:
             new_pos = self.scene().data2scene.map( event.scenePos() )
             width, height = self._parent.dataShape
 
@@ -616,7 +615,7 @@ class CropLine(QGraphicsItem):
             Selecting a line.
         """
 
-        if self._editable:
+        if self._parent._editable:
             new_pos = self.scene().data2scene.map( event.scenePos() )
             width, height = self._parent.dataShape
 
@@ -647,7 +646,7 @@ class CropLine(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
 
-        if self._editable:
+        if self._parent._editable:
             self.mouseMoveStartH = -1
             self.mouseMoveStartV = -1
 
