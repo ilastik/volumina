@@ -432,6 +432,7 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
 
     spinbox = DelayedSpinBox(750)
     spinbox.setAlignment(Qt.AlignCenter)
+    #set the information that will be viewed, if hovered over the Coordination Box
     spinbox.setToolTip("{0} Spin Box".format(name))
     spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
     spinbox.setMaximumHeight(20)
@@ -488,6 +489,16 @@ class QuadStatusBar(QHBoxLayout):
                                 xbackgroundColor, xforegroundColor,
                                 ybackgroundColor, yforegroundColor,
                                 zbackgroundColor, zforegroundColor):
+        """
+        adds the following properties to the lower part of the view
+        X value (X Spin Box)
+        Y value
+        Z value
+        Busy-waiting box (invisible)
+        Position
+        Time Spin Box
+
+        """
         self.xLabel, self.xSpinBox = _get_pos_widget('X',
                                                      xbackgroundColor,
                                                      xforegroundColor)
@@ -498,6 +509,11 @@ class QuadStatusBar(QHBoxLayout):
                                                      zbackgroundColor,
                                                      zforegroundColor)
         
+        #partial connection means:
+        #The partial object is created by definition of the connection, 
+        #not when the event is triggered. 
+        #That means: _handlePositionBoxValueChanged() is called when connecting, so that it will 
+        #always handle the contents that have changed in the viewer.
         self.xSpinBox.delayedValueChanged.connect( partial(self._handlePositionBoxValueChanged, 'x') )
         self.ySpinBox.delayedValueChanged.connect( partial(self._handlePositionBoxValueChanged, 'y') )
         self.zSpinBox.delayedValueChanged.connect( partial(self._handlePositionBoxValueChanged, 'z') )
@@ -631,6 +647,11 @@ class QuadStatusBar(QHBoxLayout):
                 self.timeSpinBox.setValue(self.timeSlider.value())
 
     def _handlePositionBoxValueChanged(self, axis, value):
+        """
+        Take the old values of the spinBoxes
+        and change the value of the given axis
+        Emit the signal with the new position
+        """
         new_position = [self.xSpinBox.value(), self.ySpinBox.value(), self.zSpinBox.value()]
         changed_axis = ord(axis) - ord('x')
         new_position[changed_axis] = value
