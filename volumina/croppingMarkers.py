@@ -34,6 +34,7 @@ class CropExtentsModel( QObject ):
 
     def setEditable (self, flag):
         self._editable = flag
+        self.editableChanged.emit(flag)
 
     def __init__(self, parent):
         super( CropExtentsModel, self ).__init__( parent )
@@ -159,7 +160,6 @@ class CroppingMarkers( QGraphicsItem ):
     def __init__(self, scene, axis, crop_extents_model, editable=True):
 
         self._cropColor = Qt.white
-        self._editable = editable
 
         QGraphicsItem.__init__(self, scene=scene)
         self.setFlag(QGraphicsItem.ItemHasNoContents);
@@ -167,7 +167,6 @@ class CroppingMarkers( QGraphicsItem ):
         self.scene = scene
         self.axis = axis
         self.crop_extents_model = crop_extents_model
-        self.crop_extents_model.editableChanged.connect( self.onEditableChanged)
 
         self._width = 0
         self._height = 0
@@ -218,9 +217,6 @@ class CroppingMarkers( QGraphicsItem ):
     def mouseMoveStartV(self, v):
         self._mouseMoveStartV = v
 
-    def onEditableChanged(self, flag):
-        self._editable = flag
-
     def onExtentsChanged(self, crop_extents_model ):
         crop_extents = crop_extents_model.crop_extents()
         crop_extents.pop(self.axis)
@@ -260,7 +256,7 @@ class CroppingMarkers( QGraphicsItem ):
             self.mouseMoveStartH and
             self.mouseMoveStartV
         """
-        if self._editable:
+        if self.crop_extents_model._editable:
             position = self.scene.data2scene.map( event.scenePos() )
             width, height = self.dataShape
             posH0 = self._horizontal0.position
@@ -326,7 +322,7 @@ class CroppingMarkers( QGraphicsItem ):
 
     def mouseReleaseEvent(self, event):
 
-        if self._editable:
+        if self.crop_extents_model._editable:
             self.mouseMoveStartH = -1
             self.mouseMoveStartV = -1
 
@@ -341,7 +337,7 @@ class CroppingMarkers( QGraphicsItem ):
             self.mouseMoveStartV
         """
 
-        if self._editable:
+        if self.crop_extents_model._editable:
             position = self.scene.data2scene.map( event.scenePos() )
             width, height = self.dataShape
 
@@ -450,7 +446,6 @@ class CropLine(QGraphicsItem):
         assert direction in ('horizontal', 'vertical')
 
         self._parent = parent
-        self._editable = self._parent._editable
         self._direction = direction
         self._index = index
         QGraphicsItem.__init__(self, parent)
@@ -544,15 +539,14 @@ class CropLine(QGraphicsItem):
                     painter.drawLine( QPointF(self.position, 0.0), QPointF(self.position, height) )
 
     def hoverEnterEvent(self, event):
-
-        if self._editable:
+        if self._parent.crop_extents_model._editable:
             # Change the cursor to indicate the line is draggable
             cursor = QCursor( Qt.OpenHandCursor )
             QApplication.instance().setOverrideCursor( cursor )
     
     def hoverLeaveEvent(self, event):
 
-        if self._editable:
+        if self._parent.crop_extents_model._editable:
             # Restore the cursor to its previous state.
             QApplication.instance().restoreOverrideCursor()
 
@@ -560,7 +554,7 @@ class CropLine(QGraphicsItem):
         """
             Moving a line.
         """
-        if self._editable:
+        if self._parent.crop_extents_model._editable:
             new_pos = self.scene().data2scene.map( event.scenePos() )
             width, height = self._parent.dataShape
 
@@ -616,7 +610,7 @@ class CropLine(QGraphicsItem):
             Selecting a line.
         """
 
-        if self._editable:
+        if self._parent.crop_extents_model._editable:
             new_pos = self.scene().data2scene.map( event.scenePos() )
             width, height = self._parent.dataShape
 
@@ -647,7 +641,7 @@ class CropLine(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
 
-        if self._editable:
+        if self._parent.crop_extents_model._editable:
             self.mouseMoveStartH = -1
             self.mouseMoveStartV = -1
 
