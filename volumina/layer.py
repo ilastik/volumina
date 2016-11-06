@@ -457,8 +457,8 @@ class ColortableLayer( NormalizableLayer ):
         self._colorTable = colorTable
         self.colorTableChanged.emit()
 
-    def randomizeColors(self, zeroIsTransparent=True):
-        self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, zeroIsTransparent)
+    def randomizeColors(self):
+        self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, self.zeroIsTransparent)
         
     def isDifferentEnough(self, other_layer):
         if type(other_layer) != type(self):
@@ -490,7 +490,7 @@ class ColortableLayer( NormalizableLayer ):
         self._colorTable = colorTable
         
         self.colortableIsRandom = False
-        self.zeroIsTransparent  = False
+        self.zeroIsTransparent = (QColor.fromRgba(colorTable[0]).alpha() == 0)
         
 class ClickableColortableLayer(ClickableLayer):
     colorTableChanged = pyqtSignal()
@@ -502,7 +502,7 @@ class ClickableColortableLayer(ClickableLayer):
         self.data = datasource
         
         self.colortableIsRandom = False
-        self.zeroIsTransparent  = False
+        self.zeroIsTransparent = (QColor.fromRgba(colorTable[0]).alpha() == 0)
 
     @property
     def colorTable( self ):
