@@ -182,6 +182,9 @@ class GrayscaleImageRequest( object ):
             elif a.dtype == np.int64:
                 a = np.asanyarray(a, np.int32)
 
+        if a.dtype == np.bool_:
+            a = a.view(np.uint8)
+
         has_no_mask = not np.ma.is_masked(a)
 
         #
@@ -391,6 +394,9 @@ class ColortableImageRequest( object ):
         tAR = 1000.0*(time.time()-tAR)
         
         assert a.ndim == 2
+
+        if a.dtype == np.bool_:
+            a = a.view(np.uint8)
 
         if self._normalize and self._normalize[0] < self._normalize[1]:
             nmin, nmax = self._normalize
