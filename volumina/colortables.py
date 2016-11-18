@@ -113,6 +113,7 @@ default16 = [QColor(0, 0, 255).rgba(),
             QColor(240, 230, 140).rgba(), #khaki
             QColor(69, 69, 69).rgba()]    # dark grey
 
+
 random256 = [             
             QColor(201, 200, 200).rgba(),
             QColor(0, 0, 255).rgba(),
@@ -392,7 +393,25 @@ def create_random_8bit():
     '''Create a colortable suitable for 8bit data.
     
     Creates a pseudo-random colortable in the 8bit range'''
-    return random256;
+
+    # don't return random256 directly. Otherwise the list will be changed by some code directly, 
+    # and everything gets messed up.
+    # use a creator instead
+    #return random256;
+    return [color for color in random256]
+
+def create_random_8bit_zero_transparent():
+    '''Create a colortable suitable for 8bit data.
+    
+    Creates a pseudo-random colortable in the 8bit range
+    Replace zero(th) Color with transparent'''
+    temp = random256
+    temp[0] = QColor(0, 0, 0, 0).rgba()
+
+    # don't return random256 directly. Otherwise the list will be changed by some code directly, 
+    # and everything gets messed up.
+    # use a creator instead
+    return [color for color in temp]
 
 def create_random_16bit():
     '''Create a colortable suitable for 16bit data.
