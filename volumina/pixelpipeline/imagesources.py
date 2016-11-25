@@ -35,7 +35,7 @@ except:
 from PyQt4.QtCore import QObject, QRect, pyqtSignal, QMutex
 from PyQt4.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
-from asyncabcs import SourceABC, RequestABC
+from .asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import cfg
 from volumina.utility import execute_in_main_thread
@@ -133,9 +133,9 @@ class GrayscaleImageSource( ImageSource ):
     def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
-            print Fore.RED + "  GrayscaleImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
+            print(Fore.RED + "  GrayscaleImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
             % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height()) \
-            + Fore.RESET
+            + Fore.RESET)
             volumina.printLock.release()
             
         assert isinstance(qrect, QRect)
@@ -241,9 +241,9 @@ class AlphaModulatedImageSource( ImageSource ):
     def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
-            print Fore.RED + "  AlphaModulatedImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
+            print(Fore.RED + "  AlphaModulatedImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
             % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height()) \
-            + Fore.RESET
+            + Fore.RESET)
             volumina.printLock.release()
             
         assert isinstance(qrect, QRect)
@@ -356,9 +356,9 @@ class ColortableImageSource( ImageSource ):
     def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
-            print Fore.RED + "  ColortableImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d) = %r" \
+            print(Fore.RED + "  ColortableImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d) = %r" \
             % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height(), rect2slicing(qrect)) \
-            + Fore.RESET
+            + Fore.RESET)
             volumina.printLock.release()
             
         assert isinstance(qrect, QRect)
@@ -512,9 +512,9 @@ class RGBAImageSource( ImageSource ):
     def request( self, qrect, along_through=None ):
         if cfg.getboolean('pixelpipeline', 'verbose'):
             volumina.printLock.acquire()
-            print Fore.RED + "  RGBAImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
+            print(Fore.RED + "  RGBAImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)" \
             % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height()) \
-             + Fore.RESET
+             + Fore.RESET)
             volumina.printLock.release()
             
         assert isinstance(qrect, QRect)
@@ -625,7 +625,7 @@ class DummyItem( QGraphicsItem ):
             painter.drawRoundedRect(shrunken_rectf, 50, 50, Qt.RelativeSize)
     
     def mousePressEvent(self, event):
-        print "You clicked on rect: {}".format( self.rectf )
+        print("You clicked on rect: {}".format( self.rectf ))
 
     def mouseReleaseEvent(self, event):
         pass

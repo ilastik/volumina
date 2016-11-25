@@ -49,7 +49,7 @@ class TilingTest ( ut.TestCase ):
         self.assertEqual( len(t), 0 )
 
     def testLen( self ):
-        for i in xrange(5):
+        for i in range(5):
             t = Tiling((100*i, 100), blockSize = 50)
             self.assertEqual(len(t), (100*i*2)//50)
 
@@ -57,7 +57,7 @@ class TilingTest ( ut.TestCase ):
         t = Tiling((0, 0))
         trans = QTransform()
         t.data2scene = trans
-        self.assertEquals(trans, t.data2scene)
+        self.assertEqual(trans, t.data2scene)
 
         # try using transformation that is not invertible
         trans = QTransform(1, 1, 1, 1, 1, 1)

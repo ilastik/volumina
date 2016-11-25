@@ -1,6 +1,6 @@
 from concurrent.futures.thread import ThreadPoolExecutor, _WorkItem
 import concurrent.futures._base 
-import Queue
+import queue
 
 class PrioritizedTask(_WorkItem):
     """
@@ -32,7 +32,7 @@ class PrioritizedThreadPoolExecutor(ThreadPoolExecutor):
     """
     def __init__(self, max_workers):
         super(PrioritizedThreadPoolExecutor, self).__init__(max_workers)
-        self._work_queue = Queue.PriorityQueue()
+        self._work_queue = queue.PriorityQueue()
 
     def submit(self, func, priority):
         """

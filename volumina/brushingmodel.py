@@ -20,7 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #!/usr/bin/env python
-from __future__ import division
+
 from PyQt4.QtCore import pyqtSignal, QObject, Qt, QSize, QPointF, QRectF, \
                          QRect, QPoint, QSizeF
 from PyQt4.QtGui  import QPen, QGraphicsScene, QColor, \

@@ -37,9 +37,7 @@ if has_lazyflow:
     from volumina.pixelpipeline._testing import OpDataProvider
     from volumina.pixelpipeline.datasources import LazyflowSource, LazyflowSinkSource
 
-class GenericArraySourceTest:
-    __metaclass__ = ABCMeta
-
+class GenericArraySourceTest(metaclass=ABCMeta):
     @abstractmethod
     def setUp( self ):
         self.slicing = (slice(0,1),slice(10,20), slice(20,25), slice(0,1), slice(0,1))

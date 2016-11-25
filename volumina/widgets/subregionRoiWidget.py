@@ -95,12 +95,12 @@ class SubregionRoiWidget( QTableWidget ):
         self.setColumnCount( 3 )
         self.setHorizontalHeaderLabels(["range", "[start,", "stop)"])
         self.resizeColumnsToContents()
-        tagged_shape = collections.OrderedDict( zip(axes, shape) )
-        tagged_start = collections.OrderedDict( zip(axes, start) )
-        tagged_stop = collections.OrderedDict( zip(axes, stop) )
+        tagged_shape = collections.OrderedDict( list(zip(axes, shape)) )
+        tagged_start = collections.OrderedDict( list(zip(axes, start)) )
+        tagged_stop = collections.OrderedDict( list(zip(axes, stop)) )
         self._tagged_shape = tagged_shape
         self.setRowCount( len(tagged_shape) )
-        self.setVerticalHeaderLabels( tagged_shape.keys() )
+        self.setVerticalHeaderLabels( list(tagged_shape.keys()) )
 
         self._boxes.clear()
 
@@ -149,10 +149,10 @@ class SubregionRoiWidget( QTableWidget ):
         if len( self._boxes ) == 0:
             start = stop = ()
         else:
-            checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
-            box_starts = map( RoiSpinBox.value, min_boxes )
-            box_stops = map( RoiSpinBox.value, max_boxes )
-            checkbox_flags = map( lambda cbox: cbox.checkState() == Qt.Checked, checkboxes )
+            checkboxes, min_boxes, max_boxes = list(zip( *list(self._boxes.values()) ))
+            box_starts = list(map( RoiSpinBox.value, min_boxes ))
+            box_stops = list(map( RoiSpinBox.value, max_boxes ))
+            checkbox_flags = [cbox.checkState() == Qt.Checked for cbox in checkboxes]
     
             # For 'full range' axes, replace box value with the full extent value
             start = tuple( None if use_full else b for use_full, b in zip( checkbox_flags, box_starts ) )
@@ -167,7 +167,7 @@ class SubregionRoiWidget( QTableWidget ):
         if not self._handling_click: # infinite recursion guard
             if len(self._boxes) == 0:
                 return
-            checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
+            checkboxes, min_boxes, max_boxes = list(zip( *list(self._boxes.values()) ))
             if item in checkboxes:
                 self._handling_click = True
                 # Because we auto-toggle the checkbox in _handleItemClicked, we have to UNTOGGLE it here
@@ -181,7 +181,7 @@ class SubregionRoiWidget( QTableWidget ):
     def _handleItemClicked(self, item):
         if len(self._boxes) == 0:
             return
-        checkboxes, min_boxes, max_boxes = zip( *self._boxes.values() )
+        checkboxes, min_boxes, max_boxes = list(zip( *list(self._boxes.values()) ))
         if item in checkboxes:
             self._handling_click = True
             row = checkboxes.index(item)

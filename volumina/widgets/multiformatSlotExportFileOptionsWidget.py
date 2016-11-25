@@ -27,9 +27,9 @@ from PyQt4 import uic
 from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QWidget
 
-from singleFileExportOptionsWidget import SingleFileExportOptionsWidget
-from hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
-from stackExportFileOptionsWidget import StackExportFileOptionsWidget
+from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
+from .hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
+from .stackExportFileOptionsWidget import StackExportFileOptionsWidget
 
 try:
     from lazyflow.operators.ioOperators import OpExportSlot
@@ -38,7 +38,7 @@ except ImportError:
     _has_lazyflow = False
 
 try:
-    from dvidVolumeExportOptionsWidget import DvidVolumeExportOptionsWidget
+    from .dvidVolumeExportOptionsWidget import DvidVolumeExportOptionsWidget
     _supports_dvid = True
 except ImportError:
     _supports_dvid = False
@@ -112,7 +112,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self._format_option_editors['blockwise hdf5'] = blockwiseHdf5OptionsWidget
 
         # Populate the format combo
-        for file_format, widget in self._format_option_editors.items():
+        for file_format, widget in list(self._format_option_editors.items()):
             self.formatCombo.addItem( file_format )
 
         # Populate the stacked widget
@@ -197,8 +197,8 @@ if __name__ == "__main__":
     w.show()
     app.exec_()
 
-    print "Selected Filepath: {}".format( op.OutputFilenameFormat.value )
-    print "Selected Dataset: {}".format( op.OutputInternalPath.value )
+    print("Selected Filepath: {}".format( op.OutputFilenameFormat.value ))
+    print("Selected Dataset: {}".format( op.OutputInternalPath.value ))
 
 
 

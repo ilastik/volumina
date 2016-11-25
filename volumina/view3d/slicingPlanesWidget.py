@@ -25,7 +25,7 @@ try:
                 vtkActor, vtkPlane
 
 except:
-    print 'Vtk not found in slicingPlanesWidget'
+    print('Vtk not found in slicingPlanesWidget')
     vtkfound = 'false'
 
 #*******************************************************************************

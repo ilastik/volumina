@@ -28,7 +28,7 @@ from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
 
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
-from layercontextmenu import layercontextmenu
+from .layercontextmenu import layercontextmenu
 from volumina.utility.qstring_codec import encode_from_qstring
 from volumina.utility.qstring_codec import decode_to_qstring
 
@@ -172,7 +172,7 @@ class LayerItemWidget( QWidget ):
         self.opacityLabel = QLabel( parent=self )
         self.opacityLabel.setAlignment(Qt.AlignRight)
         self.opacityLabel.setFont( self._font )
-        self.opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self.bar.fraction())))
+        self.opacityLabel.setText( "\u03B1=%0.1f%%" % (100.0*(self.bar.fraction())))
         self.toggleEye = ToggleEye( parent=self )
         self.toggleEye.setActive(False)
         self.toggleEye.setFixedWidth(35)
@@ -225,7 +225,7 @@ class LayerItemWidget( QWidget ):
         if self._layer:
             self.toggleEye.setActive(self._layer.visible)
             self.bar.setFraction( self._layer.opacity )
-            self.opacityLabel.setText( u"\u03B1=%0.1f%%" % (100.0*(self.bar.fraction())))
+            self.opacityLabel.setText( "\u03B1=%0.1f%%" % (100.0*(self.bar.fraction())))
             self.nameLabel.setText( self._layer.name )
             
             if self._layer.numberOfChannels > 1:

@@ -19,14 +19,14 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from __future__ import division
+
 import numpy
 
 def meshgrid2(*arrs):
     #This function is copied from:
     #http://stackoverflow.com/questions/1827489/numpy-meshgrid-in-3d
     arrs = tuple(reversed(arrs))
-    lens = map(len, arrs)
+    lens = list(map(len, arrs))
     dim = len(arrs)
     sz = 1
     for s in lens:

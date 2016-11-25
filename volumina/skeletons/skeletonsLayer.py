@@ -45,7 +45,7 @@ class SkeletonsLayer(QGraphicsObject):
        
         #update existing items 
         toRemove = []
-        for node, item in self._node2view.iteritems():
+        for node, item in self._node2view.items():
             if node.pos[self._axis] != self._axisIntersect:
                 self._scene.removeItem(item)
                 toRemove.append(node)
@@ -85,7 +85,7 @@ class SkeletonsLayer(QGraphicsObject):
             self._scene.addItem(itm)
             self._node2view[n] = itm
 
-        for itm in self._edge2view.values():
+        for itm in list(self._edge2view.values()):
             self._scene.removeItem(itm) 
         self._edge2view = dict()
         

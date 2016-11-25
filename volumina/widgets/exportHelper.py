@@ -27,8 +27,8 @@ from PyQt4.QtCore import pyqtSignal, QObject
 from PyQt4.QtGui import QMessageBox
 
 #volumina
-from dataExportOptionsDlg import DataExportOptionsDlg
-from multiStepProgressDialog import MultiStepProgressDialog
+from .dataExportOptionsDlg import DataExportOptionsDlg
+from .multiStepProgressDialog import MultiStepProgressDialog
 
 import logging
 logger = logging.getLogger(__name__)

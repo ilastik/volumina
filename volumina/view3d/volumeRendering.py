@@ -126,7 +126,7 @@ class RenderingManager(object):
     def update(self):
         assert threading.current_thread().name == 'MainThread', \
             "RenderingManager.update() must be called from the main thread to avoid segfaults."
-        for label, color in self._cmap.iteritems():
+        for label, color in self._cmap.items():
             self._colorFunc.AddRGBPoint(label, *color)
         self._dataImporter.Modified()
         self._volumeRendering.Update()

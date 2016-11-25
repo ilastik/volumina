@@ -55,7 +55,7 @@ class ResizeHandle(QGraphicsRectItem):
         self._updateColor()
         
     def mouseMoveEvent(self, event):
-        print "[view=%d] mouse move event constrained to %r" % (self.scene().skeletonAxis, self._constrainAxis)
+        print("[view=%d] mouse move event constrained to %r" % (self.scene().skeletonAxis, self._constrainAxis))
         super(ResizeHandle, self).mouseMoveEvent(event)
        
         if self.scene().skeletonAxis == 0:
@@ -64,7 +64,7 @@ class ResizeHandle(QGraphicsRectItem):
             axes = [0,2]
         else:
             axes = [0,1]
-        print axes
+        print(axes)
             
         if self._constrainAxis == 0:
             self.setPos(QPointF(self.pos().x(), 0) )
@@ -121,7 +121,7 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
             h1.setPos(QPointF(0, rect.height()/2))
 
     def setNewSize(self, constrainAxis, size):
-        print constrainAxis, size
+        print(constrainAxis, size)
         if constrainAxis == 0:
             w, h = 2*size, self.rect().height()
         else:
@@ -188,7 +188,7 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
             
             result = menu.exec_(event.screenPos())
             if result == deleteAction:
-                print "want to delete" 
+                print("want to delete") 
                 #FIXME: Implement
 
     def mouseMoveEvent(self, event):
@@ -208,6 +208,6 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
         self._skeletons.moveNode(self._node, pos)
 
     def mouseDoubleClickEvent(self, event):
-        print "DOUBLE CLICK ON NODE"
+        print("DOUBLE CLICK ON NODE")
         #FIXME: Implement me
         event.accept()

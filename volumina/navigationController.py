@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from __future__ import division
+
 from PyQt4.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
 from PyQt4.QtGui  import QColor, QCursor 
 
@@ -27,7 +27,7 @@ import copy
 import warnings
 from functools import partial
 
-from eventswitch import InterpreterABC
+from .eventswitch import InterpreterABC
 
 from volumina.sliceIntersectionMarker import SliceIntersectionMarker
 from volumina.imageScene2D import DirtyIndicator
@@ -334,8 +334,8 @@ class NavigationController(QObject):
             return
 
         # pos must not be float.
-        self._model.slicingPos = map(int, newPos)
-        self.panSlicingViews( newPos, filter( lambda a: a != axis, [0,1,2] ) )
+        self._model.slicingPos = list(map(int, newPos))
+        self.panSlicingViews( newPos, [a for a in [0,1,2] if a != axis] )
 
     def panSlicingViews(self, point3d, axes):
         """

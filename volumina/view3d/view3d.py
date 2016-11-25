@@ -45,7 +45,7 @@ import volumina.icons_rc
 
 import qimage2ndarray
 
-from numpy2vtk import toVtkImageData
+from .numpy2vtk import toVtkImageData
 
 #from GenerateModelsFromLabels_thread import *
 
@@ -53,10 +53,10 @@ import platform #to check whether we are running on a Mac
 import copy
 from functools import partial
 
-from slicingPlanesWidget import SlicingPlanesWidget
+from .slicingPlanesWidget import SlicingPlanesWidget
 from volumina.events import Event
 from volumina.layer import ColortableLayer
-from GenerateModelsFromLabels_thread import MeshExtractorDialog
+from .GenerateModelsFromLabels_thread import MeshExtractorDialog
 
 import logging
 logger = logging.getLogger(__name__)
@@ -520,7 +520,7 @@ class OverviewScene(QWidget):
             self.qvtk.renderer.RemoveActor(a) 
         
         self.polygonAppender = vtkAppendPolyData()
-        for g in self.dlg.extractor.meshes.values():
+        for g in list(self.dlg.extractor.meshes.values()):
             self.polygonAppender.AddInput(g)
         
         self.cutter[0] = Outliner(self.polygonAppender.GetOutput())
@@ -545,7 +545,7 @@ class OverviewScene(QWidget):
         ## - Set the occlusion ratio (initial value is 0.0, exact image):
         #self.renderer.SetOcclusionRatio(0.0);
 
-        for i, g in self.dlg.extractor.meshes.items():
+        for i, g in list(self.dlg.extractor.meshes.items()):
             logger.debug( " - showing object with label = {}".format(i) )
             mapper = vtkPolyDataMapper()
             mapper.SetInput(g)

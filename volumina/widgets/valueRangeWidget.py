@@ -94,7 +94,7 @@ class ValueRangeWidget(QWidget):
         self.changedSignal.emit()
 
     def printLimits(self):
-        print self.softLimits
+        print(self.softLimits)
 
     def validateRange(self):
         validCheck = [True, True]

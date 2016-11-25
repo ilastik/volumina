@@ -28,7 +28,7 @@ def encode_from_qstring(qstr, encoding=sys.getfilesystemencoding()):
     If no encoding is provided, use the same encoding as the filesystem.
     """
     assert isinstance(qstr, QString)
-    return unicode(qstr).encode( encoding )
+    return str(qstr).encode( encoding )
 
 def decode_to_qstring(s, encoding=sys.getfilesystemencoding()):
     """
@@ -36,11 +36,11 @@ def decode_to_qstring(s, encoding=sys.getfilesystemencoding()):
     If not encoding is specified, use the same encoding as the filesystem.
     """
     # pyqt converts unicode to QString correctly.
-    assert isinstance(s, str) or isinstance(s, unicode)
-    return QString( s.decode( encoding ) )
+    assert isinstance(s, str) or isinstance(s, str)
+    return QString( s.encode( encoding ) )
 
 
-assert sys.version_info.major == 2, \
+assert sys.version_info.major != 2, \
     "This file assumes Python 2 str/unicode semantics. "\
     "If you upgrade to Python 3,  you'll have to change it. "\
     "(Or maybe just get rid of it?)/"

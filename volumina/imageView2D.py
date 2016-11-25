@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from __future__ import division
+
 from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
 from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
 
@@ -28,9 +28,9 @@ import os
 import time
 import platform
 
-from crossHairCursor import CrossHairCursor
-from sliceIntersectionMarker import SliceIntersectionMarker
-from croppingMarkers import CroppingMarkers
+from .crossHairCursor import CrossHairCursor
+from .sliceIntersectionMarker import SliceIntersectionMarker
+from .croppingMarkers import CroppingMarkers
 from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 
 from PyQt4.QtOpenGL import QGLWidget

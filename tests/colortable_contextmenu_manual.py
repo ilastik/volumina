@@ -23,7 +23,7 @@
 # Use this file to check that the colortable options in the layer context menu are working
 #
 
-from __future__ import division
+
 from volumina.api import Viewer
 from PyQt4.QtGui import QApplication, QColor, QKeySequence, QShortcut
 from PyQt4.QtGui import QPushButton
@@ -61,7 +61,7 @@ colortable = [QColor(0,0,0,0).rgba(), QColor(255,0,0).rgba(), QColor(0,255,0).rg
 
 s = ((raw//64)).astype(numpy.uint8)
 def onClick(layer, pos5D, pos):
-    print "here i am: ", pos5D, s[pos5D]
+    print("here i am: ", pos5D, s[pos5D])
     
 l2 = v.addColorTableLayer(s, clickFunctor=onClick, name="thresh", colortable=colortable, direct=direct)
 l2.colortableIsRandom = True

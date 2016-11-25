@@ -23,7 +23,7 @@ from functools import partial
 from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
 from PyQt4.QtGui import QPen, QBrush, QApplication, QMouseEvent, QGraphicsLineItem
 
-from navigationController import NavigationInterpreter
+from .navigationController import NavigationInterpreter
 
 #*******************************************************************************
 # C r o s s h a i r C o n t r o l e r                                          *

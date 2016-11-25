@@ -30,11 +30,11 @@ class SlicingToolsTest(unittest.TestCase):
 
     def test_slicing2rect(self):
         qrect = st.slicing2rect(self.slicing)
-        self.assertEquals(qrect, self.qrect)
+        self.assertEqual(qrect, self.qrect)
 
     def test_rect2slicing(self):
         slicing = st.rect2slicing(self.qrect)
-        self.assertEquals(slicing, self.slicing)
+        self.assertEqual(slicing, self.slicing)
 
     def test_slicing_rect_inversion(self):
         """Ensures that slicing2rect and rect2slicing are inverse
@@ -45,13 +45,13 @@ class SlicingToolsTest(unittest.TestCase):
         b = st.slicing2rect(a)
         c = st.rect2slicing(b)
 
-        self.assertEquals(a, c)
+        self.assertEqual(a, c)
 
         a = self.qrect
         b = st.rect2slicing(a)
         c = st.slicing2rect(b)
 
-        self.assertEquals(a, c)
+        self.assertEqual(a, c)
 
 
 if __name__=='__main__':

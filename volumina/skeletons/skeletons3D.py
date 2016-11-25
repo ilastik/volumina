@@ -23,7 +23,7 @@
 try:
     import vtk
 except ImportError:
-    print "Warning: could not import optional dependency VTK"
+    print("Warning: could not import optional dependency VTK")
 
 from numpy import asarray as A
 from volumina.skeletons.frustum import cut

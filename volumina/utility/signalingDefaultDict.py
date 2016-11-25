@@ -29,13 +29,13 @@ class SignalingDefaultDict( QObject ):
     def __iter__(self):                return self._dict.__iter__()
     def __contains__(self, key):       return self._dict.__contains__(key)
     def get(self, key, default=None):  return self._dict.get(key, default)
-    def viewkeys(self):                return self._dict.viewkeys()
-    def items(self):                   return self._dict.items()
-    def iteritems(self):               return self._dict.iteritems()
-    def keys(self):                    return self._dict.keys()
-    def iterkeys(self):                return self._dict.iterkeys()
-    def itervalues(self):              return self._dict.itervalues()
-    def values(self):                  return self._dict.values()
+    def viewkeys(self):                return self._dict.keys()
+    def items(self):                   return list(self._dict.items())
+    def iteritems(self):               return iter(self._dict.items())
+    def keys(self):                    return list(self._dict.keys())
+    def iterkeys(self):                return iter(self._dict.keys())
+    def itervalues(self):              return iter(self._dict.values())
+    def values(self):                  return list(self._dict.values())
 
     def __setitem__(self, key, value):
         if key not in self._dict or self._dict[key] != value:
@@ -63,13 +63,13 @@ class SignalingDefaultDict( QObject ):
         added_keys = other_keys - original_keys
         
         common_keys = original_keys.intersection(other_keys)
-        changed_keys = filter( lambda key: self._dict[key] != other[key], common_keys )        
+        changed_keys = [key for key in common_keys if self._dict[key] != other[key]]        
 
         self._dict.update(other)
         self.updated.emit( set(changed_keys).union(added_keys) )
     
     def clear(self):
-        keys = self._dict.keys()
+        keys = list(self._dict.keys())
         self._dict.clear()
         self.updated.emit( set(keys) )
 
@@ -84,7 +84,7 @@ class SignalingDefaultDict( QObject ):
         added_keys = other_keys - original_keys
         
         common_keys = original_keys.intersection(other_keys)
-        changed_keys = filter( lambda key: self._dict[key] != other[key], common_keys )
+        changed_keys = [key for key in common_keys if self._dict[key] != other[key]]
         deleted_keys = original_keys - other_keys
 
         self._dict = defaultdict(self._dict.default_factory, other)
@@ -97,9 +97,9 @@ if __name__ == "__main__":
     orig_dict = {'a' : 1, 'b' : 2, 'c' : 3}
     d = SignalingDefaultDict(None, lambda: 0, orig_dict)
 
-    assert set(d.keys()) == set(d.iterkeys()) == set(d.viewkeys()) == set('abc')
-    assert set(d.values()) == set(d.itervalues()) == set([1,2,3])
-    assert set(d.items()) == set(d.iteritems()) == set(orig_dict.items())
+    assert set(d.keys()) == set(d.keys()) == set(d.keys()) == set('abc')
+    assert set(d.values()) == set(d.values()) == set([1,2,3])
+    assert set(d.items()) == set(d.items()) == set(orig_dict.items())
 
     assert d['a'] == 1
     assert d['z'] == 0
@@ -126,8 +126,8 @@ if __name__ == "__main__":
         "Got: {}".format( handled_items )
     
     handled_items = []
-    keys = d.keys()
+    keys = list(d.keys())
     d.clear()
     assert set(handled_items) == { (k, 0) for k in keys }
-    print "DONE."
+    print("DONE.")
         

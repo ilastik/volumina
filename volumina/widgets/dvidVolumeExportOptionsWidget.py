@@ -90,5 +90,5 @@ if __name__ == "__main__":
     w.show()
     app.exec_()
 
-    print "New Dataset URL: {}".format( op.NodeDataUrl.value )
+    print("New Dataset URL: {}".format( op.NodeDataUrl.value ))
 

@@ -2864,9 +2864,9 @@ qt_resource_struct = "\
 "
 
 def qInitResources():
-    QtCore.qRegisterResourceData(0x01, qt_resource_struct, qt_resource_name, qt_resource_data)
+    QtCore.qRegisterResourceData(0x01, qt_resource_struct.encode(encoding='UTF-8'), qt_resource_name.encode(encoding='UTF-8'), qt_resource_data.encode(encoding='UTF-8'))
 
 def qCleanupResources():
-    QtCore.qUnregisterResourceData(0x01, qt_resource_struct, qt_resource_name, qt_resource_data)
+    QtCore.qUnregisterResourceData(0x01, qt_resource_struct.encode(encoding='UTF-8'), qt_resource_name.encode(encoding='UTF-8'), qt_resource_data.encode(encoding='UTF-8'))
 
 qInitResources()

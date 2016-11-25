@@ -68,7 +68,7 @@ class CropExtentsModel( QObject ):
                 ordered_extents.append( (stop, start) )
 
         # [(x1,x2), (y1,y2), (z1,z2)] -> [(x1,y1,z1), (x2,y2,z2)]
-        roi = zip( *ordered_extents )
+        roi = list(zip( *ordered_extents ))
         return roi
 
     def get_roi_t(self):
@@ -80,7 +80,7 @@ class CropExtentsModel( QObject ):
     def set_roi_3d(self, roi):
         # Convenience function.
         # Set the extents as a roi
-        self.set_crop_extents( zip( *roi ) )
+        self.set_crop_extents( list(zip( *roi )) )
 
     def set_roi_t(self, timeRange):
         # Convenience function.
@@ -131,7 +131,7 @@ class CropExtentsModel( QObject ):
         assert len(crop_extents) == 3
         for e in crop_extents:
             assert len(e) == 2
-        self._crop_extents = map(list, crop_extents) # Ensure lists, not tuples
+        self._crop_extents = list(map(list, crop_extents)) # Ensure lists, not tuples
         self.changed.emit( self )
 
     def set_crop_times(self, crop_times):

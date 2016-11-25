@@ -1,6 +1,6 @@
 from PyQt4.QtCore import Qt, QEvent, QObject, QPoint
 import numpy as np
-from navigationController import NavigationInterpreter, posView2D
+from .navigationController import NavigationInterpreter, posView2D
 from volumina.layer import GrayscaleLayer
 
 

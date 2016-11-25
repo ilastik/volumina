@@ -24,11 +24,9 @@ from PyQt4.QtGui import QMouseEvent
 
 from abc import ABCMeta, abstractmethod
 
-from pixelpipeline.asyncabcs import _has_attributes
+from .pixelpipeline.asyncabcs import _has_attributes
 
-class InterpreterABC:
-    __metaclass__ = ABCMeta
-    
+class InterpreterABC(metaclass=ABCMeta):
     @abstractmethod
     def start( self ):
         '''Start the interpretation of an event stream.'''

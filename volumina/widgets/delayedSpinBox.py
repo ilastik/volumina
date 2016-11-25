@@ -53,7 +53,7 @@ if __name__ == "__main__":
     box = DelayedSpinBox(1000)
     
     def update_label(value):
-        print "updating label to: {}".format(value)
+        print("updating label to: {}".format(value))
         label.setText(str(value))
     box.delayedValueChanged.connect( update_label )
     

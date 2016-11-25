@@ -1,7 +1,7 @@
 import numpy as np
 import warnings
 from collections import defaultdict
-from itertools import izip
+
 
 try:
     _pandas_available = True
@@ -16,7 +16,7 @@ def edge_ids( label_img, axes=None ):
     (u,v) where u and v are segment ids.  For all ids (u,v), u < v.
     """
     if axes is None:
-        axes = range(label_img.ndim)
+        axes = list(range(label_img.ndim))
 
     all_edge_ids = []
 
@@ -52,7 +52,7 @@ def edge_ids( label_img, axes=None ):
     else:
         unique_edge_ids = set()
         for edge_ids in all_edge_ids:
-            unique_edge_ids.update( map(tuple, edge_ids) )
+            unique_edge_ids.update( list(map(tuple, edge_ids)) )
         return set(map(tuple, unique_edge_ids))
 
 def edge_coords_along_axis( label_img, axis ):
@@ -103,7 +103,7 @@ def edge_coords_along_axis( label_img, axis ):
 #         return df.groupby(['id1', 'id2'])['coords'].apply(np.asarray).to_dict()
 #     else:
     grouped_coords = defaultdict(list)
-    for id_pair, coords in izip( edge_ids, edge_coords ):
+    for id_pair, coords in zip( edge_ids, edge_coords ):
         grouped_coords[tuple(id_pair)].append(coords)
     return grouped_coords
 
@@ -127,7 +127,7 @@ def edge_coords_2d( label_img ):
 
 def edge_coords_nd( label_img, axes=None ):
     if axes is None:
-        axes = range(label_img.ndim)
+        axes = list(range(label_img.ndim))
     result = []    
     for axis in axes:
         result.append( edge_coords_along_axis(label_img, axis) )
@@ -141,23 +141,23 @@ if __name__ == "__main__":
         watershed = f['watershed'][:256, :256, :256]
 
     n = NpIter( np.array([[10,20], [20,30], [30,40]]) )
-    print np.array(n)
+    print(np.array(n))
 
     from lazyflow.utility import Timer
     with Timer() as timer:
         #ec = edge_coords_nd(watershed)
         ids = edge_ids(watershed)
-    print "Python time was: {}".format( timer.seconds() )
+    print("Python time was: {}".format( timer.seconds() ))
 
     import vigra
     with Timer() as timer:
         gridGraph = vigra.graphs.gridGraph(watershed.shape)
         rag = vigra.graphs.regionAdjacencyGraph(gridGraph, watershed)
         ids = rag.uvIds()
-    print "vigra time was: {}".format( timer.seconds() )
+    print("vigra time was: {}".format( timer.seconds() ))
 
     #print len(set( ec[0].keys() + ec[1].keys() + ec[2].keys() ))
-    print len(ids)
+    print(len(ids))
 
 #     labels_img = np.load('/Users/bergs/workspace/ilastik-meta/ilastik/seg-slice-256.npy')
 #     assert labels_img.dtype == np.uint32

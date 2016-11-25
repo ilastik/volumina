@@ -527,7 +527,7 @@ class ImageScene2D(QGraphicsScene):
         BowWave = []
 
         a = self._course[0]
-        for d in xrange(1,n+1):
+        for d in range(1,n+1):
             m = through[a] + d * self._course[1]
             if m < t_max[a] and m >= 0:
                 t = list(through)

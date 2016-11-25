@@ -89,7 +89,7 @@ def make_bounded(slicing, shape):
     assert len(slicing) <= len(shape)
     slicing = index2slice(slicing)
     result = []
-    for slc, dim in itertools.izip_longest(slicing, shape):
+    for slc, dim in itertools.zip_longest(slicing, shape):
         if slc is None:
             slc = slice(None)
         start, stop, step = slc.start, slc.stop, slc.step
@@ -140,7 +140,7 @@ def index2slice( slicing ):
 
     '''
     pure_sl = list(slicing)
-    for i in xrange(len(pure_sl)):
+    for i in range(len(pure_sl)):
         if isinstance(pure_sl[i], int):
             index = pure_sl[i]
             pure_sl[i] = slice(index, index + 1)
@@ -161,7 +161,7 @@ def intersection( lhs, rhs ):
         return min(stop1, stop2)
     dim = len(lhs)
     inter = [None] * dim
-    for d in xrange(dim):
+    for d in range(dim):
         start = max(lhs[d].start, rhs[d].start)
         stop = _min_stop(lhs[d].stop, rhs[d].stop)
 
@@ -218,7 +218,7 @@ class SliceProjection( object ):
 
         '''
         assert len(through) == len(self.along)
-        slicing = range(self.domainDim)
+        slicing = list(range(self.domainDim))
         slicing[self.abscissa] = abscissa_range
         slicing[self.ordinate] = ordinate_range
         for i in range(len(self.along)):

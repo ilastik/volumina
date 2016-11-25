@@ -183,7 +183,7 @@ class DataExportOptionsDlg(QDialog):
             tagged_output_shape = opDataExport.ImageToExport.meta.getTaggedShape()
             missing_axes = set( tagged_input_shape.keys() ) - set( tagged_output_shape.keys() )
             for axis in missing_axes:
-                index = tagged_input_shape.keys().index( axis )
+                index = list(tagged_input_shape.keys()).index( axis )
                 if (stop[index] is None and tagged_input_shape[axis] > 1) \
                 or (stop[index] is not None and stop[index] - start[index] > 1):
                     self.axisOrderCheckbox.setChecked(False)
@@ -222,7 +222,7 @@ class DataExportOptionsDlg(QDialog):
                                            ( "signed 64-bit",   "int64" ),
                                            ( "floating 32-bit", "float32" ),
                                            ( "floating 64-bit", "float64" ) ])
-        for name, dtype in dtypes.items():
+        for name, dtype in list(dtypes.items()):
             self.dtypeCombo.addItem( name, dtype )
 
         def _handleDtypeSelected():
@@ -395,7 +395,7 @@ class DataExportOptionsDlg(QDialog):
         
         def validate(self, userAxes, pos):
             taggedShape = self._inputSlot.meta.getTaggedShape()
-            inputAxes = taggedShape.keys()
+            inputAxes = list(taggedShape.keys())
             inputSet = set(inputAxes)
             userSet = set(str(userAxes))
             

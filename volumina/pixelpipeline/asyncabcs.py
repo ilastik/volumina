@@ -42,9 +42,7 @@ class IndeterminateRequestError(Exception):
 # R e q u e s t A B C                                                          *
 #*******************************************************************************
 
-class RequestABC:
-    __metaclass__ = ABCMeta
-
+class RequestABC(metaclass=ABCMeta):
     @abstractmethod
     def wait( self ):
         ''' doc '''
@@ -61,9 +59,7 @@ class RequestABC:
 # S o u r c e A B C                                                            *
 #*******************************************************************************
 
-class SourceABC:
-    __metaclass__ = ABCMeta
-    
+class SourceABC(metaclass=ABCMeta):
     numberOfChannelsChanged = pyqtSignal(int)
 
     @abstractproperty

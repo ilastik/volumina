@@ -32,24 +32,24 @@ from PyQt4.QtGui import QApplication, QWidget
 
 #volumina
 import volumina.pixelpipeline.imagepump
-from eventswitch import EventSwitch
-from imageScene2D import ImageScene2D
-from imageView2D import ImageView2D
-from positionModel import PositionModel
-from croppingMarkers import CropExtentsModel
-from navigationController import NavigationController, NavigationInterpreter
-from brushingcontroller import BrushingInterpreter, BrushingController, \
+from .eventswitch import EventSwitch
+from .imageScene2D import ImageScene2D
+from .imageView2D import ImageView2D
+from .positionModel import PositionModel
+from .croppingMarkers import CropExtentsModel
+from .navigationController import NavigationController, NavigationInterpreter
+from .brushingcontroller import BrushingInterpreter, BrushingController, \
                               CrosshairController
-from thresholdingcontroller import ThresholdingInterpreter
-from brushingmodel import BrushingModel
-from slicingtools import SliceProjection
+from .thresholdingcontroller import ThresholdingInterpreter
+from .brushingmodel import BrushingModel
+from .slicingtools import SliceProjection
 
 import logging
 logger = logging.getLogger(__name__)
 
 useVTK = True
 try:
-    from view3d.view3d import OverviewScene
+    from .view3d.view3d import OverviewScene
 except:
     logger.error( "Warning: could not import optional dependency VTK" )
     useVTK = False

@@ -20,7 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #!/usr/bin/env python
-from __future__ import division
+
 import sys
 from PyQt4.QtCore import Qt, pyqtSignal, QEvent, QTimer
 from PyQt4.QtGui import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
@@ -285,7 +285,7 @@ class QuadView(QWidget):
                          2 : self.dock1_ofSplitHorizontal1 } # z
 
         dockWidget = axisDict.pop(axis)
-        for dWidget in axisDict.values():
+        for dWidget in list(axisDict.values()):
             if dWidget._isMaximized:
                 dWidget.graphicsView._hud.maximizeButtonClicked.emit()
         dockWidget.graphicsView._hud.maximizeButtonClicked.emit()

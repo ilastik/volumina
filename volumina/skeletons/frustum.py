@@ -26,7 +26,7 @@ has_vtk = True
 try:
     import vtk
 except ImportError:
-    print "Warning: could not import optional dependency VTK"
+    print("Warning: could not import optional dependency VTK")
     has_vtk = False
 
 

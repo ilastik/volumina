@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from __future__ import division
+
 from PyQt4.QtCore import QPointF, QRectF
 
 import numpy
@@ -105,7 +105,7 @@ class PatchAccessor():
 
         nums = []
         for y in range(sy,ey):
-            nums += range(y*self._cX+sx, y*self._cX+ex)
+            nums += list(range(y*self._cX+sx, y*self._cX+ex))
         return nums
 
 if __name__ == "__main__":

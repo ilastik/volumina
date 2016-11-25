@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-import ConfigParser
+import configparser
 import io, os
 
 default_config = """
@@ -27,8 +27,8 @@ default_config = """
 verbose: false
 """
 
-cfg = ConfigParser.SafeConfigParser()
-cfg.readfp(io.BytesIO(default_config))
+cfg = configparser.SafeConfigParser()
+cfg.readfp(io.BytesIO(default_config.encode(encoding='UTF-8')))
 userConfig = os.path.expanduser("~/.voluminarc")
 if os.path.exists(userConfig):
     cfg.read(userConfig)

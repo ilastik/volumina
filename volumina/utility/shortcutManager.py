@@ -8,7 +8,7 @@ from PyQt4.QtGui import QApplication, QKeySequence, QShortcut
 from volumina.utility import Singleton, PreferencesManager, getMainWindow
 
 
-class ShortcutManager(object):
+class ShortcutManager(object, metaclass=Singleton):
     """
     A singleton class that serves as a registry for all keyboard shortcuts in the app.
     All shortcuts should be configured using this class, not using the plain Qt shortcut API.
@@ -18,7 +18,6 @@ class ShortcutManager(object):
     
     See __init__ for implementation details.
     """
-    __metaclass__ = Singleton
 
     # Each shortcut target is registered using this ActionInfo class.
     #
@@ -94,9 +93,9 @@ class ShortcutManager(object):
         Used by the ShortcutManagerDlg
         """
         all_descriptions = collections.OrderedDict()
-        for group, group_dict in self._action_infos.items():
+        for group, group_dict in list(self._action_infos.items()):
             all_descriptions[group] = []
-            for name, action_set in group_dict.items():
+            for name, action_set in list(group_dict.items()):
                 if action_set:
                     all_descriptions[group].append( (name, iter(action_set).next().description) )
         return all_descriptions
@@ -108,7 +107,7 @@ class ShortcutManager(object):
         """
         _d = _d or self._keyseq_target_actions
         reversemap = {}
-        for keyseq, targets in _d.items():
+        for keyseq, targets in list(_d.items()):
             for (group, name) in targets:
                 reversemap[(group, name)] = keyseq
         return reversemap
@@ -171,9 +170,9 @@ class ShortcutManager(object):
         #       We intercept the shortcut and decide which widget to direct it to.
         #       (We don't rely on Qt to do this for us.)
         # Note: This class assumes that all widgets using shortcuts belong to the SAME main window.
-        assert keyseq not in self._global_shortcuts
         keyseq = QKeySequence(keyseq)
         keytext = str(keyseq.toString())
+        assert keytext not in self._global_shortcuts
         self._global_shortcuts[keytext] = QShortcut( QKeySequence(keyseq), 
                                                      getMainWindow(), 
                                                      member=partial(self._handle_shortcut_pressed, keytext), 
@@ -308,7 +307,7 @@ def _has_attributes( cls, attrs ):
     return all(_has_attribute(cls, a) for a in attrs)
 
 import abc
-class ObjectWithToolTipABC(object):
+class ObjectWithToolTipABC(object, metaclass=abc.ABCMeta):
     """
     Defines an ABC for objects that have toolTip() and setToolTip() members.
     Note: All QWidgets already implement this ABC.
@@ -317,7 +316,6 @@ class ObjectWithToolTipABC(object):
     provide an object that updates the tooltip text for the shortcut.
     That object must adhere to this interface.
     """
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def toolTip(self):
@@ -347,7 +345,7 @@ if __name__ == "__main__":
     counter = [0]
     def say_hello():
         counter[0] += 1
-        print "changing label text ({})".format(counter[0])
+        print("changing label text ({})".format(counter[0]))
         label.setText("Hello! {}".format( counter[0] ))
 
     mgr = ShortcutManager()

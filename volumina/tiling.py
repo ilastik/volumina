@@ -37,7 +37,7 @@ from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
 from PyQt4.QtGui import QImage, QPainter, QTransform, QGraphicsItem
 
 #volumina
-from patchAccessor import PatchAccessor
+from .patchAccessor import PatchAccessor
 import volumina
 from volumina.pixelpipeline.asyncabcs import IndeterminateRequestError
 from volumina.utility import log_exception, PrioritizedThreadPoolExecutor
@@ -188,7 +188,7 @@ class Tiling(object):
 
     def intersected(self, sceneRect):
         if not sceneRect.isValid():
-            return range(len(self.tileRects))
+            return list(range(len(self.tileRects)))
 
         # Patch accessor uses data coordinates
         rect = self.data2scene.inverted()[0].mapRect(sceneRect)
@@ -351,7 +351,7 @@ class _TilesCache( object ):
         warnings.warn("FIXME: This is a slow way to look for the items we want.\n"
                       "_TilesCache._layerCache should be a dict-of-dict-of-dict for faster lookup!")
         qgraphicsitems = []
-        for (layer_id, t_id), img in self._layerCache.caches[stack_id].iteritems():
+        for (layer_id, t_id), img in self._layerCache.caches[stack_id].items():
             if t_id == tile_id and isinstance(img, QGraphicsItem):
                 qgraphicsitems.append(img)
         return qgraphicsitems
@@ -390,7 +390,7 @@ class _TilesCache( object ):
         """ 
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         for stack_id in self._layerCacheDirty.caches:
-            dirty_entries = [(l_id, t_id) for (l_id, t_id) in self._layerCacheDirty.caches[stack_id].keys() if l_id == layer_id]
+            dirty_entries = [(l_id, t_id) for (l_id, t_id) in list(self._layerCacheDirty.caches[stack_id].keys()) if l_id == layer_id]
             #dirty_entries = filter( lambda (l_id, t_id): l_id == layer_id, self._layerCacheDirty.caches[stack_id].keys() )
             for entry in dirty_entries:
                 del self._layerCacheDirty.caches[stack_id][entry]
@@ -596,7 +596,7 @@ class TileProvider( QObject ):
         """
         layers = self._sims.viewImageSources()
         if layer_indexes:
-            layers = map( lambda i: layers[i], layer_indexes )
+            layers = [layers[i] for i in layer_indexes]
         
         if not self.axesSwapped:
             # Who came up with this transform?
