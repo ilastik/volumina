@@ -28,7 +28,7 @@ verbose: false
 """
 
 cfg = configparser.SafeConfigParser()
-cfg.readfp(io.BytesIO(default_config.encode(encoding='UTF-8')))
+cfg.readfp(io.StringIO(default_config))
 userConfig = os.path.expanduser("~/.voluminarc")
 if os.path.exists(userConfig):
     cfg.read(userConfig)
