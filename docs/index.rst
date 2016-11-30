@@ -1,4 +1,4 @@
-Volumina v0.6 documentation
+Volumina 1.x documentation
 ====================================================
 The *volumina* library is concerned with displaying slice views of high
 dimensional image data and user interactions with the slice views. It is
