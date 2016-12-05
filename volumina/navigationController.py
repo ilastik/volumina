@@ -164,7 +164,7 @@ class NavigationInterpreter(QObject):
         else:
             # A single 'step' of a scroll wheel is typically 15 degrees, which Qt represents with delta=120
             # We'll give a little boost so that 1 step is 1 plane, but 3 steps is 4 planes.
-            planes = max( 1, ( sign*event.delta() // (120*3/4) ) )
+            planes = max( 1, ( sign*event.delta() // (120*3//4) ) )
             navCtrl.changeSliceRelative(sign*planes, navCtrl._views.index(imageview))
 
         if k_ctrl:

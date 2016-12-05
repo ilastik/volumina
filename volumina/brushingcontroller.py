@@ -277,7 +277,9 @@ class BrushingController(QObject):
 
         slicing = [slice(int(brushStrokeOffset.x()), int(brushStrokeOffset.x())+labels.shape[0]), \
                    slice(int(brushStrokeOffset.y()), int(brushStrokeOffset.y())+labels.shape[1])]
-        slicing.insert(activeView, slice(slicingPos[activeView], slicingPos[activeView]+1))
+
+        slicing.insert(activeView, slice(int(slicingPos[activeView]), int(slicingPos[activeView]+1)))
+
         slicing = (slice(t,t+1),) + tuple(slicing) + (slice(c,c+1),)
 
         #make the labels 5d for correct graph compatibility
