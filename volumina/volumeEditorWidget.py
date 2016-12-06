@@ -103,7 +103,7 @@ class VolumeEditorWidget(QWidget):
         self.quadview.statusBar.timeSpinBox.setSuffix("/{}".format( maxTime ) )
         self.quadview.statusBar.hideTimeSlider(maxTime == 0)
 
-        cropMidPos = [(b+a)//2 for [a,b] in self.editor.cropModel._crop_extents]
+        cropMidPos = numpy.mean(self.editor.cropModel.get_roi_3d(), axis=0)
         for i in range(3):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i],i)
@@ -243,10 +243,11 @@ class VolumeEditorWidget(QWidget):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
                 self.quadview.statusBar.positionCheckBox.setVisible(True)
 
-            if self.editor.cropModel._crop_extents[0][0]  == None or self.editor.cropModel.cropZero():
+            if self.editor.cropModel.cropZero() or None in self.editor.cropModel.get_roi_3d()[0]:
                 self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
             else:
-                cropMin = (self.editor.posModel.time,self.editor.cropModel._crop_extents[0][0],self.editor.cropModel._crop_extents[1][0],self.editor.cropModel._crop_extents[2][0],0)
+                crop_roi_3d = self.editor.cropModel.get_roi_3d()
+                cropMin = (self.editor.posModel.time,) + tuple(crop_roi_3d[0]) + (0,)
                 self.quadViewStatusBar.updateShape5Dcropped(cropMin,self.editor.posModel.shape5D)
 
             self._setupVolumeExtent()

@@ -127,7 +127,12 @@ class VolumeEditor( QObject ):
             v.sliceShape = self.posModel.sliceShape(axis=i)
         self.view3d.dataShape = s[1:4]
 
-        if self.cropModel._crop_extents[0][0] == None or self.cropModel.cropZero():
+        crop_roi = numpy.array(self.cropModel.get_roi_3d())
+
+        # Reset the crop roi if necessary
+        if self.cropModel.cropZero() \
+        or None in crop_roi.flat \
+        or (crop_roi > self.view3d.dataShape).any():
             self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
             self.cropModel.set_time_shape_cropped(0,s[0])
 
