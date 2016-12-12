@@ -534,7 +534,7 @@ class RGBAImageRequest( object ):
                   normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None ):
         self._mutex = QMutex()
         self._requests = r, g, b, a
-        self._normalize = [normalizeR, normalizeG, normalizeB, normalizeA]
+        self._normalize = map(lambda n: n or None, [normalizeR, normalizeG, normalizeB, normalizeA])
         shape.append(4)
         self._data = np.empty(shape, dtype=np.uint8)
         self._requestsFinished = 4 * [False,]
