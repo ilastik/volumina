@@ -1,6 +1,5 @@
 import collections
 
-from PyQt4.QtCore import QStringList
 from PyQt4.QtGui import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, \
                         QLineEdit, QPushButton, QSpacerItem, QWidget, QTreeWidget, QTreeWidgetItem, QSizePolicy
 

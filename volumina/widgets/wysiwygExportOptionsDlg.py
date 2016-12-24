@@ -25,7 +25,7 @@ from operator import mul, itemgetter
 import os
 
 from PyQt4 import uic
-from PyQt4.QtCore import Qt, QEvent, QString, QRectF
+from PyQt4.QtCore import Qt, QEvent, QRectF
 from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb, QColorDialog, \
     QApplication
 from functools import reduce
@@ -166,7 +166,7 @@ class WysiwygExportOptionsDlg(QDialog):
 
     def _initFileOptionsWidget(self):        
         # List all image formats supported by QImageWriter
-        exts = [str(QString(ext)) for ext in list(QImageWriter.supportedImageFormats())]
+        exts = [str(ext) for ext in list(QImageWriter.supportedImageFormats())]
         
         # insert them into file format combo box
         for ext in exts:

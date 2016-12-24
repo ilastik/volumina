@@ -22,7 +22,7 @@
 from functools import partial
 
 #PyQt
-from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize, QString
+from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
                         QFont, QPainterPath, QBrush, QAbstractSpinBox, \
                         QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy, QSlider, QPushButton

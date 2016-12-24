@@ -22,14 +22,14 @@
 import colorsys
 import numpy
 
-from PyQt4.QtCore import Qt, QObject, pyqtSignal, QString, QTimer
+from PyQt4.QtCore import Qt, QObject, pyqtSignal, QTimer
 from PyQt4.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource
 
-from volumina.utility import decode_to_qstring, encode_from_qstring, SignalingDefaultDict
+from volumina.utility import SignalingDefaultDict
 
 from functools import partial
 from collections import defaultdict
@@ -44,7 +44,7 @@ class Layer( QObject ):
     datasources -- list of ArraySourceABC; read-only
     visible -- boolean
     opacity -- float; range 0.0 - 1.0
-    name -- QString
+    name -- PyString
     numberOfChannels -- int
     layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
     '''
@@ -91,11 +91,6 @@ class Layer( QObject ):
         return self._name
     @name.setter
     def name( self, n ):
-        if isinstance(n, str):
-            n = decode_to_qstring(n, 'utf-8')
-        assert isinstance(n, QString)
-        pystr = encode_from_qstring(n, 'utf-8')
-
         if self._name != n:
             self._name = n
             self.nameChanged.emit(pystr)
@@ -170,7 +165,7 @@ class Layer( QObject ):
 
     def __init__( self, datasources, direct=False ):
         super(Layer, self).__init__()
-        self._name = QString("Unnamed Layer")
+        self._name = "Unnamed Layer"
         self._visible = True
         self._opacity = 1.0
         self._datasources = datasources

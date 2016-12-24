@@ -26,8 +26,6 @@ from PyQt4 import uic
 from PyQt4.QtCore import pyqtSignal, Qt, QEvent
 from PyQt4.QtGui import QWidget, QFileDialog
 
-from volumina.utility import encode_from_qstring, decode_to_qstring
-
 try:
     from lazyflow.operators.ioOperators import OpStackWriter
     _has_lazyflow = True
@@ -81,8 +79,8 @@ class StackExportFileOptionsWidget(QWidget):
             if re.search("{slice_index(:.*)?}", filename_pattern) is None:
                 filename_pattern += '_{slice_index}'
 
-            self.directoryEdit.setText( decode_to_qstring(directory) )
-            self.filePatternEdit.setText( decode_to_qstring(filename_pattern + '.' + self._extension) )
+            self.directoryEdit.setText( directory )
+            self.filePatternEdit.setText( filename_pattern + '.' + self.extension )
             
             # Re-configure the slot in case we changed the extension
             file_path = os.path.join( directory, filename_pattern ) + '.' + self._extension            
@@ -112,8 +110,8 @@ class StackExportFileOptionsWidget(QWidget):
         self._updateFromGui()
 
     def _updateFromGui(self):
-        export_dir = encode_from_qstring( self.directoryEdit.text() )
-        filename_pattern = encode_from_qstring( self.filePatternEdit.text() )
+        export_dir = self.directoryEdit.text()
+        filename_pattern = self.filePatternEdit.text()
         export_path = os.path.join( export_dir, filename_pattern )
         self._filepathSlot.setValue( export_path )
         

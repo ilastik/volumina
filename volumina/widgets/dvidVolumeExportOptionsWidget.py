@@ -21,7 +21,6 @@
 ###############################################################################
 import os
 from PyQt4.QtGui import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
-from volumina.utility import decode_to_qstring
 from libdvid.gui.contents_browser import ContentsBrowser
 from lazyflow.utility import isUrl
 
@@ -61,7 +60,7 @@ class DvidVolumeExportOptionsWidget(QWidget):
 
             # Remove extension
             file_path = os.path.splitext(file_path)[0]
-            self.urlLabel.setText( decode_to_qstring(file_path) )
+            self.urlLabel.setText( file_path )
             
             # Re-configure the slot in case we removed the extension
             self._urlSlot.setValue( file_path )
