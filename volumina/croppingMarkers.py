@@ -24,6 +24,7 @@ class CropExtentsModel( QObject ):
                                     #       (i.e. start could be greater than stop)
     colorChanged = pyqtSignal(QColor)
     editableChanged = pyqtSignal(bool)
+    mouseRelease = pyqtSignal()
 
     @property
     def editable(self):
@@ -647,6 +648,8 @@ class CropLine(QGraphicsItem):
 
             # Restore the cursor to its previous state.
             QApplication.instance().restoreOverrideCursor()
+
+            self._parent.crop_extents_model.mouseRelease.emit()
 
 def determine_pen_thickness_in_scene( scene, cosmetic_thickness ):
     """
