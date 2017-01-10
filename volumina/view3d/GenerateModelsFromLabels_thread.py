@@ -20,8 +20,8 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from vtk import *
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 from functools import partial
 import numpy
 import h5py

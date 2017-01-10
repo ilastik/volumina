@@ -18,8 +18,8 @@
 # on the ilastik web site at:
 #		   http://ilastik.org/license.html
 ###############################################################################
-from PyQt4.QtCore import QObject, QEvent
-from PyQt4.QtGui import QApplication
+from PyQt5.QtCore import QObject, QEvent
+from PyQt5.QtWidgets import QApplication
 from functools import partial
 
 class ThunkEvent( QEvent ):
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     from functools import partial
     from volumina.utility import execute_in_main_thread
     
-    from PyQt4.QtCore import QTimer
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtCore import QTimer
+    from PyQt5.QtWidgets import QApplication
     
     app = QApplication([])
         

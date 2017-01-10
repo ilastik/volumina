@@ -20,7 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
-from PyQt4.QtCore import QPointF, QRectF
+from PyQt5.QtCore import QPointF, QRectF
 
 import numpy
 

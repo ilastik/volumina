@@ -20,7 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import os
-from PyQt4.QtGui import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
 from volumina.utility import decode_to_qstring
 from libdvid.gui.contents_browser import ContentsBrowser
 from lazyflow.utility import isUrl
@@ -77,7 +77,7 @@ class DvidVolumeExportOptionsWidget(QWidget):
             self.urlLabel.setText( url )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph
 
     from lazyflow.operators.ioOperators import OpExportDvidVolume

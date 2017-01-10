@@ -20,8 +20,8 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
-from PyQt4.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
-from PyQt4.QtGui  import QColor, QCursor 
+from PyQt5.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
+from PyQt5.QtGui import QColor, QCursor 
 
 import copy
 import warnings
@@ -148,7 +148,7 @@ class NavigationInterpreter(QObject):
         grviewCenter = imageview.mapToScene(imageview.viewport().rect().center())
 
         sign = 1
-        if event.delta() < 0:
+        if event.angleDelta().y() < 0:
             sign = -1
 
         if k_shift_alt:
@@ -156,15 +156,15 @@ class NavigationInterpreter(QObject):
         elif k_alt:
             navCtrl.changeSliceRelative(sign*10, navCtrl._views.index(imageview))
         elif k_ctrl:
-            mult = max(1, (event.delta() // 120))
+            mult = max(1, (event.angleDelta().y() // 120))
             scaleFactor = 1.0 + sign*0.1*mult
             imageview.doScale(scaleFactor)
         elif k_shift:
             navCtrl.changeTimeRelative(sign*1)
         else:
-            # A single 'step' of a scroll wheel is typically 15 degrees, which Qt represents with delta=120
+            # A single 'step' of a scroll wheel is typically 15 degrees, which Qt represents with angleDelta=120
             # We'll give a little boost so that 1 step is 1 plane, but 3 steps is 4 planes.
-            planes = max( 1, ( sign*event.delta() // (120*3//4) ) )
+            planes = max( 1, ( sign*event.angleDelta().y() // (120*3//4) ) )
             navCtrl.changeSliceRelative(sign*planes, navCtrl._views.index(imageview))
 
         if k_ctrl:

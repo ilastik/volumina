@@ -1,7 +1,6 @@
 import collections
 
-from PyQt4.QtCore import QStringList
-from PyQt4.QtGui import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, \
+from PyQt5.QtWidgets import QDialog, QScrollArea, QHBoxLayout, QVBoxLayout, \
                         QLineEdit, QPushButton, QSpacerItem, QWidget, QTreeWidget, QTreeWidgetItem, QSizePolicy
 
 from shortcutManager import ShortcutManager
@@ -32,11 +31,11 @@ class ShortcutManagerDlg(QDialog):
         # and keep track of them in a dict
         shortcutEdits = collections.OrderedDict()
         for group, targets in action_descriptions.items():
-            groupItem = QTreeWidgetItem( treeWidget, QStringList( group ) )
+            groupItem = QTreeWidgetItem( treeWidget, [group] )
             for (name, description) in targets:
                 edit = QLineEdit( target_keyseqs[(group,name)] )
                 shortcutEdits[(group, name)] = edit
-                item = QTreeWidgetItem( groupItem, QStringList( description ) )
+                item = QTreeWidgetItem( groupItem, [description] )
                 item.setText(0, description)
                 treeWidget.setItemWidget( item, 1, edit )
 
@@ -79,10 +78,10 @@ class ShortcutManagerDlg(QDialog):
         mgr.store_to_preferences()
                 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QShortcut, QKeySequence
+    from PyQt5.QtWidgets import QShortcut, QKeySequence
     from functools import partial
 
-    from PyQt4.QtGui import QApplication, QPushButton, QWidget
+    from PyQt5.QtWidgets import QApplication, QPushButton, QWidget
     app = QApplication([])
 
     mainWindow = QWidget()

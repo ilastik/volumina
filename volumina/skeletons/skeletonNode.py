@@ -19,8 +19,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QPointF, QObject, pyqtSignal
-from PyQt4.QtGui import QColor
+from PyQt5.QtCore import QPointF, QObject, pyqtSignal
+from PyQt5.QtGui import QColor
 
 class SkeletonNode(QObject):
     selected = pyqtSignal(bool)

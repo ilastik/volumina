@@ -36,8 +36,9 @@ if has_dependencies:
     import os
     import time
     
-    from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import QImage, QPainter, QApplication
+    from PyQt5.QtCore import Qt
+    from PyQt5.QtGui import QImage, QPainter
+    from PyQt5.QtWidgets import QApplication
     
     from qimage2ndarray import byte_view
     import numpy
@@ -88,7 +89,7 @@ if has_dependencies:
             if QApplication.instance():
                 cls.app = QApplication.instance()
             else:
-                cls.app = QApplication([], False)
+                cls.app = QApplication([])
 
         @classmethod
         def tearDownClass(cls):

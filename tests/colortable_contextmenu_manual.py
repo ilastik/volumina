@@ -25,8 +25,8 @@
 
 from __future__ import division
 from volumina.api import Viewer
-from PyQt4.QtGui import QApplication, QColor, QKeySequence, QShortcut
-from PyQt4.QtGui import QPushButton
+from PyQt5.QtGui import QColor, QKeySequence
+from PyQt5.QtWidgets import QApplication, QPushButton, QShortcut
 import numpy
 import h5py
 

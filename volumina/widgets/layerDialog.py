@@ -23,8 +23,8 @@
 import os
 
 #PyQt
-from PyQt4 import uic
-from PyQt4.QtGui import QDialog
+from PyQt5 import uic
+from PyQt5.QtWidgets import QDialog
 from functools import partial
 
 #===----------------------------------------------------------------------------------------------------------------===
@@ -155,7 +155,7 @@ class RGBALayerDialog(QDialog):
 if __name__ == "__main__":
     import optparse
     import sys
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
      
     parser = optparse.OptionParser()
     parser.add_option("--gray", action="store_true")

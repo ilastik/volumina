@@ -20,7 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from abc import ABCMeta, abstractmethod, abstractproperty
-from PyQt4.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
 def _has_attribute( cls, attr ):
     return True if any(attr in B.__dict__ for B in cls.__mro__) else False

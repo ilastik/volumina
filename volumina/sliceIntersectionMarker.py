@@ -19,8 +19,9 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import Qt, QRectF, QPointF
-from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor
+from PyQt5.QtCore import Qt, QRectF, QPointF
+from PyQt5.QtWidgets import QGraphicsItem, QApplication 
+from PyQt5.QtGui import QPen, QCursor
 
 #*******************************************************************************
 # S l i c e I n t e r s e c t i o n M a r k e r                                *
@@ -40,11 +41,8 @@ class SliceIntersectionMarker(QGraphicsItem) :
         # This 'item' is merely a parent node for child items
         return QRectF()
 
-    def __init__(self, scene, axis, posModel):
-        """
-        scene: Must be an ImageScene2D instance.  We manipulate the scene.allow_brushing flag.
-        """
-        QGraphicsItem.__init__(self, scene=scene)
+    def __init__(self, axis, posModel):
+        QGraphicsItem.__init__(self)
         self.setFlag(QGraphicsItem.ItemHasNoContents);
         
         self.axis = axis

@@ -19,8 +19,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QPointF, QRectF, QLineF, Qt
-from PyQt4.QtGui import QGraphicsObject, QGraphicsRectItem, QGraphicsLineItem, QPen, QColor
+from PyQt5.QtCore import QPointF, QRectF, QLineF, Qt
+from PyQt5.QtWidgets import QGraphicsObject, QGraphicsRectItem, QGraphicsLineItem, QPen, QColor
 
 from volumina.skeletons.qGraphicsSkeletonNode import QGraphicsSkeletonNode
 

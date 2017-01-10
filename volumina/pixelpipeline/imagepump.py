@@ -23,7 +23,7 @@
 from functools import partial
 
 #PyQt
-from PyQt4.QtCore import QObject, pyqtSignal, QRect
+from PyQt5.QtCore import QObject, pyqtSignal, QRect
 
 #volumina
 from volumina.pixelpipeline.slicesources import SliceSource, SyncedSliceSources

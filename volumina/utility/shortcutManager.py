@@ -3,8 +3,9 @@ from functools import partial
 import logging
 logger = logging.getLogger(__name__)
 
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QApplication, QKeySequence, QShortcut
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QShortcut
+from PyQt5.QtGui import QKeySequence
 from volumina.utility import Singleton, PreferencesManager, getMainWindow
 
 
@@ -335,8 +336,8 @@ class ObjectWithToolTipABC(object):
 
 
 if __name__ == "__main__":
-    from PyQt4.QtCore import Qt, QEvent, QTimer
-    from PyQt4.QtGui import QApplication, QWidget, QLabel, QKeyEvent
+    from PyQt5.QtCore import Qt, QEvent, QTimer
+    from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QKeyEvent
     
     app = QApplication([])
     

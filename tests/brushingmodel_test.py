@@ -21,8 +21,8 @@
 ###############################################################################
 import unittest as ut
 import numpy as np
-from PyQt4.QtGui import QApplication, qApp
-from PyQt4.QtCore import QPointF
+from PyQt5.QtWidgets import QApplication, qApp
+from PyQt5.QtCore import QPointF
 from volumina.brushingmodel import BrushingModel
 
 def _onBrushStroke( point, labels  ):
@@ -33,7 +33,7 @@ class BrushingModelTest( ut.TestCase ):
 
     @classmethod
     def setUpClass(cls):
-        cls.app = QApplication([], False)
+        cls.app = QApplication([])
 
     @classmethod
     def tearDownClass(cls):

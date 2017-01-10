@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtGui import QApplication
+from PyQt5.QtWidgets import QApplication
 import vtk
 import numpy
 import colorsys

@@ -20,17 +20,15 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import warnings
-from PyQt4.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, QPoint
-from PyQt4.QtGui import QStyledItemDelegate, QWidget, QListView, QStyle, \
-                        QPainter, QItemSelectionModel, QFontMetrics, QFont,\
-                        QPalette, QMouseEvent, QLabel, QGridLayout, QPixmap, \
-                        QSpinBox, QApplication
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, QPoint, QItemSelectionModel
+from PyQt5.QtGui import QPainter, QFontMetrics, QFont, QPalette, QMouseEvent, QPixmap
+from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QListView, QStyle, \
+                            QLabel, QGridLayout, QSpinBox, QApplication
+
 
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
 from layercontextmenu import layercontextmenu
-from volumina.utility.qstring_codec import encode_from_qstring
-from volumina.utility.qstring_codec import decode_to_qstring
 
 class FractionSelectionBar( QWidget ):
     fractionChanged = pyqtSignal(float)
@@ -57,14 +55,14 @@ class FractionSelectionBar( QWidget ):
 
     def mouseMoveEvent(self, event):
         if self._lmbDown:
-            self.setFraction(self._fractionFromPosition( event.posF() ))
+            self.setFraction(self._fractionFromPosition( event.localPos() ))
             self.fractionChanged.emit(self._fraction)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.RightButton:
             return
         self._lmbDown = True
-        self.setFraction(self._fractionFromPosition( event.posF() ))
+        self.setFraction(self._fractionFromPosition( event.localPos() ))
         self.fractionChanged.emit(self._fraction)
 
     def mouseReleaseEvent(self, event):
@@ -258,7 +256,7 @@ class LayerDelegate(QStyledItemDelegate):
         self._editors = {}
 
     def sizeHint(self, option, index):
-        layer = index.data().toPyObject()
+        layer = index.data()
         if isinstance(layer, Layer):
             self._w.layer = layer
             self._w.channelSelector.setVisible(True)
@@ -270,12 +268,12 @@ class LayerDelegate(QStyledItemDelegate):
         """
         Create an editor widget.  Note that the LayerWidget always uses persistent editors.
         """
-        layer = index.data().toPyObject()
+        layer = index.data()
         if isinstance(layer, Layer):
             editor = LayerItemWidget(parent=parent)
             editor.is_editor = True
             # We set a custom objectName for debug and eventcapture testing purposes.
-            objName = encode_from_qstring(layer.name)
+            objName = layer.name.encode()
             editor.setObjectName("LayerItemWidget_{}".format(objName))
             editor.setAutoFillBackground(True)
             editor.setPalette( option.palette )
@@ -291,7 +289,7 @@ class LayerDelegate(QStyledItemDelegate):
         Return the editor (if any) that has already been 
         opened for the layer at the given index.
         """
-        layer = modelIndex.data().toPyObject()
+        layer = modelIndex.data()
         try:
             return self._editors[layer]
         except KeyError:
@@ -332,14 +330,14 @@ class LayerDelegate(QStyledItemDelegate):
                 editor.setBackgroundRole(QPalette.Highlight)
 
     def setEditorData(self, editor, index):
-        layer = index.data().toPyObject()
+        layer = index.data()
         if isinstance(layer, Layer):
             editor.layer = layer
         else:
             QStyledItemDelegate.setEditorData(self, editor, index)
 
     def setModelData(self, editor, model, index):
-        layer = index.data().toPyObject()
+        layer = index.data()
         if isinstance(layer, Layer):
             model.setData(index, editor.layer)
         else:
@@ -348,7 +346,7 @@ class LayerDelegate(QStyledItemDelegate):
     def handleRemovedRows(self, parent, start, end):
         for row in range(start, end):
             itemData = self._listModel.itemData( self._listModel.index(row) )
-            layer = itemData[Qt.EditRole].toPyObject()
+            layer = itemData[Qt.EditRole]
             del self._editors[layer]
             assert isinstance(layer, Layer)
 
@@ -427,7 +425,7 @@ class LayerWidget(QListView):
 #         # HACK: The first click merely gives focus to the list item without actually passing the event to it.
 #         # We'll simulate a mouse click on the item by sending a duplicate pair of QMouseEvent press/release events to the appropriate widget.
 #         if prevIndex != newIndex and newIndex.row() != -1:
-#             layer = self.model().itemData(newIndex)[Qt.EditRole].toPyObject()
+#             layer = self.model().itemData(newIndex)[Qt.EditRole]
 #             assert isinstance(layer, Layer)
 #             hitWidget = QApplication.widgetAt( event.globalPos() )
 #             if hitWidget is None:
@@ -449,7 +447,7 @@ if __name__ == "__main__":
 
     import sys, numpy
 
-    from PyQt4.QtGui import QPushButton, QHBoxLayout, QVBoxLayout
+    from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout
     from volumina.pixelpipeline.datasources import ArraySource, ConstantSource
 
     app = QApplication(sys.argv)

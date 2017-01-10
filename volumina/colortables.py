@@ -33,17 +33,10 @@ will be displayed red and 1s black.
 
 '''
 
-import itertools
-from PyQt4.QtGui import QColor
-
-
-
-
-from PyQt4.QtGui import QColor
 import warnings
-    
+import itertools
 import numpy as np
-
+from PyQt5.QtGui import QColor
 
 def matplotlib_to_qt4_colortable(cmap_name,N, asLong=True):
     """
@@ -404,7 +397,7 @@ def create_random_16bit():
 
 if __name__=="__main__":
       from volumina.api import *
-      from PyQt4.QtGui import QApplication
+      from PyQt5.QtWidgets import QApplication
       import numpy
       from volumina.pixelpipeline.datasourcefactories import *
       app = QApplication(sys.argv)

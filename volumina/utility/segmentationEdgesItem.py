@@ -4,9 +4,10 @@ import logging
 
 import numpy as np
 
-from PyQt4.Qt import pyqtSignal
-from PyQt4.QtCore import Qt, QObject, QRectF, QPointF, QPoint
-from PyQt4.QtGui import QApplication, QGraphicsObject, QGraphicsPathItem, QPainterPath, QPen, QColor
+from PyQt5.Qt import pyqtSignal
+from PyQt5.QtCore import Qt, QObject, QRectF, QPointF, QPoint
+from PyQt5.QtWidgets import QApplication, QGraphicsObject, QGraphicsPathItem
+from PyQt5.QtGui import QPainterPath, QPen, QColor
 
 from volumina.utility import SignalingDefaultDict, edge_coords_nd, simplify_line_segments
 
@@ -230,7 +231,7 @@ class defaultdict_with_key(defaultdict):
 ##
 ## Copied from PyQtGraph with slight modifications
 ##
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 import struct
 def arrayToQPath(x, y, connect='all'):
     """Convert an array of x,y coordinats to QPainterPath as efficiently as possible.
@@ -272,7 +273,7 @@ def arrayToQPath(x, y, connect='all'):
     ##
     ## All values are big endian--pack using struct.pack('>d') or struct.pack('>i')
 
-    path = QtGui.QPainterPath()
+    path = QtWidgets.QPainterPath()
 
     #profiler = debug.Profiler()
     n = x.shape[0]
@@ -322,7 +323,7 @@ def arrayToQPath(x, y, connect='all'):
 if __name__ == "__main__":
     import time
     import numpy as np
-    from PyQt4.QtGui import QApplication, QGraphicsView, QGraphicsScene, QTransform
+    from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QTransform
 
     app = QApplication([])
 

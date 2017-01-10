@@ -33,8 +33,9 @@ import warnings
 import numpy
 
 #PyQt
-from PyQt4.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
-from PyQt4.QtGui import QImage, QPainter, QTransform, QGraphicsItem
+from PyQt5.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
+from PyQt5.QtWidgets import QGraphicsItem
+from PyQt5.QtGui import QImage, QPainter, QTransform
 
 #volumina
 from patchAccessor import PatchAccessor

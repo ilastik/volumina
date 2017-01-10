@@ -1,6 +1,6 @@
 from collections import defaultdict
-from PyQt4.Qt import pyqtSignal
-from PyQt4.QtCore import QObject
+from PyQt5.Qt import pyqtSignal
+from PyQt5.QtCore import QObject
 
 class SignalingDefaultDict( QObject ):
     """
@@ -91,7 +91,7 @@ class SignalingDefaultDict( QObject ):
         self.updated.emit( set(changed_keys).union(added_keys).union(deleted_keys) )
 
 if __name__ == "__main__":
-    from PyQt4.QtCore import QCoreApplication
+    from PyQt5.QtCore import QCoreApplication
     app = QCoreApplication([])
     
     orig_dict = {'a' : 1, 'b' : 2, 'c' : 3}

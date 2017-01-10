@@ -21,10 +21,10 @@
 ###############################################################################
 #!/usr/bin/env python
 from __future__ import division
-from PyQt4.QtCore import pyqtSignal, QObject, Qt, QSize, QPointF, QRectF, \
+from PyQt5.QtCore import pyqtSignal, QObject, Qt, QSize, QPointF, QRectF, \
                          QRect, QPoint, QSizeF
-from PyQt4.QtGui  import QPen, QGraphicsScene, QColor, \
-                         QImage, QPainter, QGraphicsLineItem, QBrush
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsLineItem
+from PyQt5.QtGui import QPen, QColor, QImage, QPainter, QBrush
 
 import numpy, math
 import qimage2ndarray

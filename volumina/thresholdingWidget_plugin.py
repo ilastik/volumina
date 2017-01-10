@@ -19,8 +19,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtDesigner import QPyDesignerCustomWidgetPlugin
-from PyQt4.QtGui import QPixmap, QIcon, QColor
+from PyQt5.QtDesigner import QPyDesignerCustomWidgetPlugin
+from PyQt5.QtWidgets import QPixmap, QIcon, QColor
 
 from volumina.widgets.thresholdingWidget import ThresholdingWidget
 

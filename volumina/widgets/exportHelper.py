@@ -24,8 +24,8 @@ import os
 from functools import partial
 
 #Qt
-from PyQt4.QtCore import pyqtSignal, QObject
-from PyQt4.QtGui import QMessageBox
+from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtWidgets import QMessageBox
 
 #volumina
 from dataExportOptionsDlg import DataExportOptionsDlg
@@ -34,8 +34,6 @@ from multiStepProgressDialog import MultiStepProgressDialog
 import logging
 logger = logging.getLogger(__name__)
 from volumina.utility import log_exception, PreferencesManager
-
-from volumina.utility.qstring_codec import encode_from_qstring
 
 ###
 ### lazyflow

@@ -34,7 +34,7 @@ from volumina.widgets.layerwidget import LayerWidget
 
 from volumina.viewer import Viewer, ClickableSegmentationLayer
 
-from PyQt4.QtGui import QApplication
+from PyQt5.QtWidgets import QApplication
 import sys
 
 def viewerApp():

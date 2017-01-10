@@ -20,9 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import functools
-from PyQt4.QtCore import QAbstractListModel, pyqtSignal, QModelIndex, Qt, \
-                         QTimer, pyqtSignature
-from PyQt4.QtGui import QItemSelectionModel
+from PyQt5.QtCore import QAbstractListModel, QItemSelectionModel, pyqtSignal, QModelIndex, Qt, QTimer
 
 from volumina.layer import Layer
 
@@ -114,7 +112,6 @@ class LayerStackModel(QAbstractListModel):
         self.selectionModel.clear()
         self.selectionModel.setCurrentIndex( self.index(row), QItemSelectionModel.SelectCurrent)
 
-    @pyqtSignature("deleteSelected()")
     def deleteSelected(self):
         num_rows = len(self.selectionModel.selectedRows())
         assert num_rows == 1, "Can't delete selected row: {} layers are currently selected.".format( num_rows )
@@ -127,7 +124,6 @@ class LayerStackModel(QAbstractListModel):
         self.layerRemoved.emit( layer, row.row() )
         self.updateGUI()
         
-    @pyqtSignature("moveSelectedUp()")
     def moveSelectedUp(self):
         assert len(self.selectionModel.selectedRows()) == 1
         row = self.selectionModel.selectedRows()[0]
@@ -137,7 +133,6 @@ class LayerStackModel(QAbstractListModel):
             self._moveToRow(oldRow, newRow)
     
 
-    @pyqtSignature("moveSelectedDown()")
     def moveSelectedDown(self):
         assert len(self.selectionModel.selectedRows()) == 1
         row = self.selectionModel.selectedRows()[0]
@@ -146,7 +141,6 @@ class LayerStackModel(QAbstractListModel):
             newRow = oldRow + 1
             self._moveToRow(oldRow, newRow)
             
-    @pyqtSignature("moveSelectedToTop()")
     def moveSelectedToTop(self):
         assert len(self.selectionModel.selectedRows()) == 1
         row = self.selectionModel.selectedRows()[0]
@@ -155,7 +149,6 @@ class LayerStackModel(QAbstractListModel):
             newRow = 0
             self._moveToRow(oldRow, newRow)
     
-    @pyqtSignature("moveSelectedToBottom()")
     def moveSelectedToBottom(self):
         assert len(self.selectionModel.selectedRows()) == 1
         row = self.selectionModel.selectedRows()[0]

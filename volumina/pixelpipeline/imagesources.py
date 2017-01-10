@@ -32,8 +32,8 @@ except:
     from colorama import Fore, Back, Style
 
 
-from PyQt4.QtCore import QObject, QRect, pyqtSignal, QMutex
-from PyQt4.QtGui import QImage, QColor
+from PyQt5.QtCore import QObject, QRect, pyqtSignal, QMutex
+from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
 from asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
@@ -590,8 +590,9 @@ assert issubclass(RandomImageRequest, RequestABC)
 ## Sources that produce QGraphicsItems isntead of QImages
 ##
 
-from PyQt4.QtCore import Qt, QRect, QRectF, QSize
-from PyQt4.QtGui import QGraphicsItem, QColor, QPen, QGraphicsLineItem
+from PyQt5.QtCore import Qt, QRect, QRectF, QSize
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem
+from PyQt5.QtGui import QColor, QPen
 from contextlib import contextmanager
  
 @contextmanager
@@ -668,7 +669,7 @@ class DummyRasterRequest(object):
         if array_data.handedness_switched: # array_data should be of type slicingtools.ProjectedArray
             rectf = QRectF(rectf.height(), rectf.width())
         
-        from PyQt4.QtGui import QPainter
+        from PyQt5.QtWidgets import QPainter
         img = QImage( QSize( self.rectf.width(), self.rectf.height() ), QImage.Format_ARGB32_Premultiplied)
         img.fill(0xffffffff)
         p = QPainter(img)

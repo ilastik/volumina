@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QObject
+from PyQt5.QtCore import QObject
 
 from volumina.skeletons.skeletons3D import Skeletons3D
 from volumina.skeletons.skeletonsLayer import SkeletonsLayer

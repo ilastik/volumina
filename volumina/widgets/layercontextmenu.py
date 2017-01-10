@@ -23,8 +23,9 @@
 from functools import partial
 
 #Qt
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem, QColor
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem
+from PyQt5.QtGui import QColor
 
 #volumina
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
