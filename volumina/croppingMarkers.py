@@ -15,8 +15,9 @@
 # Copyright 2011-2014, the ilastik developers
 import copy
 import contextlib
-from PyQt4.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
-from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor, QBrush, QColor
+from PyQt5.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
+from PyQt5.QtGui import QPen, QCursor, QBrush, QColor
+from PyQt5.QtWidgets import QGraphicsItem, QApplication
 
 class CropExtentsModel( QObject ):
     changed = pyqtSignal( object )  # list of start/stop coords indexed by axis
@@ -157,14 +158,13 @@ class CroppingMarkers( QGraphicsItem ):
         # This 'item' is merely a parent node for child items
         return QRectF()
 
-    def __init__(self, scene, axis, crop_extents_model, editable=True):
+    def __init__(self, axis, crop_extents_model, editable=True):
 
         self._cropColor = Qt.white
 
-        QGraphicsItem.__init__(self, scene=scene)
+        QGraphicsItem.__init__(self)
         self.setFlag(QGraphicsItem.ItemHasNoContents);
         self.setAcceptHoverEvents(True)
-        self.scene = scene
         self.axis = axis
         self.crop_extents_model = crop_extents_model
 
@@ -257,7 +257,7 @@ class CroppingMarkers( QGraphicsItem ):
             self.mouseMoveStartV
         """
         if self.crop_extents_model._editable:
-            position = self.scene.data2scene.map( event.scenePos() )
+            position = self.scene().data2scene.map( event.scenePos() )
             width, height = self.dataShape
             posH0 = self._horizontal0.position
             posH1 = self._horizontal1.position
@@ -338,7 +338,7 @@ class CroppingMarkers( QGraphicsItem ):
         """
 
         if self.crop_extents_model._editable:
-            position = self.scene.data2scene.map( event.scenePos() )
+            position = self.scene().data2scene.map( event.scenePos() )
             width, height = self.dataShape
 
             positionV = int(position.x() + 0.5)

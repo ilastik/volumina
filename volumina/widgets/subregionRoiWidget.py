@@ -20,8 +20,8 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import collections
-from PyQt4.QtCore import Qt, pyqtSignal, QEvent
-from PyQt4.QtGui import QSpinBox, QTableWidget, QTableWidgetItem
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent
+from PyQt5.QtWidgets import QSpinBox, QTableWidget, QTableWidgetItem
 
 DEFAULT_MAX_EXTENT = 999999
 
@@ -196,7 +196,7 @@ class SubregionRoiWidget( QTableWidget ):
             self._handling_click = False
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     
     app = QApplication([])
 

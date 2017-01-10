@@ -36,11 +36,11 @@ from vtk import vtkRenderer, vtkConeSource, vtkPolyDataMapper, vtkActor, \
                     vtkGenericOpenGLRenderWindow, QVTKWidget, vtkOBJExporter, \
                     vtkPropCollection, vtkAppendPolyData, vtkCellPicker
 
-from PyQt4.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
                         QSizePolicy, QSpacerItem, QIcon, QFileDialog, \
                         QToolButton, QApplication
-from PyQt4.QtCore import pyqtSignal, SIGNAL, QEvent, QTimer
-from PyQt4.QtGui import QMenu, QAction, QColor
+from PyQt5.QtCore import pyqtSignal, SIGNAL, QEvent, QTimer
+from PyQt5.QtWidgets import QMenu, QAction, QColor
 import volumina.icons_rc
 
 import qimage2ndarray
@@ -572,7 +572,7 @@ if __name__ == '__main__':
     def updateSlice(num, axis):
         o.ChangeSlice(num,axis)
     
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     import sys, h5py
 
     app = QApplication(sys.argv)

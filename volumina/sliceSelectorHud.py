@@ -22,10 +22,13 @@
 from functools import partial
 
 #PyQt
-from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize, QString
-from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
-                        QFont, QPainterPath, QBrush, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy, QSlider, QPushButton
+from PyQt5.QtCore import pyqtSignal, Qt, QPointF, QSize
+from PyQt5.QtGui import QPen, QPainter, QPixmap, QColor, QFont, QPainterPath, QBrush, QTransform
+
+from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QAbstractSpinBox, QCheckBox, QWidget, \
+                            QFrame, QProgressBar, QSizePolicy, QSlider, QPushButton
+
+
 
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
@@ -663,7 +666,7 @@ class QuadStatusBar(QHBoxLayout):
 
 if __name__ == "__main__":
     import sys
-    from PyQt4.QtGui import QDialog, QApplication
+    from PyQt5.QtWidgets import QDialog, QApplication
     #make the program quit on Ctrl+C
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)

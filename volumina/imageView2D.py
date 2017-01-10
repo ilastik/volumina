@@ -20,8 +20,9 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
-from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
-from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
+from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
+from PyQt5.QtGui import QCursor, QPainter, QImage
+from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QApplication
 
 import numpy
 import os
@@ -33,7 +34,7 @@ from sliceIntersectionMarker import SliceIntersectionMarker
 from croppingMarkers import CroppingMarkers
 from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 
-from PyQt4.QtOpenGL import QGLWidget
+from PyQt5.QtOpenGL import QGLWidget
 
 #*******************************************************************************
 # I m a g e V i e w 2 D                                                        *
@@ -145,17 +146,20 @@ class ImageView2D(QGraphicsView):
         self.setCacheMode(QGraphicsView.CacheBackground)
         self.setRenderHint(QPainter.Antialiasing, False)
 
-        self._crossHairCursor = CrossHairCursor(self.scene())
+        self._crossHairCursor = CrossHairCursor()
+        self.scene().addItem(self._crossHairCursor)
         self._crossHairCursor.setZValue(99)
 
         self.posModel = self.scene()._posModel
         self.axis = self.scene()._along[1] - 1 # axis is 0,1,2 for X,Y,Z
-        self._sliceIntersectionMarker = SliceIntersectionMarker(self.scene(), self.axis, self.posModel)
+        self._sliceIntersectionMarker = SliceIntersectionMarker(self.axis, self.posModel)
+        self.scene().addItem(self._sliceIntersectionMarker)
         self._sliceIntersectionMarker.setZValue(100)
 
         self._sliceIntersectionMarker.setVisible(True)
 
-        self._croppingMarkers = CroppingMarkers( self.scene(), self.axis, cropModel )
+        self._croppingMarkers = CroppingMarkers( self.axis, cropModel )
+        self.scene().addItem( self._croppingMarkers )
 
         #FIXME: this should be private, but is currently used from
         #       within the image scene renderer
@@ -236,7 +240,7 @@ class ImageView2D(QGraphicsView):
         return QPointF(x, y)
 
     def _qBound(self, minVal, current, maxVal):
-        """PyQt4 does not wrap the qBound function from Qt's global namespace
+        """PyQt5 does not wrap the qBound function from Qt's global namespace
            This is equivalent."""
         return max(min(current, maxVal), minVal)
 
@@ -333,7 +337,7 @@ if __name__ == '__main__':
     #make the program quit on Ctrl+C
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    from PyQt4.QtGui import QMainWindow
+    from PyQt5.QtWidgets import QMainWindow
     from scipy.misc import lena
 
     def checkerboard(shape, squareSize):

@@ -23,8 +23,8 @@
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-from PyQt4.QtCore import QRect, QPoint, Qt, QTimer
-from PyQt4.QtGui import QApplication, QPainter, QImage, QBrush, QPen, QColor, \
+from PyQt5.QtCore import QRect, QPoint, Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QPainter, QImage, QBrush, QPen, QColor, \
                         QBrush
 
 import sys

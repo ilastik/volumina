@@ -22,8 +22,8 @@
 # time to wait (in seconds) for rendering to finish
 import unittest as ut
 import numpy as np
-from PyQt4.QtCore import QRectF, QPoint, QRect
-from PyQt4.QtGui import QTransform
+from PyQt5.QtCore import QRectF, QPoint, QRect
+from PyQt5.QtGui import QTransform
 from qimage2ndarray import byte_view
 
 from volumina.tiling import TileProvider, Tiling

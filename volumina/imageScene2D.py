@@ -21,10 +21,11 @@
 ###############################################################################
 import numpy, math
 
-from PyQt4.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, SIGNAL, QTimer
-from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QGraphicsItem, \
+from PyQt5.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, QTimer
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, \
                         QGraphicsItemGroup, QGraphicsLineItem, QGraphicsTextItem, QGraphicsPolygonItem, \
                         QGraphicsRectItem
+from PyQt5.QtGui import QTransform, QPen, QColor, QBrush, QPolygonF, QPainter
 
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel

@@ -21,9 +21,9 @@
 ###############################################################################
 import os
 
-from PyQt4 import uic
-from PyQt4.QtCore import Qt, QEvent
-from PyQt4.QtGui import QWidget, QFileDialog
+from PyQt5 import uic
+from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtWidgets import QWidget, QFileDialog
 
 from volumina.utility import encode_from_qstring, decode_to_qstring
 
@@ -83,7 +83,7 @@ class SingleFileExportOptionsWidget(QWidget):
         self.filepathEdit.setText( decode_to_qstring(exportPath) )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph
     from lazyflow.operators.ioOperators import OpNpyWriter
 

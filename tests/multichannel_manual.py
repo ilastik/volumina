@@ -20,7 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from volumina.api import Viewer
-from PyQt4.QtGui import QApplication
+from PyQt5.QtWidgets import QApplication
 import numpy
 
 app = QApplication([])

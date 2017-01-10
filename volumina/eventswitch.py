@@ -19,8 +19,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QObject, Qt, QEvent
-from PyQt4.QtGui import QMouseEvent
+from PyQt5.QtCore import QObject, Qt, QEvent
+from PyQt5.QtGui import QMouseEvent
 
 from abc import ABCMeta, abstractmethod
 

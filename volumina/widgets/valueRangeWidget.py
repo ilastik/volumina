@@ -22,10 +22,10 @@
 import os
 from functools import partial
 
-from PyQt4.QtGui import QWidget, QDoubleSpinBox, QHBoxLayout, QCheckBox,\
+from PyQt5.QtWidgets import QWidget, QDoubleSpinBox, QHBoxLayout, QCheckBox,\
 QLabel, QGridLayout, QSpacerItem, QSizePolicy
-from PyQt4.QtCore import QRegExp, Qt, QTimer, pyqtSignal
-from PyQt4 import uic
+from PyQt5.QtCore import QRegExp, Qt, QTimer, pyqtSignal
+from PyQt5 import uic
 import numpy
 
 class ValueRangeWidget(QWidget):
@@ -235,7 +235,7 @@ class CombinedValueRangeWidget(QWidget):
             self.roiWidgets[0].setFocus()
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     import vigra, numpy
     app = QApplication(list())
    

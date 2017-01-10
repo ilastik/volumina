@@ -22,7 +22,7 @@
 import unittest
 import numpy as np
 import volumina.slicingtools as st
-from PyQt4.QtCore import QRect
+from PyQt5.QtCore import QRect
 
 class SlicingToolsTest(unittest.TestCase):
     slicing = (slice(5, 7), slice(10, 18))

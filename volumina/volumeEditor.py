@@ -27,8 +27,8 @@ from functools import partial
 import numpy
 
 #PyQt
-from PyQt4.QtCore import pyqtSignal, QObject
-from PyQt4.QtGui import QApplication, QWidget
+from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtWidgets import QApplication, QWidget
 
 #volumina
 import volumina.pixelpipeline.imagepump

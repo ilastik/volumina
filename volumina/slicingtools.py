@@ -32,7 +32,7 @@ not wrapped in a sequence.
 
 '''
 import numpy as np
-from PyQt4.QtCore import QRect
+from PyQt5.QtCore import QRect
 import itertools
 
 

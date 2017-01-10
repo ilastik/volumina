@@ -23,9 +23,9 @@ import re
 import os
 import collections
 
-from PyQt4 import uic
-from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QWidget
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QWidget
 
 from singleFileExportOptionsWidget import SingleFileExportOptionsWidget
 from hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
@@ -175,7 +175,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
             self.pathValidityChange.emit( self._valid_path )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph, Operator, InputSlot
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 

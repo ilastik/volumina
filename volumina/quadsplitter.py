@@ -22,8 +22,8 @@
 #!/usr/bin/env python
 from __future__ import division
 import sys
-from PyQt4.QtCore import Qt, pyqtSignal, QEvent, QTimer
-from PyQt4.QtGui import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer
+from PyQt5.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
 
 class ImageView2DFloatingWindow(QWidget):
     onCloseClick = pyqtSignal()

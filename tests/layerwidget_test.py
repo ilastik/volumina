@@ -21,9 +21,12 @@
 ###############################################################################
 import os
 import time
+import threading
 import unittest as ut
-from PyQt4.QtCore import QTimer
-from PyQt4.QtGui import qApp, QApplication, QWidget, QHBoxLayout, QPixmap
+
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import qApp, QApplication, QWidget, QHBoxLayout
+from PyQt5.QtGui import QScreen, QGuiApplication
                          
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
@@ -46,6 +49,12 @@ class TestLayerWidget( ut.TestCase ):
             import nose
             raise nose.SkipTest
 
+#         if threading.currentThread().name == "MainThread":
+#             # Under Qt5, this test fails if we're not running in the main thread.
+#             # This test file needs to be run on it's own, not as part of a test suite with nosetests.
+#             import nose
+#             raise nose.SkipTest            
+
         cls.app = QApplication([])
         cls.errors = False
 
@@ -65,9 +74,11 @@ class TestLayerWidget( ut.TestCase ):
             time.sleep(0.1) 
 
             self.w.repaint()
+            
+            screen = QGuiApplication.primaryScreen()
 
             # Capture the window before we change anything
-            beforeImg = QPixmap.grabWindow( self.w.winId() ).toImage()
+            beforeImg = screen.grabWindow( self.w.winId() ).toImage()
             
             # Change the visibility of the *selected* layer
             self.o2.visible = True
@@ -81,7 +92,7 @@ class TestLayerWidget( ut.TestCase ):
             time.sleep(0.1) 
 
             # Capture the window now that we've changed a layer.
-            afterImg = QPixmap.grabWindow( self.w.winId() ).toImage()
+            afterImg = screen.grabWindow( self.w.winId() ).toImage()
     
             # Optional: Save the files so we can inspect them ourselves...
             #beforeImg.save('before.png')

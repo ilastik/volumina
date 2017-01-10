@@ -22,9 +22,9 @@
 import os
 import re
 
-from PyQt4 import uic
-from PyQt4.QtCore import pyqtSignal, Qt, QEvent
-from PyQt4.QtGui import QWidget, QFileDialog
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent
+from PyQt5.QtWidgets import QWidget, QFileDialog
 
 from volumina.utility import encode_from_qstring, decode_to_qstring
 
@@ -130,7 +130,7 @@ class StackExportFileOptionsWidget(QWidget):
             self.pathValidityChange.emit( self.settings_are_valid )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 

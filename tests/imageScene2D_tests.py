@@ -22,7 +22,8 @@
 import unittest as ut
 import time, datetime
 
-from PyQt4.QtGui import QImage, QPainter, QApplication, QStyleOptionGraphicsItem
+from PyQt5.QtGui import QImage, QPainter
+from PyQt5.QtWidgets import QApplication, QStyleOptionGraphicsItem
 
 from qimage2ndarray import byte_view
 import numpy as np
@@ -43,7 +44,7 @@ class DirtyIndicatorTest( ut.TestCase ):
         if QApplication.instance():
             cls.app = QApplication.instance()
         else:
-            cls.app = QApplication([], False)
+            cls.app = QApplication([])
 
     @classmethod
     def tearDownClass(cls):
@@ -121,7 +122,7 @@ class ImageScene2DTest( ut.TestCase ):
         if QApplication.instance():
             cls.app = QApplication.instance()
         else:
-            cls.app = QApplication([], False)
+            cls.app = QApplication([])
 
     @classmethod
     def tearDownClass(cls):
@@ -143,7 +144,7 @@ class ImageScene2D_RenderTest( ut.TestCase ):
         if QApplication.instance():
             cls.app = QApplication.instance()
         else:
-            cls.app = QApplication([], False)
+            cls.app = QApplication([])
 
     @classmethod
     def tearDownClass(cls):

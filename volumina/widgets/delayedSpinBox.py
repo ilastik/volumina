@@ -1,5 +1,5 @@
-from PyQt4.QtCore import pyqtSignal, QTimer
-from PyQt4.QtGui import QSpinBox
+from PyQt5.QtCore import pyqtSignal, QTimer
+from PyQt5.QtWidgets import QSpinBox
 
 class DelayedSpinBox(QSpinBox):
     """
@@ -45,7 +45,7 @@ class DelayedSpinBox(QSpinBox):
         self._blocksignal = False
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication, QWidget, QLabel, QVBoxLayout
+    from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
     
     app = QApplication([])
 

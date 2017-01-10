@@ -27,11 +27,12 @@ from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
 from volumina.navigationController import NavigationInterpreter
-from volumina import colortables
+from volumina.colortables import default16
 
-from PyQt4.QtCore import QTimer, pyqtSignal
-from PyQt4.QtGui import QMainWindow, QApplication, QIcon, QAction, qApp
-from PyQt4.uic import loadUi
+from PyQt5.QtCore import QTimer, pyqtSignal
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, qApp
+from PyQt5.uic import loadUi
 
 import os
 import random
@@ -69,7 +70,7 @@ class ClickableSegmentationLayer(QObject):
         #add layer
         if colortable is None:
             colortable = volumina.layer.generateRandomColors(1000, "hsv", {"v": 1.0}, zeroIsTransparent=True)
-            colortable[1:17] = colortables.default16
+            colortable[1:17] = default16
         
         layer, source = viewer.addRelabelingColorTableLayer(seg, clickFunctor=self.onClick, name=name,
             relabeling=relabeling, colortable=colortable, direct=direct)
@@ -314,7 +315,7 @@ class Viewer(QMainWindow):
                 qColor = QColor(*color)
                 colors.append(qColor.rgba())
         #for the first 16 objects, use some colors that are easily distinguishable
-        colors[1:17] = colortables.default16 
+        colors[1:17] = default16 
         return colors
 
 if __name__ == "__main__":
@@ -388,7 +389,7 @@ if __name__ == "__main__":
         viewer.addSegmentationEdgesLayer(segmentation_zyx.transpose(), 'segmentation edges', default_pen=segmentation_pen)
     
     
-    #from PyQt4.QtGui import QGraphicsView
+    #from PyQt5.QtWidgets import QGraphicsView
     #viewer.editor.imageViews[2].setOptimizationFlag(QGraphicsView.DontAdjustForAntialiasing, True)
 
 #     try:

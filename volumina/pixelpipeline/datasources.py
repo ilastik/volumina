@@ -23,7 +23,7 @@ import sys
 import threading
 import weakref
 from functools import partial, wraps
-from PyQt4.QtCore import QObject, pyqtSignal, QTimer
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, \

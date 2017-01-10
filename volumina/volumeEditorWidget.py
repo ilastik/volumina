@@ -30,9 +30,11 @@ import copy
 import numpy
 
 #PyQt
-from PyQt4.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent, QTimer
-from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, QHBoxLayout, \
-                        QColor, QSizePolicy, QAction, QIcon, QSpinBox, QMenu, QDialog, QLabel, QLineEdit, QPushButton, QMainWindow
+from PyQt5.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent, QTimer
+from PyQt5.QtGui import QKeySequence, QColor, QIcon
+from PyQt5.QtWidgets import QApplication, QWidget, QShortcut, QHBoxLayout, \
+                            QSizePolicy, QAction, QSpinBox, QMenu, QDialog, \
+                            QLabel, QLineEdit, QPushButton, QMainWindow
 
 #volumina
 from quadsplitter import QuadView
@@ -436,7 +438,7 @@ class VolumeEditorWidget(QWidget):
         # scroll all views.
         if event.type() == QEvent.Wheel and (event.modifiers() == Qt.ControlModifier):
             for view in self.editor.imageViews:
-                if event.delta() > 0:
+                if event.angleDelta().y() > 0:
                     view.zoomIn()
                 else:
                     view.zoomOut()
