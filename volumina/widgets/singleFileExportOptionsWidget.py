@@ -20,12 +20,11 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import os
+import sys
 
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtWidgets import QWidget, QFileDialog
-
-from volumina.utility import encode_from_qstring, decode_to_qstring
 
 class SingleFileExportOptionsWidget(QWidget):
     
@@ -46,7 +45,7 @@ class SingleFileExportOptionsWidget(QWidget):
                ( event.type() == QEvent.KeyPress and \
                  ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return) ):
                 newpath = self.filepathEdit.text()
-                newpath = encode_from_qstring(newpath)
+                newpath = newpath.encode( sys.getfilesystemencoding() )
                 self._filepathSlot.setValue( newpath )
         return False
 
@@ -62,7 +61,7 @@ class SingleFileExportOptionsWidget(QWidget):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             file_path = os.path.splitext(file_path)[0] + "." + self._extension
-            self.filepathEdit.setText( decode_to_qstring(file_path) )
+            self.filepathEdit.setText( (file_path) )
             
             # Re-configure the slot in case we changed the extension
             self._filepathSlot.setValue( file_path )
@@ -78,9 +77,9 @@ class SingleFileExportOptionsWidget(QWidget):
         if not dlg.exec_():
             return
         
-        exportPath = encode_from_qstring( dlg.selectedFiles()[0] )
+        exportPath = dlg.selectedFiles()[0].encode( sys.getfilesystemencoding() )
         self._filepathSlot.setValue( exportPath )
-        self.filepathEdit.setText( decode_to_qstring(exportPath) )
+        self.filepathEdit.setText( exportPath.decode( sys.getfilesystemencoding() ) )
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
