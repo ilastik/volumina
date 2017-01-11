@@ -78,7 +78,8 @@ class ShortcutManagerDlg(QDialog):
         mgr.store_to_preferences()
                 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QShortcut, QKeySequence
+    from PyQt5.QtWidgets import QShortcut
+    from PyQt5.QtGui import QKeySequence
     from functools import partial
 
     from PyQt5.QtWidgets import QApplication, QPushButton, QWidget
