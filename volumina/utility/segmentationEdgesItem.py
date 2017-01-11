@@ -273,7 +273,7 @@ def arrayToQPath(x, y, connect='all'):
     ##
     ## All values are big endian--pack using struct.pack('>d') or struct.pack('>i')
 
-    path = QtWidgets.QPainterPath()
+    path = QPainterPath()
 
     #profiler = debug.Profiler()
     n = x.shape[0]
