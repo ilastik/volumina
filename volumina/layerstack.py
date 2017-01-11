@@ -256,7 +256,7 @@ class LayerStackModel(QAbstractListModel):
     def data(self, index, role = Qt.DisplayRole):
         if not index.isValid():
             return None
-        if index.row() > len(self._layerStack):
+        if index.row() >= len(self._layerStack):
             return None
         
         if role == Qt.DisplayRole or role == Qt.EditRole:
