@@ -105,7 +105,7 @@ class StackExportFileOptionsWidget(QWidget):
             starting_dir = os.path.split(self.self._fullPathExportSlot.value)[0]
         
         export_dir = QFileDialog.getExistingDirectory( self, "Export Directory", starting_dir )
-        if export_dir.isNull():
+        if not export_dir:
             return
 
         self.directoryEdit.setText( export_dir )
