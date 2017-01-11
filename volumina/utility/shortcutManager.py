@@ -337,7 +337,8 @@ class ObjectWithToolTipABC(object):
 
 if __name__ == "__main__":
     from PyQt5.QtCore import Qt, QEvent, QTimer
-    from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QKeyEvent
+    from PyQt5.QtWidgets import QApplication, QWidget, QLabel
+    from PyQt5.QtGui import QKeyEvent
     
     app = QApplication([])
     
