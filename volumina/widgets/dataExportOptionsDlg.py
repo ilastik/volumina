@@ -229,7 +229,7 @@ class DataExportOptionsDlg(QDialog):
         def _handleDtypeSelected():
             # The dtype combo selection changed.  Update the operator to match.
             index = self.dtypeCombo.currentIndex()
-            dtype_string = str( self.dtypeCombo.itemData(index).toString() )
+            dtype_string = str( self.dtypeCombo.itemData(index) )
             dtype = numpy.dtype(dtype_string).type
             self._opDataExport.ExportDtype.setValue( dtype )
     
@@ -346,7 +346,7 @@ class DataExportOptionsDlg(QDialog):
             
         def _handleNewAxisOrder():
             new_order = str( self.outputAxisOrderEdit.text() )
-            validator_state, _ = self.outputAxisOrderEdit.validator().validate( new_order, 0 )
+            validator_state, _, _ = self.outputAxisOrderEdit.validator().validate( new_order, 0 )
             if validator_state == QValidator.Acceptable:
                 self._opDataExport.OutputAxisOrder.setValue( new_order )
 
@@ -369,7 +369,7 @@ class DataExportOptionsDlg(QDialog):
     def _updateAxisOrderColor(self, allow_intermediate):
         checked = self.axisOrderCheckbox.isChecked()
         text = self.outputAxisOrderEdit.text()
-        state, _ = self.outputAxisOrderEdit.validator().validate( text, 0 )
+        state, _, _ = self.outputAxisOrderEdit.validator().validate( text, 0 )
         invalidAxes = (checked and state != QValidator.Acceptable and not allow_intermediate)
         self._set_okay_condition('axis order', not invalidAxes)
         if invalidAxes:
@@ -402,19 +402,19 @@ class DataExportOptionsDlg(QDialog):
             
             # Ensure all user axes appear in the input
             if not (userSet <= inputSet):
-                return (QValidator.Invalid, pos)
+                return (QValidator.Invalid, userAxes, pos)
             
             # Ensure no repeats
             if len(userSet) != len(userAxes):
-                return (QValidator.Invalid, pos)
+                return (QValidator.Invalid, userAxes, pos)
             
             # If missing non-singleton axes, maybe intermediate entry
             # (It's okay to omit singleton axes)
             for key in (inputSet - userSet):
                 if taggedShape[key] != 1:
-                    return (QValidator.Intermediate, pos)
+                    return (QValidator.Intermediate, userAxes, pos)
             
-            return (QValidator.Acceptable, pos)
+            return (QValidator.Acceptable, userAxes, pos)
 
     #**************************************************************************
     # File format and options
