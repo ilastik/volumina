@@ -276,7 +276,7 @@ class LayerStackModel(QAbstractListModel):
         if role == Qt.EditRole:
             layer = value
             if not isinstance(value, Layer):
-                layer = value.toPyObject()
+                layer = value
             self._layerStack[index.row()] = layer
             self.dataChanged.emit(index, index)
             return True
