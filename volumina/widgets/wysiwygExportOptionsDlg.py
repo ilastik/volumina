@@ -383,7 +383,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         padding = ["0{}".format(len(str(len(r) - 1))) for r in ranges if len(r) > 1]
         steps = reduce(mul, map(len, ranges), 1.0)
 
-        getter = itemgetter(*iter_axes if iter_axes else [slice(0)])
+        getter = itemgetter(*(iter_axes if iter_axes else [slice(0)]))
         file_names = []
         for i, pos in enumerate(product(*ranges)):
             coords = getter(pos)
