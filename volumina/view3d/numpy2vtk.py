@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -22,7 +23,7 @@
 try:
     from vtk import vtkImageImport
 except:
-    print 'Vtk not found in numpy2vtk'
+    print('Vtk not found in numpy2vtk')
     vtkfound = 'false'
 
 import numpy

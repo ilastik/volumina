@@ -1,3 +1,4 @@
+from __future__ import print_function
 import collections
 from functools import partial
 import logging
@@ -349,7 +350,7 @@ if __name__ == "__main__":
     counter = [0]
     def say_hello():
         counter[0] += 1
-        print "changing label text ({})".format(counter[0])
+        print("changing label text ({})".format(counter[0]))
         label.setText("Hello! {}".format( counter[0] ))
 
     mgr = ShortcutManager()

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import defaultdict
 import threading
 import logging
@@ -331,12 +332,12 @@ if __name__ == "__main__":
 
     start = time.time()
     path_items = generate_path_items_for_labels(pen_table, labels_img, None)
-    print "generate took {}".format(time.time() - start) # 52 ms
+    print("generate took {}".format(time.time() - start)) # 52 ms
 
     edges_item = SegmentationEdgesItem(path_items, pen_table)
     
     def assign_random_color( id_pair):
-        print "handling click: {}".format(id_pair)
+        print("handling click: {}".format(id_pair))
         pen = pen_table[id_pair]
         if pen:
             pen = QPen(pen)

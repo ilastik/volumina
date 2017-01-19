@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -62,7 +63,7 @@ class SkeletonInterpreter(QObject):
                     dataPos = scene.scene2data.map(event.pos())
                     pos2D = copy.copy(self.posModel.cursorPos)
                     del pos2D[axis]
-                    print "add node at data coor=%r, axis=%d, pos2D=%r" % (dataPos, axis, pos2D) 
+                    print("add node at data coor=%r, axis=%d, pos2D=%r" % (dataPos, axis, pos2D)) 
                     self._vl.addNode(self.posModel.cursorPos, axis)
                     return True
         

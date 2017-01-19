@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -25,7 +26,7 @@ try:
                 vtkActor, vtkPlane
 
 except:
-    print 'Vtk not found in slicingPlanesWidget'
+    print('Vtk not found in slicingPlanesWidget')
     vtkfound = 'false'
 
 #*******************************************************************************

@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -26,7 +27,7 @@ has_vtk = True
 try:
     import vtk
 except ImportError:
-    print "Warning: could not import optional dependency VTK"
+    print("Warning: could not import optional dependency VTK")
     has_vtk = False
 
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import warnings
 from collections import defaultdict
@@ -141,23 +142,23 @@ if __name__ == "__main__":
         watershed = f['watershed'][:256, :256, :256]
 
     n = NpIter( np.array([[10,20], [20,30], [30,40]]) )
-    print np.array(n)
+    print(np.array(n))
 
     from lazyflow.utility import Timer
     with Timer() as timer:
         #ec = edge_coords_nd(watershed)
         ids = edge_ids(watershed)
-    print "Python time was: {}".format( timer.seconds() )
+    print("Python time was: {}".format( timer.seconds() ))
 
     import vigra
     with Timer() as timer:
         gridGraph = vigra.graphs.gridGraph(watershed.shape)
         rag = vigra.graphs.regionAdjacencyGraph(gridGraph, watershed)
         ids = rag.uvIds()
-    print "vigra time was: {}".format( timer.seconds() )
+    print("vigra time was: {}".format( timer.seconds() ))
 
     #print len(set( ec[0].keys() + ec[1].keys() + ec[2].keys() ))
-    print len(ids)
+    print(len(ids))
 
 #     labels_img = np.load('/Users/bergs/workspace/ilastik-meta/ilastik/seg-slice-256.npy')
 #     assert labels_img.dtype == np.uint32

@@ -28,6 +28,7 @@ from PyQt5 import uic
 from PyQt5.QtCore import Qt, QEvent, QRectF
 from PyQt5.QtGui import QImageWriter, QImage, QPainter, qRgb
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QColorDialog, QApplication
+from functools import reduce
 
 try:
     import wand

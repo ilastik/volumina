@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -23,7 +24,7 @@
 try:
     import vtk
 except ImportError:
-    print "Warning: could not import optional dependency VTK"
+    print("Warning: could not import optional dependency VTK")
 
 from numpy import asarray as A
 from volumina.skeletons.frustum import cut

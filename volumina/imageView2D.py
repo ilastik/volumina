@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
+from __future__ import absolute_import
 from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
 from PyQt5.QtGui import QCursor, QPainter, QImage
 from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QApplication
@@ -29,9 +30,9 @@ import os
 import time
 import platform
 
-from crossHairCursor import CrossHairCursor
-from sliceIntersectionMarker import SliceIntersectionMarker
-from croppingMarkers import CroppingMarkers
+from .crossHairCursor import CrossHairCursor
+from .sliceIntersectionMarker import SliceIntersectionMarker
+from .croppingMarkers import CroppingMarkers
 from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 
 from PyQt5.QtOpenGL import QGLWidget

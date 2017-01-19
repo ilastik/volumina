@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -26,8 +27,8 @@ from PyQt5.QtCore import QPointF
 from volumina.brushingmodel import BrushingModel
 
 def _onBrushStroke( point, labels  ):
-    print point.x(), point.y()
-    print labels.shape
+    print(point.x(), point.y())
+    print(labels.shape)
 
 class BrushingModelTest( ut.TestCase ):
 

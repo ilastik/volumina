@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,7 +22,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from PyQt5.QtCore import QObject, pyqtSignal
-from asyncabcs import SourceABC, RequestABC
+from .asyncabcs import SourceABC, RequestABC
 import numpy as np
 import volumina
 from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
@@ -134,7 +136,7 @@ class SliceSource( QObject ):
         
         if volumina.verboseRequests:
             volumina.printLock.acquire()
-            print Fore.RED + "SliceSource requests '%r' from data source '%s'" % (slicing, self._datasource.name) + Fore.RESET
+            print(Fore.RED + "SliceSource requests '%r' from data source '%s'" % (slicing, self._datasource.name) + Fore.RESET)
             volumina.printLock.release()
         return SliceRequest(self._datasource.request(slicing), self.sliceProjection)
         
@@ -249,7 +251,7 @@ import unittest as ut
 class SliceSourceTest( ut.TestCase ):
     def setUp( self ):
         import numpy as np
-        from datasources import ArraySource
+        from .datasources import ArraySource
         self.raw = np.random.randint(0,100,(10,3,3,128,3))
         self.a = ArraySource(self.raw)
         self.ss = SliceSource( self.a, projectionAlongTZC )

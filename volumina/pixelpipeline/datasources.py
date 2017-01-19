@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -24,7 +26,7 @@ import threading
 import weakref
 from functools import partial, wraps
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
+from .asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, \
     is_bounded, make_bounded, index2slice, sl
@@ -305,7 +307,7 @@ if _has_lazyflow:
         def request( self, slicing ):
             if cfg.getboolean('pixelpipeline', 'verbose'):
                 volumina.printLock.acquire()
-                print "  LazyflowSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing))
+                print("  LazyflowSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing)))
                 volumina.printLock.release()
             if not is_pure_slicing(slicing):
                 raise Exception('LazyflowSource: slicing is not pure')

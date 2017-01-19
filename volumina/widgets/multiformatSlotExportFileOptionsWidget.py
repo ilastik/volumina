@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -27,9 +29,9 @@ from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
-from singleFileExportOptionsWidget import SingleFileExportOptionsWidget
-from hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
-from stackExportFileOptionsWidget import StackExportFileOptionsWidget
+from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
+from .hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
+from .stackExportFileOptionsWidget import StackExportFileOptionsWidget
 
 try:
     from lazyflow.operators.ioOperators import OpExportSlot
@@ -38,7 +40,7 @@ except ImportError:
     _has_lazyflow = False
 
 try:
-    from dvidVolumeExportOptionsWidget import DvidVolumeExportOptionsWidget
+    from .dvidVolumeExportOptionsWidget import DvidVolumeExportOptionsWidget
     _supports_dvid = True
 except ImportError:
     _supports_dvid = False
@@ -197,8 +199,8 @@ if __name__ == "__main__":
     w.show()
     app.exec_()
 
-    print "Selected Filepath: {}".format( op.OutputFilenameFormat.value )
-    print "Selected Dataset: {}".format( op.OutputInternalPath.value )
+    print("Selected Filepath: {}".format( op.OutputFilenameFormat.value ))
+    print("Selected Dataset: {}".format( op.OutputInternalPath.value ))
 
 
 

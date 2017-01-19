@@ -22,6 +22,7 @@
 """High-level API.
 
 """
+from __future__ import print_function
 from volumina.pixelpipeline.datasources import *
 from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
@@ -353,33 +354,33 @@ if __name__ == "__main__":
         os.chdir('/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol')    
         
         import h5py
-        print "Loading grayscale..."
+        print("Loading grayscale...")
         grayscale_file = h5py.File('grayscale-512.h5', 'r')
         grayscale_dset = grayscale_file['grayscale']
         grayscale_zyx = grayscale_dset[...,0]
         
-        print "Loading membranes..."
+        print("Loading membranes...")
         membranes_file = h5py.File('final-membranes-512.h5', 'r')
         membranes_dset = membranes_file['membranes']
         membranes_zyx = membranes_dset[...,0]
         
-        print "Loading watershed..."
+        print("Loading watershed...")
         watershed_file = h5py.File('watershed-512.h5', 'r')
         watershed_dset = watershed_file['watershed']
         watershed_zyx = watershed_dset[:]
     
-        print "Loading segmentation..."
+        print("Loading segmentation...")
         segmentation_file = h5py.File('segmentation-512.h5', 'r')
         segmentation_dset = segmentation_file['segmentation']
         segmentation_zyx = segmentation_dset[:]
     
-        print "Adding raster layers..."
+        print("Adding raster layers...")
         viewer.addGrayscaleLayer(grayscale_zyx.transpose(), 'grayscale')
         viewer.addAlphaModulatedLayer(membranes_zyx.transpose(), 'membranes', tintColor=QColor(255,0,0))
         viewer.addRandomColorsLayer(watershed_zyx.transpose(), 'watershed')
         viewer.addRandomColorsLayer(segmentation_zyx.transpose(), 'segmentation')
     
-        print "Adding vector layers..."
+        print("Adding vector layers...")
         watershed_pen = QPen(SegmentationEdgesLayer.DEFAULT_PEN)
         watershed_pen.setColor(Qt.yellow)
         viewer.addSegmentationEdgesLayer(watershed_zyx.transpose(), 'watershed edges', default_pen=watershed_pen)

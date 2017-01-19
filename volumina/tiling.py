@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -38,7 +39,7 @@ from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5.QtGui import QImage, QPainter, QTransform
 
 #volumina
-from patchAccessor import PatchAccessor
+from .patchAccessor import PatchAccessor
 import volumina
 from volumina.pixelpipeline.asyncabcs import IndeterminateRequestError
 from volumina.utility import log_exception, PrioritizedThreadPoolExecutor

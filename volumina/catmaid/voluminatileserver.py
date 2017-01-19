@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -41,7 +42,7 @@ class TileHandler(tornado.web.RequestHandler):
 		self.database = database
 		
 	def get(self):
-		print "the get request", self.request
+		print("the get request", self.request)
 		
 		# parse the arguments
 		#z=self.get_argument('z')
@@ -67,7 +68,7 @@ class TileHandler(tornado.web.RequestHandler):
 		self.flush()
         
 	def post(self):
-		print "the post request", self.request
+		print("the post request", self.request)
 		self.write("hello post")
 
 # This handler manages POST request from the canvas label painting

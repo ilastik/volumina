@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import defaultdict
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtCore import QObject
@@ -129,5 +130,5 @@ if __name__ == "__main__":
     keys = d.keys()
     d.clear()
     assert set(handled_items) == { (k, 0) for k in keys }
-    print "DONE."
+    print("DONE.")
         

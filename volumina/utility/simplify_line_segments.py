@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 try:
@@ -161,8 +162,8 @@ def split_into_branchless_segments(undirected_graph):
     """
     # Choose an arbitrary tip to use as the tree root
     degrees = list(undirected_graph.degree_iter())
-    tip_degrees = filter( lambda (node, degree): degree == 1, degrees )
-    tip_nodes = map( lambda (node, degree): node, tip_degrees )
+    tip_degrees = filter( lambda node_degree: node_degree[1] == 1, degrees )
+    tip_nodes = map( lambda node_degree1: node_degree1[0], tip_degrees )
 
     tips_already_processed = set()
     segments = []
@@ -232,7 +233,7 @@ if __name__ == "__main__":
     simplified_lines = simplify_line_segments(lines, 0.0)
     simplified_lines_OLD = simplify_line_segments_OLD(lines, 0.0)
 
-    print "showing plot..."
+    print("showing plot...")
     import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(111)
