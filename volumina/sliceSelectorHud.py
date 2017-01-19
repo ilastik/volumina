@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,6 +20,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import str
+from past.utils import old_div
 from functools import partial
 
 #PyQt
@@ -145,14 +148,14 @@ class SpinBoxImageView(QHBoxLayout):
         self.labelLayout = QVBoxLayout()
         self.upLabel = LabelButtons('spin-up', parentView,
                                     backgroundColor, foregroundColor,
-                                    height/2, height/2)
+                                    old_div(height,2), old_div(height,2))
         self.labelLayout.addWidget(self.upLabel)
         self.upLabel.clicked.connect(self.on_upLabel)
 
         self.downLabel = LabelButtons('spin-down', parentView,
                                       backgroundColor,
-                                      foregroundColor, height/2,
-                                      height/2)
+                                      foregroundColor, old_div(height,2),
+                                      old_div(height,2))
         self.labelLayout.addWidget(self.downLabel)
         self.downLabel.clicked.connect(self.on_downLabel)
 

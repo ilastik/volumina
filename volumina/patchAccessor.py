@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
+from builtins import range
 from PyQt5.QtCore import QPointF, QRectF
 
 import numpy
@@ -28,7 +29,7 @@ import numpy
 # P a t c h A c c e s s o r                                                    *
 #*******************************************************************************
 
-class PatchAccessor():
+class PatchAccessor(object):
     """
     Cut a given 2D shape into patches of given rectangular size
     """
@@ -105,7 +106,7 @@ class PatchAccessor():
 
         nums = []
         for y in range(sy,ey):
-            nums += range(y*self._cX+sx, y*self._cX+ex)
+            nums += list(range(y*self._cX+sx, y*self._cX+ex))
         return nums
 
 if __name__ == "__main__":

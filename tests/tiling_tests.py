@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 # time to wait (in seconds) for rendering to finish
+from builtins import range
 import unittest as ut
 import numpy as np
 from PyQt5.QtCore import QRectF, QPoint, QRect
@@ -49,7 +50,7 @@ class TilingTest ( ut.TestCase ):
         self.assertEqual( len(t), 0 )
 
     def testLen( self ):
-        for i in xrange(5):
+        for i in range(5):
             t = Tiling((100*i, 100), blockSize = 50)
             self.assertEqual(len(t), (100*i*2)//50)
 

@@ -20,6 +20,7 @@ from __future__ import print_function
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import str
 try:
     import lazyflow
     has_lazyflow = True

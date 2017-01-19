@@ -21,6 +21,7 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import zip
 import sys
 import threading
 import weakref
@@ -355,7 +356,7 @@ if _has_lazyflow:
             inputKeys = [tag.key for tag in inputTags]
             transposedArray = taggedArray.withAxes(*inputKeys)
     
-            taggedSlicing = dict(zip('txyzc', slicing))
+            taggedSlicing = dict(list(zip('txyzc', slicing)))
             transposedSlicing = ()
             for k in inputKeys:
                 if k in 'txyzc':

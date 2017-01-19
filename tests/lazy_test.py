@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 # check for optional dependencies
+from builtins import range
 has_dependencies = True
 try:
     import vigra

@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -22,6 +23,8 @@ from __future__ import absolute_import
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
+from builtins import str
+from past.utils import old_div
 import logging
 import time
 import warnings
@@ -404,7 +407,7 @@ class ColortableImageRequest( object ):
             nmin, nmax = self._normalize
             if nmin:
                 a = a - nmin
-            scale = (len(self._colorTable)-1) / float(nmax - nmin + 1e-35) #if max==min
+            scale = old_div((len(self._colorTable)-1), float(nmax - nmin + 1e-35)) #if max==min
             if scale != 1.0:
                 a = a * scale
             if len(self._colorTable) <= 2**8:
@@ -536,7 +539,7 @@ class RGBAImageRequest( object ):
                   normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None ):
         self._mutex = QMutex()
         self._requests = r, g, b, a
-        self._normalize = map(lambda n: n or None, [normalizeR, normalizeG, normalizeB, normalizeA])
+        self._normalize = [n or None for n in [normalizeR, normalizeG, normalizeB, normalizeA]]
         shape.append(4)
         self._data = np.empty(shape, dtype=np.uint8)
         self._requestsFinished = 4 * [False,]

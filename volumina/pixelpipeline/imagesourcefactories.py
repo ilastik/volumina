@@ -20,6 +20,8 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import str
+from builtins import range
 import copy
 from volumina.multimethods import multimethod
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer, \
@@ -70,7 +72,7 @@ def createImageSource( layer, datasources2d ):
 def createImageSource( layer, datasources2d ):
     assert len(datasources2d) == 4
     ds = copy.copy(datasources2d)
-    for i in xrange(3):
+    for i in range(3):
         if datasources2d[i] == None:
             ds[i] = ConstantSource(layer.color_missing_value)
     guarantees_opaqueness = False

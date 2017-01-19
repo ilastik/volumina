@@ -20,6 +20,11 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
+from builtins import next
+from builtins import str
+from builtins import zip
+from builtins import map
+from builtins import range
 from itertools import product
 from operator import mul, itemgetter
 import os
@@ -222,7 +227,7 @@ class WysiwygExportOptionsDlg(QDialog):
         self._pattern_ok = False
         if valid:
             try:
-                d = dict(zip(co, range(len(co))))
+                d = dict(list(zip(co, list(range(len(co))))))
                 txt.format(**d)
             except KeyError as e:
                 self.filePatternInvalidLabel.setText(self.TOO_MANY_PLACEHOLDER.format(e.message))
@@ -380,9 +385,9 @@ class WysiwygExportHelper(MultiStepProgressDialog):
     def loopGenerator(self, rect, base_pos, start, stop, iter_axes,
                       iter_coords, folder, pattern, fileExt):
 
-        ranges = [xrange(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
+        ranges = [range(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
         padding = ["0{}".format(len(str(len(r) - 1))) for r in ranges if len(r) > 1]
-        steps = reduce(mul, map(len, ranges), 1.0)
+        steps = reduce(mul, list(map(len, ranges)), 1.0)
 
         getter = itemgetter(*(iter_axes if iter_axes else [slice(0)]))
         file_names = []
@@ -410,7 +415,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         assert depth_index is not None
         assert depth_coord is not None
         stack_range = "{}-{}".format(start[depth_index], stop[depth_index])
-        for t, chunk in zip(xrange(start[0], stop[0]), zip(*chunks)):
+        for t, chunk in zip(range(start[0], stop[0]), list(zip(*chunks))):
             stack_pattern = pattern.replace("{{{}}}".format(depth_coord), stack_range)
             stack_name = self._filename(folder, stack_pattern, fileExt, iter_coords, [t] + [0] * (len(iter_axes) - 1)
                                         , padding)
@@ -474,7 +479,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         if not hasattr(coords, "__iter__"):
             coords = [coords]
 
-        replace = dict(zip(iters, map(format, coords, padding)))
+        replace = dict(list(zip(iters, list(map(format, coords, padding)))))
 
         fname = "{pattern}.{ext}".format(pattern=pattern.format(**replace), ext=extension)
         return os.path.join(folder, fname)

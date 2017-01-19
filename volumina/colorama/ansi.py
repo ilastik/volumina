@@ -24,6 +24,7 @@ This module generates ANSI character codes to printing colors to terminals.
 See: http://en.wikipedia.org/wiki/ANSI_escape_code
 '''
 
+from builtins import str
 CSI = '\033['
 
 def code_to_chars(code):
@@ -36,7 +37,7 @@ class AnsiCodes(object):
                 value = getattr(codes, name)
                 setattr(self, name, code_to_chars(value))
 
-class AnsiFore:
+class AnsiFore(object):
     BLACK   = 30
     RED     = 31
     GREEN   = 32
@@ -47,7 +48,7 @@ class AnsiFore:
     WHITE   = 37
     RESET   = 39
 
-class AnsiBack:
+class AnsiBack(object):
     BLACK   = 40
     RED     = 41
     GREEN   = 42
@@ -58,7 +59,7 @@ class AnsiBack:
     WHITE   = 47
     RESET   = 49
 
-class AnsiStyle:
+class AnsiStyle(object):
     BRIGHT    = 1
     DIM       = 2
     NORMAL    = 22

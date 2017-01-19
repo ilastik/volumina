@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import str
 from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtWidgets import QSpinBox
 

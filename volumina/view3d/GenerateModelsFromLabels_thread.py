@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,6 +22,8 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
+from past.utils import old_div
 from vtk import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -140,7 +143,7 @@ class MeshExtractor(QThread):
         self.newStep.emit("Writing meshes")
         qDebug("*** Writing meshes ***")
         for i in range(startLabel, endLabel+1):
-            self.progress.emit((i-startLabel+1)/float(endLabel-startLabel+1))
+            self.progress.emit(old_div((i-startLabel+1),float(endLabel-startLabel+1)))
             
             if i in self.suppressLabels:
                 print(" - suppressed label:",i)
@@ -178,7 +181,7 @@ class MeshExtractor(QThread):
             print(" - adding mesh for label %d" % (i))
             self.meshes[i] = poly
             
-        print(" ==> list of labels:", self.meshes.keys())
+        print(" ==> list of labels:", list(self.meshes.keys()))
         #print "MeshExtractor::done"
         self.done.emit()
 

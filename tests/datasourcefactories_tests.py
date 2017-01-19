@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
 from numpy import ndarray,squeeze,ndarray
 from numpy.random import rand
 from unittest import TestCase

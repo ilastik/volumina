@@ -21,6 +21,8 @@
 ###############################################################################
 from __future__ import division
 from __future__ import absolute_import
+from builtins import map
+from builtins import range
 from PyQt5.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
 from PyQt5.QtGui import QColor, QCursor 
 
@@ -335,8 +337,8 @@ class NavigationController(QObject):
             return
 
         # pos must not be float.
-        self._model.slicingPos = map(int, newPos)
-        self.panSlicingViews( newPos, filter( lambda a: a != axis, [0,1,2] ) )
+        self._model.slicingPos = list(map(int, newPos))
+        self.panSlicingViews( newPos, [a for a in [0,1,2] if a != axis] )
 
     def panSlicingViews(self, point3d, axes):
         """

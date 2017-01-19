@@ -21,6 +21,7 @@ from __future__ import print_function
 #		   http://ilastik.org/license/
 ###############################################################################
 #make the program quit on Ctrl+C
+from builtins import range
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -88,12 +89,12 @@ for z in range(0,shape[2], 10):
     array3d[:,:,z] = a
     for (rx,ry), r in dots:
         assert array3d[rx,ry,z] == r
-for y in [0,]+range(3,shape[1], 10):
+for y in [0,]+list(range(3,shape[1], 10)):
     a, dots = sliceImg(shape[0], shape[2], ('x', 'z'), 'y', y)
     array3d[:,y,:] = a
     for (rx,ry), r in dots:
         assert array3d[rx,y,ry] == r
-for x in [0,]+range(6,shape[0], 10):
+for x in [0,]+list(range(6,shape[0], 10)):
     a, dots = sliceImg(shape[1], shape[2], ('y', 'z'), 'x', x)
     array3d[x,:,:] = a
     for (rx,ry), r in dots:

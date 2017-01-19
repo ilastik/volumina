@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,6 +22,7 @@ from __future__ import print_function
 #		   http://ilastik.org/license/
 ###############################################################################
 # optional dependency; catch import error to not break nosetests
+from past.utils import old_div
 try:
     import vtk
 except ImportError:
@@ -29,7 +31,7 @@ except ImportError:
 from numpy import asarray as A
 from volumina.skeletons.frustum import cut
 
-class Skeletons3D:
+class Skeletons3D(object):
     def __init__(self, skeletons, view3D):
         self._skeletons = skeletons
         self._view3D = view3D       
@@ -38,9 +40,9 @@ class Skeletons3D:
         self._edge2view = dict()
        
     def _cubeBoundsFromNode(self, cube, node):
-        cube.SetBounds(node.pos[0]-node.shape[0]/2.0, node.pos[0]+node.shape[0]/2.0, \
-                       node.pos[1]-node.shape[1]/2.0, node.pos[1]+node.shape[1]/2.0, \
-                       node.pos[2]-node.shape[2]/2.0, node.pos[2]+node.shape[2]/2.0)
+        cube.SetBounds(node.pos[0]-old_div(node.shape[0],2.0), node.pos[0]+old_div(node.shape[0],2.0), \
+                       node.pos[1]-old_div(node.shape[1],2.0), node.pos[1]+old_div(node.shape[1],2.0), \
+                       node.pos[2]-old_div(node.shape[2],2.0), node.pos[2]+old_div(node.shape[2],2.0))
         
     def update(self):
         for n in self._skeletons._nodes:
@@ -62,7 +64,7 @@ class Skeletons3D:
                 cubeActor.GetProperty().SetColor(1,0,0)
             else:
                 c = n.color()
-                r,g,b = c.red()/255.0, c.green()/255.0, c.blue()/255.0
+                r,g,b = old_div(c.red(),255.0), old_div(c.green(),255.0), old_div(c.blue(),255.0)
                 cubeActor.GetProperty().SetColor(r,g,b)
 
         for e in self._skeletons._edges:
@@ -80,7 +82,7 @@ class Skeletons3D:
                 actor = vtk.vtkActor()
                 actor.SetMapper(mapper)
                 c = p1.color() #TODO
-                r,g,b = c.red()/255.0, c.green()/255.0, c.blue()/255.0
+                r,g,b = old_div(c.red(),255.0), old_div(c.green(),255.0), old_div(c.blue(),255.0)
                 actor.GetProperty().SetColor(r,g,b)
                 self._view3D.qvtk.renderer.AddActor(actor)
                 self._edge2view[e] = source

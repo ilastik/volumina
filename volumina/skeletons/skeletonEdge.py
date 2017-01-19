@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-class SkeletonEdge:
+class SkeletonEdge(object):
     def __init__(self, nodeA, nodeB):
         self._nodeA = nodeA
         self._nodeB = nodeB

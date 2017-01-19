@@ -21,6 +21,7 @@ from __future__ import absolute_import
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
+from builtins import range
 from functools import partial
 
 #Qt

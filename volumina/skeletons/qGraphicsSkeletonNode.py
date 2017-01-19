@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,6 +21,7 @@ from __future__ import print_function
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from past.utils import old_div
 from PyQt5.QtCore import QPointF, Qt, QRectF
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsItem, QMenu 
 from PyQt5.QtGui import QPen, QBrush, QColor
@@ -31,14 +33,14 @@ from PyQt5.QtGui import QPen, QBrush, QColor
 class ResizeHandle(QGraphicsRectItem):
     def __init__(self, node, constrainAxis):
         size = 1
-        super(ResizeHandle, self).__init__(-size/2, -size/2, 2*size, 2*size)
+        super(ResizeHandle, self).__init__(old_div(-size,2), old_div(-size,2), 2*size, 2*size)
         self._node = node
         self._constrainAxis = constrainAxis
         self._hoverOver = False
         if constrainAxis == 1:
-            self._offset = QPointF( 0, self._node.shape[1]/2.0 )
+            self._offset = QPointF( 0, old_div(self._node.shape[1],2.0) )
         else:
-            self._offset = QPointF( self._node.shape[0]/2.0, 0 )
+            self._offset = QPointF( old_div(self._node.shape[0],2.0), 0 )
         self.setPos(self._offset)
         
         self.setAcceptHoverEvents(True)
@@ -92,7 +94,7 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
         from volumina.skeletons import SkeletonNode
         assert isinstance(node, SkeletonNode)
         
-        super(QGraphicsSkeletonNode, self).__init__(-shape2D[0]/2, -shape2D[1]/2, shape2D[0], shape2D[1])
+        super(QGraphicsSkeletonNode, self).__init__(old_div(-shape2D[0],2), old_div(-shape2D[1],2), shape2D[0], shape2D[1])
 
         #we manage our selection ourselves instead of using Qt's selection mechanism
         #self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable);
@@ -118,9 +120,9 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
         super(QGraphicsSkeletonNode, self).setRect(rect)
         if len(self._resizeHandles) > 0:
             h0 = self._resizeHandles[0]
-            h0.setPos(QPointF(rect.width()/2, 0))
+            h0.setPos(QPointF(old_div(rect.width(),2), 0))
             h1 = self._resizeHandles[1]
-            h1.setPos(QPointF(0, rect.height()/2))
+            h1.setPos(QPointF(0, old_div(rect.height(),2)))
 
     def setNewSize(self, constrainAxis, size):
         print(constrainAxis, size)
@@ -129,7 +131,7 @@ class QGraphicsSkeletonNode(QGraphicsRectItem):
         else:
             w, h = self.rect().width(), 2*size
             
-        self.setRect(QRectF(-w/2, -h/2, w, h))
+        self.setRect(QRectF(old_div(-w,2), old_div(-h,2), w, h))
 
     #we manage our selection ourselves instead of using Qt's selection mechanism
     def setSelected(self, selected):

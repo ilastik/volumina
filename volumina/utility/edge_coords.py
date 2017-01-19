@@ -1,8 +1,10 @@
 from __future__ import print_function
+from builtins import map
+from builtins import range
 import numpy as np
 import warnings
 from collections import defaultdict
-from itertools import izip
+
 
 try:
     _pandas_available = True
@@ -17,7 +19,7 @@ def edge_ids( label_img, axes=None ):
     (u,v) where u and v are segment ids.  For all ids (u,v), u < v.
     """
     if axes is None:
-        axes = range(label_img.ndim)
+        axes = list(range(label_img.ndim))
 
     all_edge_ids = []
 
@@ -53,7 +55,7 @@ def edge_ids( label_img, axes=None ):
     else:
         unique_edge_ids = set()
         for edge_ids in all_edge_ids:
-            unique_edge_ids.update( map(tuple, edge_ids) )
+            unique_edge_ids.update( list(map(tuple, edge_ids)) )
         return set(map(tuple, unique_edge_ids))
 
 def edge_coords_along_axis( label_img, axis ):
@@ -104,7 +106,7 @@ def edge_coords_along_axis( label_img, axis ):
 #         return df.groupby(['id1', 'id2'])['coords'].apply(np.asarray).to_dict()
 #     else:
     grouped_coords = defaultdict(list)
-    for id_pair, coords in izip( edge_ids, edge_coords ):
+    for id_pair, coords in zip( edge_ids, edge_coords ):
         grouped_coords[tuple(id_pair)].append(coords)
     return grouped_coords
 
@@ -128,7 +130,7 @@ def edge_coords_2d( label_img ):
 
 def edge_coords_nd( label_img, axes=None ):
     if axes is None:
-        axes = range(label_img.ndim)
+        axes = list(range(label_img.ndim))
     result = []    
     for axis in axes:
         result.append( edge_coords_along_axis(label_img, axis) )

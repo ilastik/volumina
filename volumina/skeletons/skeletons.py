@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,6 +22,7 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from past.utils import old_div
 from PyQt5.QtCore import QPointF, QObject, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsItem
 import numpy, copy
@@ -144,7 +146,7 @@ class Skeletons(QObject):
                 l1 = numpy.asarray(e[1].pos) 
                 l = l1 - l0
                 
-                d = numpy.dot(p0-l0, n)/numpy.dot(l,n)
+                d = old_div(numpy.dot(p0-l0, n),numpy.dot(l,n))
                 
                 p = d*l + l0
                 

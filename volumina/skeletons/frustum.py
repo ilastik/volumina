@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -23,6 +24,8 @@ from __future__ import print_function
 #!/usr/bin/env python
 
 # optional dependency; catch import error to not break nosetests
+from builtins import range
+from past.utils import old_div
 has_vtk = True
 try:
     import vtk
@@ -105,9 +108,9 @@ def addCube(bounds, color):
     cubeActor.GetProperty().SetRepresentationToWireframe()
     cubeActor.GetProperty().SetColor(*color)
     
-    addSphere((bounds[0]+(bounds[1]-bounds[0])/2.0, \
-               bounds[2]+(bounds[3]-bounds[2])/2.0, \
-               bounds[4]+(bounds[5]-bounds[4])/2.0), \
+    addSphere((bounds[0]+old_div((bounds[1]-bounds[0]),2.0), \
+               bounds[2]+old_div((bounds[3]-bounds[2]),2.0), \
+               bounds[4]+old_div((bounds[5]-bounds[4]),2.0)), \
               0.05, color)
      
     # assign actor to the renderer
