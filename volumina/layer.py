@@ -92,7 +92,7 @@ class Layer( QObject ):
         return self._name
     @name.setter
     def name( self, n ):
-        if isinstance(n, str):
+        if not isinstance(n, unicode):
             n = n.decode('utf-8')
         assert isinstance(n, unicode)
         pystr = n.encode('utf-8')
