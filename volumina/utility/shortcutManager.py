@@ -1,5 +1,5 @@
 from __future__ import print_function
-from builtins import str
+
 import collections
 from functools import partial
 import logging

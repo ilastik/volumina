@@ -21,7 +21,7 @@ from __future__ import division
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from builtins import str
+
 from builtins import range
 from past.utils import old_div
 import warnings

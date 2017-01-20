@@ -20,7 +20,7 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from builtins import str
+
 from builtins import range
 import copy
 from volumina.multimethods import multimethod

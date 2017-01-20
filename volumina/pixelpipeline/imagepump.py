@@ -21,7 +21,7 @@
 ###############################################################################
 #Python
 from builtins import map
-from builtins import str
+
 from builtins import range
 from functools import partial
 

@@ -23,7 +23,7 @@ from __future__ import absolute_import
 ###############################################################################
 from builtins import map
 from builtins import zip
-from builtins import str
+
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
 from .asyncabcs import SourceABC, RequestABC

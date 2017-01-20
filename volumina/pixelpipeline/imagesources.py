@@ -23,7 +23,7 @@ from __future__ import division
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
-from builtins import str
+
 from past.utils import old_div
 import logging
 import time

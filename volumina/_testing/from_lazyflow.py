@@ -23,7 +23,7 @@ from __future__ import division
 ###
 ### lazyflow input
 ###
-from builtins import str
+
 from past.utils import old_div
 _has_lazyflow = True
 try:

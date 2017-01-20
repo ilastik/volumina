@@ -24,7 +24,7 @@ This module generates ANSI character codes to printing colors to terminals.
 See: http://en.wikipedia.org/wiki/ANSI_escape_code
 '''
 
-from builtins import str
+
 CSI = '\033['
 
 def code_to_chars(code):
