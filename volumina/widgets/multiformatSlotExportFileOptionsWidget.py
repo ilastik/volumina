@@ -65,11 +65,12 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self._format_option_editors = collections.OrderedDict()
 
         # HDF5
-        hdf5OptionsWidget = Hdf5ExportFileOptionsWidget( self )
-        hdf5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat,
-                                     opDataExport.OutputInternalPath )
-        hdf5OptionsWidget.pathValidityChange.connect( self._handlePathValidityChange )
-        self._format_option_editors['hdf5'] = hdf5OptionsWidget
+        for fmt in ('hdf5', 'compressed hdf5'):
+            hdf5OptionsWidget = Hdf5ExportFileOptionsWidget( self )
+            hdf5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat,
+                                         opDataExport.OutputInternalPath )
+            hdf5OptionsWidget.pathValidityChange.connect( self._handlePathValidityChange )
+            self._format_option_editors[fmt] = hdf5OptionsWidget
 
         # Numpy
         npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )
