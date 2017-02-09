@@ -19,14 +19,16 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+import os
 from functools import partial
 
 #PyQt
 from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize, QString
 from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
-                        QFont, QPainterPath, QBrush, QAbstractSpinBox, \
-                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy, QSlider, QPushButton
+                        QFont, QPainterPath, QBrush, QAbstractSpinBox, QIcon, \
+                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy, QSlider, QToolButton
 
+import volumina
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
 TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
@@ -468,15 +470,15 @@ class QuadStatusBar(QHBoxLayout):
 
     def setToolTipTimeButtonsCrop(self,croppingFlag=False):
         if croppingFlag==True:
-            self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current crop.")
-            self.timeEndButton.setToolTip("Set the time coordinate to the end of the current crop.")
-            self.timePreviousButton.setToolTip("Set the time coordinate to the previous time frame.")
-            self.timeNextButton.setToolTip("Set the time coordinate to the next time frame.")
+            self.timeStartButton.setToolTip("Jump to lirst frame of current crop")
+            self.timeEndButton.setToolTip("Jump to last frame of current crop")
+            self.timePreviousButton.setToolTip("Previous Frame")
+            self.timeNextButton.setToolTip("Next Frame")
         else:
-            self.timeStartButton.setToolTip("Set the time coordinate to the beginning of the current dataset.")
-            self.timeEndButton.setToolTip("Set the time coordinate to the end of the current dataset.")
-            self.timePreviousButton.setToolTip("Set the time coordinate to the previous time frame.")
-            self.timeNextButton.setToolTip("Set the time coordinate to the next time frame.")
+            self.timeStartButton.setToolTip("First Frame")
+            self.timeEndButton.setToolTip("Last Frame")
+            self.timePreviousButton.setToolTip("Previous Frame")
+            self.timeNextButton.setToolTip("Next Frame")
 
     def setToolTipTimeSliderCrop(self,croppingFlag=False):
         if croppingFlag==True:
@@ -533,14 +535,19 @@ class QuadStatusBar(QHBoxLayout):
 
         self.timeSpinBox = DelayedSpinBox(750)
 
-        self.timeStartButton = QPushButton("|<")
+        icons_dir = os.path.dirname(volumina.__file__) + "/icons"
+        
+        self.timeStartButton = QToolButton()
+        self.timeStartButton.setIcon(QIcon(icons_dir + "/skip-start.png"))
         self.addWidget(self.timeStartButton)
         self.timeStartButton.clicked.connect(self._onTimeStartButtonClicked)
+        #self.timeStartButton.setFixedWidth(4*self.timeControlFontSize)
 
-        self.timePreviousButton = QPushButton("<")
+        self.timePreviousButton = QToolButton()
+        self.timePreviousButton.setIcon(QIcon(icons_dir + "/play-reverse.png"))
         self.addWidget(self.timePreviousButton)
         self.timePreviousButton.clicked.connect(self._onTimePreviousButtonClicked)
-        self.timePreviousButton.setFixedWidth(4*self.timeControlFontSize)
+        #self.timePreviousButton.setFixedWidth(4*self.timeControlFontSize)
 
         self.timeSlider = QSlider(Qt.Horizontal)
         self.timeSlider.setMinimumWidth(10)
@@ -549,15 +556,16 @@ class QuadStatusBar(QHBoxLayout):
         self.addWidget(self.timeSlider)
         self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
 
-        self.timeNextButton = QPushButton(">")
+        self.timeNextButton = QToolButton()
+        self.timeNextButton.setIcon(QIcon(icons_dir + "/play.png"))
         self.addWidget(self.timeNextButton)
         self.timeNextButton.clicked.connect(self._onTimeNextButtonClicked)
-        self.timeNextButton.setFixedWidth(4*self.timeControlFontSize)
+        #self.timeNextButton.setFixedWidth(4*self.timeControlFontSize)
 
-        self.timeEndButton = QPushButton(">|")
-        self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
+        self.timeEndButton = QToolButton()
+        self.timeEndButton.setIcon(QIcon(icons_dir + "/skip-end.png"))
+        #self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
 
-        self.timeStartButton.setFixedWidth(4*self.timeControlFontSize)
         
         self.setToolTipTimeButtonsCrop()
         self.addWidget(self.timeEndButton)
