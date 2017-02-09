@@ -416,6 +416,9 @@ class ImageScene2D(QGraphicsScene):
         if self.views():
             sceneRectF = self.views()[0].viewportRect().intersected(sceneRectF)
 
+        if not sceneRectF.isValid():
+            return
+            
         tiles = self._tileProvider.getTiles(sceneRectF)
         allComplete = True
         for tile in tiles:
