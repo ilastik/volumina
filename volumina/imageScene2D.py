@@ -406,6 +406,16 @@ class ImageScene2D(QGraphicsScene):
         if self._tileProvider is None:
             return
 
+        # FIXME: For some strange reason, drawBackground is called with
+        #        a much larger sceneRectF than necessasry sometimes.
+        #        This can happen after panSlicingViews(), for instance.
+        #        Somehow, the QGraphicsScene gets confused about how much area
+        #        it needs to draw immediately after the ImageView's scrollbar is panned.
+        #        As a workaround, we manually check the amount of the scene that needs to be drawn,
+        #        instead of relying on the above sceneRectF parameter to be correct.
+        if self.views():
+            sceneRectF = self.views()[0].viewportRect().intersected(sceneRectF)
+
         tiles = self._tileProvider.getTiles(sceneRectF)
         allComplete = True
         for tile in tiles:
