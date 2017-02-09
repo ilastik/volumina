@@ -149,6 +149,10 @@ class VolumeEditorWidget(QWidget):
             QColor("white"))
         self.quadview.addStatusBar(self.quadViewStatusBar)
         self.layout.addWidget(self.quadview)
+
+        # Little hack: Can't call setTabOrder on these widgets until the 
+        #              layout has been added to a widget, so we do this here.
+        QWidget.setTabOrder(self.quadViewStatusBar.zSpinBox, self.quadViewStatusBar.timeSpinBox)
         
         # Here we subscribe to the dirtyChanged() signal from all slicing views, 
         #  and show the status bar "busy indicator" if any view is dirty.
