@@ -103,7 +103,7 @@ class VolumeEditorWidget(QWidget):
         self.quadview.statusBar.timeSpinBox.setSuffix("/{}".format( maxTime ) )
         self.quadview.statusBar.hideTimeSlider(maxTime == 0)
 
-        cropMidPos = numpy.mean(self.editor.cropModel.get_roi_3d(), axis=0)
+        cropMidPos = numpy.mean(self.editor.cropModel.get_roi_3d(), axis=0).astype(int)
         for i in range(3):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i],i)
