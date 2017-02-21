@@ -220,8 +220,8 @@ class VolumeEditorWidget(QWidget):
 
         def toggleSliceIntersection(state):
             self.editor.navCtrl.indicateSliceIntersection = (state == Qt.Checked)
-        self.quadview.statusBar.positionCheckBox.stateChanged.connect(toggleSliceIntersection)
-        toggleSliceIntersection( self.quadview.statusBar.positionCheckBox.checkState() )
+        self.quadview.statusBar.crosshairsCheckbox.stateChanged.connect(toggleSliceIntersection)
+        toggleSliceIntersection( self.quadview.statusBar.crosshairsCheckbox.checkState() )
 
         self.editor.posModel.cursorPositionChanged.connect(self._updateInfoLabels)
 
@@ -239,14 +239,14 @@ class VolumeEditorWidget(QWidget):
                 self.hudsShown[axis] = self.editor.imageViews[axis].hudVisible()
                 self.editor.imageViews[axis].hud.set3DButtonsVisible(False)
                 self.quadViewStatusBar.showXYCoordinates()
-                self.quadview.statusBar.positionCheckBox.setChecked(False)
+                self.quadview.statusBar.crosshairsCheckbox.setChecked(False)
             else:
                 self.quadViewStatusBar.showXYZCoordinates()
                 for i in range(3):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
-                self.quadview.statusBar.positionCheckBox.setChecked(False)
+                self.quadview.statusBar.crosshairsCheckbox.setChecked(False)
 
-            self.quadview.statusBar.positionCheckBox.setVisible(True)
+            self.quadview.statusBar.crosshairsCheckbox.setVisible(True)
 
             if self.editor.cropModel.cropZero() or None in self.editor.cropModel.get_roi_3d()[0]:
                 self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)

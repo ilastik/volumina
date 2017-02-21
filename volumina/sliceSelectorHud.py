@@ -513,6 +513,14 @@ class QuadStatusBar(QHBoxLayout):
 
         self.addSpacing(10)
 
+        self.crosshairsCheckbox = QCheckBox()
+        self.crosshairsCheckbox.setChecked(False)
+        self.crosshairsCheckbox.setCheckable(True)
+        self.crosshairsCheckbox.setText("Crosshairs")
+        self.addWidget(self.crosshairsCheckbox)
+
+        self.addSpacing(10)
+
         self.busyIndicator = QProgressBar()
         self.busyIndicator.setMaximumWidth(200)
         self.busyIndicator.setMaximum(0)
@@ -523,13 +531,6 @@ class QuadStatusBar(QHBoxLayout):
         self.setStretchFactor(self.busyIndicator, 1)
 
         self.addStretch()
-        self.addSpacing(10)
-
-        self.positionCheckBox = QCheckBox()
-        self.positionCheckBox.setChecked(False)
-        self.positionCheckBox.setCheckable(True)
-        self.positionCheckBox.setText("Position")
-        self.addWidget(self.positionCheckBox)
 
         self.addSpacing(20)
 
