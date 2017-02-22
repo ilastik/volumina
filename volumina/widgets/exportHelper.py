@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
+import os
 from functools import partial
 
 #Qt
@@ -32,7 +33,7 @@ from multiStepProgressDialog import MultiStepProgressDialog
 
 import logging
 logger = logging.getLogger(__name__)
-from volumina.utility import log_exception
+from volumina.utility import log_exception, PreferencesManager
 
 from volumina.utility.qstring_codec import encode_from_qstring
 
@@ -43,6 +44,7 @@ _has_lazyflow = True
 try:
     from lazyflow.graph import Graph
     from lazyflow.request import Request
+    from lazyflow.utility import PathComponents
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -75,10 +77,12 @@ def get_settings_and_export_layer(layer, parent_widget=None):
     for i,islot in enumerate(opStackChannels.Images):
         islot.connect(dataSlots[i])
 
+    export_dir = PreferencesManager().get("layer", "export-dir", default=os.path.expanduser("~"))
+
     # Create an operator to do the work
     from lazyflow.operators.ioOperators import OpFormattedDataExport
     opExport = OpFormattedDataExport( parent=opStackChannels.parent )
-    opExport.OutputFilenameFormat.setValue( encode_from_qstring(layer.name) )
+    opExport.OutputFilenameFormat.setValue( os.path.join(export_dir, encode_from_qstring(layer.name) ) )
     opExport.Input.connect( opStackChannels.Output )
     opExport.TransactionSlot.setValue(True)
     
@@ -87,6 +91,9 @@ def get_settings_and_export_layer(layer, parent_widget=None):
 
     # If user didn't cancel, run the export now.
     if ( settingsDlg.exec_() == DataExportOptionsDlg.Accepted ):
+        export_dir = PathComponents(opExport.ExportPath.value).externalDirectory
+        PreferencesManager().set("layer", "export-dir", export_dir)
+
         helper = ExportHelper( parent_widget )
         helper.run(opExport)
         
