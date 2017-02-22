@@ -190,7 +190,16 @@ if __name__ == "__main__":
         def execute(self, *args): pass
         def propagateDirty(self, *args): pass
     
+    import numpy as np
+    import vigra
+    
+    data = np.zeros((100,200,10), dtype=np.uint8)
+    data = vigra.taggedView(data, 'yxc')
     op = OpFormattedDataExport( graph=Graph() )
+    
+    op.Input.setValue(data)
+    op.TransactionSlot.setValue(True)
+    
 
     app = QApplication([])
     w = MultiformatSlotExportFileOptionsWidget(None)
