@@ -24,7 +24,7 @@ import numpy, math
 from PyQt4.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, SIGNAL, QTimer
 from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QGraphicsItem, \
                         QGraphicsItemGroup, QGraphicsLineItem, QGraphicsTextItem, QGraphicsPolygonItem, \
-                        QGraphicsRectItem
+                        QGraphicsRectItem, QPainterPath
 
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
@@ -319,6 +319,31 @@ class ImageScene2D(QGraphicsScene):
         self.addItem(self._dirtyIndicator)
         self._dirtyIndicator.setVisible(False)
 
+    def mouseMoveEvent(self, event):
+        """
+        Normally our base class (QGraphicsScene) distributes mouse events to the
+        various QGraphicsItems in the scene. But when the mouse is being dragged,
+        it only sends events to the one object that was under the mouse when the
+        button was first pressed.
+
+        Here, we forward all events to QGraphicsItems on the drag path, even if
+        they're just brushed by the mouse incidentally.
+        """
+        super(ImageScene2D, self).mouseMoveEvent(event)
+
+        if not event.isAccepted() and event.buttons() != Qt.NoButton:
+            if self.last_drag_pos is None:
+                self.last_drag_pos = event.scenePos()
+
+            # As a special feature, find the item and send it this event.
+            path = QPainterPath(self.last_drag_pos)
+            path.lineTo(event.scenePos())
+            items = self.items(path)
+            for item in items:
+                item.mouseMoveEvent(event)
+            self.last_drag_pos = event.scenePos()
+        else:
+            self.last_drag_pos = None
 
     def __init__(self, posModel, along, preemptive_fetch_number=5,
                  parent=None, name="Unnamed Scene",
@@ -373,6 +398,8 @@ class ImageScene2D(QGraphicsScene):
         # we've added to the scene in this dict, otherwise we would need
         # to use O(N) lookups for every tile by calling QGraphicsScene.items()
         self.tile_graphicsitems = defaultdict(set) # [Tile.id] -> set(QGraphicsItems)
+
+        self.last_drag_pos = None # See mouseMoveEvent()
 
     def drawForeground(self, painter, rect):
         if self._tiling is None:
