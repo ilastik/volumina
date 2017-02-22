@@ -40,7 +40,7 @@ class SingleFileExportOptionsWidget(QWidget):
 
     def eventFilter(self, watched, event):
         # Apply the new path if the user presses 
-        #  'enter' or clicks outside the filepathe editbox
+        #  'enter' or clicks outside the filepath editbox
         if watched == self.filepathEdit:
             if event.type() == QEvent.FocusOut or \
                ( event.type() == QEvent.KeyPress and \
@@ -50,8 +50,9 @@ class SingleFileExportOptionsWidget(QWidget):
                 self._filepathSlot.setValue( newpath )
         return False
 
-    def initSlot(self, filepathSlot):        
+    def initSlots(self, filepathSlot, fullPathOutputSlot):
         self._filepathSlot = filepathSlot
+        self._fullPathOutputSlot = fullPathOutputSlot
         self.fileSelectButton.clicked.connect( self._browseForFilepath )
 
     def showEvent(self, event):
@@ -69,8 +70,8 @@ class SingleFileExportOptionsWidget(QWidget):
     
     def _browseForFilepath(self):
         starting_dir = os.path.expanduser("~")
-        if self._filepathSlot.ready():
-            starting_dir = os.path.split(self._filepathSlot.value)[-1]
+        if self._fullPathOutputSlot.ready():
+            starting_dir = os.path.split(self._fullPathOutputSlot.value)[0]
         
         dlg = QFileDialog( self, "Export Location", starting_dir, self._file_filter )
         dlg.setDefaultSuffix(self._extension)
