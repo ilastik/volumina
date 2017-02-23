@@ -345,6 +345,21 @@ class ImageScene2D(QGraphicsScene):
         else:
             self.last_drag_pos = None
 
+    def mousePressEvent(self, event):
+        """
+        By default, our base class (QGraphicsScene) only sends mouse press events to the top-most item under the mouse.
+        When labeling edges, we want the edge label layer to accept mouse events, even if it isn't on top.
+        Therefore, we send events to all items under the mouse, until the event is accepted.
+        """
+        super(ImageScene2D, self).mouseMoveEvent(event)
+        if not event.isAccepted():
+            items = self.items(event.scenePos())
+            for item in items:
+                item.mousePressEvent(event)
+                if event.isAccepted():
+                    break
+        
+
     def __init__(self, posModel, along, preemptive_fetch_number=5,
                  parent=None, name="Unnamed Scene",
                  swapped_default=False):
