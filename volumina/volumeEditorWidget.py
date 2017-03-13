@@ -545,6 +545,34 @@ class VolumeEditorWidget(QWidget):
                                                   None ) )
         self._debugActions.append( actionBlockGui )
 
+        def changeTileWidth():
+            '''Change tile width (tile block size) and reset image-scene'''
+            dlg = QDialog(self)
+            layout = QHBoxLayout()
+            layout.addWidget( QLabel("Tile Width:") )
+
+            spinBox = QSpinBox( parent=dlg )
+            spinBox.setRange( 128, 10*1024 )
+            spinBox.setValue(512)
+            
+            if self.editor.imageScenes[0].tileWidth:
+                spinBox.setValue( self.editor.imageScenes[0].tileWidth )
+                
+            layout.addWidget( spinBox )
+            okButton = QPushButton( "OK", parent=dlg )
+            okButton.clicked.connect( dlg.accept )
+            layout.addWidget( okButton )
+            dlg.setLayout( layout )
+            dlg.setModal(True)
+            
+            if dlg.exec_() == QDialog.Accepted:
+                for s in self.editor.imageScenes:
+                    if s.tileWidth != spinBox.value():
+                        s.tileWidth = spinBox.value()
+                        s.reset()
+                        
+        self._viewMenu.addAction( "Set Tile Width..." ).triggered.connect(changeTileWidth)
+
         # ------ Separator ------
         self._viewMenu.addAction("").setSeparator(True)
 
@@ -578,34 +606,6 @@ class VolumeEditorWidget(QWidget):
         def resetAxes():
             self.editor.imageScenes[self.editor._lastImageViewFocus].resetAxes()
         self._viewMenu.addAction( "Reset axes" ).triggered.connect(resetAxes)
-
-        def changeTileWidth():
-            '''Change tile width (tile block size) and reset image-scene'''
-            dlg = QDialog(self)
-            layout = QHBoxLayout()
-            layout.addWidget( QLabel("Tile Width:") )
-
-            spinBox = QSpinBox( parent=dlg )
-            spinBox.setRange( 128, 10*1024 )
-            spinBox.setValue(512)
-            
-            if self.editor.imageScenes[0].tileWidth:
-                spinBox.setValue( self.editor.imageScenes[0].tileWidth )
-                
-            layout.addWidget( spinBox )
-            okButton = QPushButton( "OK", parent=dlg )
-            okButton.clicked.connect( dlg.accept )
-            layout.addWidget( okButton )
-            dlg.setLayout( layout )
-            dlg.setModal(True)
-            
-            if dlg.exec_() == QDialog.Accepted:
-                for s in self.editor.imageScenes:
-                    if s.tileWidth != spinBox.value():
-                        s.tileWidth = spinBox.value()
-                        s.reset()
-                        
-        self._viewMenu.addAction( "Set Tile Width..." ).triggered.connect(changeTileWidth)
 
         def centerImage():
             self.editor.imageViews[self.editor._lastImageViewFocus].centerImage()
