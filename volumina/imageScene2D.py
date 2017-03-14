@@ -305,9 +305,15 @@ class ImageScene2D(QGraphicsScene):
         and when the underlying data changes.
 
         """
+        DEFAULT_TILE_WIDTH = 512 
+        
         self.resetAxes(finish=False)
+        
+        tileWidth = self.tileWidth
+        if self.tileWidth is None:
+            tileWidth = DEFAULT_TILE_WIDTH
 
-        self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name)
+        self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name, blockSize=tileWidth)
 
         self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
@@ -382,6 +388,7 @@ class ImageScene2D(QGraphicsScene):
         self._offsetX = 0
         self._offsetY = 0
         self.name = name
+        self.tileWidth = None
 
         self._stackedImageSources = StackedImageSources(LayerStackModel())
         self._showTileOutlines = False
