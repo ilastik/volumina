@@ -24,7 +24,8 @@ from PyQt4.QtCore import QObject, pyqtSignal, QEvent, Qt, QPoint
 class ClickReportingInterpreter(QObject):
     rightClickReceived = pyqtSignal(object, QPoint) # list of indexes, global window coordinate of click
     leftClickReceived = pyqtSignal(object, QPoint)  # ditto
-    
+    toolTipReceived = pyqtSignal(object, QPoint)
+
     def __init__(self, navigationInterpreter, positionModel):
         QObject.__init__(self)
         assert hasattr(navigationInterpreter, 'updateCursorPosition')
@@ -49,7 +50,14 @@ class ClickReportingInterpreter(QObject):
                 self.leftClickReceived.emit( pos, gPos )
             if event.button() == Qt.RightButton:
                 gPos = watched.mapToGlobal( event.pos() )
-                self.rightClickReceived.emit( pos, gPos )                
+                self.rightClickReceived.emit( pos, gPos )
+
+        if event.type() == QEvent.ToolTip:
+            self.baseInterpret.updateCursorPosition(watched, event)
+            pos = [int(i) for i in self.posModel.cursorPos]
+            pos = [self.posModel.time] + pos + [self.posModel.channel]
+            gPos = watched.mapToGlobal( event.pos() )
+            self.toolTipReceived.emit(pos, gPos)
 
         # Event is always forwarded to the navigation interpreter.
         return self.baseInterpret.eventFilter(watched, event)

@@ -731,6 +731,7 @@ class SegmentationEdgesItemRequest(object):
 
             # When the item is clicked, the layer is notified.
             graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )
+            graphics_item.edgeSwiped.connect( self._layer.handle_edge_swiped )
             return graphics_item
        
         # We're probably running in a non-main thread right now,

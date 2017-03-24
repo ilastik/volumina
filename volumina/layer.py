@@ -593,7 +593,7 @@ class SegmentationEdgesLayer( Layer ):
         # Changes to this colortable will be detected automatically in the QGraphicsItem
         self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
 
-    def handle_edge_clicked(self, id_pair):
+    def handle_edge_clicked(self, id_pair, event):
         """
         Handles clicks from our associated SegmentationEdgesItem(s).
         (See connection made in SegmentationEdgesItemRequest.) 
@@ -609,6 +609,10 @@ class SegmentationEdgesLayer( Layer ):
             pen = QPen(self.pen_table[id_pair])
             pen.setColor(random_color)
             self.pen_table[id_pair] = pen
+            event.accept()
+
+    def handle_edge_swiped(self, id_pair, event):
+        pass
 
 class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
     """
@@ -644,26 +648,56 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
             pen_table[id_pair] = self._label_class_pens[label_class]
         self.pen_table.overwrite(pen_table)
     
-    def handle_edge_clicked(self, id_pair):
+    def handle_edge_clicked(self, id_pair, event):
         """
         Overridden from SegmentationEdgesLayer
         """
-        num_classes = len(self._label_class_pens)
         old_class = self._edge_labels[id_pair]
-        new_class = (old_class+1) % num_classes
 
-        # Update the display
-        self.pen_table[id_pair] = self._label_class_pens[new_class]
+        if event.buttons() == Qt.LeftButton:
+            new_class = 1
+        elif event.buttons() == Qt.RightButton:
+            new_class = 2
+        else:
+            return
+
+        if new_class == old_class:
+            new_class = 0
 
         # For now, edge_labels dictionary will still contain 0-labeled edges.
         # We could delete them, but why bother?
         self._edge_labels[id_pair] = new_class
+
+        # Update the display immediately
+        self.pen_table[id_pair] = self._label_class_pens[new_class]
 
         # Buffer the update for listeners
         self._buffered_updates[id_pair] = new_class
         
         # Reset the timer
         self._timer.start()
+        
+        event.accept()
+
+    def handle_edge_swiped(self, id_pair, event):
+        if event.buttons() == Qt.LeftButton:
+            new_class = 1
+        elif event.buttons() == Qt.RightButton:
+            new_class = 2
+        elif event.buttons() == (Qt.LeftButton | Qt.RightButton):
+            new_class = 0
+        else:
+            return
+
+        self._edge_labels[id_pair] = new_class
+        
+        # Update the display immediately
+        self.pen_table[id_pair] = self._label_class_pens[new_class]
+
+        # Notify listeners immediately
+        self.labelsChanged.emit( {id_pair: new_class} )
+
+        event.accept()
 
     def _signal_buffered_updates(self):
         updates = self._buffered_updates

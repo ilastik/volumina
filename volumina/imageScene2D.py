@@ -24,7 +24,7 @@ import numpy, math
 from PyQt4.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, SIGNAL, QTimer
 from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QGraphicsItem, \
                         QGraphicsItemGroup, QGraphicsLineItem, QGraphicsTextItem, QGraphicsPolygonItem, \
-                        QGraphicsRectItem
+                        QGraphicsRectItem, QPainterPath
 
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
@@ -305,9 +305,15 @@ class ImageScene2D(QGraphicsScene):
         and when the underlying data changes.
 
         """
+        DEFAULT_TILE_WIDTH = 512 
+        
         self.resetAxes(finish=False)
+        
+        tileWidth = self.tileWidth
+        if self.tileWidth is None:
+            tileWidth = DEFAULT_TILE_WIDTH
 
-        self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name)
+        self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name, blockSize=tileWidth)
 
         self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
@@ -319,6 +325,46 @@ class ImageScene2D(QGraphicsScene):
         self.addItem(self._dirtyIndicator)
         self._dirtyIndicator.setVisible(False)
 
+    def mouseMoveEvent(self, event):
+        """
+        Normally our base class (QGraphicsScene) distributes mouse events to the
+        various QGraphicsItems in the scene. But when the mouse is being dragged,
+        it only sends events to the one object that was under the mouse when the
+        button was first pressed.
+
+        Here, we forward all events to QGraphicsItems on the drag path, even if
+        they're just brushed by the mouse incidentally.
+        """
+        super(ImageScene2D, self).mouseMoveEvent(event)
+
+        if not event.isAccepted() and event.buttons() != Qt.NoButton:
+            if self.last_drag_pos is None:
+                self.last_drag_pos = event.scenePos()
+
+            # As a special feature, find the item and send it this event.
+            path = QPainterPath(self.last_drag_pos)
+            path.lineTo(event.scenePos())
+            items = self.items(path)
+            for item in items:
+                item.mouseMoveEvent(event)
+            self.last_drag_pos = event.scenePos()
+        else:
+            self.last_drag_pos = None
+
+    def mousePressEvent(self, event):
+        """
+        By default, our base class (QGraphicsScene) only sends mouse press events to the top-most item under the mouse.
+        When labeling edges, we want the edge label layer to accept mouse events, even if it isn't on top.
+        Therefore, we send events to all items under the mouse, until the event is accepted.
+        """
+        super(ImageScene2D, self).mouseMoveEvent(event)
+        if not event.isAccepted():
+            items = self.items(event.scenePos())
+            for item in items:
+                item.mousePressEvent(event)
+                if event.isAccepted():
+                    break
+        
 
     def __init__(self, posModel, along, preemptive_fetch_number=5,
                  parent=None, name="Unnamed Scene",
@@ -342,6 +388,7 @@ class ImageScene2D(QGraphicsScene):
         self._offsetX = 0
         self._offsetY = 0
         self.name = name
+        self.tileWidth = None
 
         self._stackedImageSources = StackedImageSources(LayerStackModel())
         self._showTileOutlines = False
@@ -373,6 +420,8 @@ class ImageScene2D(QGraphicsScene):
         # we've added to the scene in this dict, otherwise we would need
         # to use O(N) lookups for every tile by calling QGraphicsScene.items()
         self.tile_graphicsitems = defaultdict(set) # [Tile.id] -> set(QGraphicsItems)
+
+        self.last_drag_pos = None # See mouseMoveEvent()
 
     def drawForeground(self, painter, rect):
         if self._tiling is None:
@@ -406,6 +455,19 @@ class ImageScene2D(QGraphicsScene):
         if self._tileProvider is None:
             return
 
+        # FIXME: For some strange reason, drawBackground is called with
+        #        a much larger sceneRectF than necessasry sometimes.
+        #        This can happen after panSlicingViews(), for instance.
+        #        Somehow, the QGraphicsScene gets confused about how much area
+        #        it needs to draw immediately after the ImageView's scrollbar is panned.
+        #        As a workaround, we manually check the amount of the scene that needs to be drawn,
+        #        instead of relying on the above sceneRectF parameter to be correct.
+        if self.views():
+            sceneRectF = self.views()[0].viewportRect().intersected(sceneRectF)
+
+        if not sceneRectF.isValid():
+            return
+            
         tiles = self._tileProvider.getTiles(sceneRectF)
         allComplete = True
         for tile in tiles:

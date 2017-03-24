@@ -103,7 +103,7 @@ class VolumeEditorWidget(QWidget):
         self.quadview.statusBar.timeSpinBox.setSuffix("/{}".format( maxTime ) )
         self.quadview.statusBar.hideTimeSlider(maxTime == 0)
 
-        cropMidPos = numpy.mean(self.editor.cropModel.get_roi_3d(), axis=0)
+        cropMidPos = numpy.mean(self.editor.cropModel.get_roi_3d(), axis=0).astype(int)
         for i in range(3):
             self.editor.imageViews[i].hud.setMaximum(self.editor.posModel.volumeExtent(i)-1)
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i],i)
@@ -149,6 +149,10 @@ class VolumeEditorWidget(QWidget):
             QColor("white"))
         self.quadview.addStatusBar(self.quadViewStatusBar)
         self.layout.addWidget(self.quadview)
+
+        # Little hack: Can't call setTabOrder on these widgets until the 
+        #              layout has been added to a widget, so we do this here.
+        QWidget.setTabOrder(self.quadViewStatusBar.zSpinBox, self.quadViewStatusBar.timeSpinBox)
         
         # Here we subscribe to the dirtyChanged() signal from all slicing views, 
         #  and show the status bar "busy indicator" if any view is dirty.
@@ -216,8 +220,8 @@ class VolumeEditorWidget(QWidget):
 
         def toggleSliceIntersection(state):
             self.editor.navCtrl.indicateSliceIntersection = (state == Qt.Checked)
-        self.quadview.statusBar.positionCheckBox.stateChanged.connect(toggleSliceIntersection)
-        toggleSliceIntersection( self.quadview.statusBar.positionCheckBox.checkState() )
+        self.quadview.statusBar.crosshairsCheckbox.stateChanged.connect(toggleSliceIntersection)
+        toggleSliceIntersection( self.quadview.statusBar.crosshairsCheckbox.checkState() )
 
         self.editor.posModel.cursorPositionChanged.connect(self._updateInfoLabels)
 
@@ -235,13 +239,14 @@ class VolumeEditorWidget(QWidget):
                 self.hudsShown[axis] = self.editor.imageViews[axis].hudVisible()
                 self.editor.imageViews[axis].hud.set3DButtonsVisible(False)
                 self.quadViewStatusBar.showXYCoordinates()
-                
-                self.quadview.statusBar.positionCheckBox.setVisible(False)
+                self.quadview.statusBar.crosshairsCheckbox.setChecked(False)
             else:
                 self.quadViewStatusBar.showXYZCoordinates()
                 for i in range(3):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
-                self.quadview.statusBar.positionCheckBox.setVisible(True)
+                self.quadview.statusBar.crosshairsCheckbox.setChecked(False)
+
+            self.quadview.statusBar.crosshairsCheckbox.setVisible(True)
 
             if self.editor.cropModel.cropZero() or None in self.editor.cropModel.get_roi_3d()[0]:
                 self.quadViewStatusBar.updateShape5D(self.editor.posModel.shape5D)
@@ -539,6 +544,34 @@ class VolumeEditorWidget(QWidget):
                                                   self,
                                                   None ) )
         self._debugActions.append( actionBlockGui )
+
+        def changeTileWidth():
+            '''Change tile width (tile block size) and reset image-scene'''
+            dlg = QDialog(self)
+            layout = QHBoxLayout()
+            layout.addWidget( QLabel("Tile Width:") )
+
+            spinBox = QSpinBox( parent=dlg )
+            spinBox.setRange( 128, 10*1024 )
+            spinBox.setValue(512)
+            
+            if self.editor.imageScenes[0].tileWidth:
+                spinBox.setValue( self.editor.imageScenes[0].tileWidth )
+                
+            layout.addWidget( spinBox )
+            okButton = QPushButton( "OK", parent=dlg )
+            okButton.clicked.connect( dlg.accept )
+            layout.addWidget( okButton )
+            dlg.setLayout( layout )
+            dlg.setModal(True)
+            
+            if dlg.exec_() == QDialog.Accepted:
+                for s in self.editor.imageScenes:
+                    if s.tileWidth != spinBox.value():
+                        s.tileWidth = spinBox.value()
+                        s.reset()
+                        
+        self._viewMenu.addAction( "Set Tile Width..." ).triggered.connect(changeTileWidth)
 
         # ------ Separator ------
         self._viewMenu.addAction("").setSeparator(True)

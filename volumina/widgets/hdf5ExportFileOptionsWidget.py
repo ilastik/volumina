@@ -40,10 +40,12 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.  
         # (That is, we can't just watch for FocusOut events and disable the button before the click.) 
         self.datasetEdit.textEdited.connect( lambda: self._handleTextEdited(self.datasetEdit) )
+        self.filepathEdit.textEdited.connect( lambda: self._handleTextEdited(self.filepathEdit) )
         
-    def initSlots(self, filepathSlot, datasetNameSlot):
+    def initSlots(self, filepathSlot, datasetNameSlot, fullPathOutputSlot):
         self._filepathSlot = filepathSlot
         self._datasetNameSlot = datasetNameSlot
+        self._fullPathOutputSlot = fullPathOutputSlot
         self.fileSelectButton.clicked.connect( self._browseForFilepath )
 
         self.filepathEdit.installEventFilter(self)
@@ -107,10 +109,13 @@ class Hdf5ExportFileOptionsWidget(QWidget):
             self.pathValidityChange.emit( self.settings_are_valid )
 
     def _browseForFilepath(self):
-        starting_dir = os.path.expanduser("~")
-        if self._filepathSlot.ready():
-            starting_dir = os.path.split(self._filepathSlot.value)[-1]
+        from lazyflow.utility import PathComponents
         
+        if self._fullPathOutputSlot.ready():
+            starting_dir = PathComponents(self._fullPathOutputSlot.value).externalDirectory
+        else:
+            starting_dir = os.path.expanduser("~")
+
         dlg = QFileDialog( self, "Export Location", starting_dir, "HDF5 Files (*.h5 *.hdf5)" )
         
         dlg.setDefaultSuffix("h5")

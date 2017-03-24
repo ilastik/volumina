@@ -64,6 +64,7 @@ class RequestABC:
 class SourceABC:
     __metaclass__ = ABCMeta
     
+    isDirty = pyqtSignal( object )
     numberOfChannelsChanged = pyqtSignal(int)
 
     @abstractproperty

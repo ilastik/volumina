@@ -153,7 +153,11 @@ class LayerItemWidget( QWidget ):
     @layer.setter
     def layer(self, layer):
         if self._layer:
-            self._layer.changed.disconnect(self._updateState)
+            try:
+                self._layer.changed.disconnect(self._updateState)
+            except TypeError:
+                # FIXME: It's unclear why this disconnect fails sometimes...
+                pass
         self._layer = layer
         self._updateState()
         self._layer.changed.connect(self._updateState)

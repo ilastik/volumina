@@ -21,7 +21,7 @@
 ###############################################################################
 from __future__ import division
 from PyQt4.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
-from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage
+from PyQt4.QtGui import QCursor, QGraphicsView, QPainter, QVBoxLayout, QApplication, QImage, QMessageBox
 
 import numpy
 import os
@@ -273,6 +273,17 @@ class ImageView2D(QGraphicsView):
         self.doScale(1.1)
 
     def fitImage(self):
+        width, height = self.sliceShape
+        if width*height > 10000*10000:
+            choice = QMessageBox.warning(self, "Large Image Warning",
+                                "This is a large image.\n"\
+                                "Are you sure you want to zoom out far enough to see the whole image?\n"
+                                "This may take a long time.",
+                                buttons=QMessageBox.Yes | QMessageBox.Cancel,
+                                defaultButton=QMessageBox.Cancel)
+            if choice == QMessageBox.Cancel:
+                return
+
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         width, height = self.size().width() / self.sceneRect().width(), self.height() / self.sceneRect().height()
         self.setZoomFactor(min(width, height))

@@ -65,16 +65,18 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self._format_option_editors = collections.OrderedDict()
 
         # HDF5
-        hdf5OptionsWidget = Hdf5ExportFileOptionsWidget( self )
-        hdf5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat,
-                                     opDataExport.OutputInternalPath )
-        hdf5OptionsWidget.pathValidityChange.connect( self._handlePathValidityChange )
-        self._format_option_editors['hdf5'] = hdf5OptionsWidget
+        for fmt in ('hdf5', 'compressed hdf5'):
+            hdf5OptionsWidget = Hdf5ExportFileOptionsWidget( self )
+            hdf5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat,
+                                         opDataExport.OutputInternalPath,
+                                         opDataExport.ExportPath )
+            hdf5OptionsWidget.pathValidityChange.connect( self._handlePathValidityChange )
+            self._format_option_editors[fmt] = hdf5OptionsWidget
 
         # Numpy
         npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )
-        npyOptionsWidget.initSlot( opDataExport.OutputFilenameFormat )
-        self._format_option_editors['npy'] = npyOptionsWidget
+        npyOptionsWidget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ExportPath )
+        self._format_option_editors['numpy'] = npyOptionsWidget
 
         # DVID
         if _supports_dvid:
@@ -85,30 +87,30 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         # All 2D image formats
         for fmt in OpExportSlot._2d_formats:
             widget = SingleFileExportOptionsWidget( self, fmt.extension, "{ext} files (*.{ext})".format( ext=fmt.extension ))
-            widget.initSlot( opDataExport.OutputFilenameFormat )
+            widget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ExportPath )
             self._format_option_editors[fmt.name] = widget
 
         # Sequences of 2D images
         for fmt in OpExportSlot._3d_sequence_formats:
             widget = StackExportFileOptionsWidget( self, fmt.extension )
-            widget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport )
+            widget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport, opDataExport.ExportPath )
             widget.pathValidityChange.connect( self._handlePathValidityChange )
             self._format_option_editors[fmt.name] = widget
 
         # Multipage TIFF
         multipageTiffWidget = SingleFileExportOptionsWidget( self, "tiff", "TIFF files (*.tif *tiff)" )
-        multipageTiffWidget.initSlot( opDataExport.OutputFilenameFormat )
+        multipageTiffWidget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ExportPath )
         self._format_option_editors["multipage tiff"] = multipageTiffWidget
         
         # Sequence of Multipage TIFF
         multipageTiffSequenceWidget = StackExportFileOptionsWidget( self, "tiff" )
-        multipageTiffSequenceWidget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport )
+        multipageTiffSequenceWidget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ImageToExport, opDataExport.ExportPath )
         multipageTiffSequenceWidget.pathValidityChange.connect( self._handlePathValidityChange )
         self._format_option_editors["multipage tiff sequence"] = multipageTiffSequenceWidget
 
         # DEBUG ONLY: blockwise hdf5
         blockwiseHdf5OptionsWidget = SingleFileExportOptionsWidget( self, "json", "Blockwise Volume description (*.json)" )
-        blockwiseHdf5OptionsWidget.initSlot( opDataExport.OutputFilenameFormat )
+        blockwiseHdf5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat, opDataExport.ExportPath )
         self._format_option_editors['blockwise hdf5'] = blockwiseHdf5OptionsWidget
 
         # Populate the format combo
@@ -189,12 +191,22 @@ if __name__ == "__main__":
         def execute(self, *args): pass
         def propagateDirty(self, *args): pass
     
+    import numpy as np
+    import vigra
+    
+    data = np.zeros((100,200,3), dtype=np.uint8)
+    data = vigra.taggedView(data, 'yxc')
     op = OpFormattedDataExport( graph=Graph() )
+    
+    op.Input.setValue(data)
+    op.TransactionSlot.setValue(True)
+    
 
     app = QApplication([])
     w = MultiformatSlotExportFileOptionsWidget(None)
     w.initExportOp(op)
     w.show()
+    w.raise_()
     app.exec_()
 
     print "Selected Filepath: {}".format( op.OutputFilenameFormat.value )

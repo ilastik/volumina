@@ -16,7 +16,8 @@ class SegmentationEdgesItem( QGraphicsObject ):
     """
     A parent item for a collection of SingleEdgeItems.
     """
-    edgeClicked = pyqtSignal( tuple ) # id_pair
+    edgeClicked = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
+    edgeSwiped = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
     
     def __init__(self, path_items, edge_pen_table, parent=None):
         """
@@ -54,8 +55,11 @@ class SegmentationEdgesItem( QGraphicsObject ):
         # (See QGraphicsObject.ItemHasNoContents.)
         return QRectF()
 
-    def handle_edge_clicked(self, id_pair):
-        self.edgeClicked.emit( id_pair )
+    def handle_edge_clicked(self, id_pair, event):
+        self.edgeClicked.emit( id_pair, event )
+    
+    def handle_mouse_drag(self, id_pair, event):
+        self.edgeSwiped.emit( id_pair, event )
 
     def handle_updated_pen_table(self, updated_path_ids):
         updated_path_ids = self.path_ids.intersection(updated_path_ids)
@@ -185,8 +189,16 @@ class SingleEdgeItem( QGraphicsPathItem ):
         self.setPath(painter_path)
         
     def mousePressEvent(self, event):
-        event.accept()
-        self.parent.handle_edge_clicked( self.id_pair )
+        self.parent.handle_edge_clicked( self.id_pair, event )
+
+    def mouseMoveEvent(self, event):
+        """
+        Note: ImageScene2D has special behavior to send us mouseMoveEvents that we would otherwise not receive.
+              In such cases, the event.pos() may be invalid, so don't use it.
+        """
+        if event.buttons() != Qt.NoButton:
+            self.parent.handle_mouse_drag( self.id_pair, event )
+            
 
     def set_parent(self, parent):
         assert isinstance(parent, SegmentationEdgesItem)
@@ -334,7 +346,7 @@ if __name__ == "__main__":
 
     edges_item = SegmentationEdgesItem(path_items, pen_table)
     
-    def assign_random_color( id_pair):
+    def assign_random_color( id_pair, buttons ):
         print "handling click: {}".format(id_pair)
         pen = pen_table[id_pair]
         if pen:

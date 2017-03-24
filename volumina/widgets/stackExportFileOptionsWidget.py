@@ -60,9 +60,10 @@ class StackExportFileOptionsWidget(QWidget):
                 self._updateFromGui()
         return False
 
-    def initSlots(self, filepathSlot, imageSlot):
+    def initSlots(self, filepathSlot, imageSlot, fullPathExportSlot):
         self._filepathSlot = filepathSlot
         self._imageSlot = imageSlot
+        self._fullPathExportSlot = fullPathExportSlot
         self.selectDirectoryButton.clicked.connect( self._browseForFilepath )
         imageSlot.notifyMetaChanged( self._updateDescription )
         self._updateDescription()
@@ -101,8 +102,8 @@ class StackExportFileOptionsWidget(QWidget):
 
     def _browseForFilepath(self):
         starting_dir = os.path.expanduser("~")
-        if self._filepathSlot.ready():
-            starting_dir = os.path.split(self._filepathSlot.value)[0]
+        if self.self._fullPathExportSlot.ready():
+            starting_dir = os.path.split(self.self._fullPathExportSlot.value)[0]
         
         export_dir = QFileDialog.getExistingDirectory( self, "Export Directory", starting_dir )
         if export_dir.isNull():
