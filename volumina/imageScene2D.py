@@ -29,6 +29,7 @@ from PyQt4.QtGui import QGraphicsScene, QTransform, QPen, QColor, QBrush, QPolyg
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.imagepump import StackedImageSources
+from volumina.utility import PreferencesManager
 
 import datetime
 import threading
@@ -283,6 +284,13 @@ class ImageScene2D(QGraphicsScene):
     def cacheSize(self):
         return self._tileProvider.cache_size
 
+    def setTileWidth(self, tileWidth):
+        self._tileWidth = tileWidth
+        PreferencesManager().set("ImageScene2D", "tileWidth", tileWidth)
+        
+    def tileWidth(self):
+        return self._tileWidth
+
     def setPrefetchingEnabled(self, enable):
         self._prefetching_enabled = enable
 
@@ -304,16 +312,10 @@ class ImageScene2D(QGraphicsScene):
         """Reset rotations, tiling, etc. Called when first initialized
         and when the underlying data changes.
 
-        """
-        DEFAULT_TILE_WIDTH = 512 
-        
+        """        
         self.resetAxes(finish=False)
         
-        tileWidth = self.tileWidth
-        if self.tileWidth is None:
-            tileWidth = DEFAULT_TILE_WIDTH
-
-        self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name, blockSize=tileWidth)
+        self._tiling = Tiling(self._dataShape, self.data2scene, name=self.name, blockSize=self.tileWidth())
 
         self._tileProvider = TileProvider(self._tiling, self._stackedImageSources)
         self._tileProvider.sceneRectChanged.connect(self.invalidateViewports)
@@ -388,7 +390,7 @@ class ImageScene2D(QGraphicsScene):
         self._offsetX = 0
         self._offsetY = 0
         self.name = name
-        self.tileWidth = None
+        self._tileWidth = PreferencesManager().get("ImageScene2D", "tileWidth", default=512)
 
         self._stackedImageSources = StackedImageSources(LayerStackModel())
         self._showTileOutlines = False

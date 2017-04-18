@@ -31,8 +31,9 @@ import numpy
 
 #PyQt
 from PyQt4.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent, QTimer
-from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, QHBoxLayout, \
-                        QColor, QSizePolicy, QAction, QIcon, QSpinBox, QMenu, QDialog, QLabel, QLineEdit, QPushButton, QMainWindow
+from PyQt4.QtGui import QApplication, QWidget, QShortcut, QKeySequence, QHBoxLayout, QVBoxLayout, \
+                        QColor, QSizePolicy, QAction, QIcon, QSpinBox, QMenu, QDialog, QDialogButtonBox, \
+                        QLabel, QLineEdit, QPushButton, QMainWindow, QSpacerItem
 
 #volumina
 from quadsplitter import QuadView
@@ -548,27 +549,34 @@ class VolumeEditorWidget(QWidget):
         def changeTileWidth():
             '''Change tile width (tile block size) and reset image-scene'''
             dlg = QDialog(self)
-            layout = QHBoxLayout()
-            layout.addWidget( QLabel("Tile Width:") )
-
+            dlg.setWindowTitle("Viewer Tile Width")
+            dlg.setModal(True)
+            
             spinBox = QSpinBox( parent=dlg )
             spinBox.setRange( 128, 10*1024 )
-            spinBox.setValue(512)
-            
-            if self.editor.imageScenes[0].tileWidth:
-                spinBox.setValue( self.editor.imageScenes[0].tileWidth )
+            spinBox.setValue( self.editor.imageScenes[0].tileWidth() )
                 
-            layout.addWidget( spinBox )
-            okButton = QPushButton( "OK", parent=dlg )
-            okButton.clicked.connect( dlg.accept )
-            layout.addWidget( okButton )
-            dlg.setLayout( layout )
-            dlg.setModal(True)
+            ctrl_layout = QHBoxLayout()
+            ctrl_layout.addSpacerItem(QSpacerItem(10, 0, QSizePolicy.Expanding))
+            ctrl_layout.addWidget( QLabel("Tile Width:") )
+            ctrl_layout.addWidget( spinBox )
+
+            button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, parent=dlg)
+            button_box.accepted.connect( dlg.accept )
+            button_box.rejected.connect( dlg.reject )
+            
+            dlg_layout = QVBoxLayout()
+            dlg_layout.addLayout( ctrl_layout )
+            dlg_layout.addWidget( QLabel("Setting will apply current view immediately,\n"
+                                         "and all other views upon restart.") )
+            dlg_layout.addWidget( button_box )
+
+            dlg.setLayout( dlg_layout )
             
             if dlg.exec_() == QDialog.Accepted:
                 for s in self.editor.imageScenes:
                     if s.tileWidth != spinBox.value():
-                        s.tileWidth = spinBox.value()
+                        s.setTileWidth( spinBox.value() )
                         s.reset()
                         
         self._viewMenu.addAction( "Set Tile Width..." ).triggered.connect(changeTileWidth)
