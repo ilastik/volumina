@@ -467,6 +467,8 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSlider.setHidden(flag)
         self.timeEndButton.setHidden(flag)
         self.timeStartButton.setHidden(flag)
+        self.timePreviousButton.setHidden(flag)
+        self.timeNextButton.setHidden(flag)
 
     def setToolTipTimeButtonsCrop(self,croppingFlag=False):
         if croppingFlag==True:
