@@ -24,7 +24,7 @@ from functools import partial
 
 #PyQt
 from PyQt5.QtCore import pyqtSignal, Qt, QPointF, QSize
-from PyQt5.QtGui import QPen, QPainter, QPixmap, QColor, QFont, QPainterPath, QBrush, QTransform
+from PyQt5.QtGui import QPen, QPainter, QPixmap, QColor, QFont, QPainterPath, QBrush, QTransform, QIcon
 
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QAbstractSpinBox, QCheckBox, QWidget, \
                             QFrame, QProgressBar, QSizePolicy, QSlider, QToolButton

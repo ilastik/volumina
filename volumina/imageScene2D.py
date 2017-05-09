@@ -24,8 +24,8 @@ import numpy, math
 from PyQt5.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, \
                         QGraphicsItemGroup, QGraphicsLineItem, QGraphicsTextItem, QGraphicsPolygonItem, \
-                        QGraphicsRectItem, QPainterPath
-from PyQt5.QtGui import QTransform, QPen, QColor, QBrush, QPolygonF, QPainter
+                        QGraphicsRectItem
+from PyQt5.QtGui import QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QPainterPath
 
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
