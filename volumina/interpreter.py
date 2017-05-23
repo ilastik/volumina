@@ -24,7 +24,6 @@ from PyQt4.QtCore import QObject, pyqtSignal, QEvent, Qt, QPoint
 class ClickReportingInterpreter(QObject):
     rightClickReceived = pyqtSignal(object, QPoint) # list of indexes, global window coordinate of click
     leftClickReceived = pyqtSignal(object, QPoint)  # ditto
-    toolTipReceived = pyqtSignal(object, QPoint)
 
     def __init__(self, navigationInterpreter, positionModel):
         QObject.__init__(self)
@@ -52,7 +51,36 @@ class ClickReportingInterpreter(QObject):
                 gPos = watched.mapToGlobal( event.pos() )
                 self.rightClickReceived.emit( pos, gPos )
 
-        if event.type() == QEvent.ToolTip:
+        # Event is always forwarded to the navigation interpreter.
+        return self.baseInterpret.eventFilter(watched, event)
+
+    def updateCursorPosition(self, *args, **kwargs):
+        self.baseInterpret.updateCursorPosition(*args, **kwargs)
+
+class ReportingInterpreter(ClickReportingInterpreter):
+    toolTipReceived = pyqtSignal(object, QPoint)
+
+    def __init__(self, navigationInterpreter, positionModel):
+        QObject.__init__(self)
+        assert hasattr(navigationInterpreter, 'updateCursorPosition')
+
+        self.baseInterpret = navigationInterpreter
+        self.posModel      = positionModel
+
+    def eventFilter( self, watched, event ):
+        if event.type() == QEvent.MouseButtonPress:
+            self.baseInterpret.updateCursorPosition(watched, event)
+            pos = [int(i) for i in self.posModel.cursorPos]
+            pos = [self.posModel.time] + pos + [self.posModel.channel]
+
+            if event.button() == Qt.LeftButton:
+                gPos = watched.mapToGlobal( event.pos() )
+                self.leftClickReceived.emit( pos, gPos )
+            if event.button() == Qt.RightButton:
+                gPos = watched.mapToGlobal( event.pos() )
+                self.rightClickReceived.emit( pos, gPos )
+
+        elif event.type() == QEvent.ToolTip:
             self.baseInterpret.updateCursorPosition(watched, event)
             pos = [int(i) for i in self.posModel.cursorPos]
             pos = [self.posModel.time] + pos + [self.posModel.channel]
@@ -61,9 +89,6 @@ class ClickReportingInterpreter(QObject):
 
         # Event is always forwarded to the navigation interpreter.
         return self.baseInterpret.eventFilter(watched, event)
-
-    def updateCursorPosition(self, *args, **kwargs):
-        self.baseInterpret.updateCursorPosition(*args, **kwargs)
 
 class ClickInterpreter(QObject):
     """Intercepts mouse clicks (right clicks by default) and double
