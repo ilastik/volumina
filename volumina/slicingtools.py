@@ -157,13 +157,22 @@ def intersection( lhs, rhs ):
     assert len(lhs) == len(rhs), "%d <-> %d" % (len(lhs), len(rhs))
     assert is_pure_slicing(lhs) and is_pure_slicing(rhs)
     def _min_stop( stop1, stop2 ):
-        if stop1 == None:
+        if stop1 is None:
             return stop2
+        if stop2 is None:
+            return stop1
         return min(stop1, stop2)
+
     dim = len(lhs)
     inter = [None] * dim
     for d in range(dim):
-        start = max(lhs[d].start, rhs[d].start)
+        if lhs[d].start is None:
+            start = rhs[d].start
+        elif rhs[d].start is None:
+            start = lhs[d].start
+        else:
+            start = max(lhs[d].start, rhs[d].start)
+        
         stop = _min_stop(lhs[d].stop, rhs[d].stop)
 
         if start and stop:
