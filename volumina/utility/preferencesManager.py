@@ -72,7 +72,7 @@ class PreferencesManager(with_metaclass(Singleton, object)):
         if self._dirty:
             with self._lock:
                 with open(self._filePath, 'wb') as f:
-                    pickle.dump(self._prefs, f)
+                    pickle.dump(self._prefs, f, 0)
                 self._dirty = False
 
     # We support the 'with' keyword, in which case a sequence of settings can be set,
