@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -22,6 +23,7 @@
 ###
 ### lazyflow input
 ###
+from past.utils import old_div
 _has_lazyflow = True
 try:
     from lazyflow.graph import  Operator, InputSlot, OutputSlot
@@ -64,7 +66,7 @@ class OpDataProvider5D(Operator):
     def execute(self, slot, subindex, roi, result):
         key = roi.toSlice()
         result[:] = self._data[key]
-        result[:] = result / 10
+        result[:] = old_div(result, 10)
         return result
     
     def setInSlot(self, slot, subindex, roi, value):

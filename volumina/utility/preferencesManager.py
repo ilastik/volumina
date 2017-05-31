@@ -19,20 +19,22 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import os
 import threading
-import cPickle as pickle
+import pickle as pickle
 from volumina.utility import Singleton
+from future.utils import with_metaclass
 
-class PreferencesManager():
+class PreferencesManager(with_metaclass(Singleton, object)):
     # TODO: Maybe this should be a wrapper API around QSettings (but with pickle strings)
     #       Pros:
     #         - Settings would be stored in standard locations for each platform
     #       Cons:
     #         - QT dependency (currently there are no non-gui preferences, but maybe someday)
     
-    __metaclass__ = Singleton
-
     def get(self, group, setting, default=None):
         try:
             return self._prefs[group][setting]

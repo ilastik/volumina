@@ -24,6 +24,7 @@
 #Python
 from __future__ import division
 from __future__ import absolute_import
+from builtins import range
 from functools import partial
 import copy
 
@@ -163,8 +164,8 @@ class VolumeEditorWidget(QWidget):
         #         timer that prevents the indicator from showing for a bit. 
         def updateDirtyStatus(fromTimer=False):
             # We only care about views that are both VISIBLE and DIRTY.
-            dirties = map( lambda v: v.scene().dirty, self.editor.imageViews)
-            visibilities = map( lambda v: v.isVisible(), self.editor.imageViews)
+            dirties = [v.scene().dirty for v in self.editor.imageViews]
+            visibilities = [v.isVisible() for v in self.editor.imageViews]
             visible_dirtiness = numpy.logical_and(visibilities, dirties)
             
             if not any(visible_dirtiness):
@@ -234,7 +235,7 @@ class VolumeEditorWidget(QWidget):
             for axis in [0,1,2]:
                 self.editor.imageViews[axis].hud.set3DButtonsVisible(True)
 
-            singletonDims = filter( lambda i_dim: i_dim[1] == 1, enumerate(self.editor.posModel.shape5D[1:4]) )
+            singletonDims = [i_dim for i_dim in enumerate(self.editor.posModel.shape5D[1:4]) if i_dim[1] == 1]
             if len(singletonDims) == 1:
                 # Maximize the slicing view for this axis
                 axis = singletonDims[0][0]

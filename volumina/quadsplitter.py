@@ -21,6 +21,7 @@
 ###############################################################################
 #!/usr/bin/env python
 from __future__ import division
+from builtins import range
 import sys
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer
 from PyQt5.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
@@ -285,7 +286,7 @@ class QuadView(QWidget):
                          2 : self.dock1_ofSplitHorizontal1 } # z
 
         dockWidget = axisDict.pop(axis)
-        for dWidget in axisDict.values():
+        for dWidget in list(axisDict.values()):
             if dWidget._isMaximized:
                 dWidget.graphicsView._hud.maximizeButtonClicked.emit()
         dockWidget.graphicsView._hud.maximizeButtonClicked.emit()

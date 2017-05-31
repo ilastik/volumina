@@ -21,6 +21,7 @@
 ###############################################################################
 from __future__ import division
 from __future__ import absolute_import
+from builtins import range
 from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
 from PyQt5.QtGui import QCursor, QPainter, QImage
 from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox

@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,6 +22,8 @@ from __future__ import absolute_import
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
+from builtins import range
+from past.utils import old_div
 import sys
 import time
 import collections
@@ -190,7 +193,7 @@ class Tiling(object):
 
     def intersected(self, sceneRect):
         if not sceneRect.isValid():
-            return range(len(self.tileRects))
+            return list(range(len(self.tileRects)))
 
         # Patch accessor uses data coordinates
         rect = self.data2scene.inverted()[0].mapRect(sceneRect)
@@ -323,7 +326,7 @@ class _TilesCache( object ):
                                        for ims in self._sims.viewImageSources()])
                 num = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)
                 denom = float(numpy.count_nonzero(visibleAndNotOccluded))
-                progress = 1.0 - num / denom
+                progress = 1.0 - old_div(num, denom)
             else:
                 progress = 1.0
         else:
@@ -353,7 +356,7 @@ class _TilesCache( object ):
         warnings.warn("FIXME: This is a slow way to look for the items we want.\n"
                       "_TilesCache._layerCache should be a dict-of-dict-of-dict for faster lookup!")
         qgraphicsitems = []
-        for (layer_id, t_id), img in self._layerCache.caches[stack_id].iteritems():
+        for (layer_id, t_id), img in self._layerCache.caches[stack_id].items():
             if t_id == tile_id and isinstance(img, QGraphicsItem):
                 qgraphicsitems.append(img)
         return qgraphicsitems
@@ -392,7 +395,7 @@ class _TilesCache( object ):
         """ 
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         for stack_id in self._layerCacheDirty.caches:
-            dirty_entries = [(l_id, t_id) for (l_id, t_id) in self._layerCacheDirty.caches[stack_id].keys() if l_id == layer_id]
+            dirty_entries = [(l_id, t_id) for (l_id, t_id) in list(self._layerCacheDirty.caches[stack_id].keys()) if l_id == layer_id]
             #dirty_entries = filter( lambda (l_id, t_id): l_id == layer_id, self._layerCacheDirty.caches[stack_id].keys() )
             for entry in dirty_entries:
                 del self._layerCacheDirty.caches[stack_id][entry]
@@ -598,7 +601,7 @@ class TileProvider( QObject ):
         """
         layers = self._sims.viewImageSources()
         if layer_indexes:
-            layers = map( lambda i: layers[i], layer_indexes )
+            layers = [layers[i] for i in layer_indexes]
         
         if not self.axesSwapped:
             # Who came up with this transform?

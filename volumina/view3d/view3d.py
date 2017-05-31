@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,6 +21,8 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
+from past.utils import old_div
 import volumina
 if volumina.NO3D:
     # For testing purposes, it is sometimes convenient to intentionally disable this module.
@@ -521,7 +524,7 @@ class OverviewScene(QWidget):
             self.qvtk.renderer.RemoveActor(a) 
         
         self.polygonAppender = vtkAppendPolyData()
-        for g in self.dlg.extractor.meshes.values():
+        for g in list(self.dlg.extractor.meshes.values()):
             self.polygonAppender.AddInput(g)
         
         self.cutter[0] = Outliner(self.polygonAppender.GetOutput())
@@ -546,7 +549,7 @@ class OverviewScene(QWidget):
         ## - Set the occlusion ratio (initial value is 0.0, exact image):
         #self.renderer.SetOcclusionRatio(0.0);
 
-        for i, g in self.dlg.extractor.meshes.items():
+        for i, g in list(self.dlg.extractor.meshes.items()):
             logger.debug( " - showing object with label = {}".format(i) )
             mapper = vtkPolyDataMapper()
             mapper.SetInput(g)
@@ -557,7 +560,7 @@ class OverviewScene(QWidget):
             if self.colorTable:
                 c = self.colorTable[i]
                 c = QColor.fromRgba(c)
-                actor.GetProperty().SetColor(c.red()/255.0, c.green()/255.0, c.blue()/255.0)
+                actor.GetProperty().SetColor(old_div(c.red(),255.0), old_div(c.green(),255.0), old_div(c.blue(),255.0))
             
             self.qvtk.renderer.AddActor(actor)
         

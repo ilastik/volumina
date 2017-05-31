@@ -116,7 +116,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self._format_option_editors['blockwise hdf5'] = blockwiseHdf5OptionsWidget
 
         # Populate the format combo
-        for file_format, widget in self._format_option_editors.items():
+        for file_format, widget in list(self._format_option_editors.items()):
             self.formatCombo.addItem( file_format )
 
         # Populate the stacked widget

@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from __future__ import division
+from past.utils import old_div
 from PyQt5.QtCore import Qt, QEvent, QObject, QPoint
 import numpy as np
 from .navigationController import NavigationInterpreter, posView2D
@@ -201,7 +203,7 @@ class ThresholdingInterpreter( QObject ):
         # don't know what version is more efficient
         # range_delta = np.sqrt((range_upper - range_lower)**2) 
         range_delta = np.abs(range_upper - range_lower)
-        range_mean = range_lower + range_delta/2.0
+        range_mean = range_lower + old_div(range_delta,2.0)
 
         self._steps_mean = range_delta * self._steps_scaling
         self._steps_delta = self._steps_mean * 2
@@ -234,8 +236,8 @@ class ThresholdingInterpreter( QObject ):
         elif range_delta > self._range: 
             range_delta = self._range
 
-        a = range_mean - range_delta/2.0
-        b = range_mean + range_delta/2.0
+        a = range_mean - old_div(range_delta,2.0)
+        b = range_mean + old_div(range_delta,2.0)
 
         if a < self._range_min:
             a = self._range_min

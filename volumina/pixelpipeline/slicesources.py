@@ -21,6 +21,7 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
 from .asyncabcs import SourceABC, RequestABC
 import numpy as np
@@ -192,7 +193,8 @@ class SyncedSliceSources( QObject ):
             old = self._through
             old_id = self.id
             self._through = value
-            map(self._syncSliceSource , self._srcs)
+            for src in self._srcs:
+                self._syncSliceSource(src)
             self.throughChanged.emit(tuple(old), tuple(value))
             self.idChanged.emit(old, self.id)
 
@@ -237,7 +239,7 @@ class SyncedSliceSources( QObject ):
 
     def _syncSliceSource( self, sliceSrc ): 
         through = sliceSrc.through
-        for i in xrange(len(self._through)):
+        for i in range(len(self._through)):
             through[self._sync_along[i]] = self._through[i] 
         sliceSrc.through = through
 

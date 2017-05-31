@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,6 +21,8 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
+from past.utils import old_div
 import warnings
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, QPoint, QItemSelectionModel
 from PyQt5.QtGui import QPainter, QFontMetrics, QFont, QPalette, QMouseEvent, QPixmap
@@ -105,7 +108,7 @@ class FractionSelectionBar( QWidget ):
         return self.height()-1
 
     def _fractionFromPosition( self, pointf ):
-        frac = pointf.x() / self.width()
+        frac = old_div(pointf.x(), self.width())
         # mouse has left the widget
         if frac < 0.:
             frac = 0.

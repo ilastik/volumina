@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
+from builtins import range
 from functools import partial
 
 #PyQt
@@ -143,7 +144,7 @@ class StackedImageSources( QObject ):
     def __iter__( self ):
         return ( (layer.visible, layer.opacity, self._layerToIms[layer])
                  for layer in self._layerStackModel
-                 if layer in self._layerToIms.keys() )
+                 if layer in list(self._layerToIms.keys()) )
                 
     def __reversed__( self ):
         return ( (layer.visible, layer.opacity, self._layerToIms[layer])
@@ -195,14 +196,14 @@ class StackedImageSources( QObject ):
         self.sizeChanged.emit()
 
     def clear( self ):
-        all_layers = self.getRegisteredLayers()
-        map( self._removeLayer, all_layers )
+        for layer in self.getRegisteredLayers():
+            self._removeLayer(layer)
         assert( len(self) == 0 )
         assert( len(self.getRegisteredLayers() ) == 0 )
         self.sizeChanged.emit()
 
     def getRegisteredLayers( self ):
-        return self._layerToIms.keys()
+        return list(self._layerToIms.keys())
 
     def isRegistered( self, layer ):
         return layer in self._layerToIms
@@ -371,7 +372,7 @@ class ImagePump( object ):
     def _onStackCleared( self ):
         self._stackedImageSources.clear()
         assert(len(self._stackedImageSources.getRegisteredLayers()) == 0)
-        for layer, sss in self._layerToSliceSrcs.iteritems():
+        for layer, sss in self._layerToSliceSrcs.items():
             for ss in sss:
                 self._syncedSliceSources.remove(ss)
         assert(len(self._syncedSliceSources) == 0 )
@@ -386,7 +387,7 @@ class ImagePump( object ):
         # mark the corresponding image source as dirty
         sa = self._syncedSliceSources.getSyncAlong()
         mark_dirty = False
-        for i in xrange(len(new)):
+        for i in range(len(new)):
             if i not in sa:
                 if old[i] != new[i]:
                     mark_dirty = True
@@ -402,7 +403,7 @@ class ImagePump( object ):
                 return SliceSource( datasrc, self._projection )
             return None
 
-        slicesrcs = map( sliceSrcOrNone, layer.datasources )
+        slicesrcs = list(map( sliceSrcOrNone, layer.datasources ))
         ims = createImageSource( layer, slicesrcs )
         # remove Nones
         slicesrcs = [ src for src in slicesrcs if src != None]

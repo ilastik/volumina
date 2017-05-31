@@ -355,7 +355,7 @@ if _has_lazyflow:
             inputKeys = [tag.key for tag in inputTags]
             transposedArray = taggedArray.withAxes(*inputKeys)
     
-            taggedSlicing = dict(zip('txyzc', slicing))
+            taggedSlicing = dict(list(zip('txyzc', slicing)))
             transposedSlicing = ()
             for k in inputKeys:
                 if k in 'txyzc':

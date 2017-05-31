@@ -28,11 +28,13 @@ from __future__ import print_function
 # Requirements:
 # sudo pip install tornado
 
+from future import standard_library
+standard_library.install_aliases()
 import tornado.ioloop
 import tornado.web
 
 import Image
-import cStringIO 
+import io 
 import numpy as np
 
 # This handler serves tiles from e.g. volumina
@@ -59,7 +61,7 @@ class TileHandler(tornado.web.RequestHandler):
 		img[0,0]=0x800000FF
 		img[:100,:100]=0xFFFF0000
 		pilImage = Image.frombuffer('RGBA',(w,h),img,'raw','RGBA',0,1)
-		imgbuff = cStringIO.StringIO() 
+		imgbuff = io.StringIO() 
 		pilImage.save(imgbuff, format='PNG') 
 		imgbuff.seek(0)
 		self.set_header('Content-Type', 'image/png') 

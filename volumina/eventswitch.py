@@ -20,16 +20,16 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import object
 from PyQt5.QtCore import QObject, Qt, QEvent
 from PyQt5.QtGui import QMouseEvent
 
 from abc import ABCMeta, abstractmethod
 
 from .pixelpipeline.asyncabcs import _has_attributes
+from future.utils import with_metaclass
 
-class InterpreterABC:
-    __metaclass__ = ABCMeta
-    
+class InterpreterABC(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def start( self ):
         '''Start the interpretation of an event stream.'''

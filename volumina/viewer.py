@@ -23,6 +23,7 @@
 
 """
 from __future__ import print_function
+from builtins import range
 from volumina.pixelpipeline.datasources import *
 from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *

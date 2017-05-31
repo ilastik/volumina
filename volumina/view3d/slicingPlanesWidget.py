@@ -20,6 +20,7 @@ from __future__ import print_function
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
 try:
     from vtk import vtkPropAssembly, vtkImplicitPlaneRepresentation, vtkPolyData, vtkPoints, \
                 vtkCellArray, vtkImplicitPlaneWidget2, vtkTubeFilter, vtkPolyDataMapper, \

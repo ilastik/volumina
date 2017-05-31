@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,6 +20,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
+from past.utils import old_div
 from PyQt5.QtCore import QPointF, QRectF, QLineF, Qt
 from PyQt5.QtWidgets import QGraphicsObject, QGraphicsRectItem, QGraphicsLineItem, QPen, QColor
 
@@ -45,7 +48,7 @@ class SkeletonsLayer(QGraphicsObject):
        
         #update existing items 
         toRemove = []
-        for node, item in self._node2view.iteritems():
+        for node, item in self._node2view.items():
             if node.pos[self._axis] != self._axisIntersect:
                 self._scene.removeItem(item)
                 toRemove.append(node)
@@ -64,7 +67,7 @@ class SkeletonsLayer(QGraphicsObject):
             newRectF = QRectF(0,0,*newSize)
             newRectF = self._scene.data2scene.mapRect(newRectF)
             
-            item.setRect(QRectF(-newRectF.width()/2.0, -newRectF.height()/2.0, newRectF.width(), newRectF.height()))
+            item.setRect(QRectF(old_div(-newRectF.width(),2.0), old_div(-newRectF.height(),2.0), newRectF.width(), newRectF.height()))
             
         for r in toRemove:
             del self._node2view[r]
@@ -85,7 +88,7 @@ class SkeletonsLayer(QGraphicsObject):
             self._scene.addItem(itm)
             self._node2view[n] = itm
 
-        for itm in self._edge2view.values():
+        for itm in list(self._edge2view.values()):
             self._scene.removeItem(itm) 
         self._edge2view = dict()
         
@@ -117,7 +120,7 @@ class SkeletonsLayer(QGraphicsObject):
                                (c1.blue()+c2.blue())//2 )
 
             nodeSize = 6
-            p = QGraphicsRectItem(-nodeSize/2, -nodeSize/2, nodeSize, nodeSize)
+            p = QGraphicsRectItem(old_div(-nodeSize,2), old_div(-nodeSize,2), nodeSize, nodeSize)
             pos2D = list(e)
             del pos2D[self._axis]
             p.setPos(self._scene.data2scene.map(QPointF(*pos2D)))

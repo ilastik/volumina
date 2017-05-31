@@ -32,7 +32,7 @@ class ShortcutManagerDlg(QDialog):
         # Create a LineEdit for each shortcut,
         # and keep track of them in a dict
         shortcutEdits = collections.OrderedDict()
-        for group, targets in action_descriptions.items():
+        for group, targets in list(action_descriptions.items()):
             groupItem = QTreeWidgetItem( treeWidget, [group] )
             for (name, description) in targets:
                 edit = QLineEdit( target_keyseqs[(group,name)] )
@@ -70,7 +70,7 @@ class ShortcutManagerDlg(QDialog):
         if result != QDialog.Accepted:
             return
         
-        for (group, name), edit in shortcutEdits.items():
+        for (group, name), edit in list(shortcutEdits.items()):
             oldKey = target_keyseqs[(group, name)]
             newKey = str(edit.text())
             

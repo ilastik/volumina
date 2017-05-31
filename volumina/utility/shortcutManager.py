@@ -2,6 +2,7 @@ from __future__ import print_function
 import collections
 from functools import partial
 import logging
+from future.utils import with_metaclass
 logger = logging.getLogger(__name__)
 
 from PyQt5.QtCore import Qt
@@ -10,7 +11,7 @@ from PyQt5.QtGui import QKeySequence
 from volumina.utility import Singleton, PreferencesManager, getMainWindow
 
 
-class ShortcutManager(object):
+class ShortcutManager(with_metaclass(Singleton, object)):
     """
     A singleton class that serves as a registry for all keyboard shortcuts in the app.
     All shortcuts should be configured using this class, not using the plain Qt shortcut API.
@@ -20,7 +21,6 @@ class ShortcutManager(object):
     
     See __init__ for implementation details.
     """
-    __metaclass__ = Singleton
 
     # Each shortcut target is registered using this ActionInfo class.
     #
@@ -96,9 +96,9 @@ class ShortcutManager(object):
         Used by the ShortcutManagerDlg
         """
         all_descriptions = collections.OrderedDict()
-        for group, group_dict in self._action_infos.items():
+        for group, group_dict in list(self._action_infos.items()):
             all_descriptions[group] = []
-            for name, action_set in group_dict.items():
+            for name, action_set in list(group_dict.items()):
                 if action_set:
                     all_descriptions[group].append( (name, iter(action_set).next().description) )
         return all_descriptions
@@ -110,7 +110,7 @@ class ShortcutManager(object):
         """
         _d = _d or self._keyseq_target_actions
         reversemap = {}
-        for keyseq, targets in _d.items():
+        for keyseq, targets in list(_d.items()):
             for (group, name) in targets:
                 reversemap[(group, name)] = keyseq
         return reversemap
@@ -310,7 +310,7 @@ def _has_attributes( cls, attrs ):
     return all(_has_attribute(cls, a) for a in attrs)
 
 import abc
-class ObjectWithToolTipABC(object):
+class ObjectWithToolTipABC(with_metaclass(abc.ABCMeta, object)):
     """
     Defines an ABC for objects that have toolTip() and setToolTip() members.
     Note: All QWidgets already implement this ABC.
@@ -319,7 +319,6 @@ class ObjectWithToolTipABC(object):
     provide an object that updates the tooltip text for the shortcut.
     That object must adhere to this interface.
     """
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def toolTip(self):

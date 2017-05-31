@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,6 +20,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
+from past.utils import old_div
 import numpy, math
 
 from PyQt5.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, QTimer
@@ -87,7 +90,7 @@ class DirtyIndicator(QGraphicsItem):
             p = self._tiling.tileRectFs[i]
             w,h = p.width(), p.height()
             r = min(w,h)
-            rectangle = QRectF(p.center()-QPointF(r/4,r/4), QSizeF(r/2, r/2));
+            rectangle = QRectF(p.center()-QPointF(old_div(r,4),old_div(r,4)), QSizeF(old_div(r,2), old_div(r,2)));
             startAngle = 0 * 16
             spanAngle  = min(360*16, int((1.0-self._indicate[i])*360.0) * 16)
             painter.drawPie(rectangle, startAngle, spanAngle)
@@ -592,7 +595,7 @@ class ImageScene2D(QGraphicsScene):
         BowWave = []
 
         a = self._course[0]
-        for d in xrange(1,n+1):
+        for d in range(1,n+1):
             m = through[a] + d * self._course[1]
             if m < t_max[a] and m >= 0:
                 t = list(through)

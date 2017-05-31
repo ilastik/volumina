@@ -19,6 +19,8 @@ from __future__ import print_function
 # on the ilastik web site at:
 #		   http://ilastik.org/license.html
 ###############################################################################
+from future import standard_library
+standard_library.install_aliases()
 from PyQt5.QtCore import QObject, QEvent
 from PyQt5.QtWidgets import QApplication
 from functools import partial
