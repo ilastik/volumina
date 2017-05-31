@@ -35,6 +35,10 @@ from volumina.utility import SignalingDefaultDict
 from functools import partial
 from collections import defaultdict
 
+import sys
+if sys.version_info.major > 2:
+    unicode = str
+
 #*******************************************************************************
 # L a y e r                                                                    *
 #*******************************************************************************
