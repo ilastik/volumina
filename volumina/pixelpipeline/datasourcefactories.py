@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,13 +21,13 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from volumina.multimethods import multimethod
-from datasources import ArraySource
+from .datasources import ArraySource
 import numpy
 
 hasLazyflow = True
 try:
     import lazyflow
-    from datasources import LazyflowSource
+    from .datasources import LazyflowSource
 except ImportError:
     hasLazyflow = False
     

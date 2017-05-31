@@ -24,6 +24,7 @@
 #
 
 from __future__ import division
+from __future__ import print_function
 from volumina.api import Viewer
 from PyQt5.QtGui import QColor, QKeySequence
 from PyQt5.QtWidgets import QApplication, QPushButton, QShortcut
@@ -61,7 +62,7 @@ colortable = [QColor(0,0,0,0).rgba(), QColor(255,0,0).rgba(), QColor(0,255,0).rg
 
 s = ((raw//64)).astype(numpy.uint8)
 def onClick(layer, pos5D, pos):
-    print "here i am: ", pos5D, s[pos5D]
+    print("here i am: ", pos5D, s[pos5D])
     
 l2 = v.addColorTableLayer(s, clickFunctor=onClick, name="thresh", colortable=colortable, direct=direct)
 l2.colortableIsRandom = True

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -28,8 +29,8 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QMessageBox
 
 #volumina
-from dataExportOptionsDlg import DataExportOptionsDlg
-from multiStepProgressDialog import MultiStepProgressDialog
+from .dataExportOptionsDlg import DataExportOptionsDlg
+from .multiStepProgressDialog import MultiStepProgressDialog
 
 import logging
 logger = logging.getLogger(__name__)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -94,7 +95,7 @@ class ValueRangeWidget(QWidget):
         self.changedSignal.emit()
 
     def printLimits(self):
-        print self.softLimits
+        print(self.softLimits)
 
     def validateRange(self):
         validCheck = [True, True]

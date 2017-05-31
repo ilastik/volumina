@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -25,12 +26,12 @@ from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer, \
                                AlphaModulatedLayer, ClickableColortableLayer, \
                                DummyGraphicsItemLayer, DummyRasterItemLayer, \
                                SegmentationEdgesLayer, LabelableSegmentationEdgesLayer
-from imagesources import GrayscaleImageSource, ColortableImageSource, \
+from .imagesources import GrayscaleImageSource, ColortableImageSource, \
                          RGBAImageSource, AlphaModulatedImageSource, \
                          DummyItemSource, DummyRasterItemSource, \
                          SegmentationEdgesItemSource
                          
-from datasources import ConstantSource
+from .datasources import ConstantSource
 
 @multimethod(AlphaModulatedLayer, list)
 def createImageSource( layer, datasources2d ):

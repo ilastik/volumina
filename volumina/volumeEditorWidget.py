@@ -23,6 +23,7 @@
 
 #Python
 from __future__ import division
+from __future__ import absolute_import
 from functools import partial
 import copy
 
@@ -37,10 +38,10 @@ from PyQt5.QtWidgets import QApplication, QWidget, QShortcut, QHBoxLayout, \
                             QLabel, QLineEdit, QPushButton, QMainWindow
 
 #volumina
-from quadsplitter import QuadView
-from sliceSelectorHud import ImageView2DHud, QuadStatusBar
-from pixelpipeline.datasources import ArraySource
-from volumeEditor import VolumeEditor
+from .quadsplitter import QuadView
+from .sliceSelectorHud import ImageView2DHud, QuadStatusBar
+from .pixelpipeline.datasources import ArraySource
+from .volumeEditor import VolumeEditor
 from volumina.utility import ShortcutManager
 
 class __TimerEventEater( QObject ):
@@ -233,7 +234,7 @@ class VolumeEditorWidget(QWidget):
             for axis in [0,1,2]:
                 self.editor.imageViews[axis].hud.set3DButtonsVisible(True)
 
-            singletonDims = filter( lambda (i,dim): dim == 1, enumerate(self.editor.posModel.shape5D[1:4]) )
+            singletonDims = filter( lambda i_dim: i_dim[1] == 1, enumerate(self.editor.posModel.shape5D[1:4]) )
             if len(singletonDims) == 1:
                 # Maximize the slicing view for this axis
                 axis = singletonDims[0][0]
@@ -666,7 +667,7 @@ class VolumeEditorWidget(QWidget):
 if __name__ == "__main__":
     
     import sys
-    from layerstack import LayerStackModel
+    from .layerstack import LayerStackModel
     from volumina.layer import GrayscaleLayer
     
     array = numpy.random.rand(1,100,100,100,1)

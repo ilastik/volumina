@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -24,7 +25,7 @@ from PyQt5.QtGui import QMouseEvent
 
 from abc import ABCMeta, abstractmethod
 
-from pixelpipeline.asyncabcs import _has_attributes
+from .pixelpipeline.asyncabcs import _has_attributes
 
 class InterpreterABC:
     __metaclass__ = ABCMeta

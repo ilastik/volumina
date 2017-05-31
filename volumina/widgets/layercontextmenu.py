@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -29,8 +30,8 @@ from PyQt5.QtGui import QColor
 
 #volumina
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
-from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
-from exportHelper import get_settings_and_export_layer
+from .layerDialog import GrayscaleLayerDialog, RGBALayerDialog
+from .exportHelper import get_settings_and_export_layer
 
 #===----------------------------------------------------------------------------------------------------------------===
 

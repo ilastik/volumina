@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -50,7 +51,7 @@ class SkeletonsLayer3D(QObject):
         pass
     
     def onNodeSelectionChanged(self, node):
-        print "XXXXXXXXXXXXXXX selection changed for node=%r to %r" % (node, node.isSelected())
+        print("XXXXXXXXXXXXXXX selection changed for node=%r to %r" % (node, node.isSelected()))
         for l in self._layers:
             l.update()
         pass

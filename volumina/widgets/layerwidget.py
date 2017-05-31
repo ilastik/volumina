@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -28,7 +29,7 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QListView, QStyle, \
 
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
-from layercontextmenu import layercontextmenu
+from .layercontextmenu import layercontextmenu
 
 class FractionSelectionBar( QWidget ):
     fractionChanged = pyqtSignal(float)

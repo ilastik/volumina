@@ -20,6 +20,7 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
+from __future__ import absolute_import
 from PyQt5.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
 from PyQt5.QtGui import QColor, QCursor 
 
@@ -27,7 +28,7 @@ import copy
 import warnings
 from functools import partial
 
-from eventswitch import InterpreterABC
+from .eventswitch import InterpreterABC
 
 from volumina.sliceIntersectionMarker import SliceIntersectionMarker
 from volumina.imageScene2D import DirtyIndicator

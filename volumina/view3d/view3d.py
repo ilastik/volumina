@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -45,7 +46,7 @@ import volumina.icons_rc
 
 import qimage2ndarray
 
-from numpy2vtk import toVtkImageData
+from .numpy2vtk import toVtkImageData
 
 #from GenerateModelsFromLabels_thread import *
 
@@ -53,10 +54,10 @@ import platform #to check whether we are running on a Mac
 import copy
 from functools import partial
 
-from slicingPlanesWidget import SlicingPlanesWidget
+from .slicingPlanesWidget import SlicingPlanesWidget
 from volumina.events import Event
 from volumina.layer import ColortableLayer
-from GenerateModelsFromLabels_thread import MeshExtractorDialog
+from .GenerateModelsFromLabels_thread import MeshExtractorDialog
 
 import logging
 logger = logging.getLogger(__name__)

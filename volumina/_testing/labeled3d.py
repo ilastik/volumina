@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -34,7 +35,7 @@ import h5py
 app = QApplication(sys.argv)
 
 def sliceImg(width, height, axisLabels, perpAxisLabel, perpAxisValue):
-    print perpAxisLabel, perpAxisValue
+    print(perpAxisLabel, perpAxisValue)
     img = QImage(width, height, QImage.Format_ARGB32)
     img.fill(0)
 

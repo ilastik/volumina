@@ -28,6 +28,7 @@ from PyQt5 import uic
 from PyQt5.QtCore import Qt, QEvent, QRectF
 from PyQt5.QtGui import QImageWriter, QImage, QPainter, qRgb
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QColorDialog, QApplication
+from functools import reduce
 
 try:
     import wand
@@ -383,7 +384,11 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         padding = ["0{}".format(len(str(len(r) - 1))) for r in ranges if len(r) > 1]
         steps = reduce(mul, map(len, ranges), 1.0)
 
-        getter = itemgetter(*iter_axes if iter_axes else [slice(0)])
+        if iter_axes:
+            getter = itemgetter(*iter_axes)
+        else:
+            getter = [slice(0)]
+
         file_names = []
         for i, pos in enumerate(product(*ranges)):
             coords = getter(pos)
