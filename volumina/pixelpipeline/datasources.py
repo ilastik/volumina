@@ -32,6 +32,7 @@ from volumina.slicingtools import is_pure_slicing, slicing2shape, \
     is_bounded, make_bounded, index2slice, sl
 from volumina.config import cfg
 import numpy as np
+from future.utils import raise_with_traceback
 
 _has_lazyflow = True
 try:
@@ -203,7 +204,7 @@ if _has_lazyflow:
                 return func(*args, **kwargs)
             except Slot.SlotNotReadyError as ex:
                 # Translate lazyflow not-ready errors into the volumina equivalent.
-                raise IndeterminateRequestError, IndeterminateRequestError(ex), sys.exc_info()[2]
+                raise_with_traceback( IndeterminateRequestError(ex) ).with_traceback(sys.exc_info()[2])
         wrapper.__wrapped__ = func # Emulate python 3 behavior of @functools.wraps        
         return wrapper
 
