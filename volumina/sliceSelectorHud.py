@@ -465,12 +465,13 @@ class QuadStatusBar(QHBoxLayout):
         self.zSpinBox.setHidden(False)
     
     def hideTimeSlider(self,flag):
+        visibleBefore = self.timeSlider.isHidden()
         self.timeSlider.setHidden(flag)
         self.timeEndButton.setHidden(flag)
         self.timeStartButton.setHidden(flag)
         self.timePreviousButton.setHidden(flag)
         self.timeNextButton.setHidden(flag)
-        self._registerTimeframeShortcuts(not flag)
+        self._registerTimeframeShortcuts(enabled=not flag, remove=visibleBefore)
 
     def setToolTipTimeButtonsCrop(self,croppingFlag=False):
         if croppingFlag==True:
@@ -592,7 +593,7 @@ class QuadStatusBar(QHBoxLayout):
 
         self._registerTimeframeShortcuts()
 
-    def _registerTimeframeShortcuts(self, enabled=True):
+    def _registerTimeframeShortcuts(self, enabled=True, remove=True):
         """ Register or deregister "," and "." as keyboard shortcuts for scrolling in time """
         mgr = ShortcutManager()
         ActionInfo = ShortcutManager.ActionInfo
@@ -601,7 +602,8 @@ class QuadStatusBar(QHBoxLayout):
             if enabled:
                 mgr.register(key, actionInfo)
             else:
-                mgr.unregister(actionInfo)
+                if remove:
+                    mgr.unregister(actionInfo)
 
         action("k", ActionInfo("Navigation",
                                "Go to next time frame",
