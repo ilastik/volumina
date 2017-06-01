@@ -25,6 +25,7 @@ from PyQt4.QtGui import QMouseEvent
 from abc import ABCMeta, abstractmethod
 
 from pixelpipeline.asyncabcs import _has_attributes
+from imageView2D import ImageView2D
 
 class InterpreterABC:
     __metaclass__ = ABCMeta
@@ -96,8 +97,10 @@ class EventSwitch( QObject ):
         else:
             # prevent double delivery of unhandled mouse events that
             # bubble up from the underlying viewport
-            if not isinstance(event, QMouseEvent):
-                return self._interpreter.eventFilter(watched, event)
+            if isinstance(event, QMouseEvent):
+                if isinstance(watched, ImageView2D):
+                    return self._interpreter.eventFilter(watched, event)
+                else:
+                    return False
             else:
-                return False
-
+                return self._interpreter.eventFilter(watched, event)

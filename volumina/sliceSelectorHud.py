@@ -253,6 +253,7 @@ class ImageView2DHud(QWidget):
     exportButtonClicked = pyqtSignal()
     def __init__(self, parent ):
         QWidget.__init__(self, parent)
+        self.setMouseTracking(True)
 
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
