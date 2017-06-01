@@ -1,6 +1,5 @@
 from collections import defaultdict
-from PyQt4.Qt import pyqtSignal
-from PyQt4.QtCore import QObject
+from PyQt4.QtCore import pyqtSignal, QObject
 
 class SignalingDefaultDict( QObject ):
     """

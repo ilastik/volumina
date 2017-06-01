@@ -4,8 +4,7 @@ import logging
 
 import numpy as np
 
-from PyQt4.Qt import pyqtSignal
-from PyQt4.QtCore import Qt, QObject, QRectF, QPointF, QPoint
+from PyQt4.QtCore import Qt, pyqtSignal, QObject, QRectF, QPointF, QPoint
 from PyQt4.QtGui import QApplication, QGraphicsObject, QGraphicsPathItem, QPainterPath, QPen, QColor
 
 from volumina.utility import SignalingDefaultDict, edge_coords_nd, simplify_line_segments
