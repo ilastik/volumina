@@ -21,6 +21,7 @@
 ###############################################################################
 import os
 import threading
+import warnings
 import cPickle as pickle
 from volumina.utility import Singleton
 
@@ -64,6 +65,10 @@ class PreferencesManager():
                     with open(self._filePath, 'rb') as f:
                         return pickle.load(f)
                 except EOFError:
+                    os.remove(self._filePath)
+                    return {}
+                except ValueError:
+                    warnings.warn("Unable to load preferences from {}. Overwriting...".format(self._filePath))
                     os.remove(self._filePath)
                     return {}
     def _save(self):
