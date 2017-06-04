@@ -263,8 +263,7 @@ class VolumeEditorWidget(QWidget):
         self.updateGeometry()
         self.update()
         self.quadview.update()
-        if hasattr(self.editor.view3d, 'bUndock'):
-            self.editor.view3d.bUndock.clicked.connect(partial(self.quadview.on_dock, self.quadview.dock2_ofSplitHorizontal2))
+        self.editor.view3d.dock_status_changed.connect(partial(self.quadview.on_dock, self.quadview.dock2_ofSplitHorizontal2))
 
         # shortcuts
         self._initShortcuts()
