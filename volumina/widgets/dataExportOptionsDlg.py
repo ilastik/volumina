@@ -352,7 +352,7 @@ class DataExportOptionsDlg(QDialog):
 
         def _handleAxisOrderChecked( checked ):
             self.outputAxisOrderEdit.setEnabled( checked )
-            default_order = "".join( self._opDataExport.Input.meta.getAxisKeys() )
+            default_order = ''.join(self._opDataExport.Input.meta.getOriginalAxisKeys())
             self.outputAxisOrderEdit.setText( default_order )
             if checked:
                 _handleNewAxisOrder()
