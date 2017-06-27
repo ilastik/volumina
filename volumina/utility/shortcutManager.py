@@ -100,7 +100,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
             all_descriptions[group] = []
             for name, action_set in list(group_dict.items()):
                 if action_set:
-                    all_descriptions[group].append( (name, iter(action_set).next().description) )
+                    all_descriptions[group].append( (name, next(iter(action_set)).description) )
         return all_descriptions
     
     def get_keyseq_reversemap(self, _d=None):
