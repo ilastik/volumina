@@ -440,6 +440,7 @@ class ImageScene2D(QGraphicsScene):
             ## draw tile outlines
                 # Dashed black line
                 pen = QPen()
+                pen.setWidth(0)
                 pen.setDashPattern([5,5])
                 painter.setPen(pen)
                 painter.drawRect(self._tiling.imageRects[tileId])
@@ -447,6 +448,7 @@ class ImageScene2D(QGraphicsScene):
                 # Dashed white line
                 # (offset to occupy the spaces in the dashed black line)
                 pen = QPen()
+                pen.setWidth(0)
                 pen.setDashPattern([5,5])
                 pen.setDashOffset(5)
                 pen.setColor(QColor(Qt.white))
