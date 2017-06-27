@@ -36,7 +36,7 @@ from PyQt5.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent, QTimer
 from PyQt5.QtGui import QKeySequence, QColor, QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QShortcut, QHBoxLayout, \
                             QSizePolicy, QAction, QSpinBox, QMenu, QDialog, \
-                            QLabel, QLineEdit, QPushButton, QMainWindow
+                            QLabel, QLineEdit, QPushButton, QMainWindow, QSpacerItem
 
 #volumina
 from .quadsplitter import QuadView
