@@ -35,6 +35,7 @@ from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QAbstractSpinBox, 
 
 import volumina
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
+from volumina.utility import ShortcutManager
 
 TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
 
@@ -257,6 +258,7 @@ class ImageView2DHud(QWidget):
     exportButtonClicked = pyqtSignal()
     def __init__(self, parent ):
         QWidget.__init__(self, parent)
+        self.setMouseTracking(True)
 
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
@@ -469,11 +471,13 @@ class QuadStatusBar(QHBoxLayout):
         self.zSpinBox.setHidden(False)
     
     def hideTimeSlider(self,flag):
+        visibleBefore = self.timeSlider.isHidden()
         self.timeSlider.setHidden(flag)
         self.timeEndButton.setHidden(flag)
         self.timeStartButton.setHidden(flag)
         self.timePreviousButton.setHidden(flag)
         self.timeNextButton.setHidden(flag)
+        self._registerTimeframeShortcuts(enabled=not flag, remove=visibleBefore)
 
     def setToolTipTimeButtonsCrop(self,croppingFlag=False):
         if croppingFlag==True:
@@ -592,6 +596,33 @@ class QuadStatusBar(QHBoxLayout):
 
         self.addWidget(self.timeSpinBox)
         self.timeSpinBox.delayedValueChanged.connect(self._onTimeSpinBoxChanged)
+
+        self._registerTimeframeShortcuts()
+
+    def _registerTimeframeShortcuts(self, enabled=True, remove=True):
+        """ Register or deregister "," and "." as keyboard shortcuts for scrolling in time """
+        mgr = ShortcutManager()
+        ActionInfo = ShortcutManager.ActionInfo
+
+        def action(key, actionInfo):
+            if enabled:
+                mgr.register(key, actionInfo)
+            else:
+                if remove:
+                    mgr.unregister(actionInfo)
+
+        action("k", ActionInfo("Navigation",
+                               "Go to next time frame",
+                               "Go to next time frame",
+                               self._onTimeNextButtonClicked,
+                               self.timeNextButton,
+                               self.timeNextButton))
+        action("j", ActionInfo("Navigation",
+                               "Go to previous time frame",
+                               "Go to previous time frame",
+                               self._onTimePreviousButtonClicked,
+                               self.timePreviousButton,
+                               self.timePreviousButton))
 
     def _onTimeStartButtonClicked(self):
         self.timeSpinBox.setValue(self.parent().parent().parent().editor.cropModel.get_roi_t()[0])

@@ -111,7 +111,7 @@ class BrushingModel(QObject):
             self.setBrushSize(b+1)
 
     def setBrushColor(self, color):
-        self.drawColor = color
+        self.drawColor = QColor(color)
         self.brushColorChanged.emit(self.drawColor)
 
     def beginDrawing(self, pos, sliceRect):
