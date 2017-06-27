@@ -67,7 +67,7 @@ class CropExtentsModel( QObject ):
         """
         ordered_extents = []
         for start, stop in self._crop_extents:
-            if start < stop:
+            if start is None or stop is None or start < stop:
                 ordered_extents.append( (start, stop) )
             else:
                 ordered_extents.append( (stop, start) )
