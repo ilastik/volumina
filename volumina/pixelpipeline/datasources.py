@@ -345,9 +345,9 @@ if _has_lazyflow:
     
     class LazyflowSinkSource( LazyflowSource ):
         def __init__( self, outslot, inslot, priority = 0 ):
-            LazyflowSource.__init__(self, outslot)
             self._inputSlot = inslot
             self._priority = priority
+            LazyflowSource.__init__(self, outslot)
     
         def put( self, slicing, array ):
             assert _has_vigra, "Lazyflow SinkSource requires lazyflow and vigra."
@@ -375,6 +375,9 @@ if _has_lazyflow:
         
         def __ne__( self, other ):
             return not ( self == other )
+
+        def __hash__(self):
+            return hash((self._orig_meta, self._orig_outslot, self._inputSlot))
         
 #*******************************************************************************
 # C o n s t a n t R e q u e s t                                                *
