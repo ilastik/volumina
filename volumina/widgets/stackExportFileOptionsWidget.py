@@ -81,8 +81,8 @@ class StackExportFileOptionsWidget(QWidget):
             if re.search("{slice_index(:.*)?}", filename_pattern) is None:
                 filename_pattern += '_{slice_index}'
 
-            self.directoryEdit.setText( directory.decode( sys.getfilesystemencoding() ) )
-            self.filePatternEdit.setText( (filename_pattern + '.' + self._extension).decode( sys.getfilesystemencoding() ) )
+            self.directoryEdit.setText( directory )
+            self.filePatternEdit.setText( filename_pattern + '.' + self._extension )
             
             # Re-configure the slot in case we changed the extension
             file_path = os.path.join( directory, filename_pattern ) + '.' + self._extension            
@@ -112,8 +112,8 @@ class StackExportFileOptionsWidget(QWidget):
         self._updateFromGui()
 
     def _updateFromGui(self):
-        export_dir = self.directoryEdit.text().encode( sys.getfilesystemencoding() )
-        filename_pattern = self.filePatternEdit.text().encode( sys.getfilesystemencoding() )
+        export_dir = self.directoryEdit.text()
+        filename_pattern = self.filePatternEdit.text()
         export_path = os.path.join( export_dir, filename_pattern )
         self._filepathSlot.setValue( export_path )
         

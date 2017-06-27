@@ -63,7 +63,7 @@ class DvidVolumeExportOptionsWidget(QWidget):
 
             # Remove extension
             file_path = os.path.splitext(file_path)[0]
-            self.urlLabel.setText( file_path.decode( sys.getfilesystemencoding() ) )
+            self.urlLabel.setText( file_path )
             
             # Re-configure the slot in case we removed the extension
             self._urlSlot.setValue( file_path )

@@ -81,7 +81,7 @@ def get_settings_and_export_layer(layer, parent_widget=None):
     # Create an operator to do the work
     from lazyflow.operators.ioOperators import OpFormattedDataExport
     opExport = OpFormattedDataExport( parent=opStackChannels.parent )
-    opExport.OutputFilenameFormat.setValue( os.path.join(export_dir, encode_from_qstring(layer.name) ) )
+    opExport.OutputFilenameFormat.setValue( os.path.join(export_dir, layer.name) )
     opExport.Input.connect( opStackChannels.Output )
     opExport.TransactionSlot.setValue(True)
     

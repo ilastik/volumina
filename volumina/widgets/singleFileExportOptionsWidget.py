@@ -46,7 +46,6 @@ class SingleFileExportOptionsWidget(QWidget):
                ( event.type() == QEvent.KeyPress and \
                  ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return) ):
                 newpath = self.filepathEdit.text()
-                newpath = newpath.encode( sys.getfilesystemencoding() )
                 self._filepathSlot.setValue( newpath )
         return False
 
@@ -79,9 +78,9 @@ class SingleFileExportOptionsWidget(QWidget):
         if not dlg.exec_():
             return
         
-        exportPath = dlg.selectedFiles()[0].encode( sys.getfilesystemencoding() )
+        exportPath = dlg.selectedFiles()[0]
         self._filepathSlot.setValue( exportPath )
-        self.filepathEdit.setText( exportPath.decode( sys.getfilesystemencoding() ) )
+        self.filepathEdit.setText( exportPath )
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication

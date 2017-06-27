@@ -277,7 +277,7 @@ class LayerDelegate(QStyledItemDelegate):
             editor = LayerItemWidget(parent=parent)
             editor.is_editor = True
             # We set a custom objectName for debug and eventcapture testing purposes.
-            objName = layer.name.encode()
+            objName = layer.name
             editor.setObjectName("LayerItemWidget_{}".format(objName))
             editor.setAutoFillBackground(True)
             editor.setPalette( option.palette )
