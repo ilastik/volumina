@@ -27,7 +27,7 @@ from PyQt5.QtGui import QMouseEvent
 from abc import ABCMeta, abstractmethod
 
 from .pixelpipeline.asyncabcs import _has_attributes
-from imageView2D import ImageView2D
+from .imageView2D import ImageView2D
 from future.utils import with_metaclass
 
 class InterpreterABC(with_metaclass(ABCMeta, object)):
