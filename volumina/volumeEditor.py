@@ -122,26 +122,19 @@ class VolumeEditor( QObject ):
         return self.posModel.shape5D
     @dataShape.setter
     def dataShape(self, s):
+        self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
+        self.cropModel.set_time_shape_cropped(0,s[0])
         self.posModel.shape5D = s
-        for i, v in enumerate(self.imageViews):
-            v.sliceShape = self.posModel.sliceShape(axis=i)
-        self.view3d.dataShape = s[1:4]
-
-        crop_roi = numpy.array(self.cropModel.get_roi_3d())
-
-        # Reset the crop roi if necessary
-        if self.cropModel.cropZero() \
-        or None in crop_roi.flat \
-        or (crop_roi > self.view3d.dataShape).any():
-            self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
-            self.cropModel.set_time_shape_cropped(0,s[0])
-
         #for 2D images, disable the slice intersection marker
         is_2D = (numpy.asarray(s[1:4]) == 1).any()
         if is_2D:
             self.navCtrl.indicateSliceIntersection = False
-        
+
         self.shapeChanged.emit()
+
+        for i, v in enumerate(self.imageViews):
+            v.sliceShape = self.posModel.sliceShape(axis=i)
+        self.view3d.dataShape = s[1:4]
 
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
