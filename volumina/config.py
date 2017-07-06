@@ -29,7 +29,7 @@ default_config = """
 verbose: false
 """
 
-cfg = configparser.SafeConfigParser()
+cfg = configparser.ConfigParser()
 cfg.read_string(default_config)
 userConfig = os.path.expanduser("~/.voluminarc")
 if os.path.exists(userConfig):

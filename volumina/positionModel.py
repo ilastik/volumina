@@ -55,6 +55,7 @@ class PositionModel(QObject):
     @property
     def shape5D(self):
         return self._shape5D
+
     @shape5D.setter
     def shape5D(self, s):
         assert len(s) == 5, str(s) + " not dim 5"
