@@ -260,6 +260,17 @@ class QuadView(QWidget):
         if not axisDict[axis]._isMaximized:
             self.switchMinMax(axis)
 
+    def ensureMinimized(self, axis):
+        """
+        Minimize the view for the given axis if it isn't already minimized.
+        """
+        axisDict = { 0 : self.dock2_ofSplitHorizontal1,  # x
+                     1 : self.dock1_ofSplitHorizontal2,  # y
+                     2 : self.dock1_ofSplitHorizontal1 } # z
+
+        if axisDict[axis]._isMaximized:
+            self.switchMinMax(axis)
+
     def switchMinMax(self,axis):
         """Switch an AxisViewWidget between from minimized to maximized and vice
         versa.
