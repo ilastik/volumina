@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,13 +22,15 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
+from past.utils import old_div
 from vtk import *
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 from functools import partial
 import numpy
 import h5py
-from numpy2vtk import toVtkImageData
+from .numpy2vtk import toVtkImageData
 
 #*******************************************************************************
 # M e s h E x t r a c t o r                                                    *
@@ -50,13 +55,13 @@ class MeshExtractor(QThread):
     def SetInput(self, numpyVolume):
         self.numpyVolume = numpyVolume.copy()
     def SuppressLabels(self, labelList):
-        print "will suppress labels =", labelList
+        print("will suppress labels =", labelList)
         self.suppressLabels = labelList
     def Smooth(self, smooth):
         self.smooth = smooth
     
     def run(self):
-        print "MeshExtractor::run()"
+        print("MeshExtractor::run()")
         self.meshes = dict()
         
         if self.numpyVolume is None:
@@ -138,16 +143,16 @@ class MeshExtractor(QThread):
         self.newStep.emit("Writing meshes")
         qDebug("*** Writing meshes ***")
         for i in range(startLabel, endLabel+1):
-            self.progress.emit((i-startLabel+1)/float(endLabel-startLabel+1))
+            self.progress.emit(old_div((i-startLabel+1),float(endLabel-startLabel+1)))
             
             if i in self.suppressLabels:
-                print " - suppressed label:",i
+                print(" - suppressed label:",i)
                 continue
             
             #see if the label exists, if not skip it
             frequency = histogram.GetOutput().GetPointData().GetScalars().GetTuple1(i)
             if frequency == 0.0:
-                print " - labels %d does not occur" % (i)
+                print(" - labels %d does not occur" % (i))
                 continue
 
             #select the cells for a given label
@@ -173,10 +178,10 @@ class MeshExtractor(QThread):
             poly = vtkPolyData()
             poly.DeepCopy(f.GetOutput())
             
-            print " - adding mesh for label %d" % (i)
+            print(" - adding mesh for label %d" % (i))
             self.meshes[i] = poly
             
-        print " ==> list of labels:", self.meshes.keys()
+        print(" ==> list of labels:", list(self.meshes.keys()))
         #print "MeshExtractor::done"
         self.done.emit()
 

@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,8 +20,10 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import Qt, QRectF, QPointF
-from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor
+from past.utils import old_div
+from PyQt5.QtCore import Qt, QRectF, QPointF
+from PyQt5.QtWidgets import QGraphicsItem, QApplication 
+from PyQt5.QtGui import QPen, QCursor
 
 #*******************************************************************************
 # S l i c e I n t e r s e c t i o n M a r k e r                                *
@@ -40,11 +43,8 @@ class SliceIntersectionMarker(QGraphicsItem) :
         # This 'item' is merely a parent node for child items
         return QRectF()
 
-    def __init__(self, scene, axis, posModel):
-        """
-        scene: Must be an ImageScene2D instance.  We manipulate the scene.allow_brushing flag.
-        """
-        QGraphicsItem.__init__(self, scene=scene)
+    def __init__(self, axis, posModel):
+        QGraphicsItem.__init__(self)
         self.setFlag(QGraphicsItem.ItemHasNoContents);
         
         self.axis = axis
@@ -138,7 +138,7 @@ class SliceIntersectionMarker(QGraphicsItem) :
             painter.setPen(self.thin_penX)
             painter.drawLine(QPointF(self.x, 0), QPointF(self.x, self._height))
 
-        radius = self.diameter / 2 + 1
+        radius = old_div(self.diameter, 2) + 1
 
         # Thick line elsewhere
         if direction == 'horizontal':
@@ -186,9 +186,9 @@ class SliceMarkerLine(QGraphicsItem):
         pen_width_in_scene = transformed_pen_thickness.x()
 
         if self._direction == 'horizontal':
-            return self.scene().data2scene.mapRect( QRectF( 0, y - pen_width_in_scene/2.0, width, pen_width_in_scene ) )
+            return self.scene().data2scene.mapRect( QRectF( 0, y - old_div(pen_width_in_scene,2.0), width, pen_width_in_scene ) )
         else:
-            return self.scene().data2scene.mapRect( QRectF( x - pen_width_in_scene/2.0, 0, pen_width_in_scene, height ) )
+            return self.scene().data2scene.mapRect( QRectF( x - old_div(pen_width_in_scene,2.0), 0, pen_width_in_scene, height ) )
     
     def paint(self, painter, option, widget=None):
         # Delegate painting to our parent, since it keeps track of line thickness, etc.

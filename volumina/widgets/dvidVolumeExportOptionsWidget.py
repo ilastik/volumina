@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,8 +21,9 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import os
-from PyQt4.QtGui import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
-from volumina.utility import decode_to_qstring
+import sys
+
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
 from libdvid.gui.contents_browser import ContentsBrowser
 from lazyflow.utility import isUrl
 
@@ -61,7 +63,7 @@ class DvidVolumeExportOptionsWidget(QWidget):
 
             # Remove extension
             file_path = os.path.splitext(file_path)[0]
-            self.urlLabel.setText( decode_to_qstring(file_path) )
+            self.urlLabel.setText( file_path )
             
             # Re-configure the slot in case we removed the extension
             self._urlSlot.setValue( file_path )
@@ -77,7 +79,7 @@ class DvidVolumeExportOptionsWidget(QWidget):
             self.urlLabel.setText( url )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph
 
     from lazyflow.operators.ioOperators import OpExportDvidVolume
@@ -90,5 +92,5 @@ if __name__ == "__main__":
     w.show()
     app.exec_()
 
-    print "New Dataset URL: {}".format( op.NodeDataUrl.value )
+    print("New Dataset URL: {}".format( op.NodeDataUrl.value ))
 

@@ -31,8 +31,9 @@ Additionally, a 1-dimensional slicing may consist of a single slice instance
 not wrapped in a sequence.
 
 '''
+from builtins import range
 import numpy as np
-from PyQt4.QtCore import QRect
+from PyQt5.QtCore import QRect
 import itertools
 
 
@@ -89,7 +90,7 @@ def make_bounded(slicing, shape):
     assert len(slicing) <= len(shape)
     slicing = index2slice(slicing)
     result = []
-    for slc, dim in itertools.izip_longest(slicing, shape):
+    for slc, dim in itertools.zip_longest(slicing, shape):
         if slc is None:
             slc = slice(None)
         start, stop, step = slc.start, slc.stop, slc.step
@@ -140,7 +141,7 @@ def index2slice( slicing ):
 
     '''
     pure_sl = list(slicing)
-    for i in xrange(len(pure_sl)):
+    for i in range(len(pure_sl)):
         if isinstance(pure_sl[i], int):
             index = pure_sl[i]
             pure_sl[i] = slice(index, index + 1)
@@ -156,13 +157,22 @@ def intersection( lhs, rhs ):
     assert len(lhs) == len(rhs), "%d <-> %d" % (len(lhs), len(rhs))
     assert is_pure_slicing(lhs) and is_pure_slicing(rhs)
     def _min_stop( stop1, stop2 ):
-        if stop1 == None:
+        if stop1 is None:
             return stop2
+        if stop2 is None:
+            return stop1
         return min(stop1, stop2)
+
     dim = len(lhs)
     inter = [None] * dim
-    for d in xrange(dim):
-        start = max(lhs[d].start, rhs[d].start)
+    for d in range(dim):
+        if lhs[d].start is None:
+            start = rhs[d].start
+        elif rhs[d].start is None:
+            start = lhs[d].start
+        else:
+            start = max(lhs[d].start, rhs[d].start)
+        
         stop = _min_stop(lhs[d].stop, rhs[d].stop)
 
         if start and stop:
@@ -218,7 +228,7 @@ class SliceProjection( object ):
 
         '''
         assert len(through) == len(self.along)
-        slicing = range(self.domainDim)
+        slicing = list(range(self.domainDim))
         slicing[self.abscissa] = abscissa_range
         slicing[self.ordinate] = ordinate_range
         for i in range(len(self.along)):

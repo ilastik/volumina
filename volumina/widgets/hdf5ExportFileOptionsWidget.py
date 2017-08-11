@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,12 +21,11 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import os
+import sys
 
-from PyQt4 import uic
-from PyQt4.QtCore import pyqtSignal, Qt, QEvent
-from PyQt4.QtGui import QWidget, QFileDialog
-
-from volumina.utility import encode_from_qstring, decode_to_qstring
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent
+from PyQt5.QtWidgets import QWidget, QFileDialog
 
 class Hdf5ExportFileOptionsWidget(QWidget):
     pathValidityChange = pyqtSignal(bool)
@@ -77,7 +77,7 @@ class Hdf5ExportFileOptionsWidget(QWidget):
 
     def _applyFilepath(self):
         filepath = self.filepathEdit.text()
-        self._filepathSlot.setValue( encode_from_qstring(filepath) )
+        self._filepathSlot.setValue( filepath )
         # TODO: Check for valid path format and signal validity
 
     def _handleTextEdited(self, watched):
@@ -100,7 +100,7 @@ class Hdf5ExportFileOptionsWidget(QWidget):
                 file_path += ".h5"
             else:
                 file_path += ext
-            self.filepathEdit.setText( decode_to_qstring(file_path) )
+            self.filepathEdit.setText( file_path )
             
             # Re-configure the file slot in case we changed the extension
             self._filepathSlot.setValue( file_path )
@@ -125,10 +125,10 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         
         exportPath = dlg.selectedFiles()[0]
         self.filepathEdit.setText( exportPath )
-        self._filepathSlot.setValue( encode_from_qstring(exportPath) )
+        self._filepathSlot.setValue( exportPath )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph, Operator, InputSlot
 
     class OpMock(Operator):
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     w.show()
     app.exec_()
 
-    print "Selected Filepath: {}".format( op.Filepath.value )
-    print "Selected Dataset: {}".format( op.DatasetName.value )
+    print("Selected Filepath: {}".format( op.Filepath.value ))
+    print("Selected Dataset: {}".format( op.DatasetName.value ))
 
 

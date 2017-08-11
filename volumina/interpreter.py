@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QObject, pyqtSignal, QEvent, Qt, QPoint
+from PyQt5.QtCore import QObject, pyqtSignal, QEvent, Qt, QPoint
 
 class ClickReportingInterpreter(QObject):
     rightClickReceived = pyqtSignal(object, QPoint) # list of indexes, global window coordinate of click

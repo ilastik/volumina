@@ -22,7 +22,8 @@
 """High-level API.
 
 """
-from pixelpipeline.imagepump import ImagePump
+from __future__ import absolute_import
+from .pixelpipeline.imagepump import ImagePump
 from volumina.pixelpipeline.datasources import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
@@ -34,7 +35,7 @@ from volumina.widgets.layerwidget import LayerWidget
 
 from volumina.viewer import Viewer, ClickableSegmentationLayer
 
-from PyQt4.QtGui import QApplication
+from PyQt5.QtWidgets import QApplication
 import sys
 
 def viewerApp():

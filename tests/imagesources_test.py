@@ -20,6 +20,9 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import unittest as ut
 import os
 import sys
@@ -29,8 +32,9 @@ sys.path.append("../.")
 import numpy
 
 #PyQt
-from PyQt4.QtCore import QRect
-from PyQt4.QtGui import QImage, QGraphicsItem, QColor
+from PyQt5.QtCore import QRect
+from PyQt5.QtGui import QImage, QColor
+from PyQt5.QtWidgets import QGraphicsItem
 
 import qimage2ndarray
 
@@ -450,7 +454,7 @@ class TestGraphicsItems(ut.TestCase):
 
         DEBUG = False
         if DEBUG:        
-            from PyQt4.QtGui import QApplication, QGraphicsView, QGraphicsScene
+            from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
             app = QApplication([])
             scene = QGraphicsScene()
             scene.addItem(item)

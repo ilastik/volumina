@@ -21,9 +21,10 @@
 ###############################################################################
 #!/usr/bin/env python
 from __future__ import division
+from builtins import range
 import sys
-from PyQt4.QtCore import Qt, pyqtSignal, QEvent, QTimer
-from PyQt4.QtGui import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer
+from PyQt5.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
 
 class ImageView2DFloatingWindow(QWidget):
     onCloseClick = pyqtSignal()
@@ -179,11 +180,9 @@ class QuadView(QWidget):
     def _resizeEqual(self):
         if not all( [dock.isVisible() for dock in self.dockableContainer] ):
             return
-        assert sys.version_info.major == 2, "Alert! This function has not been tested "\
-        "under python 3. Please remove this assetion and be wary of any strnage behavior you encounter"
         w, h = self.size().width()-self.splitHorizontal1.handleWidth(), self.size().height()-self.splitVertical.handleWidth()
 
-        self.splitVertical.setSizes([h/2, h/2])
+        self.splitVertical.setSizes([h//2, h//2])
 
         if self.splitHorizontal1.count() == 2 and self.splitHorizontal2.count() == 2:
             #docks = [self.imageView2D_1, self.imageView2D_2, self.imageView2D_3, self.testView4]
@@ -296,7 +295,7 @@ class QuadView(QWidget):
                          2 : self.dock1_ofSplitHorizontal1 } # z
 
         dockWidget = axisDict.pop(axis)
-        for dWidget in axisDict.values():
+        for dWidget in list(axisDict.values()):
             if dWidget._isMaximized:
                 dWidget.graphicsView._hud.maximizeButtonClicked.emit()
         dockWidget.graphicsView._hud.maximizeButtonClicked.emit()

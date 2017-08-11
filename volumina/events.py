@@ -24,7 +24,7 @@ class Event(object):
 
     @classmethod
     def register(self, eventname, callback):
-        if not self.callbacks.has_key(eventname):
+        if eventname not in self.callbacks:
             self.callbacks[eventname] = []
         self.callbacks[eventname].append(callback)
 
@@ -32,7 +32,7 @@ class Event(object):
 
     @classmethod
     def trigger(self, eventname, *args, **kwargs):
-        if not self.callbacks.has_key(eventname):
+        if eventname not in self.callbacks:
             return 
         for c in self.callbacks[eventname]:
             c(*args, **kwargs)

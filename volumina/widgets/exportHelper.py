@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -24,18 +25,16 @@ import os
 from functools import partial
 
 #Qt
-from PyQt4.QtCore import pyqtSignal, QObject
-from PyQt4.QtGui import QMessageBox
+from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtWidgets import QMessageBox
 
 #volumina
-from dataExportOptionsDlg import DataExportOptionsDlg
-from multiStepProgressDialog import MultiStepProgressDialog
+from .dataExportOptionsDlg import DataExportOptionsDlg
+from .multiStepProgressDialog import MultiStepProgressDialog
 
 import logging
 logger = logging.getLogger(__name__)
 from volumina.utility import log_exception, PreferencesManager
-
-from volumina.utility.qstring_codec import encode_from_qstring
 
 ###
 ### lazyflow
@@ -82,7 +81,7 @@ def get_settings_and_export_layer(layer, parent_widget=None):
     # Create an operator to do the work
     from lazyflow.operators.ioOperators import OpFormattedDataExport
     opExport = OpFormattedDataExport( parent=opStackChannels.parent )
-    opExport.OutputFilenameFormat.setValue( os.path.join(export_dir, encode_from_qstring(layer.name) ) )
+    opExport.OutputFilenameFormat.setValue( os.path.join(export_dir, layer.name) )
     opExport.Input.connect( opStackChannels.Output )
     opExport.TransactionSlot.setValue(True)
     

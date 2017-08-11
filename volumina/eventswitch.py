@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,17 +20,17 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QObject, Qt, QEvent
-from PyQt4.QtGui import QMouseEvent
+from builtins import object
+from PyQt5.QtCore import QObject, Qt, QEvent
+from PyQt5.QtGui import QMouseEvent
 
 from abc import ABCMeta, abstractmethod
 
-from pixelpipeline.asyncabcs import _has_attributes
-from imageView2D import ImageView2D
+from .pixelpipeline.asyncabcs import _has_attributes
+from .imageView2D import ImageView2D
+from future.utils import with_metaclass
 
-class InterpreterABC:
-    __metaclass__ = ABCMeta
-    
+class InterpreterABC(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def start( self ):
         '''Start the interpretation of an event stream.'''

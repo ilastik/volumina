@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -23,13 +25,14 @@ import sys
 import threading
 import weakref
 from functools import partial, wraps
-from PyQt4.QtCore import QObject, pyqtSignal, QTimer
-from asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+from .asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, \
     is_bounded, make_bounded, index2slice, sl
 from volumina.config import cfg
 import numpy as np
+from future.utils import raise_with_traceback
 
 _has_lazyflow = True
 try:
@@ -201,7 +204,7 @@ if _has_lazyflow:
                 return func(*args, **kwargs)
             except Slot.SlotNotReadyError as ex:
                 # Translate lazyflow not-ready errors into the volumina equivalent.
-                raise IndeterminateRequestError, IndeterminateRequestError(ex), sys.exc_info()[2]
+                raise_with_traceback( IndeterminateRequestError(ex) ).with_traceback(sys.exc_info()[2])
         wrapper.__wrapped__ = func # Emulate python 3 behavior of @functools.wraps        
         return wrapper
 
@@ -305,7 +308,7 @@ if _has_lazyflow:
         def request( self, slicing ):
             if cfg.getboolean('pixelpipeline', 'verbose'):
                 volumina.printLock.acquire()
-                print "  LazyflowSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing))
+                print("  LazyflowSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing)))
                 volumina.printLock.release()
             if not is_pure_slicing(slicing):
                 raise Exception('LazyflowSource: slicing is not pure')
@@ -334,14 +337,17 @@ if _has_lazyflow:
         
         def __ne__( self, other ):
             return not ( self == other )
+
+        def __hash__(self):
+            return hash((self._orig_meta, self._orig_outslot))
     
     assert issubclass(LazyflowSource, SourceABC)
     
     class LazyflowSinkSource( LazyflowSource ):
         def __init__( self, outslot, inslot, priority = 0 ):
-            LazyflowSource.__init__(self, outslot)
             self._inputSlot = inslot
             self._priority = priority
+            LazyflowSource.__init__(self, outslot)
     
         def put( self, slicing, array ):
             assert _has_vigra, "Lazyflow SinkSource requires lazyflow and vigra."
@@ -353,7 +359,7 @@ if _has_lazyflow:
             inputKeys = [tag.key for tag in inputTags]
             transposedArray = taggedArray.withAxes(*inputKeys)
     
-            taggedSlicing = dict(zip('txyzc', slicing))
+            taggedSlicing = dict(list(zip('txyzc', slicing)))
             transposedSlicing = ()
             for k in inputKeys:
                 if k in 'txyzc':
@@ -369,6 +375,9 @@ if _has_lazyflow:
         
         def __ne__( self, other ):
             return not ( self == other )
+
+        def __hash__(self):
+            return hash((self._orig_meta, self._orig_outslot, self._inputSlot))
         
 #*******************************************************************************
 # C o n s t a n t R e q u e s t                                                *

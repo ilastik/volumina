@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,8 +20,10 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QPointF, QObject, pyqtSignal
-from PyQt4.QtGui import QColor
+from builtins import range
+from past.utils import old_div
+from PyQt5.QtCore import QPointF, QObject, pyqtSignal
+from PyQt5.QtGui import QColor
 
 class SkeletonNode(QObject):
     selected = pyqtSignal(bool)
@@ -72,7 +75,7 @@ class SkeletonNode(QObject):
     def intersectsBbox(self, point):
         assert len(point) == 3
         for i in range(3):
-            if not (self.pos[i] - self.shape/2.0 >= point[i] and self.pos[i] + self.shape/2.0 <= point[i]):
+            if not (self.pos[i] - old_div(self.shape,2.0) >= point[i] and self.pos[i] + old_div(self.shape,2.0) <= point[i]):
                 return False 
         return True
 

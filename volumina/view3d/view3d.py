@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,6 +21,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
+from past.utils import old_div
 import volumina
 if volumina.NO3D:
     # For testing purposes, it is sometimes convenient to intentionally disable this module.
@@ -36,16 +40,16 @@ from vtk import vtkRenderer, vtkConeSource, vtkPolyDataMapper, vtkActor, \
                     vtkGenericOpenGLRenderWindow, QVTKWidget, vtkOBJExporter, \
                     vtkPropCollection, vtkAppendPolyData, vtkCellPicker
 
-from PyQt4.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
                         QSizePolicy, QSpacerItem, QIcon, QFileDialog, \
                         QToolButton, QApplication
-from PyQt4.QtCore import pyqtSignal, SIGNAL, QEvent, QTimer
-from PyQt4.QtGui import QMenu, QAction, QColor
+from PyQt5.QtCore import pyqtSignal, SIGNAL, QEvent, QTimer
+from PyQt5.QtWidgets import QMenu, QAction, QColor
 import volumina.icons_rc
 
 import qimage2ndarray
 
-from numpy2vtk import toVtkImageData
+from .numpy2vtk import toVtkImageData
 
 #from GenerateModelsFromLabels_thread import *
 
@@ -53,10 +57,10 @@ import platform #to check whether we are running on a Mac
 import copy
 from functools import partial
 
-from slicingPlanesWidget import SlicingPlanesWidget
+from .slicingPlanesWidget import SlicingPlanesWidget
 from volumina.events import Event
 from volumina.layer import ColortableLayer
-from GenerateModelsFromLabels_thread import MeshExtractorDialog
+from .GenerateModelsFromLabels_thread import MeshExtractorDialog
 
 import logging
 logger = logging.getLogger(__name__)
@@ -520,7 +524,7 @@ class OverviewScene(QWidget):
             self.qvtk.renderer.RemoveActor(a) 
         
         self.polygonAppender = vtkAppendPolyData()
-        for g in self.dlg.extractor.meshes.values():
+        for g in list(self.dlg.extractor.meshes.values()):
             self.polygonAppender.AddInput(g)
         
         self.cutter[0] = Outliner(self.polygonAppender.GetOutput())
@@ -545,7 +549,7 @@ class OverviewScene(QWidget):
         ## - Set the occlusion ratio (initial value is 0.0, exact image):
         #self.renderer.SetOcclusionRatio(0.0);
 
-        for i, g in self.dlg.extractor.meshes.items():
+        for i, g in list(self.dlg.extractor.meshes.items()):
             logger.debug( " - showing object with label = {}".format(i) )
             mapper = vtkPolyDataMapper()
             mapper.SetInput(g)
@@ -556,7 +560,7 @@ class OverviewScene(QWidget):
             if self.colorTable:
                 c = self.colorTable[i]
                 c = QColor.fromRgba(c)
-                actor.GetProperty().SetColor(c.red()/255.0, c.green()/255.0, c.blue()/255.0)
+                actor.GetProperty().SetColor(old_div(c.red(),255.0), old_div(c.green(),255.0), old_div(c.blue(),255.0))
             
             self.qvtk.renderer.AddActor(actor)
         
@@ -572,7 +576,7 @@ if __name__ == '__main__':
     def updateSlice(num, axis):
         o.ChangeSlice(num,axis)
     
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     import sys, h5py
 
     app = QApplication(sys.argv)

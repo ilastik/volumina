@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,16 +21,18 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 #Python
+from builtins import range
 from functools import partial
 
 #Qt
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem, QColor
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem
+from PyQt5.QtGui import QColor
 
 #volumina
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
-from layerDialog import GrayscaleLayerDialog, RGBALayerDialog
-from exportHelper import get_settings_and_export_layer
+from .layerDialog import GrayscaleLayerDialog, RGBALayerDialog
+from .exportHelper import get_settings_and_export_layer
 
 #===----------------------------------------------------------------------------------------------------------------===
 

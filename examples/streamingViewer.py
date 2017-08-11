@@ -29,7 +29,7 @@ from lazyflow.graph import Graph
 from lazyflow.operators.ioOperators.opStreamingHdf5Reader import OpStreamingHdf5Reader
 from lazyflow.operators import OpCompressedCache
 
-from PyQt4.QtGui import QApplication
+from PyQt5.QtWidgets import QApplication
 
 f = h5py.File("raw.h5", 'w')
 d = (255*numpy.random.random((100,200,300))).astype(numpy.uint8)

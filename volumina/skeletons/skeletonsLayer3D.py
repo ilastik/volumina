@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,7 +20,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QObject
+from builtins import range
+from PyQt5.QtCore import QObject
 
 from volumina.skeletons.skeletons3D import Skeletons3D
 from volumina.skeletons.skeletonsLayer import SkeletonsLayer
@@ -50,7 +52,7 @@ class SkeletonsLayer3D(QObject):
         pass
     
     def onNodeSelectionChanged(self, node):
-        print "XXXXXXXXXXXXXXX selection changed for node=%r to %r" % (node, node.isSelected())
+        print("XXXXXXXXXXXXXXX selection changed for node=%r to %r" % (node, node.isSelected()))
         for l in self._layers:
             l.update()
         pass

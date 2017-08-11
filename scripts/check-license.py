@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -48,7 +49,7 @@ lgplv2orlater = """#############################################################
 """
 
 def check_file(fname):
-    print "checking %s" % fname
+    print("checking %s" % fname)
     assert os.path.exists(fname)
     f = open(fname, 'r')
     c = "".join(f.readlines())

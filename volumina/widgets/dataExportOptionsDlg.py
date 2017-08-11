@@ -25,9 +25,10 @@ from functools import partial
 
 import numpy
 
-from PyQt4 import uic
-from PyQt4.QtCore import Qt, QObject, QEvent
-from PyQt4.QtGui import QDialog, QValidator, QDialogButtonBox
+from PyQt5 import uic
+from PyQt5.QtCore import Qt, QObject, QEvent
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox
+from PyQt5.QtGui import QValidator
 
 try:
     from lazyflow.graph import Operator, InputSlot, OutputSlot
@@ -183,7 +184,7 @@ class DataExportOptionsDlg(QDialog):
             tagged_output_shape = opDataExport.ImageToExport.meta.getTaggedShape()
             missing_axes = set( tagged_input_shape.keys() ) - set( tagged_output_shape.keys() )
             for axis in missing_axes:
-                index = tagged_input_shape.keys().index( axis )
+                index = list(tagged_input_shape.keys()).index( axis )
                 if (stop[index] is None and tagged_input_shape[axis] > 1) \
                 or (stop[index] is not None and stop[index] - start[index] > 1):
                     self.axisOrderCheckbox.setChecked(False)
@@ -222,13 +223,13 @@ class DataExportOptionsDlg(QDialog):
                                            ( "signed 64-bit",   "int64" ),
                                            ( "floating 32-bit", "float32" ),
                                            ( "floating 64-bit", "float64" ) ])
-        for name, dtype in dtypes.items():
+        for name, dtype in list(dtypes.items()):
             self.dtypeCombo.addItem( name, dtype )
 
         def _handleDtypeSelected():
             # The dtype combo selection changed.  Update the operator to match.
             index = self.dtypeCombo.currentIndex()
-            dtype_string = str( self.dtypeCombo.itemData(index).toString() )
+            dtype_string = str( self.dtypeCombo.itemData(index) )
             dtype = numpy.dtype(dtype_string).type
             self._opDataExport.ExportDtype.setValue( dtype )
     
@@ -345,7 +346,7 @@ class DataExportOptionsDlg(QDialog):
             
         def _handleNewAxisOrder():
             new_order = str( self.outputAxisOrderEdit.text() )
-            validator_state, _ = self.outputAxisOrderEdit.validator().validate( new_order, 0 )
+            validator_state, _, _ = self.outputAxisOrderEdit.validator().validate( new_order, 0 )
             if validator_state == QValidator.Acceptable:
                 self._opDataExport.OutputAxisOrder.setValue( new_order )
 
@@ -368,7 +369,7 @@ class DataExportOptionsDlg(QDialog):
     def _updateAxisOrderColor(self, allow_intermediate):
         checked = self.axisOrderCheckbox.isChecked()
         text = self.outputAxisOrderEdit.text()
-        state, _ = self.outputAxisOrderEdit.validator().validate( text, 0 )
+        state, _, _ = self.outputAxisOrderEdit.validator().validate( text, 0 )
         invalidAxes = (checked and state != QValidator.Acceptable and not allow_intermediate)
         self._set_okay_condition('axis order', not invalidAxes)
         if invalidAxes:
@@ -395,25 +396,25 @@ class DataExportOptionsDlg(QDialog):
         
         def validate(self, userAxes, pos):
             taggedShape = self._inputSlot.meta.getTaggedShape()
-            inputAxes = taggedShape.keys()
+            inputAxes = list(taggedShape.keys())
             inputSet = set(inputAxes)
             userSet = set(str(userAxes))
             
             # Ensure all user axes appear in the input
             if not (userSet <= inputSet):
-                return (QValidator.Invalid, pos)
+                return (QValidator.Invalid, userAxes, pos)
             
             # Ensure no repeats
             if len(userSet) != len(userAxes):
-                return (QValidator.Invalid, pos)
+                return (QValidator.Invalid, userAxes, pos)
             
             # If missing non-singleton axes, maybe intermediate entry
             # (It's okay to omit singleton axes)
             for key in (inputSet - userSet):
                 if taggedShape[key] != 1:
-                    return (QValidator.Intermediate, pos)
+                    return (QValidator.Intermediate, userAxes, pos)
             
-            return (QValidator.Acceptable, pos)
+            return (QValidator.Acceptable, userAxes, pos)
 
     #**************************************************************************
     # File format and options
@@ -448,7 +449,7 @@ def dtype_limits(dtype):
 #**************************************************************************
 if __name__ == "__main__":
     import vigra
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 

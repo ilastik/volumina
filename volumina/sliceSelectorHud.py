@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,14 +20,18 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from past.utils import old_div
 import os
 from functools import partial
 
 #PyQt
-from PyQt4.QtCore import pyqtSignal, Qt, QPointF, QSize, QString
-from PyQt4.QtGui import QLabel, QPen, QPainter, QPixmap, QColor, QHBoxLayout, QVBoxLayout, \
-                        QFont, QPainterPath, QBrush, QAbstractSpinBox, QIcon, \
-                        QCheckBox, QWidget, QFrame, QTransform, QProgressBar, QSizePolicy, QSlider, QToolButton
+from PyQt5.QtCore import pyqtSignal, Qt, QPointF, QSize
+from PyQt5.QtGui import QPen, QPainter, QPixmap, QColor, QFont, QPainterPath, QBrush, QTransform, QIcon
+
+from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QAbstractSpinBox, QCheckBox, QWidget, \
+                            QFrame, QProgressBar, QSizePolicy, QSlider, QToolButton
+
+
 
 import volumina
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
@@ -145,14 +150,14 @@ class SpinBoxImageView(QHBoxLayout):
         self.labelLayout = QVBoxLayout()
         self.upLabel = LabelButtons('spin-up', parentView,
                                     backgroundColor, foregroundColor,
-                                    height/2, height/2)
+                                    old_div(height,2), old_div(height,2))
         self.labelLayout.addWidget(self.upLabel)
         self.upLabel.clicked.connect(self.on_upLabel)
 
         self.downLabel = LabelButtons('spin-down', parentView,
                                       backgroundColor,
-                                      foregroundColor, height/2,
-                                      height/2)
+                                      foregroundColor, old_div(height,2),
+                                      old_div(height,2))
         self.labelLayout.addWidget(self.downLabel)
         self.downLabel.clicked.connect(self.on_downLabel)
 
@@ -705,7 +710,7 @@ class QuadStatusBar(QHBoxLayout):
 
 if __name__ == "__main__":
     import sys
-    from PyQt4.QtGui import QDialog, QApplication
+    from PyQt5.QtWidgets import QDialog, QApplication
     #make the program quit on Ctrl+C
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)

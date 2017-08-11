@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   ilastik: interactive learning and segmentation toolkit
 #
@@ -18,8 +19,10 @@
 # on the ilastik web site at:
 #		   http://ilastik.org/license.html
 ###############################################################################
-from PyQt4.QtCore import QObject, QEvent
-from PyQt4.QtGui import QApplication
+from future import standard_library
+standard_library.install_aliases()
+from PyQt5.QtCore import QObject, QEvent
+from PyQt5.QtWidgets import QApplication
 from functools import partial
 
 class ThunkEvent( QEvent ):
@@ -127,8 +130,8 @@ if __name__ == "__main__":
     from functools import partial
     from volumina.utility import execute_in_main_thread
     
-    from PyQt4.QtCore import QTimer
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtCore import QTimer
+    from PyQt5.QtWidgets import QApplication
     
     app = QApplication([])
         
@@ -136,19 +139,19 @@ if __name__ == "__main__":
     
     def g():
         time.sleep(0.5)
-        print "in workload, thread is: ", threading.current_thread().name
+        print("in workload, thread is: ", threading.current_thread().name)
         return 7
     
     def f():
-        print "in thread:", threading.current_thread().name
+        print("in thread:", threading.current_thread().name)
         result = execute_in_main_thread(g)
-        print "Result was:", result
+        print("Result was:", result)
 
     thread = threading.Thread(target=f)
-    print "Starting thread"
+    print("Starting thread")
     thread.start()
     
     app.exec_()
     thread.join()
-    print "DONE"
+    print("DONE")
     

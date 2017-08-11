@@ -1,3 +1,4 @@
+from __future__ import division
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
@@ -13,10 +14,13 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # Copyright 2011-2014, the ilastik developers
+from builtins import range
+from past.utils import old_div
 import copy
 import contextlib
-from PyQt4.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
-from PyQt4.QtGui import QGraphicsItem, QPen, QApplication, QCursor, QBrush, QColor
+from PyQt5.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
+from PyQt5.QtGui import QPen, QCursor, QBrush, QColor
+from PyQt5.QtWidgets import QGraphicsItem, QApplication
 
 class CropExtentsModel( QObject ):
     changed = pyqtSignal( object )  # list of start/stop coords indexed by axis
@@ -63,13 +67,13 @@ class CropExtentsModel( QObject ):
         """
         ordered_extents = []
         for start, stop in self._crop_extents:
-            if start < stop:
+            if start is None or stop is None or start < stop:
                 ordered_extents.append( (start, stop) )
             else:
                 ordered_extents.append( (stop, start) )
 
         # [(x1,x2), (y1,y2), (z1,z2)] -> [(x1,y1,z1), (x2,y2,z2)]
-        roi = zip( *ordered_extents )
+        roi = list(zip( *ordered_extents ))
         return roi
 
     def get_roi_t(self):
@@ -81,7 +85,7 @@ class CropExtentsModel( QObject ):
     def set_roi_3d(self, roi):
         # Convenience function.
         # Set the extents as a roi
-        self.set_crop_extents( zip( *roi ) )
+        self.set_crop_extents( list(zip( *roi )) )
 
     def set_roi_t(self, timeRange):
         # Convenience function.
@@ -132,7 +136,7 @@ class CropExtentsModel( QObject ):
         assert len(crop_extents) == 3
         for e in crop_extents:
             assert len(e) == 2
-        self._crop_extents = map(list, crop_extents) # Ensure lists, not tuples
+        self._crop_extents = list(map(list, crop_extents)) # Ensure lists, not tuples
         self.changed.emit( self )
 
     def set_crop_times(self, crop_times):
@@ -158,14 +162,13 @@ class CroppingMarkers( QGraphicsItem ):
         # This 'item' is merely a parent node for child items
         return QRectF()
 
-    def __init__(self, scene, axis, crop_extents_model, editable=True):
+    def __init__(self, axis, crop_extents_model, editable=True):
 
         self._cropColor = Qt.white
 
-        QGraphicsItem.__init__(self, scene=scene)
+        QGraphicsItem.__init__(self)
         self.setFlag(QGraphicsItem.ItemHasNoContents);
         self.setAcceptHoverEvents(True)
-        self.scene = scene
         self.axis = axis
         self.crop_extents_model = crop_extents_model
 
@@ -258,7 +261,7 @@ class CroppingMarkers( QGraphicsItem ):
             self.mouseMoveStartV
         """
         if self.crop_extents_model._editable:
-            position = self.scene.data2scene.map( event.scenePos() )
+            position = self.scene().data2scene.map( event.scenePos() )
             width, height = self.dataShape
             posH0 = self._horizontal0.position
             posH1 = self._horizontal1.position
@@ -277,8 +280,8 @@ class CroppingMarkers( QGraphicsItem ):
             distV1 = abs(positionV - posV1)
             distH0 = abs(positionH - posH0)
             distH1 = abs(positionH - posH1)
-            distV = abs(posV1 - posV0)/self._fractionOfDistance
-            distH = abs(posH1 - posH0)/self._fractionOfDistance
+            distV = old_div(abs(posV1 - posV0),self._fractionOfDistance)
+            distH = old_div(abs(posH1 - posH0),self._fractionOfDistance)
             dist = distV*distV+distH*distH
 
             # corners
@@ -339,7 +342,7 @@ class CroppingMarkers( QGraphicsItem ):
         """
 
         if self.crop_extents_model._editable:
-            position = self.scene.data2scene.map( event.scenePos() )
+            position = self.scene().data2scene.map( event.scenePos() )
             width, height = self.dataShape
 
             positionV = int(position.x() + 0.5)
@@ -495,9 +498,9 @@ class CropLine(QGraphicsItem):
         self._line_thickness = 4*line_thickness
 
         if self._direction == 'horizontal':
-            return self.scene().data2scene.mapRect( QRectF( 0, self._position - line_thickness/2.0, width, line_thickness ) )
+            return self.scene().data2scene.mapRect( QRectF( 0, self._position - old_div(line_thickness,2.0), width, line_thickness ) )
         else:
-            return self.scene().data2scene.mapRect( QRectF( self._position - line_thickness/2.0, 0, line_thickness, height ) )
+            return self.scene().data2scene.mapRect( QRectF( self._position - old_div(line_thickness,2.0), 0, line_thickness, height ) )
 
     def paint(self, painter, option, widget=None):
         """
@@ -512,7 +515,7 @@ class CropLine(QGraphicsItem):
         # Determine the inverse scaling factor from scene to view to set a consistent dash pattern at all scales.
         view = self.scene().views()[0]
         inverted_transform, has_inverse = view.transform().inverted()
-        dash_length = 4 / inverted_transform.m11()
+        dash_length = old_div(4, inverted_transform.m11())
         dash_length = max( 0.5, dash_length )
 
         # Draw the line with two pens to get a black-and-white dashed line.

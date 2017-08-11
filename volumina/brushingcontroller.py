@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -20,10 +21,11 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from functools import partial
-from PyQt4.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
-from PyQt4.QtGui import QPen, QBrush, QApplication, QMouseEvent, QGraphicsLineItem
+from PyQt5.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
+from PyQt5.QtGui import QPen, QBrush, QMouseEvent
+from PyQt5.QtWidgets import QApplication, QGraphicsLineItem
 
-from navigationController import NavigationInterpreter
+from .navigationController import NavigationInterpreter
 
 #*******************************************************************************
 # C r o s s h a i r C o n t r o l e r                                          *

@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -23,8 +24,8 @@
 import os
 
 #PyQt
-from PyQt4 import uic
-from PyQt4.QtGui import QDialog
+from PyQt5 import uic
+from PyQt5.QtWidgets import QDialog
 from functools import partial
 
 #===----------------------------------------------------------------------------------------------------------------===
@@ -37,7 +38,7 @@ class GrayscaleLayerDialog(QDialog):
         self.setLayername(layer.name)
         def dbgPrint(a, b):
             layer.set_normalize(0, (a,b))
-            print "normalization changed to [%d, %d]" % (a,b)
+            print("normalization changed to [%d, %d]" % (a,b))
 
         def autoRange(state):
             if state == 2:
@@ -76,7 +77,7 @@ class RGBALayerDialog(QDialog):
 
         def dbgPrint(layerIdx, a, b):
             layer.set_normalize(layerIdx, (a, b))
-            print "normalization changed for channel=%d to [%d, %d]" % (layerIdx, a,b)
+            print("normalization changed for channel=%d to [%d, %d]" % (layerIdx, a,b))
 
         self.redChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
         self.greenChannelThresholdingWidget.setRange(layer.range[1][0], layer.range[1][1])
@@ -155,7 +156,7 @@ class RGBALayerDialog(QDialog):
 if __name__ == "__main__":
     import optparse
     import sys
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
      
     parser = optparse.OptionParser()
     parser.add_option("--gray", action="store_true")
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     elif options.rgb:
         l = RGBALayerDialog()
     else:
-        print parser.usage
+        print(parser.usage)
         sys.exit()
     l.show()
     app.exec_()

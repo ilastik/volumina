@@ -20,14 +20,16 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
+from builtins import range
 from itertools import product
 from operator import mul, itemgetter
 import os
 
-from PyQt4 import uic
-from PyQt4.QtCore import Qt, QEvent, QString, QRectF
-from PyQt4.QtGui import QDialog, QDialogButtonBox, QFileDialog, QImageWriter, QImage, QPainter, qRgb, QColorDialog, \
-    QApplication
+from PyQt5 import uic
+from PyQt5.QtCore import Qt, QEvent, QRectF
+from PyQt5.QtGui import QImageWriter, QImage, QPainter, qRgb
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QColorDialog, QApplication
+from functools import reduce
 
 try:
     import wand
@@ -165,7 +167,7 @@ class WysiwygExportOptionsDlg(QDialog):
 
     def _initFileOptionsWidget(self):        
         # List all image formats supported by QImageWriter
-        exts = [str(QString(ext)) for ext in list(QImageWriter.supportedImageFormats())]
+        exts = [str(ext) for ext in QImageWriter.supportedImageFormats()]
         
         # insert them into file format combo box
         for ext in exts:
@@ -221,7 +223,7 @@ class WysiwygExportOptionsDlg(QDialog):
         self._pattern_ok = False
         if valid:
             try:
-                d = dict(zip(co, range(len(co))))
+                d = dict(list(zip(co, list(range(len(co))))))
                 txt.format(**d)
             except KeyError as e:
                 self.filePatternInvalidLabel.setText(self.TOO_MANY_PLACEHOLDER.format(e.message))
@@ -285,7 +287,7 @@ class WysiwygExportOptionsDlg(QDialog):
     def _browseForPath(self):
         default_path = self.directoryEdit.text()
         export_dir = QFileDialog.getExistingDirectory(self, "Export Directory", default_path)
-        if not export_dir.isNull():
+        if export_dir:
             self.directoryEdit.setText(export_dir)
             
     def _validateFilePath(self):
@@ -379,11 +381,15 @@ class WysiwygExportHelper(MultiStepProgressDialog):
     def loopGenerator(self, rect, base_pos, start, stop, iter_axes,
                       iter_coords, folder, pattern, fileExt):
 
-        ranges = [xrange(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
+        ranges = [range(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
         padding = ["0{}".format(len(str(len(r) - 1))) for r in ranges if len(r) > 1]
-        steps = reduce(mul, map(len, ranges), 1.0)
+        steps = reduce(mul, list(map(len, ranges)), 1.0)
 
-        getter = itemgetter(*iter_axes if iter_axes else [slice(0)])
+        if iter_axes:
+            getter = itemgetter(*iter_axes)
+        else:
+            getter = [slice(0)]
+
         file_names = []
         for i, pos in enumerate(product(*ranges)):
             coords = getter(pos)
@@ -409,7 +415,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         assert depth_index is not None
         assert depth_coord is not None
         stack_range = "{}-{}".format(start[depth_index], stop[depth_index])
-        for t, chunk in zip(xrange(start[0], stop[0]), zip(*chunks)):
+        for t, chunk in zip(range(start[0], stop[0]), list(zip(*chunks))):
             stack_pattern = pattern.replace("{{{}}}".format(depth_coord), stack_range)
             stack_name = self._filename(folder, stack_pattern, fileExt, iter_coords, [t] + [0] * (len(iter_axes) - 1)
                                         , padding)
@@ -473,7 +479,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         if not hasattr(coords, "__iter__"):
             coords = [coords]
 
-        replace = dict(zip(iters, map(format, coords, padding)))
+        replace = dict(list(zip(iters, list(map(format, coords, padding)))))
 
         fname = "{pattern}.{ext}".format(pattern=pattern.format(**replace), ext=extension)
         return os.path.join(folder, fname)

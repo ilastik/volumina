@@ -21,7 +21,7 @@
 ###############################################################################
 import numpy
 from functools import partial
-from PyQt4.QtCore import QObject, pyqtSignal, QTimer
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
 #*******************************************************************************
 # P o s i t i o n M o d e l                                                    *
@@ -55,6 +55,7 @@ class PositionModel(QObject):
     @property
     def shape5D(self):
         return self._shape5D
+
     @shape5D.setter
     def shape5D(self, s):
         assert len(s) == 5, str(s) + " not dim 5"

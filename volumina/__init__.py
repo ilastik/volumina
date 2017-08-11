@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -39,11 +40,11 @@ if not has_handler(volumina_logger):
     volumina_logging_handler.setLevel(logging.INFO)
 
 NO3D = False
-import api
+from . import api
 
 verboseRequests = False
 
-import colorama
+from . import colorama
 colorama.init()
 
 import threading

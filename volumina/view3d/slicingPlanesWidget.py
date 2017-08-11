@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,13 +20,14 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
 try:
     from vtk import vtkPropAssembly, vtkImplicitPlaneRepresentation, vtkPolyData, vtkPoints, \
                 vtkCellArray, vtkImplicitPlaneWidget2, vtkTubeFilter, vtkPolyDataMapper, \
                 vtkActor, vtkPlane
 
 except:
-    print 'Vtk not found in slicingPlanesWidget'
+    print('Vtk not found in slicingPlanesWidget')
     vtkfound = 'false'
 
 #*******************************************************************************

@@ -19,8 +19,8 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtGui import QWidget,QGridLayout, QSizePolicy
-from PyQt4.QtCore import Qt
+from PyQt5.QtWidgets import QWidget,QGridLayout, QSizePolicy
+from PyQt5.QtCore import Qt
 from imageEditorComponents import PositionModelImage
 
 class SynchronizedEditors(QWidget):
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     #make the program quit on Ctrl+C
     import sys
     import signal   
-    from PyQt4.QtGui import QApplication, QPushButton, QVBoxLayout
+    from PyQt5.QtWidgets import QApplication, QPushButton, QVBoxLayout
     from imageEditorWidget import TestWidget
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     

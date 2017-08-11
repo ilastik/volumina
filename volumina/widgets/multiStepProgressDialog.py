@@ -1,3 +1,4 @@
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,10 +20,11 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from past.utils import old_div
 import os, time
 
-from PyQt4 import uic
-from PyQt4.QtGui import QDialog, QDialogButtonBox
+from PyQt5 import uic
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox
 
 class MultiStepProgressDialog(QDialog):
     def __init__(self, parent=None):
@@ -79,13 +81,13 @@ class MultiStepProgressDialog(QDialog):
     
     def _updateCurrentStepLabel(self, singlet):
         self.times.append(singlet)
-        t = sum(self.times) / len(self.times)
+        t = old_div(sum(self.times), len(self.times))
         if len(self.times) > 5:
             self.times.pop(0)
         if t < 120:
             self.currentStepLabel.setText("Estimated time left: %.02f sec" % (t))
         else:
-            self.currentStepLabel.setText("Estimated time left: %.02f min" % (t / 60))
+            self.currentStepLabel.setText("Estimated time left: %.02f min" % (old_div(t, 60)))
 
     def _initUic(self):
         p = os.path.split(__file__)[0]+'/'
@@ -96,7 +98,7 @@ class MultiStepProgressDialog(QDialog):
         
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     import vigra, numpy
     app = QApplication(list())
    

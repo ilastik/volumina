@@ -1,11 +1,14 @@
+from __future__ import print_function
 from collections import defaultdict
 import threading
 import logging
 
 import numpy as np
 
-from PyQt4.QtCore import Qt, pyqtSignal, QObject, QRectF, QPointF, QPoint
-from PyQt4.QtGui import QApplication, QGraphicsObject, QGraphicsPathItem, QPainterPath, QPen, QColor
+from PyQt5.Qt import pyqtSignal
+from PyQt5.QtCore import Qt, QObject, QRectF, QPointF, QPoint
+from PyQt5.QtWidgets import QApplication, QGraphicsObject, QGraphicsPathItem
+from PyQt5.QtGui import QPainterPath, QPen, QColor
 
 from volumina.utility import SignalingDefaultDict, edge_coords_nd, simplify_line_segments
 
@@ -42,7 +45,7 @@ class SegmentationEdgesItem( QGraphicsObject ):
 
     def set_path_items(self, path_items):
         self.path_items = path_items
-        for path_item in path_items.values():
+        for path_item in list(path_items.values()):
             path_item.set_parent(self)
 
         # Cache the path item keys as a set
@@ -75,7 +78,7 @@ def painter_paths_for_labels_PURE_PYTHON( label_img, simplify_with_tolerance=Non
   
     # Populate the path_items dict.
     painter_paths = {}
-    for id_pair in set(x_axis_edge_coords.keys() + y_axis_edge_coords.keys()):
+    for id_pair in set(list(x_axis_edge_coords.keys()) + list(y_axis_edge_coords.keys())):
         horizontal_edge_coords = vertical_edge_coords = []
         if id_pair in y_axis_edge_coords:
             horizontal_edge_coords = y_axis_edge_coords[id_pair]
@@ -94,7 +97,7 @@ try:
             return painter_paths_for_labels_PURE_PYTHON(label_img, simplify_with_tolerance)
         line_seg_lookup = line_segments_for_labels(vigra.taggedView(label_img, 'xy') )
         painter_paths = {}
-        for edge_id, line_segments in line_seg_lookup.items():
+        for edge_id, line_segments in list(line_seg_lookup.items()):
             point_list = line_segments.reshape(-1, 2)
             painter_paths[edge_id] = arrayToQPath(point_list[:,0], point_list[:,1], connect='pairs')
         return painter_paths
@@ -112,7 +115,7 @@ def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tole
     painter_paths = painter_paths_for_labels(label_img, simplify_with_tolerance)
     
     path_items = {}
-    for id_pair in painter_paths.keys():
+    for id_pair in list(painter_paths.keys()):
         path_items[id_pair] = SingleEdgeItem(id_pair, painter_paths[id_pair], initial_pen=edge_pen_table[id_pair])
     return path_items
 
@@ -156,7 +159,7 @@ def line_segments_from_edge_coords( horizontal_edge_coords, vertical_edge_coords
             # Since these points are already in order, doubling the size of the point list like this 
             # is slightly inefficient, but it simplifies things because we can use the same QPath
             # generation method.
-            line_segments += zip(point_list[:-1], point_list[1:])
+            line_segments += list(zip(point_list[:-1], point_list[1:]))
         line_segments = np.array(line_segments)
     return line_segments
 
@@ -229,7 +232,7 @@ class defaultdict_with_key(defaultdict):
 ##
 ## Copied from PyQtGraph with slight modifications
 ##
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 import struct
 def arrayToQPath(x, y, connect='all'):
     """Convert an array of x,y coordinats to QPainterPath as efficiently as possible.
@@ -271,7 +274,7 @@ def arrayToQPath(x, y, connect='all'):
     ##
     ## All values are big endian--pack using struct.pack('>d') or struct.pack('>i')
 
-    path = QtGui.QPainterPath()
+    path = QPainterPath()
 
     #profiler = debug.Profiler()
     n = x.shape[0]
@@ -321,7 +324,7 @@ def arrayToQPath(x, y, connect='all'):
 if __name__ == "__main__":
     import time
     import numpy as np
-    from PyQt4.QtGui import QApplication, QGraphicsView, QGraphicsScene, QTransform
+    from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QTransform
 
     app = QApplication([])
 
@@ -341,12 +344,12 @@ if __name__ == "__main__":
 
     start = time.time()
     path_items = generate_path_items_for_labels(pen_table, labels_img, None)
-    print "generate took {}".format(time.time() - start) # 52 ms
+    print("generate took {}".format(time.time() - start)) # 52 ms
 
     edges_item = SegmentationEdgesItem(path_items, pen_table)
     
     def assign_random_color( id_pair, buttons ):
-        print "handling click: {}".format(id_pair)
+        print("handling click: {}".format(id_pair))
         pen = pen_table[id_pair]
         if pen:
             pen = QPen(pen)

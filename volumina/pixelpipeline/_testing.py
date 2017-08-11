@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -45,7 +46,7 @@ if has_lazyflow:
             req = self.inputs["Input"][key].writeInto(result)
             req.wait()
             t = self._delay_factor*result.nbytes
-            print "Delay: " + str(t) + " secs."
+            print("Delay: " + str(t) + " secs.")
             time.sleep(t)
             return result
 

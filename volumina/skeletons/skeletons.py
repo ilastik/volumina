@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,11 +22,12 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from PyQt4.QtCore import QPointF, QObject, pyqtSignal
-from PyQt4.QtGui import QGraphicsItem
+from past.utils import old_div
+from PyQt5.QtCore import QPointF, QObject, pyqtSignal
+from PyQt5.QtWidgets import QGraphicsItem
 import numpy, copy
 
-from skeletonNode import SkeletonNode
+from .skeletonNode import SkeletonNode
 
 class Skeletons(QObject):
    
@@ -73,17 +77,17 @@ class Skeletons(QObject):
         self.changed.emit()
     
     def selectNode(self, node, select):
-        print "Skeletons.selectNode(node=%r) = %r" % (node, select)
+        print("Skeletons.selectNode(node=%r) = %r" % (node, select))
         
         assert node in self._nodes
         if self._selectMode == Skeletons.SelectExclusive:
             for n in copy.copy(self._selectedNodes):
-                print "  setting %r to unselected" % (n,)
+                print("  setting %r to unselected" % (n,))
                 self._selectNode(n, False)
-                print "  -> n[]id=%d].isSelected() = ", (id(n), n.isSelected())
+                print("  -> n[]id=%d].isSelected() = ", (id(n), n.isSelected()))
                 
         if select :
-            print "  setting %r to select = %r" % (node, select)
+            print("  setting %r to select = %r" % (node, select))
             self._selectNode(node, select)
       
         self.jumpRequested.emit(node.pos) 
@@ -102,7 +106,7 @@ class Skeletons(QObject):
                 self._selectedNodes.remove(node)
        
     def moveNode(self, node, newPos):
-        print "Skeletons: node %r moved to %r" % (node, newPos)
+        print("Skeletons: node %r moved to %r" % (node, newPos))
         node.pos = newPos
         self.changed.emit()
         
@@ -142,7 +146,7 @@ class Skeletons(QObject):
                 l1 = numpy.asarray(e[1].pos) 
                 l = l1 - l0
                 
-                d = numpy.dot(p0-l0, n)/numpy.dot(l,n)
+                d = old_div(numpy.dot(p0-l0, n),numpy.dot(l,n))
                 
                 p = d*l + l0
                 
@@ -167,6 +171,6 @@ if __name__ == "__main__":
     
     s.intersect(2, 30)
     
-    print s.intersect(2, 35)
+    print(s.intersect(2, 35))
     
     

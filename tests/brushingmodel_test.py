@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,21 +20,22 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
 import unittest as ut
 import numpy as np
-from PyQt4.QtGui import QApplication, qApp
-from PyQt4.QtCore import QPointF
+from PyQt5.QtWidgets import QApplication, qApp
+from PyQt5.QtCore import QPointF
 from volumina.brushingmodel import BrushingModel
 
 def _onBrushStroke( point, labels  ):
-    print point.x(), point.y()
-    print labels.shape
+    print(point.x(), point.y())
+    print(labels.shape)
 
 class BrushingModelTest( ut.TestCase ):
 
     @classmethod
     def setUpClass(cls):
-        cls.app = QApplication([], False)
+        cls.app = QApplication([])
 
     @classmethod
     def tearDownClass(cls):
@@ -43,8 +45,8 @@ class BrushingModelTest( ut.TestCase ):
         m = BrushingModel()
 
         def check( point, labels ):
-            self.assertEqual(max((np.count_nonzero(labels[row,:]) for row in xrange(labels.shape[0]))), should_diameter)
-            self.assertEqual(max((np.count_nonzero(labels[col,:]) for col in xrange(labels.shape[1]))), should_diameter)
+            self.assertEqual(max((np.count_nonzero(labels[row,:]) for row in range(labels.shape[0]))), should_diameter)
+            self.assertEqual(max((np.count_nonzero(labels[col,:]) for col in range(labels.shape[1]))), should_diameter)
         m.setBrushSize( size )
         m.brushStrokeAvailable.connect( check )
         m.beginDrawing( QPointF(size*2,size*2), (size*3,size*3) )

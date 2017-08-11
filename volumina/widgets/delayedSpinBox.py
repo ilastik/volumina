@@ -1,5 +1,6 @@
-from PyQt4.QtCore import pyqtSignal, QTimer
-from PyQt4.QtGui import QSpinBox
+from __future__ import print_function
+from PyQt5.QtCore import pyqtSignal, QTimer
+from PyQt5.QtWidgets import QSpinBox
 
 class DelayedSpinBox(QSpinBox):
     """
@@ -45,7 +46,7 @@ class DelayedSpinBox(QSpinBox):
         self._blocksignal = False
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication, QWidget, QLabel, QVBoxLayout
+    from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
     
     app = QApplication([])
 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     box = DelayedSpinBox(1000)
     
     def update_label(value):
-        print "updating label to: {}".format(value)
+        print("updating label to: {}".format(value))
         label.setText(str(value))
     box.delayedValueChanged.connect( update_label )
     

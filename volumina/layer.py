@@ -19,20 +19,25 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
 import colorsys
 import numpy
 
-from PyQt4.QtCore import Qt, QObject, pyqtSignal, QString, QTimer
-from PyQt4.QtGui import QColor, QPen
+from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer
+from PyQt5.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource
 
-from volumina.utility import decode_to_qstring, encode_from_qstring, SignalingDefaultDict
+from volumina.utility import SignalingDefaultDict
 
 from functools import partial
 from collections import defaultdict
+
+import sys
+if sys.version_info.major > 2:
+    unicode = str
 
 #*******************************************************************************
 # L a y e r                                                                    *
@@ -44,7 +49,7 @@ class Layer( QObject ):
     datasources -- list of ArraySourceABC; read-only
     visible -- boolean
     opacity -- float; range 0.0 - 1.0
-    name -- QString
+    name -- unicode
     numberOfChannels -- int
     layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
     '''
@@ -55,7 +60,7 @@ class Layer( QObject ):
 
     visibleChanged = pyqtSignal(bool) 
     opacityChanged = pyqtSignal(float) 
-    nameChanged = pyqtSignal(object)  # sends a python str object, not a QString!
+    nameChanged = pyqtSignal(object)  # sends a python str object, not unicode!
     channelChanged = pyqtSignal(int)
     numberOfChannelsChanged = pyqtSignal(int)
 
@@ -91,14 +96,10 @@ class Layer( QObject ):
         return self._name
     @name.setter
     def name( self, n ):
-        if isinstance(n, str):
-            n = decode_to_qstring(n, 'utf-8')
-        assert isinstance(n, QString)
-        pystr = encode_from_qstring(n, 'utf-8')
-
+        assert isinstance(n, unicode)
         if self._name != n:
             self._name = n
-            self.nameChanged.emit(pystr)
+            self.nameChanged.emit(n)
 
     @property
     def numberOfChannels( self ):
@@ -170,7 +171,7 @@ class Layer( QObject ):
 
     def __init__( self, datasources, direct=False ):
         super(Layer, self).__init__()
-        self._name = QString("Unnamed Layer")
+        self._name = u"Unnamed Layer"
         self._visible = True
         self._opacity = 1.0
         self._datasources = datasources
@@ -183,7 +184,7 @@ class Layer( QObject ):
         self._cleaned_up = False
 
         self._updateNumberOfChannels()
-        for datasource in filter(None, self._datasources):
+        for datasource in [_f for _f in self._datasources if _f]:
             datasource.numberOfChannelsChanged.connect( self._updateNumberOfChannels )
 
         self.visibleChanged.connect(self.changed)
@@ -199,7 +200,7 @@ class Layer( QObject ):
         # grab numberOfChannels for those that are defined.
         # That is, if there are any datasources.
         newchannels = []
-        for i in xrange(len(self._datasources)):
+        for i in range(len(self._datasources)):
             if self._datasources[i] is not None:
                 newchannels.append(self._datasources[i].numberOfChannels)
 
@@ -259,7 +260,7 @@ def dtype_to_range(dsource):
     if (dtype == numpy.bool_ or dtype == bool):
         # Special hack for bool
         rng = (0,1)
-    elif issubclass(dtype, (int, long, numpy.integer)):
+    elif issubclass(dtype, (int, int, numpy.integer)):
         rng = (0, numpy.iinfo(dtype).max)
     elif (dtype == numpy.float32 or dtype == numpy.float64):
         # Is there a way to get the min and max values of the actual dataset(s)?
@@ -427,7 +428,7 @@ def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=
                    to lie uniformly in the allowed range. """
     r = numpy.random.random((M, 3))
     if clamp is not None:
-        for k,v in clamp.iteritems():
+        for k,v in clamp.items():
             idx = colormodel.index(k)
             r[:,idx] = v
 
@@ -644,7 +645,7 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
 
         # Change the pens accordingly
         pen_table = {}
-        for id_pair, label_class in self._edge_labels.items():
+        for id_pair, label_class in list(self._edge_labels.items()):
             pen_table[id_pair] = self._label_class_pens[label_class]
         self.pen_table.overwrite(pen_table)
     

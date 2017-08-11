@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -27,29 +28,29 @@ from functools import partial
 import numpy
 
 #PyQt
-from PyQt4.QtCore import pyqtSignal, QObject
-from PyQt4.QtGui import QApplication, QWidget
+from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtWidgets import QApplication, QWidget
 
 #volumina
 import volumina.pixelpipeline.imagepump
-from eventswitch import EventSwitch
-from imageScene2D import ImageScene2D
-from imageView2D import ImageView2D
-from positionModel import PositionModel
-from croppingMarkers import CropExtentsModel
-from navigationController import NavigationController, NavigationInterpreter
-from brushingcontroller import BrushingInterpreter, BrushingController, \
+from .eventswitch import EventSwitch
+from .imageScene2D import ImageScene2D
+from .imageView2D import ImageView2D
+from .positionModel import PositionModel
+from .croppingMarkers import CropExtentsModel
+from .navigationController import NavigationController, NavigationInterpreter
+from .brushingcontroller import BrushingInterpreter, BrushingController, \
                               CrosshairController
-from thresholdingcontroller import ThresholdingInterpreter
-from brushingmodel import BrushingModel
-from slicingtools import SliceProjection
+from .thresholdingcontroller import ThresholdingInterpreter
+from .brushingmodel import BrushingModel
+from .slicingtools import SliceProjection
 
 import logging
 logger = logging.getLogger(__name__)
 
 useVTK = True
 try:
-    from view3d.view3d import OverviewScene
+    from .view3d.view3d import OverviewScene
 except:
     logger.error( "Warning: could not import optional dependency VTK" )
     useVTK = False
@@ -124,6 +125,7 @@ class VolumeEditor( QObject ):
     def dataShape(self, s):
         self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
         self.cropModel.set_time_shape_cropped(0,s[0])
+
         self.posModel.shape5D = s
         #for 2D images, disable the slice intersection marker
         is_2D = (numpy.asarray(s[1:4]) == 1).any()

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -23,13 +25,13 @@ import re
 import os
 import collections
 
-from PyQt4 import uic
-from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QWidget
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QWidget
 
-from singleFileExportOptionsWidget import SingleFileExportOptionsWidget
-from hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
-from stackExportFileOptionsWidget import StackExportFileOptionsWidget
+from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
+from .hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
+from .stackExportFileOptionsWidget import StackExportFileOptionsWidget
 
 try:
     from lazyflow.operators.ioOperators import OpExportSlot
@@ -38,7 +40,7 @@ except ImportError:
     _has_lazyflow = False
 
 try:
-    from dvidVolumeExportOptionsWidget import DvidVolumeExportOptionsWidget
+    from .dvidVolumeExportOptionsWidget import DvidVolumeExportOptionsWidget
     _supports_dvid = True
 except ImportError:
     _supports_dvid = False
@@ -114,7 +116,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self._format_option_editors['blockwise hdf5'] = blockwiseHdf5OptionsWidget
 
         # Populate the format combo
-        for file_format, widget in self._format_option_editors.items():
+        for file_format, widget in list(self._format_option_editors.items()):
             self.formatCombo.addItem( file_format )
 
         # Populate the stacked widget
@@ -177,7 +179,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
             self.pathValidityChange.emit( self._valid_path )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph, Operator, InputSlot
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 
@@ -209,8 +211,8 @@ if __name__ == "__main__":
     w.raise_()
     app.exec_()
 
-    print "Selected Filepath: {}".format( op.OutputFilenameFormat.value )
-    print "Selected Dataset: {}".format( op.OutputInternalPath.value )
+    print("Selected Filepath: {}".format( op.OutputFilenameFormat.value ))
+    print("Selected Dataset: {}".format( op.OutputInternalPath.value ))
 
 
 

@@ -48,8 +48,9 @@
 #    authors and should not be interpreted as representing official policies, either expressed
 #    or implied, of their employers.
 
-from PyQt4.QtCore import Qt, QPointF, QRectF
-from PyQt4.QtGui import QGraphicsItem, QPen
+from PyQt5.QtCore import Qt, QPointF, QRectF
+from PyQt5.QtGui import QPen
+from PyQt5.QtWidgets import QGraphicsItem
 
 #*******************************************************************************
 # C r o s s H a i r C u r s o r                                                *
@@ -68,8 +69,8 @@ class CrossHairCursor(QGraphicsItem) :
     def boundingRect(self):
         return self.scene().data2scene.mapRect(QRectF(0,0, self._width, self._height))
 
-    def __init__(self, scene):
-        QGraphicsItem.__init__(self, scene=scene)
+    def __init__(self):
+        QGraphicsItem.__init__(self)
 
         self._width = 0
         self._height = 0

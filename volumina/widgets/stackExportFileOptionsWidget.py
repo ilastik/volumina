@@ -20,13 +20,12 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 import os
+import sys
 import re
 
-from PyQt4 import uic
-from PyQt4.QtCore import pyqtSignal, Qt, QEvent
-from PyQt4.QtGui import QWidget, QFileDialog
-
-from volumina.utility import encode_from_qstring, decode_to_qstring
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent
+from PyQt5.QtWidgets import QWidget, QFileDialog
 
 try:
     from lazyflow.operators.ioOperators import OpStackWriter
@@ -82,8 +81,8 @@ class StackExportFileOptionsWidget(QWidget):
             if re.search("{slice_index(:.*)?}", filename_pattern) is None:
                 filename_pattern += '_{slice_index}'
 
-            self.directoryEdit.setText( decode_to_qstring(directory) )
-            self.filePatternEdit.setText( decode_to_qstring(filename_pattern + '.' + self._extension) )
+            self.directoryEdit.setText( directory )
+            self.filePatternEdit.setText( filename_pattern + '.' + self._extension )
             
             # Re-configure the slot in case we changed the extension
             file_path = os.path.join( directory, filename_pattern ) + '.' + self._extension            
@@ -106,15 +105,15 @@ class StackExportFileOptionsWidget(QWidget):
             starting_dir = os.path.split(self._fullPathExportSlot.value)[0]
         
         export_dir = QFileDialog.getExistingDirectory( self, "Export Directory", starting_dir )
-        if export_dir.isNull():
+        if not export_dir:
             return
 
         self.directoryEdit.setText( export_dir )
         self._updateFromGui()
 
     def _updateFromGui(self):
-        export_dir = encode_from_qstring( self.directoryEdit.text() )
-        filename_pattern = encode_from_qstring( self.filePatternEdit.text() )
+        export_dir = self.directoryEdit.text()
+        filename_pattern = self.filePatternEdit.text()
         export_path = os.path.join( export_dir, filename_pattern )
         self._filepathSlot.setValue( export_path )
         
@@ -131,7 +130,7 @@ class StackExportFileOptionsWidget(QWidget):
             self.pathValidityChange.emit( self.settings_are_valid )
 
 if __name__ == "__main__":
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     from lazyflow.graph import Graph
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 

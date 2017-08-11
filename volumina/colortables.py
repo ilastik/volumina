@@ -32,18 +32,14 @@ This table is applicable to raw with two different values 0 and 1. 0s
 will be displayed red and 1s black.
 
 '''
+from __future__ import division
 
-import itertools
-from PyQt4.QtGui import QColor
-
-
-
-
-from PyQt4.QtGui import QColor
+from builtins import range
+from past.utils import old_div
 import warnings
-    
+import itertools
 import numpy as np
-
+from PyQt5.QtGui import QColor
 
 def matplotlib_to_qt4_colortable(cmap_name,N, asLong=True):
     """
@@ -81,7 +77,7 @@ def jetTransparent(N=256):
     return colortable
 
 #A jet colortable for the first half, only increasing in opacity for the second
-def partlyJetTransparent(N=256, ratio = 2./3):
+def partlyJetTransparent(N=256, ratio = old_div(2.,3)):
     colortable = matplotlib_to_qt4_colortable("jet", N=int(ratio * N), asLong = False)
     #colortable[0] = QColor(0,0,0,0)
     maxCol = colortable[-1]
@@ -89,7 +85,7 @@ def partlyJetTransparent(N=256, ratio = 2./3):
         colortable.append(maxCol)
     for i,color in enumerate(colortable):
         color = colortable[i]
-        color.setAlpha(min(int(i/ ratio),255))
+        color.setAlpha(min(int(old_div(i, ratio)),255))
         colortable[i] = color.rgba()
     return colortable
 
@@ -404,7 +400,7 @@ def create_random_16bit():
 
 if __name__=="__main__":
       from volumina.api import *
-      from PyQt4.QtGui import QApplication
+      from PyQt5.QtWidgets import QApplication
       import numpy
       from volumina.pixelpipeline.datasourcefactories import *
       app = QApplication(sys.argv)

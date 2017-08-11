@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 try:
@@ -36,7 +37,7 @@ def simplify_line_segments(lines, tolerance=0.707):
         # Annoyingly, the output type of linemerge() depends
         # on how many segments were found
         return [ np.array(merged_lines) ]
-    return map( np.array, merged_lines )
+    return list(map( np.array, merged_lines ))
 
 
 ##
@@ -74,17 +75,17 @@ def simplify_line_segments_OLD(lines, tolerance=0.707):
     assert not _missing_shapely and not _missing_nx, \
         "This function requires networkx and shapely to be installed."
 
-    lines = map(lambda l: tuple(map(tuple, l)), lines)
+    lines = [tuple(map(tuple, l)) for l in lines]
     merged_lines = merge_line_segments(lines)
 
     # Convert to LineString
-    merged_lines = map(LineString, merged_lines)
+    merged_lines = list(map(LineString, merged_lines))
 
     # Simplify
-    simplified_line_strings = map( lambda ls: ls.simplify(tolerance, preserve_topology=False), merged_lines )
+    simplified_line_strings = [ls.simplify(tolerance, preserve_topology=False) for ls in merged_lines]
 
     # Return as numpy
-    point_arrays = map(np.array, simplified_line_strings)
+    point_arrays = list(map(np.array, simplified_line_strings))
     return point_arrays
 
 def merge_line_segments(lines):
@@ -161,8 +162,8 @@ def split_into_branchless_segments(undirected_graph):
     """
     # Choose an arbitrary tip to use as the tree root
     degrees = list(undirected_graph.degree_iter())
-    tip_degrees = filter( lambda (node, degree): degree == 1, degrees )
-    tip_nodes = map( lambda (node, degree): node, tip_degrees )
+    tip_degrees = [node_degree for node_degree in degrees if node_degree[1] == 1]
+    tip_nodes = [node_degree1[0] for node_degree1 in tip_degrees]
 
     tips_already_processed = set()
     segments = []
@@ -232,7 +233,7 @@ if __name__ == "__main__":
     simplified_lines = simplify_line_segments(lines, 0.0)
     simplified_lines_OLD = simplify_line_segments_OLD(lines, 0.0)
 
-    print "showing plot..."
+    print("showing plot...")
     import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(111)

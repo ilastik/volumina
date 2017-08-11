@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,18 +20,19 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
+from builtins import range
 import copy
 from volumina.multimethods import multimethod
 from volumina.layer import GrayscaleLayer, RGBALayer, ColortableLayer, \
                                AlphaModulatedLayer, ClickableColortableLayer, \
                                DummyGraphicsItemLayer, DummyRasterItemLayer, \
                                SegmentationEdgesLayer, LabelableSegmentationEdgesLayer
-from imagesources import GrayscaleImageSource, ColortableImageSource, \
+from .imagesources import GrayscaleImageSource, ColortableImageSource, \
                          RGBAImageSource, AlphaModulatedImageSource, \
                          DummyItemSource, DummyRasterItemSource, \
                          SegmentationEdgesItemSource
                          
-from datasources import ConstantSource
+from .datasources import ConstantSource
 
 @multimethod(AlphaModulatedLayer, list)
 def createImageSource( layer, datasources2d ):
@@ -69,7 +71,7 @@ def createImageSource( layer, datasources2d ):
 def createImageSource( layer, datasources2d ):
     assert len(datasources2d) == 4
     ds = copy.copy(datasources2d)
-    for i in xrange(3):
+    for i in range(3):
         if datasources2d[i] == None:
             ds[i] = ConstantSource(layer.color_missing_value)
     guarantees_opaqueness = False
