@@ -127,16 +127,19 @@ class VolumeEditor( QObject ):
         self.cropModel.set_time_shape_cropped(0,s[0])
 
         self.posModel.shape5D = s
-        for i, v in enumerate(self.imageViews):
-            v.sliceShape = self.posModel.sliceShape(axis=i)
-        self.view3d.dataShape = s[1:4]
-
         #for 2D images, disable the slice intersection marker
         is_2D = (numpy.asarray(s[1:4]) == 1).any()
         if is_2D:
             self.navCtrl.indicateSliceIntersection = False
-        
+        else:
+            for i in range(3):
+                self.parent.volumeEditorWidget.quadview.ensureMinimized(i)
+
         self.shapeChanged.emit()
+
+        for i, v in enumerate(self.imageViews):
+            v.sliceShape = self.posModel.sliceShape(axis=i)
+        self.view3d.dataShape = s[1:4]
 
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
@@ -224,6 +227,7 @@ class VolumeEditor( QObject ):
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
 
         self.layerStack.layerAdded.connect( self._onLayerAdded )
+        self.parent = parent
 
     def _reset(self):
         for s in self.imageScenes:

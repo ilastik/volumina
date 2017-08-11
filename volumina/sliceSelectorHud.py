@@ -471,7 +471,7 @@ class QuadStatusBar(QHBoxLayout):
         self.zSpinBox.setHidden(False)
     
     def hideTimeSlider(self,flag):
-        visibleBefore = self.timeSlider.isHidden()
+        visibleBefore = not self.timeSlider.isHidden()
         self.timeSlider.setHidden(flag)
         self.timeEndButton.setHidden(flag)
         self.timeStartButton.setHidden(flag)
@@ -611,13 +611,13 @@ class QuadStatusBar(QHBoxLayout):
                 if remove:
                     mgr.unregister(actionInfo)
 
-        action("k", ActionInfo("Navigation",
+        action("<", ActionInfo("Navigation",
                                "Go to next time frame",
                                "Go to next time frame",
                                self._onTimeNextButtonClicked,
                                self.timeNextButton,
                                self.timeNextButton))
-        action("j", ActionInfo("Navigation",
+        action(">", ActionInfo("Navigation",
                                "Go to previous time frame",
                                "Go to previous time frame",
                                self._onTimePreviousButtonClicked,
