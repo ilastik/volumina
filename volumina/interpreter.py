@@ -113,6 +113,7 @@ class ClickInterpreter(QObject):
             pos = [int(i) for i in pos]
             pos = [self.posModel.time] + pos + [self.posModel.channel]
             self._onClick(self._layer, tuple(pos), event.pos())
+            event.accept()
             return True
         else:
             return self.baseInterpret.eventFilter(watched, event)
