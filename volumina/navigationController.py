@@ -208,6 +208,7 @@ class NavigationInterpreter(QObject):
 
         pos = event.pos()
         imageview.customContextMenuRequested.emit( pos )
+        event.accept()
         return True
 
     def _itemsAt(self, imageview, pos):
@@ -227,6 +228,7 @@ class NavigationInterpreter(QObject):
 
         dataMousePos = imageview.mapScene2Data(imageview.mapToScene(event.pos()))
         self._navCtrl.navigateToPoint(dataMousePos.x(), dataMousePos.y(), self._navCtrl._views.index(imageview))
+        event.accept()
         return True
 
     ###
