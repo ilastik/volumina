@@ -52,10 +52,10 @@ class OpDelay(OpArrayPiper):
 class OpDataProvider5D(Operator):
     name = "Data Provider 5D"
     category = "Input"
-    
-    inputSlots = [InputSlot("Changedata")]
-    outputSlots = [OutputSlot("Data5D")]
-    
+
+    Changedata = InputSlot()
+    Data5D = OutputSlot()
+
     def __init__(self, g, fn):
         Operator.__init__(self,g)
         self._data = np.load(fn)
