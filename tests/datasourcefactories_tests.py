@@ -35,10 +35,10 @@ except:
 
 if hasLazyflow:
     class OpPiper(Operator):
-        
-        inputSlots = [InputSlot("Input")]
-        outputSlots = [OutputSlot("Output")]
-        
+
+        Input = InputSlot()
+        Output = OutputSlot()
+
         def setupOutputs(self):
             
             self.outputs["Output"].meta.assignFrom(self.inputs["Input"].meta)

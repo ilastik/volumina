@@ -58,8 +58,8 @@ if has_lazyflow:
         name = "Data Provider"
         category = "Input"
 
-        inputSlots = [InputSlot("Changedata", optional=True)]
-        outputSlots = [OutputSlot("Data")]
+        Changedata = InputSlot(optional=True)
+        Data = OutputSlot("Data")
 
         def __init__(self, voluminaData, graph=None, parent=None):
             """
