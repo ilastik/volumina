@@ -479,23 +479,14 @@ class QuadStatusBar(QHBoxLayout):
         self.timeNextButton.setHidden(flag)
         self._registerTimeframeShortcuts(enabled=not flag, remove=visibleBefore)
 
-    def setToolTipTimeButtonsCrop(self,croppingFlag=False):
-        if croppingFlag==True:
-            self.timeStartButton.setToolTip("Jump to lirst frame of current crop")
-            self.timeEndButton.setToolTip("Jump to last frame of current crop")
-            self.timePreviousButton.setToolTip("Previous Frame")
-            self.timeNextButton.setToolTip("Next Frame")
-        else:
-            self.timeStartButton.setToolTip("First Frame")
-            self.timeEndButton.setToolTip("Last Frame")
-            self.timePreviousButton.setToolTip("Previous Frame")
-            self.timeNextButton.setToolTip("Next Frame")
+    def setToolTipTimeButtons(self,croppingFlag=False):
+        self.timeStartButton.setToolTip("First Frame")
+        self.timeEndButton.setToolTip("Last Frame")
+        self.timePreviousButton.setToolTip("Previous Frame")
+        self.timeNextButton.setToolTip("Next Frame")
 
-    def setToolTipTimeSliderCrop(self,croppingFlag=False):
-        if croppingFlag==True:
-            self.timeSlider.setToolTip("Choose the time coordinate of the current crop.")
-        else:
-            self.timeSlider.setToolTip("Choose the time coordinate of the current dataset.")
+    def setToolTipTimeSlider(self,croppingFlag=False):
+        self.timeSlider.setToolTip("Choose the time coordinate of the current dataset.")
 
     def createQuadViewStatusBar(self,
                                 xbackgroundColor, xforegroundColor,
@@ -564,7 +555,7 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSlider = QSlider(Qt.Horizontal)
         self.timeSlider.setMinimumWidth(10)
         self.timeSlider.setMaximumWidth(200)
-        self.setToolTipTimeSliderCrop()
+        self.setToolTipTimeSlider()
         self.addWidget(self.timeSlider)
         self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
 
@@ -579,7 +570,7 @@ class QuadStatusBar(QHBoxLayout):
         #self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
 
         
-        self.setToolTipTimeButtonsCrop()
+        self.setToolTipTimeButtons()
         self.addWidget(self.timeEndButton)
         self.timeEndButton.clicked.connect(self._onTimeEndButtonClicked)
 
