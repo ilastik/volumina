@@ -97,10 +97,9 @@ class NavigationInterpreter(QObject):
             elif etype == QEvent.MouseButtonDblClick:
                 return self.onMouseDoubleClick_default( watched, event )
 
-            elif etype == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
-                return self.onMousePressRight_default( watched, event )
-            
-            
+            elif etype == QEvent.MouseButtonPress:
+                return self.onMousePress_default( watched, event )
+
         elif self._current_state == self.DRAG_MODE:
             ### drag mode -> default mode
             if etype == QEvent.MouseButtonRelease:
@@ -195,7 +194,7 @@ class NavigationInterpreter(QObject):
 
         self._navCtrl.positionDataCursor(QPointF(dataX, dataY), self._navCtrl._views.index(imageview))
 
-    def onMousePressRight_default( self, imageview, event ):
+    def onMousePress_default( self, imageview, event ):
         #make sure that we have the cursor at the correct position
         #before we call the context menu
         self.onMouseMove_default( imageview, event )
