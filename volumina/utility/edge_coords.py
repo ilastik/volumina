@@ -10,7 +10,7 @@ try:
     import pandas as pd
 except ImportError:
     _pandas_available = False
-    warnings.warning("pandas not available. edge_coords functions will be slower.")
+    warnings.warn("pandas not available. edge_coords functions will be slower.")
 
 def edge_ids( label_img, axes=None ):
     """

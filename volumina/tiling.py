@@ -353,7 +353,7 @@ class _TilesCache( object ):
         """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
 
-        warnings.warning("FIXME: This is a slow way to look for the items we want.\n"
+        warnings.warn("FIXME: This is a slow way to look for the items we want.\n"
                       "_TilesCache._layerCache should be a dict-of-dict-of-dict for faster lookup!")
         qgraphicsitems = []
         for (layer_id, t_id), img in self._layerCache.caches[stack_id].items():

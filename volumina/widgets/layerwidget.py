@@ -50,10 +50,10 @@ class FractionSelectionBar( QWidget ):
             return
         if(value < 0.):
             value = 0.
-            warnings.warning("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 0." % str(value))
+            warnings.warn("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 0." % str(value))
         if(value > 1.):
             value = 1.
-            warnings.warning("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 1." % str(value))
+            warnings.warn("FractionSelectionBar.setFraction(): value has to be between 0. and 1. (was %s); setting to 1." % str(value))
         self._fraction = float(value)
         self.update()
 

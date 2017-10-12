@@ -70,7 +70,7 @@ class PreferencesManager(with_metaclass(Singleton, object)):
                     os.remove(self._filePath)
                     return {}
                 except ValueError:
-                    warnings.warning("Unable to load preferences from {}. Overwriting...".format(self._filePath))
+                    warnings.warn("Unable to load preferences from {}. Overwriting...".format(self._filePath))
                     os.remove(self._filePath)
                     return {}
     def _save(self):
