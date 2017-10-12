@@ -180,7 +180,7 @@ class GrayscaleImageRequest( object ):
             
         # FIXME: It is obviously wrong to truncate like this (right?)
         if a.dtype == np.uint64 or a.dtype == np.int64:
-            warnings.warn("Truncating 64-bit pixels for display")
+            warnings.warning("Truncating 64-bit pixels for display")
             if a.dtype == np.uint64:
                 a = np.asanyarray(a, np.uint32)
             elif a.dtype == np.int64:
@@ -425,7 +425,7 @@ class ColortableImageRequest( object ):
                 raise NotImplementedError()
                 #FIXME: maybe this should be done in a better way using an operator before the colortable request which properly handles 
                 #this problem 
-                warnings.warn("Data for colortable layers cannot be float, casting",RuntimeWarning)
+                warnings.warning("Data for colortable layers cannot be float, casting",RuntimeWarning)
                 a = np.asanyarray(a, dtype=np.uint32)
 
             # If we have a masked array with a non-trivial mask, ensure that mask is made transparent.
@@ -473,7 +473,7 @@ class ColortableImageRequest( object ):
             if _has_vigra:
                 # If this warning is annoying you, try this:
                 # warnings.filterwarnings("once")
-                warnings.warn("Using slow colortable images.  Upgrade to VIGRA > 1.9 to use faster implementation.")
+                warnings.warning("Using slow colortable images.  Upgrade to VIGRA > 1.9 to use faster implementation.")
 
             #make sure that a has values in range [0, colortable_length)
             a = np.remainder(a, len(self._colorTable))

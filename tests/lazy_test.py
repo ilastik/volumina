@@ -29,7 +29,7 @@ except ImportError:
     has_dependencies = False
     import os.path
     import warnings
-    warnings.warn("Modules vigra and/or lazyflow not found. "
+    warnings.warning("Modules vigra and/or lazyflow not found. "
           "Will not import %s" % os.path.basename(__file__)) 
 
 if has_dependencies:
