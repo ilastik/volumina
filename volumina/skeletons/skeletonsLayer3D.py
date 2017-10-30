@@ -23,7 +23,6 @@ from __future__ import print_function
 from builtins import range
 from PyQt5.QtCore import QObject
 
-from volumina.skeletons.skeletons3D import Skeletons3D
 from volumina.skeletons.skeletonsLayer import SkeletonsLayer
 from volumina.skeletons.skeletonNode import SkeletonNode
 
@@ -42,8 +41,6 @@ class SkeletonsLayer3D(QObject):
         
         self._skeletons = skeletons
         self._layers = []
-        
-        self._skeletons3D = Skeletons3D(skeletons, editor.view3d)
         
         for i in range(3):
             self._layers.append( SkeletonsLayer(self, i, editor.imageScenes[i]) )
@@ -64,7 +61,6 @@ class SkeletonsLayer3D(QObject):
     def update(self):
         for l in self._layers:
             l.update()
-        self._skeletons3D.update()
         
     def onSlicingPositionChanged(self, newPos, oldPos):
         for i in range(3):
