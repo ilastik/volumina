@@ -5,9 +5,9 @@ from numpy import where
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
 
-from PyQt4.QtCore import QThread, pyqtSignal
-from PyQt4.QtGui import QDialog
-from PyQt4.uic import loadUiType
+from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QDialog
+from PyQt5.uic import loadUiType
 
 
 try:

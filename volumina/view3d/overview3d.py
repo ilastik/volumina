@@ -1,8 +1,8 @@
 from os.path import split, join
 
-from PyQt4.QtGui import QWidget
-from PyQt4.QtCore import pyqtSignal, pyqtSlot
-from PyQt4.uic import loadUiType
+from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.uic import loadUiType
 
 
 class Overview3D(QWidget):

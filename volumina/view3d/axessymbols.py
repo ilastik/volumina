@@ -45,7 +45,7 @@ class AxesSymbols(object):
         self._y.rotate(-90, 1, 0, 0)
         self._z.rotate(90, 0, 1, 0)
 
-        [view.addItem(arrow) for arrow in self._x, self._y, self._z, self._center]
+        [view.addItem(arrow) for arrow in [self._x, self._y, self._z, self._center]]
 
     def set_shape(self, x, y, z):
         """

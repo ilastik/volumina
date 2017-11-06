@@ -1,7 +1,7 @@
 from pyqtgraph.opengl import GLViewWidget
 
-from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QVector4D
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QVector4D
 
 from volumina.view3d.slicingplanes import SlicingPlanes
 from volumina.view3d.axessymbols import AxesSymbols
