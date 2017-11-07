@@ -13,10 +13,10 @@ from PyQt5.uic import loadUiType
 try:
     from marching_cubes import march
 except ImportError:
-    from skimage.measure import correct_mesh_orientation, marching_cubes
-    
+    from skimage.measure import correct_mesh_orientation, marching_cubes_lewiner
+
     def march(volume, _):
-        verts, faces = marching_cubes(volume, 1)
+        verts, faces, normals, values = marching_cubes_lewiner(volume, 1)
         faces = correct_mesh_orientation(volume, verts, faces)
         return verts, None, faces
 
