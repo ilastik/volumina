@@ -5,6 +5,7 @@ from PyQt5.QtGui import QVector4D
 
 from volumina.view3d.slicingplanes import SlicingPlanes
 from volumina.view3d.axessymbols import AxesSymbols
+from volumina.utility import PreferencesManager
 
 
 class GLView(GLViewWidget):
@@ -24,7 +25,7 @@ class GLView(GLViewWidget):
 
     def __init__(self, parent=None):
         GLViewWidget.__init__(self, parent)
-        self.setBackgroundColor([1, 1, 1])
+        self.setBackgroundColor(PreferencesManager().get("GLView", "backgroundColor", default=[255, 255, 255]))
         self._shape = (1, 1, 1)
         self._slice_planes = SlicingPlanes(self)
         self._arrows = AxesSymbols(self)
