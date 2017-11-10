@@ -40,7 +40,7 @@ ShaderProgram('toon', [
             vec3 light = normalize(vec3(1.0, -1.0, -1.0));
             float intensity;
 
-            intensity = (dot(light, normalize(normal)) + 1) / 2;
+            intensity = (dot(light, normalize(normal)) + 1.0) / 2.0;
 
             //gl_FragColor = max(round(intensity * 3), 0.3) / 3 * gl_Color / 2;
             gl_FragColor = intensity * gl_Color;
