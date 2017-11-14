@@ -167,7 +167,7 @@ class WysiwygExportOptionsDlg(QDialog):
 
     def _initFileOptionsWidget(self):        
         # List all image formats supported by QImageWriter
-        exts = [str(ext) for ext in QImageWriter.supportedImageFormats()]
+        exts = [bytes(ext).decode() for ext in QImageWriter.supportedImageFormats()]
         
         # insert them into file format combo box
         for ext in exts:
