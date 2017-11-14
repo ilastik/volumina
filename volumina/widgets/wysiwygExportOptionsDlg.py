@@ -392,7 +392,10 @@ class WysiwygExportHelper(MultiStepProgressDialog):
 
         file_names = []
         for i, pos in enumerate(product(*ranges)):
-            coords = getter(pos)
+            if iter_axes:
+                coords = getter(pos)
+            else:
+                coords = getter[pos]
             file_names.append(self._filename(folder, pattern, fileExt, iter_coords, coords, padding))
             self._saveImg(pos, rect, file_names[-1])
             self.setStepProgress(100 * i / steps)
