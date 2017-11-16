@@ -48,12 +48,6 @@ from .slicingtools import SliceProjection
 import logging
 logger = logging.getLogger(__name__)
 
-useVTK = True
-try:
-    from .view3d.view3d import OverviewScene
-except:
-    logger.error( "Warning: could not import optional dependency VTK" )
-    useVTK = False
 
 #*******************************************************************************
 # V o l u m e E d i t o r                                                      *
@@ -139,7 +133,7 @@ class VolumeEditor( QObject ):
 
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
-        self.view3d.dataShape = s[1:4]
+        self.view3d.shape = s[1:4]
 
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
@@ -178,7 +172,7 @@ class VolumeEditor( QObject ):
 
         self.imagepumps = self._initImagePumps()
 
-        self.view3d = self._initView3d() if useVTK else QWidget()
+        self.view3d = self._initView3d()
 
         names = ['x', 'y', 'z']
         for scene, name, pump in zip(self.imageScenes, names, self.imagepumps):
@@ -194,7 +188,7 @@ class VolumeEditor( QObject ):
         self.eventSwitch = EventSwitch(self.imageViews)
 
         # navigation control
-        v3d = self.view3d if useVTK else None
+        v3d = self.view3d
         self.navCtrl      = NavigationController(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
@@ -277,13 +271,13 @@ class VolumeEditor( QObject ):
         return imagepumps
 
     def _initView3d( self ):
-        view3d = OverviewScene()
-        def onSliceDragged(num, pos):
-            newPos = copy.deepcopy(self.posModel.slicingPos)
-            newPos[pos] = num
-            self.posModel.slicingPos = newPos
+        from .view3d.overview3d import Overview3D
+        view3d = Overview3D()
 
-        view3d.changedSlice.connect(onSliceDragged)
+        def onSliceDragged():
+            self.posModel.slicingPos = view3d.slice
+
+        view3d.slice_changed.connect(onSliceDragged)
         return view3d
 
     def _onLayerAdded( self, layer, row ):

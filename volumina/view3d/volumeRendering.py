@@ -19,56 +19,14 @@
 # This information is also available on the ilastik web site at:
 #		   http://ilastik.org/license/
 ###############################################################################
-from builtins import range
 from PyQt5.QtWidgets import QApplication
-import vtk
 import numpy
-import colorsys
-# http://www.scipy.org/Cookbook/vtkVolumeRendering
-import threading
+from colorsys import hsv_to_rgb
+from threading import current_thread
 
-NOBJECTS = 256
+from .meshgenerator import MeshGenerator
 
-def makeVolumeRenderingPipeline(in_volume):
-    dataImporter = vtk.vtkImageImport()
-
-    if in_volume.dtype == numpy.uint8:
-        dataImporter.SetDataScalarTypeToUnsignedChar()
-    elif in_volume.dtype == numpy.uint16:
-        dataImporter.SetDataScalarTypeToUnsignedShort()
-    elif in_volume.dtype == numpy.int32:
-        dataImporter.SetDataScalarTypeToInt()
-    elif in_volume.dtype == numpy.int16:
-        dataImporter.SetDataScalarTypeToShort()
-    else:
-        raise RuntimeError("unknown data type %r of volume" % (in_volume.dtype,))
-
-    dataImporter.SetImportVoidPointer(in_volume, len(in_volume))
-    dataImporter.SetNumberOfScalarComponents(1)
-    extent = [0, in_volume.shape[2]-1, 0, in_volume.shape[1]-1, 0, in_volume.shape[0]-1]
-    dataImporter.SetDataExtent(*extent)
-    dataImporter.SetWholeExtent(*extent)
-
-    alphaChannelFunc = vtk.vtkPiecewiseFunction()
-    alphaChannelFunc.AddPoint(0, 0.0)
-    for i in range(1, NOBJECTS):
-        alphaChannelFunc.AddPoint(i, 1.0)
-
-    colorFunc = vtk.vtkColorTransferFunction()
-
-    volumeMapper = vtk.vtkSmartVolumeMapper()
-    volumeMapper.SetInputConnection(dataImporter.GetOutputPort())
-
-    volumeProperty = vtk.vtkVolumeProperty()
-    volumeProperty.SetColor(colorFunc)
-    volumeProperty.SetScalarOpacity(alphaChannelFunc)
-    volumeProperty.ShadeOn()
-
-    volume = vtk.vtkVolume()
-    volume.SetMapper(volumeMapper)
-    volume.SetProperty(volumeProperty)
-
-    return dataImporter, colorFunc, volume, volumeMapper
+NUM_OBJECTS = 256
 
 
 class LabelManager(object):
@@ -93,6 +51,7 @@ class LabelManager(object):
             self._used.remove(label)
             self._available.add(label)
 
+
 class RenderingManager(object):
     """Encapsulates the work of adding/removing objects to the
     rendered volume and setting their colors.
@@ -104,9 +63,11 @@ class RenderingManager(object):
     """
     def __init__(self, overview_scene):
         self._overview_scene = overview_scene
-        self.labelmgr = LabelManager(NOBJECTS)
+        self.labelmgr = LabelManager(NUM_OBJECTS)
         self.ready = False
         self._cmap = {}
+        self._mesh_thread = None
+        self._dirty = False
 
         def _handle_scene_init():
             self.setup( self._overview_scene.dataShape )
@@ -116,23 +77,45 @@ class RenderingManager(object):
     def setup(self, shape):
         shape = shape[::-1]
         self._volume = numpy.zeros(shape, dtype=numpy.uint8)
-        dataImporter, colorFunc, volume, volumeMapper = makeVolumeRenderingPipeline(self._volume)
-        self._overview_scene.qvtk.renderer.AddVolume(volume)
-        self._mapper = volumeMapper
-        self._volumeRendering = volume
-        self._dataImporter = dataImporter
-        self._colorFunc = colorFunc
+        self._mapping = {}
         self.ready = True
 
     def update(self):
-        assert threading.current_thread().name == 'MainThread', \
+        assert current_thread().name == 'MainThread', \
             "RenderingManager.update() must be called from the main thread to avoid segfaults."
-        for label, color in self._cmap.items():
-            self._colorFunc.AddRGBPoint(label, *color)
-        self._dataImporter.Modified()
-        self._volumeRendering.Update()
-        if self._overview_scene.qvtk is not None:
-            self._overview_scene.qvtk.update()
+
+        if not self._dirty:
+            return
+        self._dirty = False
+
+        new_labels = set(numpy.unique(self._volume))
+        new_names = set(filter(None, (self._mapping.get(label) for label in new_labels)))
+        old_names = self._overview_scene.visible_objects
+        for name in old_names - new_names:
+            self._overview_scene.remove_object(name)
+
+        names_to_add = new_names - old_names
+        known = set(filter(self._overview_scene.has_object, names_to_add))
+        generate = set(self._mapping[name] for name in names_to_add - known)
+
+        for name in known:
+            self._overview_scene.add_object(name)
+
+        if generate:
+            self._overview_scene.set_busy(True)
+            self._mesh_thread = MeshGenerator(self._on_mesh_generated, self._volume, generate, self._mapping)
+
+    def _on_mesh_generated(self, label, mesh):
+        """
+        Slot for the mesh generated signal from the MeshGenerator
+        """
+        assert current_thread().name == 'MainThread'
+        if label == 0 and mesh is None:
+            self._overview_scene.set_busy(False)
+        else:
+            mesh.setColor(self._cmap[self._mapping[label]] + (1,))
+            mesh.setShader("toon")
+            self._overview_scene.add_object(label, mesh)
 
     def setColor(self, label, color):
         self._cmap[label] = color
@@ -146,61 +129,28 @@ class RenderingManager(object):
     def volume(self, value):
         # Must copy here because a reference to self._volume was stored in the pipeline (see setup())
         # store in reversed-transpose order to match the wireframe axes
-        self._volume[:] = numpy.transpose(value)
+        new_volume, mapping = value
+        new_volume = numpy.transpose(new_volume)
+        if numpy.any(new_volume != self._volume) or mapping != self._mapping:
+            self._volume[:] = new_volume
+            self._mapping = mapping
+            self._dirty = True
+            self.update()
 
     def addObject(self, color=None):
         label = self.labelmgr.request()
         if color is None:
-            color = colorsys.hsv_to_rgb(numpy.random.random(), 1.0, 1.0)
+            color = hsv_to_rgb(numpy.random.random(), 1.0, 1.0)
         self.setColor(label, color)
         return label
 
     def removeObject(self, label):
         self.labelmgr.free(label)
 
+    def invalidateObject(self, name):
+        self._overview_scene.invalidate_object(name)
+
     def clear(self, ):
         self._volume[:] = 0
         self.labelmgr.free()
 
-if __name__ == "__main__":
-
-    # With almost everything else ready, its time to initialize the
-    # renderer and window, as well as creating a method for exiting
-    # the application
-    renderer = vtk.vtkRenderer()
-    renderWin = vtk.vtkRenderWindow()
-    renderWin.AddRenderer(renderer)
-    renderInteractor = vtk.vtkRenderWindowInteractor()
-    renderInteractor.SetRenderWindow(renderWin)
-    renderer.SetBackground(1, 1, 1) # white background
-    renderWin.SetSize(400, 400)
-
-    # A simple function to be called when the user decides to quit the
-    # application.
-    def exitCheck(obj, event):
-        if obj.GetEventPending() != 0:
-            obj.SetAbortRender(1)
-
-    # Tell the application to use the function as an exit check.
-    renderWin.AddObserver("AbortCheckEvent", exitCheck)
-
-    # create the rendering manager
-    mgr = RenderingManager(renderer)
-    mgr.setup((256, 256, 256))
-
-    # add some  squares
-    for x in (10, 200):
-        for y in (10, 200):
-            for z in (10, 200):
-                label = mgr.addObject()
-                mgr.volume[x:x+50, y:y+50, z:z+50] = label
-    mgr.update()
-
-    renderInteractor.Initialize()
-
-    # Because nothing will be rendered without any input, we order the
-    # first render manually before control is handed over to the
-    # main-loop.
-    renderWin.Render()
-
-    renderInteractor.Start()
