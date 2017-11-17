@@ -381,24 +381,22 @@ class WysiwygExportHelper(MultiStepProgressDialog):
     def loopGenerator(self, rect, base_pos, start, stop, iter_axes,
                       iter_coords, folder, pattern, fileExt):
 
-        ranges = [range(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
-        padding = ["0{}".format(len(str(len(r) - 1))) for r in ranges if len(r) > 1]
-        steps = reduce(mul, list(map(len, ranges)), 1.0)
+        export_range_per_axis = [range(a, b) if i in iter_axes else [base_pos[i]] for i, (a, b) in enumerate(zip(start, stop))]
+        filename_padding = ["0{}".format(len(str(len(r) - 1))) for r in export_range_per_axis if len(r) > 1]
+        num_steps = reduce(mul, [len(r) for r in export_range_per_axis], 1.0)
 
         if iter_axes:
             getter = itemgetter(*iter_axes)
-        else:
-            getter = [slice(0)]
 
         file_names = []
-        for i, pos in enumerate(product(*ranges)):
+        for i, pos in enumerate(product(*export_range_per_axis)):
             if iter_axes:
                 coords = getter(pos)
             else:
-                coords = getter[pos]
-            file_names.append(self._filename(folder, pattern, fileExt, iter_coords, coords, padding))
+                coords = 0
+            file_names.append(self._filename(folder, pattern, fileExt, iter_coords, coords, filename_padding))
             self._saveImg(pos, rect, file_names[-1])
-            self.setStepProgress(100 * i / steps)
+            self.setStepProgress(100 * i / num_steps)
             yield
         self.setStepProgress(100)
         self.finishStep()
@@ -421,7 +419,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
         for t, chunk in zip(range(start[0], stop[0]), list(zip(*chunks))):
             stack_pattern = pattern.replace("{{{}}}".format(depth_coord), stack_range)
             stack_name = self._filename(folder, stack_pattern, fileExt, iter_coords, [t] + [0] * (len(iter_axes) - 1)
-                                        , padding)
+                                        , filename_padding)
             self.combine_stack(stack_name, *chunk)
             self.setStepProgress(100 * t / tsteps)
             yield
