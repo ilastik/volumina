@@ -102,6 +102,7 @@ class MeshGenerator(QThread):
         super(MeshGenerator, self).__init__()
         self.mesh_generated.connect(receiver)
         self.start()
+        print("setting up the mesh generator", labeling.shape)
         self._labeling = labeling
         self._labels = labels
         self._mapping = name_mapping or {}

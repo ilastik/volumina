@@ -113,7 +113,8 @@ class RenderingManager(object):
         if label == 0 and mesh is None:
             self._overview_scene.set_busy(False)
         else:
-            mesh.setColor(self._cmap[self._mapping[label]] + (1,))
+            #mesh.setColor(self._cmap[self._mapping[label]] + (1,))
+            mesh.setColor((1., 0., 0.,1.))
             mesh.setShader("toon")
             self._overview_scene.add_object(label, mesh)
 
@@ -131,6 +132,7 @@ class RenderingManager(object):
         # store in reversed-transpose order to match the wireframe axes
         new_volume, mapping = value
         new_volume = numpy.transpose(new_volume)
+        print("setting volume in renderer", new_volume.shape)
         if numpy.any(new_volume != self._volume) or mapping != self._mapping:
             self._volume[:] = new_volume
             self._mapping = mapping
