@@ -1,11 +1,10 @@
-from pyqtgraph.opengl import GLViewWidget
-
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QVector4D
+from pyqtgraph.opengl import GLViewWidget
 
-from volumina.view3d.slicingplanes import SlicingPlanes
-from volumina.view3d.axessymbols import AxesSymbols
 from volumina.utility import PreferencesManager
+from volumina.view3d.axessymbols import AxesSymbols
+from volumina.view3d.slicingplanes import SlicingPlanes
 
 
 class GLView(GLViewWidget):
@@ -33,6 +32,10 @@ class GLView(GLViewWidget):
         self._mouse_pos = None
 
         self._meshes = {}
+        # Make sure the layout stays the same no matter if the 3D widget is on/off
+        size_policy = self.sizePolicy()
+        size_policy.setRetainSizeWhenHidden(True)
+        self.setSizePolicy(size_policy)
 
     def add_mesh(self, name, mesh=None):
         """

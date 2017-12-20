@@ -31,13 +31,15 @@ class Overview3D(QWidget):
     reinitialized = pyqtSignal()  # TODO: this should not be necessary: remove
     dock_status_changed = pyqtSignal(bool)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, is_3d_visible=False, *args, **kwargs):
         super(QWidget, self).__init__(*args, **kwargs)
         cls, _ = loadUiType(join(split(__file__)[0], "ui/view3d.ui"))
         self._ui = cls()
         self._ui.setupUi(self)
 
         self._view = self._ui.view
+        # Set the visibility of 3D widget
+        self._view.setVisible(is_3d_visible)
         self._progress = self._ui.progress
         self._progress.setVisible(False)  # this can't be set in QDesigner for some reason
         self._mesh_generator_thread = None  # the thread need to be stored so it doesn't get destroyed when out of scope
@@ -154,3 +156,15 @@ class Overview3D(QWidget):
         :param bool busy: True or False for the busy state
         """
         self._progress.setVisible(busy)
+
+    @pyqtSlot(int, name="on_show_3D_view_stateChanged")
+    def _on_toggle_3d_view(self, state):
+        """
+        Toggles the 3D widget.
+
+        :param state: checkbox state (0 for unchecked)
+        :return: None
+        """
+        self._view.setVisible(state != 0)
+        self.update()
+
