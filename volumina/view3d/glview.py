@@ -1,10 +1,11 @@
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QVector4D
 from pyqtgraph.opengl import GLViewWidget
 
-from volumina.utility import PreferencesManager
-from volumina.view3d.axessymbols import AxesSymbols
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QVector4D
+
 from volumina.view3d.slicingplanes import SlicingPlanes
+from volumina.view3d.axessymbols import AxesSymbols
+from volumina.utility import PreferencesManager
 
 
 class GLView(GLViewWidget):

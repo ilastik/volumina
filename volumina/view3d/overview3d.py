@@ -31,7 +31,12 @@ class Overview3D(QWidget):
     reinitialized = pyqtSignal()  # TODO: this should not be necessary: remove
     dock_status_changed = pyqtSignal(bool)
 
-    def __init__(self, is_3d_visible=False, *args, **kwargs):
+    def __init__(self, is_3d_widget_visible=False, *args, **kwargs):
+        """
+        Creates the 3D widget object and sets its visibility.
+
+        :param is_3d_widget_visible: if True, the 3D widget will be visible
+        """
         super(QWidget, self).__init__(*args, **kwargs)
         cls, _ = loadUiType(join(split(__file__)[0], "ui/view3d.ui"))
         self._ui = cls()
@@ -39,7 +44,9 @@ class Overview3D(QWidget):
 
         self._view = self._ui.view
         # Set the visibility of 3D widget
-        self._view.setVisible(is_3d_visible)
+        self._view.setVisible(is_3d_widget_visible)
+        self._ui.show_3D_view.setChecked(is_3d_widget_visible)
+
         self._progress = self._ui.progress
         self._progress.setVisible(False)  # this can't be set in QDesigner for some reason
         self._mesh_generator_thread = None  # the thread need to be stored so it doesn't get destroyed when out of scope

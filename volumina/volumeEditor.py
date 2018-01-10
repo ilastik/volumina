@@ -139,7 +139,7 @@ class VolumeEditor( QObject ):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
 
-    def __init__( self, layerStackModel, parent, labelsink=None, crosshair=True, syncAlongAxes=(0,1)):
+    def __init__( self, layerStackModel, parent, labelsink=None, crosshair=True, is_3d_widget_visible=False, syncAlongAxes=(0,1)):
         super(VolumeEditor, self).__init__(parent=parent)
         self._sync_along = tuple(syncAlongAxes)
 
@@ -172,7 +172,7 @@ class VolumeEditor( QObject ):
 
         self.imagepumps = self._initImagePumps()
 
-        self.view3d = self._initView3d()
+        self.view3d = self._initView3d(is_3d_widget_visible)
 
         names = ['x', 'y', 'z']
         for scene, name, pump in zip(self.imageScenes, names, self.imagepumps):
@@ -270,9 +270,9 @@ class VolumeEditor( QObject ):
 
         return imagepumps
 
-    def _initView3d( self ):
+    def _initView3d( self, is_3d_widget_visible):
         from .view3d.overview3d import Overview3D
-        view3d = Overview3D()
+        view3d = Overview3D(is_3d_widget_visible=is_3d_widget_visible)
 
         def onSliceDragged():
             self.posModel.slicingPos = view3d.slice
