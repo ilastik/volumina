@@ -33,6 +33,10 @@ class GLView(GLViewWidget):
         self._mouse_pos = None
 
         self._meshes = {}
+        # Make sure the layout stays the same no matter if the 3D widget is on/off
+        size_policy = self.sizePolicy()
+        size_policy.setRetainSizeWhenHidden(True)
+        self.setSizePolicy(size_policy)
 
     def add_mesh(self, name, mesh=None):
         """
