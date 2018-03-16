@@ -90,6 +90,24 @@ def partlyJetTransparent(N=256, ratio = old_div(2.,3)):
     return colortable
 
 
+#taken from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+default16_new = [QColor(0, 0, 0, 0).rgba(), #transparent
+             QColor(255, 225, 25).rgba(), #yellow
+             QColor(0, 130, 200).rgba(), #blue
+             QColor(230, 25, 75).rgba(), #red
+             QColor(70, 240, 240).rgba(), #cyan
+             QColor(60, 180, 75).rgba(), #green
+             QColor(250, 190, 190).rgba(), #pink
+             QColor(170, 110, 40).rgba(), #brown
+             QColor(145, 30, 180).rgba(), #purple
+             QColor(0, 128, 128).rgba(), #teal
+             QColor(245, 130, 48).rgba(), #orange
+             QColor(240, 50, 230).rgba(), #magenta
+             QColor(210, 245, 60).rgba(), #lime
+             QColor(255, 215, 180).rgba(), #coral
+             QColor(230, 190, 255).rgba(), #lavender
+             QColor(128, 128, 128).rgba() #gray
+             ]
 
 
 default16 = [QColor(0, 0, 255).rgba(),
