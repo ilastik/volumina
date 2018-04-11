@@ -273,6 +273,7 @@ if _has_lazyflow:
             # (We include the graph parameter, too, since tests sometimes provide an operator with no parent.)
             self._op5 = lazyflow.operators.opReorderAxes.OpReorderAxes( parent=outslot.getRealOperator().parent, graph=outslot.getRealOperator().graph )
             self._op5.Input.connect( outslot )
+            self._op5.AxisOrder.setValue( 'txyzc' )
     
             self._priority = priority
             self._dirtyCallback = partial( weakref_setDirtyLF, weakref.ref(self) )
