@@ -34,6 +34,8 @@ class ShortcutManager(with_metaclass(Singleton, object)):
     #                                        If provided, this object's tooltip will be updated to reflect the current shortcut key sequence.
     #                                        To omit this field, simply provide None
     ActionInfo = collections.namedtuple('ActionInfo', 'group name description target_callable context_widget tooltip_widget')
+    # for sorting: make sure only to compare comparable member
+    ActionInfo.__lt__ = lambda self, other: self[:2] < other[:2]
 
     def __init__(self):
         """
@@ -222,7 +224,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
                 logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
                 best_focus_candidates[0][1].target_callable()
             else:
-                best_focus_candidates = sorted(best_focus_candidates)
+                best_focus_candidates.sort()
                 if best_focus_candidates[0][0] != best_focus_candidates[1][0]:
                     # More than one of our targets owned the focus widget, but one was closer.
                     logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
