@@ -46,6 +46,6 @@ dependencies:
 test:
   override:
     - >
-      source ${TEST_ENV_PREFIX}/bin/activate ${TEST_ENV_NAME} &&
+      source ${CONDA_ROOT}/bin/activate ${TEST_ENV_NAME} &&
       cd ${TEST_ENV_PREFIX}/ilastik-meta/volumina/tests && 
       ./run-each-until-fail.sh
