@@ -327,7 +327,7 @@ class NavigationController(QObject):
         self._updateCrossHairCursor()
 
     def navigateToPoint(self, x, y, axis):
-        newPos = copy.copy(self._model.slicingPos)
+        newPos = list(self._model.slicingPos)
         i,j = posView2D([0,1,2], axis)
         newPos[i] = x
         newPos[j] = y
@@ -438,10 +438,10 @@ class NavigationController(QObject):
         newSlice = minValue if newSlice < minValue else newSlice
         newSlice = maxValue-1 if newSlice >= maxValue else newSlice
 
-        newPos = copy.copy(self._model.slicingPos)
+        newPos = list(self._model.slicingPos)
         newPos[axis] = newSlice
 
-        cursorPos = copy.copy(self._model.cursorPos)
+        cursorPos = list(self._model.cursorPos)
         cursorPos[axis] = newSlice
         self._model.cursorPos  = cursorPos
 
@@ -457,7 +457,7 @@ class NavigationController(QObject):
 
         if value < 0 or value > self._model.volumeExtent(axis):
             return
-        newPos = copy.copy(self._model.slicingPos)
+        newPos = list(self._model.slicingPos)
         newPos[axis] = value
         if not self._positionValid(newPos):
             return
