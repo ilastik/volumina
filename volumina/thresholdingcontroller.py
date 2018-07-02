@@ -200,56 +200,38 @@ class ThresholdingInterpreter( QObject ):
             range = self._channel_range[self._active_channel_idx]
             range_lower = range[0]
             range_upper = range[1]
+
         # don't know what version is more efficient
         # range_delta = np.sqrt((range_upper - range_lower)**2) 
         range_delta = np.abs(range_upper - range_lower)
-        range_mean = range_lower + old_div(range_delta,2.0)
+        range_mean = range_lower + range_delta / 2.0
 
         self._steps_mean = range_delta * self._steps_scaling
         self._steps_delta = self._steps_mean * 2
         pos = imageview.mapToGlobal( event.pos() )
-        dx =  pos.x() - self._current_position.x()
-        dy =  self._current_position.y() - pos.y()
+        dx = pos.x() - self._current_position.x()
+        dy = self._current_position.y() - pos.y()
+        fastest = np.argmax(np.abs([dx, dy]))
 
-        if dx > 0.0:
-            # move mean to right
-            range_mean += self._steps_mean
-        elif dx < 0.0:
-            # move mean to left
-            range_mean -= self._steps_mean
-        
-        if dy > 0.0:
-            # increase delta
-            range_delta += self._steps_delta
-        elif dy < 0.0:
-            # decrease delta
-            range_delta -= self._steps_delta
+        if fastest == 0:
+            if dx > 1:
+                # move mean to right
+                range_mean += self._steps_mean
+            elif dx < -1:
+                # move mean to left
+                range_mean -= self._steps_mean
+        else:
+            if dy > 1:
+                # increase delta
+                range_delta += self._steps_delta
+            elif dy < -1:
+                # decrease delta
+                range_delta -= self._steps_delta
 
-        # check the bounds, ugly use min max values actually present
-        if range_mean < self._range_min:
-            range_mean = self._range_min
-        elif range_mean > self._range_max:
-            range_mean = self._range_max
-        
-        if range_delta < 1:
-            range_delta = 1
-        elif range_delta > self._range: 
-            range_delta = self._range
+        a = range_mean - range_delta / 2.0
+        b = range_mean + range_delta / 2.0
 
-        a = range_mean - old_div(range_delta,2.0)
-        b = range_mean + old_div(range_delta,2.0)
-
-        if a < self._range_min:
-            a = self._range_min
-        elif a > self._range_max:
-            a = self._range_max
-        
-        if b < self._range_min:
-            b = self._range_min
-        elif b > self._range_max:
-            b = self._range_max
-
-        assert a <= b 
+        assert a <= b
 
         # TODO test if in allowed range (i.e. max and min of data)
         self._active_layer.set_normalize(0, (a,b))
