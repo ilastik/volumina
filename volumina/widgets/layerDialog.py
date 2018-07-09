@@ -28,6 +28,9 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QDialog
 from functools import partial
 
+import logging
+logger = logging.getLogger(__name__)
+
 #===----------------------------------------------------------------------------------------------------------------===
 
 class GrayscaleLayerDialog(QDialog):
@@ -36,9 +39,10 @@ class GrayscaleLayerDialog(QDialog):
         p = os.path.split(os.path.abspath(__file__))[0]
         uic.loadUi(p+"/ui/grayLayerDialog.ui", self)
         self.setLayername(layer.name)
+
         def dbgPrint(a, b):
-            layer.set_normalize(0, (a,b))
-            print("normalization changed to [%d, %d]" % (a,b))
+            layer.set_normalize(0, (a, b))
+            logger.debug("normalization changed to [%d, %d]" % (a, b))
 
         def autoRange(state):
             if state == 2:
@@ -77,7 +81,7 @@ class RGBALayerDialog(QDialog):
 
         def dbgPrint(layerIdx, a, b):
             layer.set_normalize(layerIdx, (a, b))
-            print("normalization changed for channel=%d to [%d, %d]" % (layerIdx, a,b))
+            logger.debug("normalization changed for channel=%d to [%d, %d]" % (layerIdx, a, b))
 
         self.redChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
         self.greenChannelThresholdingWidget.setRange(layer.range[1][0], layer.range[1][1])
