@@ -359,7 +359,6 @@ if _has_lazyflow:
             inputTags = self._inputSlot.meta.axistags
             inputKeys = [tag.key for tag in inputTags]
             transposedArray = taggedArray.withAxes(*inputKeys)
-    
             taggedSlicing = dict(list(zip('txyzc', slicing)))
             transposedSlicing = ()
             for k in inputKeys:
@@ -502,13 +501,15 @@ class MinMaxSource( QObject ):
         self._rawSource = rawSource
         self._rawSource.isDirty.connect( self.isDirty )
         self._rawSource.numberOfChannelsChanged.connect( self.numberOfChannelsChanged )
-        self._bounds = [1e9,-1e9]
-        
+        self.reset_bounds()
         self._delayedDirtySignal = QTimer()
         self._delayedDirtySignal.setSingleShot(True)
         self._delayedDirtySignal.setInterval(10)
         self._delayedDirtySignal.timeout.connect( partial(self.setDirty, sl[:,:,:,:,:]) )
         self._delayedBoundsChange.connect(self._delayedDirtySignal.start)
+
+    def reset_bounds(self):
+        self._bounds = [1e9, -1e9]
 
     @property
     def numberOfChannels(self):

@@ -318,7 +318,7 @@ class NormalizableLayer( Layer ):
             self._autoMinMax[datasourceIdx] = True
         else:
             self._autoMinMax[datasourceIdx] = False
-        self._normalize[datasourceIdx] = value 
+        self._normalize[datasourceIdx] = value
         self.normalizeChanged.emit()
 
     def __init__( self, datasources, range=None, normalize=None, direct=False ):
@@ -360,6 +360,12 @@ class NormalizableLayer( Layer ):
 
         self.rangeChanged.connect(self.changed)
         self.normalizeChanged.connect(self.changed)
+        self.channelChanged.connect(self._channel_changed)
+
+    def _channel_changed(self, ch_idx):
+        for idx, src in enumerate(self._mmSources):
+            src.reset_bounds()
+            self._bounds_changed(idx, None)
 
     def _bounds_changed(self, datasourceIdx, range):
         if self._autoMinMax[datasourceIdx]:
