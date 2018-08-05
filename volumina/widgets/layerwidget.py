@@ -32,7 +32,13 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QListView, QStyle, \
 
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
+from volumina.utility import ShortcutManager
 from .layercontextmenu import layercontextmenu
+
+
+NEXT_CHANNEL_SEQ = "Ctrl+N"
+PREV_CHANNEL_SEQ = "Ctrl+P"
+
 
 class FractionSelectionBar( QWidget ):
     fractionChanged = pyqtSignal(float)
@@ -207,9 +213,28 @@ class LayerItemWidget( QWidget ):
         self.bar.fractionChanged.connect( self._onFractionChanged )
         self.toggleEye.activeChanged.connect( self._onEyeToggle )
         self.channelSelector.valueChanged.connect( self._onChannelChanged )
+        self.setUpShortcuts()
 
-    def mousePressEvent( self, ev ):
-        super(LayerItemWidget, self).mousePressEvent( ev )
+    def setUpShortcuts(self):
+        mgr = ShortcutManager()
+        ActionInfo = ShortcutManager.ActionInfo
+
+        selector = self.channelSelector
+
+        def inc():
+            selector.setValue(selector.value() + selector.singleStep())
+
+        def dec():
+            selector.setValue(selector.value() - selector.singleStep())
+
+        # Can't pass channelSelector(QSpinBox) as tooltip widget
+        # because it doesn't have # separate tooltips for arrows
+        mgr.register(NEXT_CHANNEL_SEQ, ActionInfo(
+            "Channels", "Next channel", "Next channel", inc, selector, None
+        ))
+        mgr.register(PREV_CHANNEL_SEQ, ActionInfo(
+            "Channels", "Prev channel", "Prev channel", dec, selector, None
+        ))
 
     def _onFractionChanged( self, fraction ):
         if self._layer and (fraction != self._layer.opacity):
@@ -372,7 +397,7 @@ class LayerWidget(QListView):
         
         listModel.dataChanged.connect( self._handleModelDataChanged )
         listModel.layoutChanged.connect( self._handleModelLayoutChanged )
-        
+
     def _handleModelDataChanged(self, index, index2):
         # Every time the data changes, open a persistent editor for that layer.
         # Using persistent editors allows us to use the eventcapture testing system,
