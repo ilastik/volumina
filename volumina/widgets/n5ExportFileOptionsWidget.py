@@ -37,7 +37,7 @@ class N5ExportFileOptionsWidget(QWidget):
         self.settings_are_valid = True
 
         # We need to watch the textEdited signal because Qt has a bug that causes the OK button 
-        #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.  
+        # to receive it's click event BEFORE the LineEdit receives its FocusOut event.
         # (That is, we can't just watch for FocusOut events and disable the button before the click.) 
         self.datasetEdit.textEdited.connect( lambda: self._handleTextEdited(self.datasetEdit) )
         self.filepathEdit.textEdited.connect( lambda: self._handleTextEdited(self.filepathEdit) )
@@ -56,8 +56,10 @@ class N5ExportFileOptionsWidget(QWidget):
         self.updateFromSlots()
         
     def eventFilter(self, watched, event):
-        # Apply the new path/dataset if the user presses 'enter' 
-        #  or clicks outside the path/dataset edit box.
+        """
+        Apply the new path/dataset if the user presses 'enter'
+        or clicks outside the path/dataset edit box.
+        """
         if event.type() == QEvent.FocusOut or \
            ( event.type() == QEvent.KeyPress and \
              ( event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return) ):
