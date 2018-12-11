@@ -36,6 +36,10 @@ def is_a_tty(stream):
     return hasattr(stream, 'isatty') and stream.isatty()
 
 
+def is_open(stream):
+    return hasattr(stream, 'closed') and not stream.closed
+
+
 class StreamWrapper(object):
     '''
     Wraps a stream (such as stdout), acting as a transparent proxy for all
@@ -82,7 +86,7 @@ class AnsiToWin32(object):
 
         # should we should convert ANSI sequences into win32 calls?
         if convert is None:
-            convert = on_windows and is_a_tty(wrapped)
+            convert = on_windows and is_open(wrapped) and is_a_tty(wrapped)
         self.convert = convert
 
         # dict of ansi codes to win32 functions and parameters
@@ -144,7 +148,7 @@ class AnsiToWin32(object):
     def reset_all(self):
         if self.convert:
             self.call_win32('m', (0,))
-        elif is_a_tty(self.wrapped):
+        elif is_open(self.wrapped) and is_a_tty(self.wrapped):
             self.wrapped.write(Style.RESET_ALL)
 
 
