@@ -230,10 +230,10 @@ class LayerItemWidget( QWidget ):
         # Can't pass channelSelector(QSpinBox) as tooltip widget
         # because it doesn't have # separate tooltips for arrows
         mgr.register(NEXT_CHANNEL_SEQ, ActionInfo(
-            "Channels", "Next channel", "Next channel", inc, selector, None
+            "Navigation", "Next channel", "Next channel", inc, selector, None
         ))
         mgr.register(PREV_CHANNEL_SEQ, ActionInfo(
-            "Channels", "Prev channel", "Prev channel", dec, selector, None
+            "Navigation", "Prev channel", "Prev channel", dec, selector, None
         ))
 
     def _onFractionChanged( self, fraction ):
