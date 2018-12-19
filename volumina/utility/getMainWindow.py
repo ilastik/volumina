@@ -24,5 +24,14 @@ def getMainWindow():
 
     # Now return the biggest widget we found.
     sizes = [w.width() * w.height() for w in top_level_widgets]
-    biggest_widget = max(list(zip(sizes, top_level_widgets)))[1]
-    return biggest_widget
+
+    max_area = 0
+    main_widget = None
+
+    for w in top_level_widgets:
+        area = w.width() * w.height()
+        if area > max_area:
+            max_area = area
+            main_widget = w
+
+    return main_widget
