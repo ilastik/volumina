@@ -422,11 +422,14 @@ class ColortableImageRequest( object ):
             tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32)
             if not issubclass( a.dtype.type, np.integer ):
-                raise NotImplementedError()
                 #FIXME: maybe this should be done in a better way using an operator before the colortable request which properly handles 
                 #this problem 
                 warnings.warn("Data for colortable layers cannot be float, casting",RuntimeWarning)
                 a = np.asanyarray(a, dtype=np.uint32)
+                warnings.warn("As a workaround, volumina/volumina/pixelpipeline/imagesource.py, comment the raise NotImplementedError; Or adjust your data-set to be np.integer conform",RuntimeWarning)
+                #TODO raise Error just stopped but doesn't handle anything. 
+                # The Warning and conversion did the job
+                raise NotImplementedError()
 
             # If we have a masked array with a non-trivial mask, ensure that mask is made transparent.
             _colorTable = self._colorTable
