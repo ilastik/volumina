@@ -54,4 +54,3 @@ script:
   - echo `which pytest`
   - cd ${TEST_ENV_PREFIX}/ilastik-meta/volumina 
   - xvfb-run pytest --capture=no --cov=volumina
-  - coveralls
