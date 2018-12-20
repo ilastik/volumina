@@ -20,9 +20,12 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 # time to wait (in seconds) for rendering to finish
-from builtins import range
+import pytest
+
 import unittest as ut
+
 import numpy as np
+
 from PyQt5.QtCore import QRectF, QPoint, QRect
 from PyQt5.QtGui import QTransform
 from qimage2ndarray import byte_view
@@ -66,7 +69,9 @@ class TilingTest ( ut.TestCase ):
             t.data2scene = trans
 
 
+@pytest.mark.usefixtures('qtapp')
 class TileProviderTest( ut.TestCase ):
+
     def setUp( self ):
         self.GRAY1 = 60
         self.ds1 = ConstantSource( self.GRAY1 )
@@ -136,8 +141,8 @@ class TileProviderTest( ut.TestCase ):
             self.assertTrue(np.all(aimg[:,:,3] == 255))
 
 
+@pytest.mark.usefixtures('qtapp')
 class DirtyPropagationTest( ut.TestCase ):
-
     def setUp( self ):
         dataShape = (1, 900, 400, 10, 1) # t,x,y,z,c
         data = np.indices(dataShape)[3].astype(np.uint8) # Data is labeled according to z-index
