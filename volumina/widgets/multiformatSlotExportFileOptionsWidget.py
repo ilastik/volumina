@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import QWidget
 
 from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
 from .hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
+from .n5ExportFileOptionsWidget import N5ExportFileOptionsWidget
 from .stackExportFileOptionsWidget import StackExportFileOptionsWidget
 
 try:
@@ -74,6 +75,15 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
                                          opDataExport.ExportPath )
             hdf5OptionsWidget.pathValidityChange.connect( self._handlePathValidityChange )
             self._format_option_editors[fmt] = hdf5OptionsWidget
+
+        # N5
+        for fmt in ('n5', 'compressed n5'):
+            n5OptionsWidget = N5ExportFileOptionsWidget( self )
+            n5OptionsWidget.initSlots( opDataExport.OutputFilenameFormat,
+                                         opDataExport.OutputInternalPath,
+                                         opDataExport.ExportPath )
+            n5OptionsWidget.pathValidityChange.connect( self._handlePathValidityChange )
+            self._format_option_editors[fmt] = n5OptionsWidget
 
         # Numpy
         npyOptionsWidget = SingleFileExportOptionsWidget( self, "npy", "numpy files (*.npy)" )

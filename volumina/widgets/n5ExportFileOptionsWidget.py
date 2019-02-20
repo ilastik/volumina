@@ -25,17 +25,18 @@ from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent
 from PyQt5.QtWidgets import QWidget, QFileDialog
 
-class Hdf5ExportFileOptionsWidget(QWidget):
+
+class N5ExportFileOptionsWidget(QWidget):
     pathValidityChange = pyqtSignal(bool)
     
     def __init__(self, parent):
-        super( Hdf5ExportFileOptionsWidget, self ).__init__(parent)
+        super( N5ExportFileOptionsWidget, self ).__init__(parent)
         uic.loadUi( os.path.splitext(__file__)[0] + '.ui', self )
         
         self.settings_are_valid = True
 
         # We need to watch the textEdited signal because Qt has a bug that causes the OK button 
-        #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.  
+        # to receive it's click event BEFORE the LineEdit receives its FocusOut event.
         # (That is, we can't just watch for FocusOut events and disable the button before the click.) 
         self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
@@ -50,12 +51,14 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         self.datasetEdit.installEventFilter(self)
 
     def showEvent(self, event):
-        super(Hdf5ExportFileOptionsWidget, self).showEvent(event)
+        super(N5ExportFileOptionsWidget, self).showEvent(event)
         self.updateFromSlots()
         
     def eventFilter(self, watched, event):
-        # Apply the new path/dataset if the user presses 'enter' 
-        #  or clicks outside the path/dataset edit box.
+        """
+        Apply the new path/dataset if the user presses 'enter'
+        or clicks outside the path/dataset edit box.
+        """
         if event.type() == QEvent.FocusOut or \
                 (event.type() == QEvent.KeyPress and
                  (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return)):
@@ -94,8 +97,8 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             file_path, ext = os.path.splitext(file_path)
-            if ext != ".h5" and ext != ".hdf5":
-                file_path += ".h5"
+            if ext != ".n5":
+                file_path += ".n5"
             else:
                 file_path += ext
             self.filepathEdit.setText(file_path)
@@ -114,9 +117,9 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         else:
             starting_dir = os.path.expanduser("~")
 
-        dlg = QFileDialog(self, "Export Location", starting_dir, "HDF5 Files (*.h5 *.hdf5)")
+        dlg = QFileDialog(self, "Export Location", starting_dir, "N5 Files (*.n5)")
         
-        dlg.setDefaultSuffix("h5")
+        dlg.setDefaultSuffix("n5")
         dlg.setAcceptMode(QFileDialog.AcceptSave)
         if not dlg.exec_():
             return
@@ -130,7 +133,7 @@ if __name__ == "__main__":
     from lazyflow.graph import Graph, Operator, InputSlot
 
     class OpMock(Operator):
-        Filepath = InputSlot(value='~/something.h5')
+        Filepath = InputSlot(value='~/something.n5')
         DatasetName = InputSlot(value='volume/data')
         FullPath = InputSlot(value='~/')
         
@@ -141,10 +144,10 @@ if __name__ == "__main__":
     op = OpMock(graph=Graph())
 
     app = QApplication([])
-    w = Hdf5ExportFileOptionsWidget(None)
+    w = N5ExportFileOptionsWidget(None)
     w.initSlots(op.Filepath, op.DatasetName, op.FullPath)
     w.show()
     app.exec_()
 
-    print("Selected Filepath: {}".format(op.Filepath.value))
-    print("Selected Dataset: {}".format(op.DatasetName.value))
+    print("Selected Filepath: {}".format( op.Filepath.value))
+    print("Selected Dataset: {}".format( op.DatasetName.value))

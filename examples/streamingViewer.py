@@ -26,7 +26,7 @@ from volumina.api import Viewer
 from volumina.pixelpipeline.datasources import LazyflowSource
 
 from lazyflow.graph import Graph
-from lazyflow.operators.ioOperators.opStreamingHdf5Reader import OpStreamingHdf5Reader
+from lazyflow.operators.ioOperators.opStreamingH5N5Reader import OpStreamingH5N5Reader
 from lazyflow.operators import OpCompressedCache
 
 from PyQt5.QtWidgets import QApplication
@@ -50,8 +50,8 @@ graph = Graph()
 
 def mkH5source(fname, gname):
     h5file = h5py.File(fname)
-    source = OpStreamingHdf5Reader(graph=graph)
-    source.Hdf5File.setValue(h5file)
+    source = OpStreamingH5N5Reader(graph=graph)
+    source.H5N5File.setValue(h5file)
     source.InternalPath.setValue(gname)
 
     op = OpCompressedCache( parent=None, graph=graph )
