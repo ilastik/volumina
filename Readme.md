@@ -1,7 +1,8 @@
 **Volumina** - Volume Slicing and Editing Library
 =============================================
 
-[![Circle CI](https://circleci.com/gh/ilastik/volumina.svg?style=svg)](https://circleci.com/gh/ilastik/volumina)
+[![Build Status](https://travis-ci.org/ilastik/volumina.svg?branch=master)](https://travis-ci.org/ilastik/volumina)
+[![Build status](https://ci.appveyor.com/api/projects/status/t371b1yf0eo7u5mp/branch/master?svg=true)](https://ci.appveyor.com/project/k-dominik/volumina-r7dc9/branch/master)
 
 Installing
 ==========
