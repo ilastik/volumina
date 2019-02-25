@@ -20,7 +20,8 @@
 #		   http://ilastik.org/license/
 ###############################################################################
 # check for optional dependencies
-from builtins import range
+import pytest
+
 has_dependencies = True
 try:
     import vigra
@@ -82,20 +83,8 @@ if has_dependencies:
             time.sleep(self.delay)
             return result
 
+    @pytest.mark.usefixtures('qtapp')
     class ImageScene2D_LazyTest( ut.TestCase ):
-
-        @classmethod
-        def setUpClass(cls):
-            cls.app = None
-            if QApplication.instance():
-                cls.app = QApplication.instance()
-            else:
-                cls.app = QApplication([])
-
-        @classmethod
-        def tearDownClass(cls):
-            del cls.app
-
         def setUp( self ):
             self.layerstack = LayerStackModel()
             self.sims = StackedImageSources( self.layerstack )

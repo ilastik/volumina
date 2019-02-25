@@ -14,7 +14,7 @@ do
     else
         SKIP_UNTIL=""
         echo "Running $f"
-	python $f
+	pytest $f
 	RET=$?
         if [ $RET -ne 0 ]; then
 	    exit $RET

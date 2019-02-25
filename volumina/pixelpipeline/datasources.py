@@ -441,8 +441,7 @@ class ConstantSource( QObject ):
         assert is_pure_slicing(slicing)
         assert is_bounded(slicing)
         shape = slicing2shape(slicing)
-        result = np.zeros( shape, dtype = self._dtype )
-        result[:] = self._constant
+        result = np.full( shape, self._constant, dtype = self._dtype )
         return ConstantRequest( result )
 
     def setDirty( self, slicing):
