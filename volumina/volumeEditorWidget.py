@@ -456,8 +456,8 @@ class VolumeEditorWidget(QWidget):
                 ),
             )
 
-    def _updateInfoLabels(self, pos):
-        self.quadViewStatusBar.setMouseCoords(*pos)
+    def _updateInfoLabels(self, pos, oldpos, time):
+        self.quadViewStatusBar.setMouseCoords(*pos, time)
 
     def eventFilter(self, watched, event):
         # If the user performs a ctrl+scroll on the splitter itself,

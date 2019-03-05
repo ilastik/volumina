@@ -79,6 +79,16 @@ class LayerStackModel(QAbstractListModel):
                 return index
         raise ValueError("No matching layer in stack.")
 
+    def findMatchingIndices(self, func):
+        """Call the given function with each layer and return all indices of layers for which func is True."""
+        indices = []
+        for index, layer in enumerate(self._layerStack):
+            if func(layer):
+                indices.append(index)
+        if indices:
+            return indices
+        raise ValueError("No matching layer in stack.")
+
     def append(self, data):
         self.insert(0, data)
 

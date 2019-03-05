@@ -509,6 +509,7 @@ class QuadStatusBar(QHBoxLayout):
         self.addWidget(self.ySpinBox)
         self.addWidget(self.zLabel)
         self.addWidget(self.zSpinBox)
+        self.addWidget(self.labelWidget)
 
         self.addSpacing(10)
 
@@ -585,6 +586,97 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSpinBox.delayedValueChanged.connect(self._onTimeSpinBoxChanged)
 
         self._registerTimeframeShortcuts()
+
+    def _get_pos_widget(self, name, backgroundColor, foregroundColor):
+        label = QLabel()
+        label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+        pixmap = QPixmap(25 * 10, 25 * 10)
+        pixmap.fill(backgroundColor)
+        painter = QPainter()
+        painter.begin(pixmap)
+        pen = QPen(foregroundColor)
+        painter.setPen(pen)
+        painter.setRenderHint(QPainter.Antialiasing)
+        font = QFont()
+        font.setBold(True)
+        font.setPixelSize(25 * 10 - 30)
+        path = QPainterPath()
+        path.addText(QPointF(50, 25 * 10 - 50), font, name)
+        brush = QBrush(foregroundColor)
+        painter.setBrush(brush)
+        painter.drawPath(path)
+        painter.setFont(font)
+        painter.end()
+        pixmap = pixmap.scaled(QSize(20, 20),
+                               Qt.KeepAspectRatio,
+                               Qt.SmoothTransformation)
+        label.setPixmap(pixmap)
+
+        spinbox = DelayedSpinBox(750)
+        spinbox.setAlignment(Qt.AlignCenter)
+        spinbox.setToolTip("{0} Spin Box".format(name))
+        spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
+        spinbox.setMaximumHeight(20)
+        font = spinbox.font()
+        font.setPixelSize(14)
+        spinbox.setFont(font)
+        sheet = TEMPLATE.format(foregroundColor.name(),
+                                backgroundColor.name())
+        spinbox.setStyleSheet(sheet)
+        return label, spinbox
+
+    def _get_label_widget(self, backgroundColor, foregroundColor):
+        ledit = QLineEdit()
+        ledit.setAlignment(Qt.AlignCenter)
+        ledit.setMaximumHeight(20)
+        ledit.setMaximumWidth(100)
+
+        font = ledit.font()
+        font.setPixelSize(14)
+        font.setBold(True)
+        ledit.setFont(font)
+        ledit.setStyleSheet(f"color: {foregroundColor.name()};"
+                            f"background-color: {backgroundColor.name()};"
+                            f"border: none")
+
+        return ledit
+
+    def _set_label_widget(self, x, y, z, t):
+        """Updates the label widget according to current mouse cursor position (x,y,z) and selectet time frame (t)"""
+        # no need for the color dimension (last element) here.
+        slicing = [slice(int(i), int(i + 1)) for i in [t, x, y, z]] + [slice(0,1)]
+        label = None
+        try:
+            def findLayer(layer):
+                if "Segmentation" in layer.name:
+                    return True
+            labelings = self.layerstack.findMatchingIndices(findLayer)  # this throws exception if no layer found
+            for lbl in labelings:
+                val = self.layerstack[lbl].datasources[0].request(slicing).wait()
+                if val == 1:  # indicates, that 'sclicing' is labelled with the label layer 'lbl'
+                    name = self.layerstack[lbl].name
+                    label = name[name.find("(") + 1:name.find(")")]
+                    color = self.layerstack[lbl].tintColor.name()
+                    break
+            if label is not None:
+                self.labelWidget.setStyleSheet(f"color: white;"
+                                         f"background-color: {color};"
+                                         f"border: none")
+                self.labelWidget.setText(f"{label}")
+            else:
+                self.labelWidget.setStyleSheet(f"color: white;"
+                                         f"background-color: black;"
+                                         f"border: none")
+                self.labelWidget.setText(f"Label: -")
+        except ValueError as e:
+            self.labelWidget.setStyleSheet(f"color: white;"
+                                     f"background-color: black;"
+                                     f"border: none")
+            self.labelWidget.setText(f"Label: -")
+
+            if str(e) != "No matching layer in stack.":
+                raise
 
     def _registerTimeframeShortcuts(self, enabled=True, remove=True):
         """ Register or deregister "," and "." as keyboard shortcuts for scrolling in time """
@@ -699,10 +791,11 @@ class QuadStatusBar(QHBoxLayout):
         self.zSpinBox.setValue(shape5DcropMin[3])
         self.timeSlider.setValue(shape5DcropMin[0])
 
-    def setMouseCoords(self, x, y, z):
+    def setMouseCoords(self, x, y, z, t):
         self.xSpinBox.setValueWithoutSignal(x)
         self.ySpinBox.setValueWithoutSignal(y)
         self.zSpinBox.setValueWithoutSignal(z)
+        self._set_label_widget(x, y, z, t)
 
 
 if __name__ == "__main__":
