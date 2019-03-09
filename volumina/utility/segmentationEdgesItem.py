@@ -340,7 +340,7 @@ if __name__ == "__main__":
     default_pen.setWidth(3)
 
     # Changes to this pen table will be detected automatically in the QGraphicsItem
-    pen_table = SignalingDefaultDict(parent=None, default_factory=lambda:default_pen)
+    pen_table = SignalingDefaultDict(None, default_pen)
 
     start = time.time()
     path_items = generate_path_items_for_labels(pen_table, labels_img, None)

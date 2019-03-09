@@ -1,5 +1,4 @@
 from __future__ import print_function
-from collections import defaultdict
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtCore import QObject
 
@@ -20,16 +19,15 @@ class SignalingDefaultDict( QObject ):
     """
     updated = pyqtSignal(object) # set(updated_keys) 
     
-    def __init__(self, parent, default_factory, *args, **kwargs):
-        assert default_factory is not None, "You must provide a default_factory."
+    def __init__(self, parent, default_value):
         super( SignalingDefaultDict, self ).__init__(parent)
-        self._dict = defaultdict(default_factory, *args, **kwargs)
+        self._dict = {}
+        self.default_value = default_value
+        assert not callable(default_value), "Pass a default_value, not a default_factory"
         
     def __len__(self):                 return len(self._dict)
-    def __getitem__(self, key):        return self._dict[key]
     def __iter__(self):                return self._dict.__iter__()
     def __contains__(self, key):       return self._dict.__contains__(key)
-    def get(self, key, default=None):  return self._dict.get(key, default)
     def viewkeys(self):                return self._dict.keys()
     def items(self):                   return list(self._dict.items())
     def iteritems(self):               return iter(self._dict.items())
@@ -37,6 +35,18 @@ class SignalingDefaultDict( QObject ):
     def iterkeys(self):                return iter(self._dict.keys())
     def itervalues(self):              return iter(self._dict.values())
     def values(self):                  return list(self._dict.values())
+
+    def __getitem__(self, key):
+        try:
+            return self._dict[key]
+        except KeyError:
+            return self.default_value
+
+    def get(self, key, default=None):
+        try:
+            return self._dict[key]
+        except KeyError:
+            return default
 
     def __setitem__(self, key, value):
         if key not in self._dict or self._dict[key] != value:
@@ -64,7 +74,7 @@ class SignalingDefaultDict( QObject ):
         added_keys = other_keys - original_keys
         
         common_keys = original_keys.intersection(other_keys)
-        changed_keys = [key for key in common_keys if self._dict[key] != other[key]]        
+        changed_keys = [key for key in common_keys if self._dict[key] != other[key]]
 
         self._dict.update(other)
         self.updated.emit( set(changed_keys).union(added_keys) )
@@ -88,15 +98,16 @@ class SignalingDefaultDict( QObject ):
         changed_keys = [key for key in common_keys if self._dict[key] != other[key]]
         deleted_keys = original_keys - other_keys
 
-        self._dict = defaultdict(self._dict.default_factory, other)
+        self._dict = dict(other)
         self.updated.emit( set(changed_keys).union(added_keys).union(deleted_keys) )
 
 if __name__ == "__main__":
     from PyQt5.QtCore import QCoreApplication
     app = QCoreApplication([])
     
+    d = SignalingDefaultDict(None, 0)
     orig_dict = {'a' : 1, 'b' : 2, 'c' : 3}
-    d = SignalingDefaultDict(None, lambda: 0, orig_dict)
+    d.overwrite(orig_dict)
 
     assert set(d.keys()) == set(d.keys()) == set(d.keys()) == set('abc')
     assert set(d.values()) == set(d.values()) == set([1,2,3])
