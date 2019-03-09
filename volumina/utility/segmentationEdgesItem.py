@@ -66,7 +66,30 @@ class SegmentationEdgesItem( QGraphicsObject ):
     def handle_updated_pen_table(self, updated_path_ids):
         updated_path_ids = self.path_ids.intersection(updated_path_ids)
         for id_pair in updated_path_ids:
-            self.path_items[id_pair].setPen( self.edge_pen_table[id_pair] )
+            item = self.path_items[id_pair]
+            pen = self.edge_pen_table[id_pair]
+            item.setPen( pen )
+            
+            colliding = list(filter(lambda c: c.parentItem() is item.parentItem(), item.collidingItems()))
+            if not colliding:
+                continue
+            
+            # If the item was made transparent, send it to the bottom so that
+            # nearby overlapping items that are still visible can be clicked.
+            # Otherwise, send it to the top.
+            # (It doesn't really matter what each item's exact Z-values is,
+            # as long as they are in the right order relative to each other.)
+            if pen.color().alpha() == 0.0:
+                min_z = 0.0
+                for c in colliding:
+                    min_z = min(min_z, c.zValue())
+                item.setZValue(min_z - 1.0)
+            else:
+                max_z = 1.0
+                for c in colliding:
+                    max_z = max(max_z, c.zValue())
+                item.setZValue(max_z + 1.0)
+                
 
 def painter_paths_for_labels_PURE_PYTHON( label_img, simplify_with_tolerance=None ):
     # Find edge coordinates.
