@@ -21,7 +21,7 @@ class SegmentationEdgesItem( QGraphicsObject ):
     edgeClicked = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
     edgeSwiped = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
     
-    def __init__(self, path_items, edge_pen_table, parent=None):
+    def __init__(self, path_items, edge_pen_table, is_clickable=False, parent=None):
         """
         path_items: A dict of { edge_id : SingleEdgeItem }
                     Use generate_path_items_for_labels() to produce this dict.
@@ -31,6 +31,10 @@ class SegmentationEdgesItem( QGraphicsObject ):
                         Such elements are ignored.
                         (It is assumed that edge_pen_table may be shared among several SegmentationEdgeItems)
         
+        is_clickable: If this item will be used for interactive labeling, change the Z-order when an
+                      edge becomes visible/invisible, to make it easier for small edges to be accessible
+                      despite overlapping neighbors, as explained in
+                      https://github.com/ilastik/volumina/pull/222
         """
         assert threading.current_thread().name == 'MainThread', \
             "SegmentationEdgesItem objects may only be created in the main thread."
@@ -42,6 +46,7 @@ class SegmentationEdgesItem( QGraphicsObject ):
         self.edge_pen_table = edge_pen_table
         self.edge_pen_table.updated.connect( self.handle_updated_pen_table )
         self.set_path_items(path_items)
+        self.is_clickable = is_clickable
 
     def set_path_items(self, path_items):
         self.path_items = path_items
@@ -69,6 +74,9 @@ class SegmentationEdgesItem( QGraphicsObject ):
             item = self.path_items[id_pair]
             pen = self.edge_pen_table[id_pair]
             item.setPen( pen )
+            
+            if not self.is_clickable:
+                continue
             
             colliding = list(filter(lambda c: c.parentItem() is item.parentItem(), item.collidingItems()))
             if not colliding:
@@ -347,7 +355,8 @@ def arrayToQPath(x, y, connect='all'):
 if __name__ == "__main__":
     import time
     import numpy as np
-    from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QTransform
+    from PyQt5.QtGui import QTransform
+    from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
 
     app = QApplication([])
 
@@ -388,7 +397,7 @@ if __name__ == "__main__":
     scene.addItem(edges_item)
     
     transform = QTransform()
-    transform.scale(5.0, 5.0)
+    transform.scale(2.0, 2.0)
     
     view = QGraphicsView(scene)
     view.setTransform(transform)

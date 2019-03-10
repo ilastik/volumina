@@ -689,13 +689,14 @@ class DummyRasterItemSource(ImageSource):
 from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem, generate_path_items_for_labels
 class SegmentationEdgesItemSource(ImageSource):
     def __init__( self, layer, arraySource2D ):
-        from volumina.layer import SegmentationEdgesLayer
+        from volumina.layer import SegmentationEdgesLayer, LabelableSegmentationEdgesLayer
         assert isinstance(layer, SegmentationEdgesLayer)
         
         super( SegmentationEdgesItemSource, self ).__init__(layer.name)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._layer = layer
+        self._is_clickable = isinstance(self._layer, LabelableSegmentationEdgesLayer)
 
     def request( self, qrect, along_through=None ):
         assert isinstance(qrect, QRect)
@@ -703,16 +704,17 @@ class SegmentationEdgesItemSource(ImageSource):
         qrect = QRect( qrect.x(), qrect.y(), qrect.width()+1, qrect.height()+1 )
         s = rect2slicing(qrect)
         arrayreq = self._arraySource2D.request(s, along_through)
-        return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect)
+        return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect, self._is_clickable)
 
     def image_type(self):
         return SegmentationEdgesItem
 
 class SegmentationEdgesItemRequest(object):
-    def __init__(self, arrayreq, layer, rect):
+    def __init__(self, arrayreq, layer, rect, is_clickable):
         self.rect = rect
         self._arrayreq = arrayreq
         self._layer = layer
+        self._is_clickable = is_clickable
     
     def wait(self):
         array_data = self._arrayreq.wait()
@@ -730,7 +732,7 @@ class SegmentationEdgesItemRequest(object):
 
             # All SegmentationEdgesItem(s) associated with this layer will share a common pen table.
             # They react immediately when the pen table is updated.
-            graphics_item = SegmentationEdgesItem(path_items, self._layer.pen_table)
+            graphics_item = SegmentationEdgesItem(path_items, self._layer.pen_table, self._is_clickable)
 
             # When the item is clicked, the layer is notified.
             graphics_item.edgeClicked.connect( self._layer.handle_edge_clicked )
