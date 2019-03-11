@@ -25,8 +25,9 @@ from functools import partial
 
 import volumina
 from past.utils import old_div
-from PyQt5.QtCore import QCoreApplication, QEvent, QPointF, QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QCoreApplication, QEvent, QPointF, QSize, Qt, pyqtSignal, QSize, QTimer
 from PyQt5.QtGui import QBrush, QColor, QFont, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QTransform
+
 from PyQt5.QtWidgets import (
     QAbstractSpinBox,
     QCheckBox,
@@ -458,6 +459,7 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
 
 
 class QuadStatusBar(QHBoxLayout):
+
     positionChanged = pyqtSignal(int, int, int)  # x,y,z
 
     def __init__(self, parent=None):
@@ -465,6 +467,7 @@ class QuadStatusBar(QHBoxLayout):
         self.setContentsMargins(0, 4, 0, 0)
         self.setSpacing(0)
         self.timeControlFontSize = 12
+        self.layerStack = layerStack
 
     def showXYCoordinates(self):
         self.zLabel.setHidden(True)
@@ -627,6 +630,9 @@ class QuadStatusBar(QHBoxLayout):
         return label, spinbox
 
     def _get_label_widget(self, backgroundColor, foregroundColor):
+        ticker = QTimer()
+        ticker.setInterval(200)
+        ticker.setSingleShot(True)
         ledit = QLineEdit()
         ledit.setAlignment(Qt.AlignCenter)
         ledit.setMaximumHeight(20)
@@ -640,35 +646,60 @@ class QuadStatusBar(QHBoxLayout):
                             f"background-color: {backgroundColor.name()};"
                             f"border: none")
 
-        return ledit
+        return ledit, ticker
 
     def _set_label_widget(self, x, y, z, t):
         """Updates the label widget according to current mouse cursor position (x,y,z) and selectet time frame (t)"""
+        # from lazyflow.roi import TinyVector
+        # from collections import namedtuple
+
         # no need for the color dimension (last element) here.
         slicing = [slice(int(i), int(i + 1)) for i in [t, x, y, z]] + [slice(0,1)]
+        # Roi = namedtuple('Roi', 'start stop')
+        # roi = Roi(start=TinyVector([int(t),int(y),int(x),int(z)]), stop=TinyVector([int(t+1),int(y+1),int(x+1),int(z+1)]))
         label = None
         try:
             def findLayer(layer):
-                if "Segmentation" in layer.name:
+                if "Segmentation (Label " in layer.name:
                     return True
-            labelings = self.layerstack.findMatchingIndices(findLayer)  # this throws exception if no layer found
+            labelings = self.layerStack.findMatchingIndices(findLayer)  # this throws exception if no layer found
             for lbl in labelings:
-                val = self.layerstack[lbl].datasources[0].request(slicing).wait()
-                if val == 1:  # indicates, that 'sclicing' is labelled with the label layer 'lbl'
-                    name = self.layerstack[lbl].name
+                try:
+                    fixed = []
+                    # FIXME This is really hacky, need to find another way of retrieving the cached values without the cache blocking the request
+                    for op in self.layerStack[lbl].datasources[0].dataSlot.getRealOperator().opPredictionPipeline.innerOperators[0].prediction_cache_gui._innerOps:
+                        fixed.append(op._opCacheFixer._fixed)
+                        op._opCacheFixer._fixed = False
+
+                    # Get the whole dataset (debugging purposes)
+                    # whole_set_roi = Roi(start=TinyVector([0, 0, 0, 0]),
+                    # whole_set_slicing = [slice(int(0), int(i)) for i in [2, 1343, 1022, 1]] + [slice(0,1)]
+                    # set_fromRoi = self.layerStack[lbl].datasources[0].dataSlot.get(whole_set_roi).wait()
+                    # set_fromSlice = self.layerStack[lbl].datasources[0].request(whole_set_slicing).wait()
+                    # set_fromVal = self.layerStack[lbl].datasources[0].dataSlot.value
+
+                    # Equivalent calls to opCacheFixer
+                    # val = self.layerStack[lbl].datasources[0].dataSlot.get(roi).wait()
+                    # val = self.layerStack[lbl].datasources[0].dataSlot(roi.start, roi.stop).wait()
+                    val = self.layerStack[lbl].datasources[0].request(slicing).wait()
+
+                    # This does not call cached values, hence no need to hack the cache. But it is way to slow
+                    # val = self.layerStack[lbl].datasources[0].dataSlot.value[int(t),int(y),int(x),int(z)]
+                finally:
+                    if fixed:
+                        for fx, op in zip(fixed, self.layerStack[lbl].datasources[0].dataSlot.getRealOperator().opPredictionPipeline.innerOperators[0].prediction_cache_gui._innerOps):
+                            op._opCacheFixer._fixed = fx
+                if val == 1:  # indicates, that 'sclicing' is labelled with the label 'lbl'
+                    name = self.layerStack[lbl].name
                     label = name[name.find("(") + 1:name.find(")")]
-                    color = self.layerstack[lbl].tintColor.name()
+                    color = self.layerStack[lbl].tintColor.name()
+                    self.labelWidget.setStyleSheet(f"color: white;"
+                                                   f"background-color: {color};"
+                                                   f"border: none")
+                    self.labelWidget.setText(f"{label}")
                     break
-            if label is not None:
-                self.labelWidget.setStyleSheet(f"color: white;"
-                                         f"background-color: {color};"
-                                         f"border: none")
-                self.labelWidget.setText(f"{label}")
-            else:
-                self.labelWidget.setStyleSheet(f"color: white;"
-                                         f"background-color: black;"
-                                         f"border: none")
-                self.labelWidget.setText(f"Label: -")
+            if label is None:
+                raise ValueError("No matching layer in stack.")
         except ValueError as e:
             self.labelWidget.setStyleSheet(f"color: white;"
                                      f"background-color: black;"
@@ -795,7 +826,9 @@ class QuadStatusBar(QHBoxLayout):
         self.xSpinBox.setValueWithoutSignal(x)
         self.ySpinBox.setValueWithoutSignal(y)
         self.zSpinBox.setValueWithoutSignal(z)
-        self._set_label_widget(x, y, z, t)
+        if not self.pos_info_ticker.isActive():
+            self._set_label_widget(x, y, z, t)
+            self.pos_info_ticker.start()
 
 
 if __name__ == "__main__":

@@ -161,9 +161,10 @@ class VolumeEditorWidget(QWidget):
             self, self.editor.imageViews[2], self.editor.imageViews[0], self.editor.imageViews[1], self.editor.view3d
         )
         self.quadview.installEventFilter(self)
-        self.quadViewStatusBar = QuadStatusBar()
+        self.quadViewStatusBar = QuadStatusBar(self.editor.layerStack)
         self.quadViewStatusBar.createQuadViewStatusBar(
-            QColor("#dc143c"), QColor("white"), QColor("green"), QColor("white"), QColor("blue"), QColor("white")
+            QColor("#dc143c"), QColor("white"), QColor("green"), QColor("white"), QColor("blue"), QColor("white"),
+            QColor("black"), QColor("white")
         )
         self.quadview.addStatusBar(self.quadViewStatusBar)
         self.layout.addWidget(self.quadview)
