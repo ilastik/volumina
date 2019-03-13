@@ -81,7 +81,8 @@ class SegmentationEdgesItem( QGraphicsObject ):
             if not self.is_clickable:
                 continue
             
-            colliding = list(filter(lambda c: c.parentItem() is item.parentItem(), item.collidingItems()))
+            # Find colliding items and filter to keep siblings only
+            colliding = [c for c in item.collidingItems() if c.parentItem() is item.parentItem()]
             if not colliding:
                 continue
             
