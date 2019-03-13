@@ -688,15 +688,15 @@ class DummyRasterItemSource(ImageSource):
 
 from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem, generate_path_items_for_labels
 class SegmentationEdgesItemSource(ImageSource):
-    def __init__( self, layer, arraySource2D ):
-        from volumina.layer import SegmentationEdgesLayer, LabelableSegmentationEdgesLayer
+    def __init__( self, layer, arraySource2D, is_clickable ):
+        from volumina.layer import SegmentationEdgesLayer
         assert isinstance(layer, SegmentationEdgesLayer)
         
         super( SegmentationEdgesItemSource, self ).__init__(layer.name)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._layer = layer
-        self._is_clickable = isinstance(self._layer, LabelableSegmentationEdgesLayer)
+        self._is_clickable = is_clickable
 
     def request( self, qrect, along_through=None ):
         assert isinstance(qrect, QRect)
