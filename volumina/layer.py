@@ -30,7 +30,7 @@ from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource
 
-from volumina.utility import SignalingDefaultDict
+from volumina.utility import SignalingDict
 
 from functools import partial
 from collections import defaultdict
@@ -598,7 +598,8 @@ class SegmentationEdgesLayer( Layer ):
         super( SegmentationEdgesLayer, self ).__init__( [datasource], direct=direct )
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
-        self._pen_table = SignalingDefaultDict(self, default_pen)
+        self._pen_table = SignalingDict(self)
+        self.default_pen = default_pen
 
     def handle_edge_clicked(self, id_pair, event):
         """

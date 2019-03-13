@@ -2,13 +2,12 @@ from __future__ import print_function
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtCore import QObject
 
-class SignalingDefaultDict( QObject ):
+class SignalingDict( QObject ):
     """
-    Provides a defaultdict-like interface, but emits a signal whenever the dict is updated.
+    Provides a dict-like interface, but emits a signal whenever the dict is updated.
     
     Note: To simplify the API, this offers only one signal, 
           which is used any time a value is updated, even for deleted items.
-          When an item is deleted, the signal is emitted with the default_value.
           
     TODO: Some dict functions are not implemented yet:
           - pop()
@@ -19,11 +18,9 @@ class SignalingDefaultDict( QObject ):
     """
     updated = pyqtSignal(object) # set(updated_keys) 
     
-    def __init__(self, parent, default_value):
-        super( SignalingDefaultDict, self ).__init__(parent)
+    def __init__(self, parent):
+        super( SignalingDict, self ).__init__(parent)
         self._dict = {}
-        self.default_value = default_value
-        assert not callable(default_value), "Pass a default_value, not a default_factory"
         
     def __len__(self):                 return len(self._dict)
     def __iter__(self):                return self._dict.__iter__()
@@ -37,16 +34,10 @@ class SignalingDefaultDict( QObject ):
     def values(self):                  return list(self._dict.values())
 
     def __getitem__(self, key):
-        try:
-            return self._dict[key]
-        except KeyError:
-            return self.default_value
+        return self._dict[key]
 
     def get(self, key, default=None):
-        try:
-            return self._dict[key]
-        except KeyError:
-            return default
+        return self._dict.get(key, default)
 
     def __setitem__(self, key, value):
         if key not in self._dict or self._dict[key] != value:
@@ -105,7 +96,7 @@ if __name__ == "__main__":
     from PyQt5.QtCore import QCoreApplication
     app = QCoreApplication([])
     
-    d = SignalingDefaultDict(None, 0)
+    d = SignalingDict(None)
     orig_dict = {'a' : 1, 'b' : 2, 'c' : 3}
     d.overwrite(orig_dict)
 
@@ -114,14 +105,20 @@ if __name__ == "__main__":
     assert set(d.items()) == set(d.items()) == set(orig_dict.items())
 
     assert d['a'] == 1
-    assert d['z'] == 0
+    try:
+        d['z']
+    except KeyError:
+        pass
+    else:
+        raise AssertionError("Expected a KeyError")
+
     assert d.get('b') == 2
-    assert d.get('y') is None # This is what defaultdict does
+    assert d.get('y') is None
     assert d.get('y', 100) == 100
 
     handled_items = []
     def f(keys):
-        handled_items.extend( (k,d[k]) for k in keys )
+        handled_items.extend( (k,d.get(k, 0)) for k in keys )
     
     d.updated.connect(f)
     

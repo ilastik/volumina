@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt, QObject, QRectF, QPointF, QPoint
 from PyQt5.QtWidgets import QApplication, QGraphicsObject, QGraphicsPathItem
 from PyQt5.QtGui import QPainterPath, QPen, QColor
 
-from volumina.utility import SignalingDefaultDict, edge_coords_nd, simplify_line_segments
+from volumina.utility import SignalingDict, edge_coords_nd, simplify_line_segments
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +21,17 @@ class SegmentationEdgesItem( QGraphicsObject ):
     edgeClicked = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
     edgeSwiped = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
     
-    def __init__(self, path_items, edge_pen_table, is_clickable=False, parent=None):
+    def __init__(self, path_items, edge_pen_table, default_pen, is_clickable=False, parent=None):
         """
         path_items: A dict of { edge_id : SingleEdgeItem }
                     Use generate_path_items_for_labels() to produce this dict.
         
-        edge_pen_table: Must be of type SignalingDefaultDict, mapping from id_pair -> QPen.
+        edge_pen_table: Must be of type SignalingDict, mapping from id_pair -> QPen.
                         May contain id_pair elements that are not present in the label_img.
                         Such elements are ignored.
                         (It is assumed that edge_pen_table may be shared among several SegmentationEdgeItems)
+
+        default_pen: What pen to use for id_pairs that are not found in the edge_pen_table
         
         is_clickable: If this item will be used for interactive labeling, change the Z-order when an
                       edge becomes visible/invisible, to make it easier for small edges to be accessible
@@ -42,10 +44,11 @@ class SegmentationEdgesItem( QGraphicsObject ):
         super(SegmentationEdgesItem, self).__init__(parent=parent)
         self.setFlag(QGraphicsObject.ItemHasNoContents)
         
-        assert isinstance(edge_pen_table, SignalingDefaultDict)
+        assert isinstance(edge_pen_table, SignalingDict)
         self.edge_pen_table = edge_pen_table
         self.edge_pen_table.updated.connect( self.handle_updated_pen_table )
         self.set_path_items(path_items)
+        self.default_pen = default_pen
         self.is_clickable = is_clickable
 
     def set_path_items(self, path_items):
@@ -72,7 +75,7 @@ class SegmentationEdgesItem( QGraphicsObject ):
         updated_path_ids = self.path_ids.intersection(updated_path_ids)
         for id_pair in updated_path_ids:
             item = self.path_items[id_pair]
-            pen = self.edge_pen_table[id_pair]
+            pen = self.edge_pen_table.get(id_pair, self.default_pen)
             item.setPen( pen )
             
             if not self.is_clickable:
@@ -142,12 +145,13 @@ try:
 except ImportError:
     pass
 
-def generate_path_items_for_labels(edge_pen_table, label_img, simplify_with_tolerance=None):
+def generate_path_items_for_labels(edge_pen_table, default_pen, label_img, simplify_with_tolerance=None):
     painter_paths = painter_paths_for_labels(label_img, simplify_with_tolerance)
     
     path_items = {}
     for id_pair in list(painter_paths.keys()):
-        path_items[id_pair] = SingleEdgeItem(id_pair, painter_paths[id_pair], initial_pen=edge_pen_table[id_pair])
+        path_items[id_pair] = SingleEdgeItem(id_pair, painter_paths[id_pair],
+                                             initial_pen=edge_pen_table.get(id_pair, default_pen))
     return path_items
 
 def line_segments_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None ):
@@ -372,13 +376,13 @@ if __name__ == "__main__":
     default_pen.setWidth(3)
 
     # Changes to this pen table will be detected automatically in the QGraphicsItem
-    pen_table = SignalingDefaultDict(None, default_pen)
+    pen_table = SignalingDict(None)
 
     start = time.time()
-    path_items = generate_path_items_for_labels(pen_table, labels_img, None)
+    path_items = generate_path_items_for_labels(pen_table, default_pen, labels_img, None)
     print("generate took {}".format(time.time() - start)) # 52 ms
 
-    edges_item = SegmentationEdgesItem(path_items, pen_table)
+    edges_item = SegmentationEdgesItem(path_items, pen_table, default_pen)
     
     def assign_random_color( id_pair, buttons ):
         print("handling click: {}".format(id_pair))

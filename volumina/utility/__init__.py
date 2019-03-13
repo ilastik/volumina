@@ -29,6 +29,6 @@ from .shortcutManagerDlg import ShortcutManagerDlg
 from volumina.utility.thunkEvent import execute_in_main_thread
 from volumina.utility.edge_coords import edge_coords_along_axis, edge_coords_nd
 from volumina.utility.simplify_line_segments import simplify_line_segments
-from volumina.utility.signalingDefaultDict import SignalingDefaultDict
+from volumina.utility.signalingDefaultDict import SignalingDict
 from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem
 from volumina.utility.prioritizedThreadPool import PrioritizedThreadPoolExecutor
