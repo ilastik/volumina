@@ -363,7 +363,7 @@ class ImageScene2D(QGraphicsScene):
         When labeling edges, we want the edge label layer to accept mouse events, even if it isn't on top.
         Therefore, we send events to all items under the mouse, until the event is accepted.
         """
-        super(ImageScene2D, self).mouseMoveEvent(event)
+        super(ImageScene2D, self).mousePressEvent(event)
         if not event.isAccepted():
             items = self.items(event.scenePos())
             for item in items:
