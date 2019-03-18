@@ -30,7 +30,7 @@ from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource
 
-from volumina.utility import SignalingDefaultDict
+from volumina.utility import SignalingDict
 
 from functools import partial
 from collections import defaultdict
@@ -598,7 +598,8 @@ class SegmentationEdgesLayer( Layer ):
         super( SegmentationEdgesLayer, self ).__init__( [datasource], direct=direct )
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
-        self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
+        self._pen_table = SignalingDict(self)
+        self.default_pen = default_pen
 
     def handle_edge_clicked(self, id_pair, event):
         """
@@ -652,7 +653,10 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
         # Change the pens accordingly
         pen_table = {}
         for id_pair, label_class in list(self._edge_labels.items()):
-            pen_table[id_pair] = self._label_class_pens[label_class]
+            # Omit unlabeled edges; there are usually a lot of them
+            # and the default is class 0 anyway.
+            if label_class != 0:
+                pen_table[id_pair] = self._label_class_pens[label_class]
         self.pen_table.overwrite(pen_table)
     
     def handle_edge_clicked(self, id_pair, event):
@@ -709,5 +713,6 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
     def _signal_buffered_updates(self):
         updates = self._buffered_updates
         self._buffered_updates = {}
-        self.labelsChanged.emit( updates )
+        if updates:
+            self.labelsChanged.emit( updates )
         
