@@ -4,9 +4,11 @@ import numpy as np
 try:
     import shapely.ops
     from shapely.geometry import LineString, MultiLineString
+
     _missing_shapely = False
 except ImportError:
     _missing_shapely = True
+
 
 def simplify_line_segments(lines, tolerance=0.707):
     """
@@ -31,20 +33,20 @@ def simplify_line_segments(lines, tolerance=0.707):
     # To avoid a ~2x slowdown, force everything to be plain python.
     lines = np.asarray(lines).tolist()
     lines = MultiLineString(lines)
-    
+
     merged_lines = shapely.ops.linemerge(lines).simplify(tolerance, False)
     if isinstance(merged_lines, LineString):
         # Annoyingly, the output type of linemerge() depends
         # on how many segments were found
-        return [ np.array(merged_lines) ]
-    return list(map( np.array, merged_lines ))
+        return [np.array(merged_lines)]
+    return list(map(np.array, merged_lines))
 
 
 ##
 ##
 ## OLD IMPLEMENTATION: All functions below this line aren't needed any more,
 ##                     but might be useful in the future...
-## 
+##
 ## This version implements the merge step using networkx.
 ## (I implemented this before I discovered the shapely.ops.linemerge() function...)
 ##
@@ -52,9 +54,11 @@ def simplify_line_segments(lines, tolerance=0.707):
 
 try:
     import networkx as nx
+
     _missing_nx = False
 except ImportError:
     _missing_nx = True
+
 
 def simplify_line_segments_OLD(lines, tolerance=0.707):
     """
@@ -72,8 +76,7 @@ def simplify_line_segments_OLD(lines, tolerance=0.707):
     Returns a list of the segment point arrays (one array per segment),
     where each point array is already in order, ready to be drawn on screen.
     """
-    assert not _missing_shapely and not _missing_nx, \
-        "This function requires networkx and shapely to be installed."
+    assert not _missing_shapely and not _missing_nx, "This function requires networkx and shapely to be installed."
 
     lines = [tuple(map(tuple, l)) for l in lines]
     merged_lines = merge_line_segments(lines)
@@ -87,6 +90,7 @@ def simplify_line_segments_OLD(lines, tolerance=0.707):
     # Return as numpy
     point_arrays = list(map(np.array, simplified_line_strings))
     return point_arrays
+
 
 def merge_line_segments(lines):
     """
@@ -113,6 +117,7 @@ def merge_line_segments(lines):
     branch_segments = split_into_branchless_segments(g)
     return cycle_segments + branch_segments
 
+
 def pop_cycle_segments(graph):
     """
     Find all cycles in the given nx.Graph (each cycle becomes a 'segment'),
@@ -124,18 +129,19 @@ def pop_cycle_segments(graph):
             cycle_edges = nx.find_cycle(graph)
             graph.remove_edges_from(cycle_edges)
             cycle_nodes = [node[0] for node in cycle_edges]
-            cycle_nodes.append( cycle_edges[-1][1] )
+            cycle_nodes.append(cycle_edges[-1][1])
 
-            # Drop nodes without neighbors                
+            # Drop nodes without neighbors
             for node in cycle_nodes[:-1]:
                 if not graph.neighbors(node):
-                    graph.remove_node(node)                
+                    graph.remove_node(node)
             segments.append(cycle_nodes)
     except nx.NetworkXNoCycle:
         pass
- 
+
     return segments
-        
+
+
 def split_into_branchless_segments(undirected_graph):
     """
     Break the (possibly disjoint) nx.Graph into 'segments'.
@@ -199,49 +205,97 @@ def split_into_branchless_segments(undirected_graph):
 
         segments.append([])
         grow_segments(tip_node, segments)
-    
+
     return segments
+
 
 if __name__ == "__main__":
     import networkx as nx
-    g = nx.Graph()
-    g.add_path('abcdefg')
-    g.add_path('chijk')
-    g.add_path('ilmnop')
 
-    g.add_path('12345')
-    g.add_path('3678')
-    g.add_path('790')
-    
+    g = nx.Graph()
+    g.add_path("abcdefg")
+    g.add_path("chijk")
+    g.add_path("ilmnop")
+
+    g.add_path("12345")
+    g.add_path("3678")
+    g.add_path("790")
+
     segments = split_into_branchless_segments(g)
-    #print segments
-    
-    # Start with an edge taken from real-world data.    
-    lines = [((56, 111), (57, 111)), ((56, 126), (57, 126)), ((57, 110), (58, 110)), ((58, 109), (59, 109)), ((59, 108), (60, 108)), ((60, 107), (61, 107)), ((61, 106), (62, 106)), ((62, 106), (63, 106)), ((63, 106), (64, 106)), ((64, 108), (65, 108)), ((65, 106), (66, 106)), ((65, 107), (66, 107)), ((65, 108), (66, 108)), ((66, 109), (67, 109)), ((67, 110), (68, 110)), ((56, 111), (56, 112)), ((56, 112), (56, 113)), ((56, 113), (56, 114)), ((56, 114), (56, 115)), ((56, 115), (56, 116)), ((56, 116), (56, 117)), ((56, 117), (56, 118)), ((56, 118), (56, 119)), ((56, 119), (56, 120)), ((56, 120), (56, 121)), ((56, 121), (56, 122)), ((56, 122), (56, 123)), ((56, 123), (56, 124)), ((56, 124), (56, 125)), ((56, 125), (56, 126)), ((57, 110), (57, 111)), ((57, 126), (57, 127)), ((57, 127), (57, 128)), ((58, 109), (58, 110)), ((59, 108), (59, 109)), ((60, 107), (60, 108)), ((61, 106), (61, 107)), ((64, 106), (64, 107)), ((64, 107), (64, 108)), ((65, 106), (65, 107)), ((66, 106), (66, 107)), ((66, 108), (66, 109)), ((67, 109), (67, 110)), ((68, 110), (68, 111))]
-    
+    # print segments
+
+    # Start with an edge taken from real-world data.
+    lines = [
+        ((56, 111), (57, 111)),
+        ((56, 126), (57, 126)),
+        ((57, 110), (58, 110)),
+        ((58, 109), (59, 109)),
+        ((59, 108), (60, 108)),
+        ((60, 107), (61, 107)),
+        ((61, 106), (62, 106)),
+        ((62, 106), (63, 106)),
+        ((63, 106), (64, 106)),
+        ((64, 108), (65, 108)),
+        ((65, 106), (66, 106)),
+        ((65, 107), (66, 107)),
+        ((65, 108), (66, 108)),
+        ((66, 109), (67, 109)),
+        ((67, 110), (68, 110)),
+        ((56, 111), (56, 112)),
+        ((56, 112), (56, 113)),
+        ((56, 113), (56, 114)),
+        ((56, 114), (56, 115)),
+        ((56, 115), (56, 116)),
+        ((56, 116), (56, 117)),
+        ((56, 117), (56, 118)),
+        ((56, 118), (56, 119)),
+        ((56, 119), (56, 120)),
+        ((56, 120), (56, 121)),
+        ((56, 121), (56, 122)),
+        ((56, 122), (56, 123)),
+        ((56, 123), (56, 124)),
+        ((56, 124), (56, 125)),
+        ((56, 125), (56, 126)),
+        ((57, 110), (57, 111)),
+        ((57, 126), (57, 127)),
+        ((57, 127), (57, 128)),
+        ((58, 109), (58, 110)),
+        ((59, 108), (59, 109)),
+        ((60, 107), (60, 108)),
+        ((61, 106), (61, 107)),
+        ((64, 106), (64, 107)),
+        ((64, 107), (64, 108)),
+        ((65, 106), (65, 107)),
+        ((66, 106), (66, 107)),
+        ((66, 108), (66, 109)),
+        ((67, 109), (67, 110)),
+        ((68, 110), (68, 111)),
+    ]
+
     # Add a branch point
     lines += [((62, 106), (62, 105))]
-    
+
     # Add a tangent cycle
     lines += [((64, 108), (64, 109)), ((64, 109), (63, 109)), ((63, 109), (63, 108)), ((63, 108), (64, 108))]
 
     # randomize the order, to prove this really works
     import random
+
     random.shuffle(lines)
-    #print lines
+    # print lines
 
     simplified_lines = simplify_line_segments(lines, 0.0)
     simplified_lines_OLD = simplify_line_segments_OLD(lines, 0.0)
 
     print("showing plot...")
     import matplotlib.pyplot as plt
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     for ls in simplified_lines_OLD:
-        ax.plot(*np.array(ls).T, color='blue', linewidth=3, solid_capstyle='round')
+        ax.plot(*np.array(ls).T, color="blue", linewidth=3, solid_capstyle="round")
 
     for ls in simplified_lines:
-        ax.plot(*np.array(ls).T, color='green', linewidth=3, solid_capstyle='round')
+        ax.plot(*np.array(ls).T, color="green", linewidth=3, solid_capstyle="round")
 
     plt.show()
-

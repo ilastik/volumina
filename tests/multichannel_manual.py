@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from volumina.api import Viewer
 from PyQt5.QtWidgets import QApplication
@@ -25,7 +25,7 @@ import numpy
 
 app = QApplication([])
 v = Viewer()
-a = (255*numpy.random.random((1, 50,60,70,10) )).astype(numpy.uint8)
+a = (255 * numpy.random.random((1, 50, 60, 70, 10))).astype(numpy.uint8)
 v.addGrayscaleLayer(a, name="raw")
 v.showMaximized()
 app.exec_()

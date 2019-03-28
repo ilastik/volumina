@@ -1,4 +1,5 @@
 from __future__ import division
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,16 +19,17 @@ from __future__ import division
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 ###
 ### lazyflow input
 ###
 from past.utils import old_div
+
 _has_lazyflow = True
 try:
-    from lazyflow.graph import  Operator, InputSlot, OutputSlot
-    from lazyflow.operators import OpArrayPiper  
+    from lazyflow.graph import Operator, InputSlot, OutputSlot
+    from lazyflow.operators import OpArrayPiper
 except ImportError as e:
     exceptStr = str(e)
     _has_lazyflow = False
@@ -35,8 +37,9 @@ except ImportError as e:
 import numpy as np
 import time
 
+
 class OpDelay(OpArrayPiper):
-    def __init__( self, g, delay_factor = 0.000001 ):
+    def __init__(self, g, delay_factor=0.000001):
         super(OpDelay, self).__init__(graph=g)
         self._delay_factor = delay_factor
 
@@ -44,10 +47,11 @@ class OpDelay(OpArrayPiper):
         key = roi.toSlice()
         req = self.inputs["Input"][key].writeInto(result)
         req.wait()
-        t = self._delay_factor*result.nbytes
-        #print "Delay: " + str(t) + " secs."
-        time.sleep(t)    
+        t = self._delay_factor * result.nbytes
+        # print "Delay: " + str(t) + " secs."
+        time.sleep(t)
         return result
+
 
 class OpDataProvider5D(Operator):
     name = "Data Provider 5D"
@@ -57,24 +61,25 @@ class OpDataProvider5D(Operator):
     Data5D = OutputSlot()
 
     def __init__(self, g, fn):
-        Operator.__init__(self,g)
+        Operator.__init__(self, g)
         self._data = np.load(fn)
         oslot = self.outputs["Data5D"]
         oslot.meta.shape = self._data.shape
         oslot.meta.dtype = self._data.dtype
-    
+
     def execute(self, slot, subindex, roi, result):
         key = roi.toSlice()
         result[:] = self._data[key]
         result[:] = old_div(result, 10)
         return result
-    
+
     def setInSlot(self, slot, subindex, roi, value):
         key = roi.toSlice()
         self._data[key] = value
         self.outputs["Output"].setDirty(key)
 
-'''
+
+"""
 if __name__ == "__main__":
     import sys
     fn = sys.argv[1]
@@ -144,4 +149,4 @@ if __name__ == "__main__":
     qapp.exec_()
     
     g.finalize()
-'''
+"""

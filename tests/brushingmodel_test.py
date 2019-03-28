@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,7 +19,7 @@ from __future__ import print_function
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from builtins import range
 import unittest as ut
@@ -27,12 +28,13 @@ from PyQt5.QtWidgets import QApplication, qApp
 from PyQt5.QtCore import QPointF
 from volumina.brushingmodel import BrushingModel
 
-def _onBrushStroke( point, labels  ):
+
+def _onBrushStroke(point, labels):
     print(point.x(), point.y())
     print(labels.shape)
 
-class BrushingModelTest( ut.TestCase ):
 
+class BrushingModelTest(ut.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication([])
@@ -40,25 +42,26 @@ class BrushingModelTest( ut.TestCase ):
     @classmethod
     def tearDownClass(cls):
         del cls.app
-    
-    def _checkBrushSize( self, size, should_diameter ):
+
+    def _checkBrushSize(self, size, should_diameter):
         m = BrushingModel()
 
-        def check( point, labels ):
-            self.assertEqual(max((np.count_nonzero(labels[row,:]) for row in range(labels.shape[0]))), should_diameter)
-            self.assertEqual(max((np.count_nonzero(labels[col,:]) for col in range(labels.shape[1]))), should_diameter)
-        m.setBrushSize( size )
-        m.brushStrokeAvailable.connect( check )
-        m.beginDrawing( QPointF(size*2,size*2), (size*3,size*3) )
-        m.endDrawing( QPointF(size*2, size*2) )
+        def check(point, labels):
+            self.assertEqual(max((np.count_nonzero(labels[row, :]) for row in range(labels.shape[0]))), should_diameter)
+            self.assertEqual(max((np.count_nonzero(labels[col, :]) for col in range(labels.shape[1]))), should_diameter)
+
+        m.setBrushSize(size)
+        m.brushStrokeAvailable.connect(check)
+        m.beginDrawing(QPointF(size * 2, size * 2), (size * 3, size * 3))
+        m.endDrawing(QPointF(size * 2, size * 2))
+
+    def testBrushSizes(self):
+        self._checkBrushSize(0, 1)
+        self._checkBrushSize(0.7, 1)
+        self._checkBrushSize(2.1, 2)
+        for i in range(1, 20):
+            self._checkBrushSize(i, i)
 
 
-    def testBrushSizes( self ):
-        self._checkBrushSize( 0, 1 )
-        self._checkBrushSize( 0.7, 1 )
-        self._checkBrushSize( 2.1, 2 )
-        for i in range(1,20):
-            self._checkBrushSize( i, i )
-
-if __name__=='__main__':
+if __name__ == "__main__":
     ut.main()

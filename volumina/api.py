@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 """High-level API.
 
@@ -30,13 +30,14 @@ from volumina.layerstack import LayerStackModel
 from volumina.widgets.layerwidget import LayerWidget
 
 # Do NOT import these here because they prevent the volumina.NO3D flag from working properly
-#from volumina.volumeEditorWidget import VolumeEditorWidget
-#from volumina.volumeEditor import VolumeEditor
+# from volumina.volumeEditorWidget import VolumeEditorWidget
+# from volumina.volumeEditor import VolumeEditor
 
 from volumina.viewer import Viewer, ClickableSegmentationLayer
 
 from PyQt5.QtWidgets import QApplication
 import sys
+
 
 def viewerApp():
     app = QApplication(sys.argv)

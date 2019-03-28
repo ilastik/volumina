@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,43 +19,46 @@ from __future__ import absolute_import
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
-#Python
+# Python
 from builtins import range
 from functools import partial
 
-#Qt
+# Qt
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem
 from PyQt5.QtGui import QColor
 
-#volumina
+# volumina
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
 from .layerDialog import GrayscaleLayerDialog, RGBALayerDialog
 from .exportHelper import get_settings_and_export_layer
 
-#===----------------------------------------------------------------------------------------------------------------===
+# ===----------------------------------------------------------------------------------------------------------------===
 
 ###
 ### lazyflow input
 ###
 try:
     import lazyflow
+
     _has_lazyflow = True
 except ImportError as e:
     _has_lazyflow = False
 
-def _add_actions_grayscalelayer( layer, menu ):
+
+def _add_actions_grayscalelayer(layer, menu):
     def adjust_thresholds_callback():
         dlg = GrayscaleLayerDialog(layer, menu.parent())
         dlg.show()
-        
+
     adjThresholdAction = QAction("Adjust thresholds", menu)
     adjThresholdAction.triggered.connect(adjust_thresholds_callback)
     menu.addAction(adjThresholdAction)
 
-def _add_actions_rgbalayer( layer, menu ): 
+
+def _add_actions_rgbalayer(layer, menu):
     def adjust_thresholds_callback():
         dlg = RGBALayerDialog(layer, menu.parent())
         dlg.show()
@@ -62,51 +66,55 @@ def _add_actions_rgbalayer( layer, menu ):
     adjThresholdAction = QAction("Adjust thresholds", menu)
     adjThresholdAction.triggered.connect(adjust_thresholds_callback)
     menu.addAction(adjThresholdAction)
- 
+
+
 class LayerColortableDialog(QDialog):
     def __init__(self, layer, parent=None):
         super(LayerColortableDialog, self).__init__(parent=parent)
-        
+
         h = QHBoxLayout(self)
         t = QTableWidget(self)
-        t.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)       
+        t.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         t.setRowCount(len(layer._colorTable))
         t.setColumnCount(1)
-        t.setVerticalHeaderLabels(["%d" %i for i in range(len(layer._colorTable))])
-        
-        for i in range(len(layer._colorTable)): 
+        t.setVerticalHeaderLabels(["%d" % i for i in range(len(layer._colorTable))])
+
+        for i in range(len(layer._colorTable)):
             item = QTableWidgetItem(" ")
-            t.setItem(i,0, item);
+            t.setItem(i, 0, item)
             item.setBackgroundColor(QColor.fromRgba(layer._colorTable[i]))
             item.setFlags(Qt.ItemIsSelectable)
-        
+
         h.addWidget(t)
-    
-def _add_actions_colortablelayer( layer, menu ): 
+
+
+def _add_actions_colortablelayer(layer, menu):
     def adjust_colortable_callback():
         dlg = LayerColortableDialog(layer, menu.parent())
         dlg.exec_()
-        
+
     if layer.colortableIsRandom:
         randomizeColors = QAction("Randomize colors", menu)
         randomizeColors.triggered.connect(layer.randomizeColors)
         menu.addAction(randomizeColors)
 
-def _add_actions( layer, menu ):
-    if isinstance(layer, GrayscaleLayer):
-        _add_actions_grayscalelayer( layer, menu )
-    elif isinstance( layer, RGBALayer ):
-        _add_actions_rgbalayer( layer, menu )
-    elif isinstance( layer, ColortableLayer ) or isinstance( layer, ClickableColortableLayer ):
-        _add_actions_colortablelayer( layer, menu )
 
-def layercontextmenu( layer, pos, parent=None ):
-    '''Show a context menu to manipulate properties of layer.
+def _add_actions(layer, menu):
+    if isinstance(layer, GrayscaleLayer):
+        _add_actions_grayscalelayer(layer, menu)
+    elif isinstance(layer, RGBALayer):
+        _add_actions_rgbalayer(layer, menu)
+    elif isinstance(layer, ColortableLayer) or isinstance(layer, ClickableColortableLayer):
+        _add_actions_colortablelayer(layer, menu)
+
+
+def layercontextmenu(layer, pos, parent=None):
+    """Show a context menu to manipulate properties of layer.
 
     layer -- a volumina layer instance
     pos -- QPoint 
 
-    '''
+    """
     menu = QMenu("Menu", parent)
 
     # Title
@@ -116,14 +124,14 @@ def layercontextmenu( layer, pos, parent=None ):
 
     # Export
     global _has_lazyflow
-    if _has_lazyflow:    
-        export = QAction("Export...",menu)
+    if _has_lazyflow:
+        export = QAction("Export...", menu)
         export.setStatusTip("Export Layer...")
-        export.triggered.connect( partial( get_settings_and_export_layer, layer, menu ) )
+        export.triggered.connect(partial(get_settings_and_export_layer, layer, menu))
         menu.addAction(export)
 
     menu.addSeparator()
-    _add_actions( layer, menu )
+    _add_actions(layer, menu)
 
     # Layer-custom context menu items
     menu.addSeparator()
@@ -134,4 +142,3 @@ def layercontextmenu( layer, pos, parent=None ):
             menu.addMenu(item)
 
     menu.exec_(pos)
-

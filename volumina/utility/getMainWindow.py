@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 
+
 def getMainWindow() -> QMainWindow:
     """
     Attempt to return the main window for the app.
@@ -15,7 +16,7 @@ def getMainWindow() -> QMainWindow:
 
     if not top_level_widgets:
         # Couldn't find any
-        raise Exception('Failed to determine main widget')
+        raise Exception("Failed to determine main widget")
 
     # We prefer QMainWindow instances.  If we have any, drop all the other widgets.
     main_windows = [w for w in top_level_widgets if isinstance(w, QMainWindow)]

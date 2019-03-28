@@ -17,18 +17,21 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from builtins import object
 from abc import ABCMeta, abstractmethod, abstractproperty
 from PyQt5.QtCore import pyqtSignal
 from future.utils import with_metaclass
 
-def _has_attribute( cls, attr ):
+
+def _has_attribute(cls, attr):
     return True if any(attr in B.__dict__ for B in cls.__mro__) else False
 
-def _has_attributes( cls, attrs ):
+
+def _has_attributes(cls, attrs):
     return True if all(_has_attribute(cls, a) for a in attrs) else False
+
 
 class IndeterminateRequestError(Exception):
     """
@@ -38,31 +41,34 @@ class IndeterminateRequestError(Exception):
     The datasource has the responsibility of sending a dirty notification 
       when the source is ready again.
     """
+
     pass
 
-#*******************************************************************************
+
+# *******************************************************************************
 # R e q u e s t A B C                                                          *
-#*******************************************************************************
+# *******************************************************************************
+
 
 class RequestABC(with_metaclass(ABCMeta, object)):
     @abstractmethod
-    def wait( self ):
-        ''' doc '''
+    def wait(self):
+        """ doc """
 
     @classmethod
     def __subclasshook__(cls, C):
         if cls is RequestABC:
-            return True if _has_attributes(C, ['wait']) else False
+            return True if _has_attributes(C, ["wait"]) else False
         return NotImplemented
 
 
-
-#*******************************************************************************
+# *******************************************************************************
 # S o u r c e A B C                                                            *
-#*******************************************************************************
+# *******************************************************************************
+
 
 class SourceABC(with_metaclass(ABCMeta, object)):
-    isDirty = pyqtSignal( object )
+    isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
     @abstractproperty
@@ -70,27 +76,27 @@ class SourceABC(with_metaclass(ABCMeta, object)):
         raise NotImplementedError
 
     @abstractmethod
-    def request( self, slicing ):
+    def request(self, slicing):
         pass
 
     @abstractmethod
-    def setDirty( self, slicing ):
+    def setDirty(self, slicing):
         pass
 
     @classmethod
     def __subclasshook__(cls, C):
         if cls is SourceABC:
-            return True if _has_attributes(C, ['request', 'setDirty']) else False
+            return True if _has_attributes(C, ["request", "setDirty"]) else False
         return NotImplemented
 
     @abstractmethod
-    def __eq__( self, other ):
+    def __eq__(self, other):
         raise NotImplementedError
 
     @abstractmethod
-    def __ne__( self, other ):
+    def __ne__(self, other):
         raise NotImplementedError
-    
+
     @abstractmethod
     def clean_up(self):
         pass

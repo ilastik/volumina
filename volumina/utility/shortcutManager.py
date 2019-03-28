@@ -3,6 +3,7 @@ import collections
 from functools import partial
 import logging
 from future.utils import with_metaclass
+
 logger = logging.getLogger(__name__)
 
 from PyQt5.QtCore import Qt
@@ -33,7 +34,9 @@ class ShortcutManager(with_metaclass(Singleton, object)):
     # tooltip_widget (ObjectWithToolTipABC): (optional) Any object that fulfills the ObjectWithToolTipABC (see below).
     #                                        If provided, this object's tooltip will be updated to reflect the current shortcut key sequence.
     #                                        To omit this field, simply provide None
-    ActionInfo = collections.namedtuple('ActionInfo', 'group name description target_callable context_widget tooltip_widget')
+    ActionInfo = collections.namedtuple(
+        "ActionInfo", "group name description target_callable context_widget tooltip_widget"
+    )
     # for sorting: make sure only to compare comparable member
     ActionInfo.__lt__ = lambda self, other: self[:2] < other[:2]
 
@@ -47,8 +50,8 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         - We register a single, universal shortcut handler with Qt (_handle_shortcut_pressed) for every shortcut key sequence we are aware of.
           In that handler, we determine which target action (if any) should be triggered in response to the shortcut, and trigger it by calling its target_callable. 
         """
-        self._keyseq_target_actions = {} # { keyseq : set([(group,name), (group,name), ...]) }
-        self._action_infos = collections.OrderedDict()    # { group : { name : set([ActionInfo, ActionInfo, ...]) } }
+        self._keyseq_target_actions = {}  # { keyseq : set([(group,name), (group,name), ...]) }
+        self._action_infos = collections.OrderedDict()  # { group : { name : set([ActionInfo, ActionInfo, ...]) } }
         self._global_shortcuts = {}  # { keyseq : QShortcut }
 
         self._preferences_reversemap = self._load_from_preferences()
@@ -63,26 +66,26 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         default_keyseq = QKeySequence(default_keyseq)
         group, name, description, target_callable, context_widget, tooltip_widget = action_info
         assert context_widget is not None, "You must provide a context_widget"
-        
+
         try:
             group_dict = self._action_infos[group]
         except KeyError:
             group_dict = self._action_infos[group] = collections.OrderedDict()
-        
+
         try:
             action_set = group_dict[name]
         except KeyError:
             action_set = group_dict[name] = set()
-        action_set.add( action_info )
-        
-        self.change_keyseq( group, name, None, default_keyseq )
-        
+        action_set.add(action_info)
+
+        self.change_keyseq(group, name, None, default_keyseq)
+
         # If there was a preference for this keyseq, update our map to use it.
         try:
             stored_keyseq = self._preferences_reversemap[(group, name)]
-            self.change_keyseq( group, name, default_keyseq, stored_keyseq )
+            self.change_keyseq(group, name, default_keyseq, stored_keyseq)
         except KeyError:
-            pass            
+            pass
 
     def unregister(self, action_info):
         """
@@ -91,7 +94,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         group, name, description, target_callable, context_widget, tooltip_widget = action_info
         action_set = self._action_infos[group][name]
         action_set.remove(action_info)
-    
+
     def get_all_action_descriptions(self):
         """
         Return a dict of { group : [(name, description), (name, description),...] }
@@ -102,9 +105,9 @@ class ShortcutManager(with_metaclass(Singleton, object)):
             all_descriptions[group] = []
             for name, action_set in list(group_dict.items()):
                 if action_set:
-                    all_descriptions[group].append( (name, next(iter(action_set)).description) )
+                    all_descriptions[group].append((name, next(iter(action_set)).description))
         return all_descriptions
-    
+
     def get_keyseq_reversemap(self, _d=None):
         """
         Construct the reverse-map of { (group, name) : keyseq }
@@ -116,7 +119,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
             for (group, name) in targets:
                 reversemap[(group, name)] = keyseq
         return reversemap
-    
+
     def change_keyseq(self, group, name, old_keyseq, keyseq):
         """
         Customize a shortcut's activating key sequence.
@@ -124,33 +127,37 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         if old_keyseq:
             old_keyseq = QKeySequence(old_keyseq)
             old_keytext = str(old_keyseq.toString())
-            self._keyseq_target_actions[old_keytext].remove( (group, name) )        
+            self._keyseq_target_actions[old_keytext].remove((group, name))
         try:
             keyseq = QKeySequence(keyseq)
             keytext = str(keyseq.toString())
             target_name_set = self._keyseq_target_actions[keytext]
         except KeyError:
             target_name_set = self._keyseq_target_actions[keytext] = set()
-            self._add_global_shortcut_listener( keyseq )
-        
-        target_name_set.add( (group, name) )
-        self._update_tooltip( group, name, keyseq )
-    
+            self._add_global_shortcut_listener(keyseq)
+
+        target_name_set.add((group, name))
+        self._update_tooltip(group, name, keyseq)
+
     def update_description(self, action_info, new_description):
         """
         Locate the given action_info and replace it with a copy except for the new description text.
-        """ 
-        assert action_info in self._action_infos[action_info.group][action_info.name],\
-            "Couldn't locate action_info for {}/{}".format( action_info.group, action_info.name )
-        
+        """
+        assert (
+            action_info in self._action_infos[action_info.group][action_info.name]
+        ), "Couldn't locate action_info for {}/{}".format(action_info.group, action_info.name)
+
         group, name, old_description, target_callable, context_widget, tooltip_widget = action_info
-        new_action_info = ShortcutManager.ActionInfo( group, name, new_description, target_callable, context_widget, tooltip_widget )
-        self._action_infos[action_info.group][action_info.name].remove( action_info )
-        self._action_infos[action_info.group][action_info.name].add( new_action_info )
-        self._update_tooltip( new_action_info.group, new_action_info.name, None )
+        new_action_info = ShortcutManager.ActionInfo(
+            group, name, new_description, target_callable, context_widget, tooltip_widget
+        )
+        self._action_infos[action_info.group][action_info.name].remove(action_info)
+        self._action_infos[action_info.group][action_info.name].add(new_action_info)
+        self._update_tooltip(new_action_info.group, new_action_info.name, None)
         return new_action_info
 
     PreferencesGroup = "Shortcut Preferences v2"
+
     def store_to_preferences(self):
         """
         Immediately serialize the current set of shortcuts to the preferences file.
@@ -159,16 +166,15 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         with PreferencesManager() as prefsMgr:
             # Just save the entire shortcut dict as a single pickle value
             reversemap = self.get_keyseq_reversemap(self._keyseq_target_actions)
-            prefsMgr.set( self.PreferencesGroup, "all_shortcuts", reversemap )
+            prefsMgr.set(self.PreferencesGroup, "all_shortcuts", reversemap)
 
     def _load_from_preferences(self):
         """
         Read previously-saved preferences file and return the dict of shortcut keys -> targets (a 'reversemap').
         Called during initialization only.  
         """
-        return PreferencesManager().get( self.PreferencesGroup, "all_shortcuts", default={} )
+        return PreferencesManager().get(self.PreferencesGroup, "all_shortcuts", default={})
 
-    
     def _add_global_shortcut_listener(self, keyseq):
         # Create a shortcut for this new key sequence
         # Note: We associate the shortcut with the ENTIRE WINDOW.
@@ -178,10 +184,12 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         assert keyseq not in self._global_shortcuts
         keyseq = QKeySequence(keyseq)
         keytext = str(keyseq.toString())
-        self._global_shortcuts[keytext] = QShortcut( QKeySequence(keyseq), 
-                                                     getMainWindow(), 
-                                                     member=partial(self._handle_shortcut_pressed, keytext), 
-                                                     context=Qt.ApplicationShortcut )
+        self._global_shortcuts[keytext] = QShortcut(
+            QKeySequence(keyseq),
+            getMainWindow(),
+            member=partial(self._handle_shortcut_pressed, keytext),
+            context=Qt.ApplicationShortcut,
+        )
 
     def _handle_shortcut_pressed(self, keytext):
         # Resolve the target callable for this shortcut among the registered candidates
@@ -192,46 +200,51 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         candidate_actions = []
         for index, (group, name) in enumerate(list(target_name_set)):
             instance_list = self._action_infos[group][name]
-            for action_info in list(instance_list): # copy the list so we can modify it in the loop if necessary
+            for action_info in list(instance_list):  # copy the list so we can modify it in the loop if necessary
                 try:
                     if action_info.context_widget.isVisible() and action_info.context_widget.isEnabled():
-                        candidate_actions.append( action_info )
+                        candidate_actions.append(action_info)
                 except RuntimeError as ex:
-                    if 'has been deleted' in str(ex):
-                        # This widget doesn't exist anymore.  
+                    if "has been deleted" in str(ex):
+                        # This widget doesn't exist anymore.
                         # Just remove it from our candidate list for next time.
-                        instance_list.remove( action_info )
+                        instance_list.remove(action_info)
                     else:
                         raise
 
         if len(candidate_actions) == 0:
             return
         if len(candidate_actions) == 1:
-            logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
+            logger.debug("Executing shortcut target for key sequence: {}".format(keytext))
             candidate_actions[0].target_callable()
             return
-        elif len( candidate_actions ) > 1:
+        elif len(candidate_actions) > 1:
             best_focus_candidates = []
             for action_info in candidate_actions:
                 focused_child_depth = self._focused_widget_ancestor_index(action_info.context_widget)
                 if focused_child_depth is not None:
-                    best_focus_candidates.append( (focused_child_depth, action_info ) )
+                    best_focus_candidates.append((focused_child_depth, action_info))
 
             if len(best_focus_candidates) == 0:
-                logger.warning("Ignoring key sequence: {} due to multiple candidate targets, none of which have keyboard focus: {}"
-                             .format( keytext, [action_info.group + ": " + action_info.name for action_info in candidate_actions] ) )
-            elif len( best_focus_candidates ) == 1:
-                logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
+                logger.warning(
+                    "Ignoring key sequence: {} due to multiple candidate targets, none of which have keyboard focus: {}".format(
+                        keytext, [action_info.group + ": " + action_info.name for action_info in candidate_actions]
+                    )
+                )
+            elif len(best_focus_candidates) == 1:
+                logger.debug("Executing shortcut target for key sequence: {}".format(keytext))
                 best_focus_candidates[0][1].target_callable()
             else:
                 best_focus_candidates.sort()
                 if best_focus_candidates[0][0] != best_focus_candidates[1][0]:
                     # More than one of our targets owned the focus widget, but one was closer.
-                    logger.debug("Executing shortcut target for key sequence: {}".format( keytext ))
+                    logger.debug("Executing shortcut target for key sequence: {}".format(keytext))
                     best_focus_candidates[0][1].target_callable()
                 else:
-                    logger.warning( "Ignoring key sequence: {} due to multiple candidate targets:\n"
-                                 "{}".format( keytext, best_focus_candidates ) )
+                    logger.warning(
+                        "Ignoring key sequence: {} due to multiple candidate targets:\n"
+                        "{}".format(keytext, best_focus_candidates)
+                    )
 
     def _focused_widget_ancestor_index(self, widget):
         """
@@ -245,7 +258,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
             return ancestors.index(widget)
         except ValueError:
             return None
-        
+
     def _get_ancestors(self, widget):
         """
         Return all 'ancestors' (i.e. parent widgets) of the given widget, INCLUDING the widget itself.
@@ -274,44 +287,47 @@ class ShortcutManager(with_metaclass(Singleton, object)):
                 continue
             try:
                 old_text = str(widget.toolTip())
-                new_key_text = ''
+                new_key_text = ""
                 if new_keyseq:
                     new_key = str(new_keyseq.toString())
                     if new_key == "":
                         new_key = "<no key>"
-                    new_key_text = '[' + new_key + ']'
-                elif '[' in old_text and ']' in old_text:
+                    new_key_text = "[" + new_key + "]"
+                elif "[" in old_text and "]" in old_text:
                     # No keyseq provided (it didn't change, so just extract the old keyseq)
-                    start = old_text.find('[')
-                    stop = old_text.find(']')
-                    new_key_text = old_text[start:stop+1]
-                
+                    start = old_text.find("[")
+                    stop = old_text.find("]")
+                    new_key_text = old_text[start : stop + 1]
+
                 if old_text == "":
                     old_text = action_info.description
-        
-                if '[' not in old_text:
-                    new_text = old_text + ' ' + new_key_text
+
+                if "[" not in old_text:
+                    new_text = old_text + " " + new_key_text
                 else:
-                    keyhelp_start = old_text.find('[')
+                    keyhelp_start = old_text.find("[")
                     new_text = old_text[:keyhelp_start] + new_key_text
-                
-                widget.setToolTip( new_text )
+
+                widget.setToolTip(new_text)
             except RuntimeError as ex:
                 # Simply ignore 'XXX has been deleted' errors
-                if 'has been deleted' in str(ex):
+                if "has been deleted" in str(ex):
                     pass
                 else:
                     raise
 
 
-
-def _has_attribute( cls, attr ):
+def _has_attribute(cls, attr):
     return any(attr in B.__dict__ for B in cls.__mro__)
 
-def _has_attributes( cls, attrs ):
+
+def _has_attributes(cls, attrs):
     return all(_has_attribute(cls, a) for a in attrs)
 
+
 import abc
+
+
 class ObjectWithToolTipABC(with_metaclass(abc.ABCMeta, object)):
     """
     Defines an ABC for objects that have toolTip() and setToolTip() members.
@@ -325,15 +341,15 @@ class ObjectWithToolTipABC(with_metaclass(abc.ABCMeta, object)):
     @abc.abstractmethod
     def toolTip(self):
         raise NotImplementedError()
-    
+
     @abc.abstractmethod
     def setToolTip(self, tip):
         raise NotImplementedError()
-    
+
     @classmethod
     def __subclasshook__(cls, C):
         if cls is ObjectWithToolTipABC:
-            return _has_attributes(C, ['toolTip', 'setToolTip'])
+            return _has_attributes(C, ["toolTip", "setToolTip"])
         return NotImplemented
 
 
@@ -341,24 +357,27 @@ if __name__ == "__main__":
     from PyQt5.QtCore import Qt, QEvent, QTimer
     from PyQt5.QtWidgets import QApplication, QWidget, QLabel
     from PyQt5.QtGui import QKeyEvent
-    
+
     app = QApplication([])
-    
+
     widget = QWidget()
     label = QLabel("<BLANK>", parent=widget)
     widget.show()
 
     counter = [0]
+
     def say_hello():
         counter[0] += 1
         print("changing label text ({})".format(counter[0]))
-        label.setText("Hello! {}".format( counter[0] ))
+        label.setText("Hello! {}".format(counter[0]))
 
     mgr = ShortcutManager()
-    mgr.register( "h", ShortcutManager.ActionInfo("greetings", "say hello", "Say Hello (with gusto)", say_hello, label, label) )
+    mgr.register(
+        "h", ShortcutManager.ActionInfo("greetings", "say hello", "Say Hello (with gusto)", say_hello, label, label)
+    )
 
     def change_key():
         mgr.change_keyseq("greetings", "say hello", "h", "q")
-    
+
     QTimer.singleShot(3000, change_key)
     app.exec_()

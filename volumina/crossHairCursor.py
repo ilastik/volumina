@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -52,22 +52,24 @@ from PyQt5.QtCore import Qt, QPointF, QRectF
 from PyQt5.QtGui import QPen
 from PyQt5.QtWidgets import QGraphicsItem
 
-#*******************************************************************************
+# *******************************************************************************
 # C r o s s H a i r C u r s o r                                                *
-#*******************************************************************************
+# *******************************************************************************
 
-class CrossHairCursor(QGraphicsItem) :
+
+class CrossHairCursor(QGraphicsItem):
     """
     A 2D cross-hair cursor centered around a point (x,y) on the scene.
     A cross hair cursor usually follows the mouse cursor and has a color
     and marks the size of the current brush.
     """
-    modeYPosition  = 0
-    modeXPosition  = 1
+
+    modeYPosition = 0
+    modeXPosition = 1
     modeXYPosition = 2
 
     def boundingRect(self):
-        return self.scene().data2scene.mapRect(QRectF(0,0, self._width, self._height))
+        return self.scene().data2scene.mapRect(QRectF(0, 0, self._width, self._height))
 
     def __init__(self):
         QGraphicsItem.__init__(self)
@@ -105,21 +107,21 @@ class CrossHairCursor(QGraphicsItem) :
         if self._enabled:
             super(CrossHairCursor, self).setVisible(visible)
 
-    #be careful: QGraphicsItem has a shape() method, which
-    #we cannot override, therefore we choose this name
+    # be careful: QGraphicsItem has a shape() method, which
+    # we cannot override, therefore we choose this name
     @property
     def dataShape(self):
         return (self._width, self._height)
 
     @dataShape.setter
     def dataShape(self, shape2D):
-        self._width  = shape2D[0]
+        self._width = shape2D[0]
         self._height = shape2D[1]
 
     def setColor(self, color):
         self.penDotted = QPen(color, 2, Qt.DotLine, Qt.RoundCap, Qt.RoundJoin)
         self.penDotted.setCosmetic(True)
-        self.penSolid  = QPen(color, 2)
+        self.penSolid = QPen(color, 2)
         self.penSolid.setCosmetic(True)
         self.update()
 
@@ -135,33 +137,41 @@ class CrossHairCursor(QGraphicsItem) :
         self.mode = self.modeYPosition
         self.setPos(x - int(x), y)
 
-    def showXYPosition(self, x,y):
+    def showXYPosition(self, x, y):
         """mark the (x,y) position by displaying a cross hair cursor
            including a circle indicating the current brush size"""
         self.setVisible(True)
         self.mode = self.modeXYPosition
-        self.setPos(x,y)
+        self.setPos(x, y)
 
     def paint(self, painter, option, widget=None):
 
         painter.save()
-        painter.setTransform(self.scene().data2scene  * painter.transform() )
+        painter.setTransform(self.scene().data2scene * painter.transform())
 
         painter.setPen(self.penDotted)
 
         if self.mode == self.modeXPosition:
-            painter.drawLine(QPointF(self.x +0.5, 0), QPointF(self.x +0.5, self._height))
+            painter.drawLine(QPointF(self.x + 0.5, 0), QPointF(self.x + 0.5, self._height))
         elif self.mode == self.modeYPosition:
             painter.drawLine(QPointF(0, self.y), QPointF(self.width, self.y))
         else:
-            painter.drawLine(QPointF(self.x -0.5*self.brushSize -3 ,self.y), QPointF(self.x -0.5*self.brushSize, self.y))
-            painter.drawLine(QPointF(self.x+0.5*self.brushSize, self.y), QPointF(self.x+0.5*self.brushSize +3, self.y))
+            painter.drawLine(
+                QPointF(self.x - 0.5 * self.brushSize - 3, self.y), QPointF(self.x - 0.5 * self.brushSize, self.y)
+            )
+            painter.drawLine(
+                QPointF(self.x + 0.5 * self.brushSize, self.y), QPointF(self.x + 0.5 * self.brushSize + 3, self.y)
+            )
 
-            painter.drawLine(QPointF(self.x, self.y-0.5*self.brushSize - 3), QPointF(self.x, self.y-0.5*self.brushSize))
-            painter.drawLine(QPointF(self.x, self.y+0.5*self.brushSize), QPointF(self.x, self.y+0.5*self.brushSize + 3))
+            painter.drawLine(
+                QPointF(self.x, self.y - 0.5 * self.brushSize - 3), QPointF(self.x, self.y - 0.5 * self.brushSize)
+            )
+            painter.drawLine(
+                QPointF(self.x, self.y + 0.5 * self.brushSize), QPointF(self.x, self.y + 0.5 * self.brushSize + 3)
+            )
 
             painter.setPen(self.penSolid)
-            painter.drawEllipse(QPointF(self.x, self.y), 0.5*self.brushSize, 0.5*self.brushSize)
+            painter.drawEllipse(QPointF(self.x, self.y), 0.5 * self.brushSize, 0.5 * self.brushSize)
 
         painter.restore()
 

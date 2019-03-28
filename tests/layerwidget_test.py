@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 import os
 import time
@@ -27,33 +27,35 @@ import unittest as ut
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import qApp, QApplication, QWidget, QHBoxLayout
 from PyQt5.QtGui import QScreen, QGuiApplication
-                         
+
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
 from volumina.widgets.layerwidget import LayerWidget
 
-class TestLayerWidget( ut.TestCase ):
+
+class TestLayerWidget(ut.TestCase):
     """
     Create two layers and add them to a LayerWidget.
     Then change one of the layer visibilities and verify that the layer widget appearance updates.
     
     At the time of this writing, the widget doesn't properly repaint the selected layer (all others repaint correctly).
     """
-    
+
     @classmethod
     def setUpClass(cls):
-        if 'TRAVIS' in os.environ:
+        if "TRAVIS" in os.environ:
             # This test fails on Travis-CI for unknown reasons,
             #  probably due to the variability of time.sleep().
             # Skip it on Travis-CI.
             import nose
+
             raise nose.SkipTest
 
-#         if threading.currentThread().name == "MainThread":
-#             # Under Qt5, this test fails if we're not running in the main thread.
-#             # This test file needs to be run on it's own, not as part of a test suite with nosetests.
-#             import nose
-#             raise nose.SkipTest            
+        #         if threading.currentThread().name == "MainThread":
+        #             # Under Qt5, this test fails if we're not running in the main thread.
+        #             # This test file needs to be run on it's own, not as part of a test suite with nosetests.
+        #             import nose
+        #             raise nose.SkipTest
 
         cls.app = QApplication([])
         cls.errors = False
@@ -61,7 +63,7 @@ class TestLayerWidget( ut.TestCase ):
     @classmethod
     def tearDownClass(cls):
         del cls.app
-    
+
     def impl(self):
         try:
             # Change the visibility of the *selected* layer
@@ -69,34 +71,34 @@ class TestLayerWidget( ut.TestCase ):
 
             # Make sure the GUI is caught up on paint events
             QApplication.processEvents()
-            
+
             # We must sleep for the screenshot to be right.
-            time.sleep(0.1) 
+            time.sleep(0.1)
 
             self.w.repaint()
-            
+
             screen = QGuiApplication.primaryScreen()
 
             # Capture the window before we change anything
-            beforeImg = screen.grabWindow( self.w.winId() ).toImage()
-            
+            beforeImg = screen.grabWindow(self.w.winId()).toImage()
+
             # Change the visibility of the *selected* layer
             self.o2.visible = True
-            
+
             self.w.repaint()
-            
+
             # Make sure the GUI is caught up on paint events
             QApplication.processEvents()
-            
+
             # We must sleep for the screenshot to be right.
-            time.sleep(0.1) 
+            time.sleep(0.1)
 
             # Capture the window now that we've changed a layer.
-            afterImg = screen.grabWindow( self.w.winId() ).toImage()
-    
+            afterImg = screen.grabWindow(self.w.winId()).toImage()
+
             # Optional: Save the files so we can inspect them ourselves...
-            #beforeImg.save('before.png')
-            #afterImg.save('after.png')
+            # beforeImg.save('before.png')
+            # afterImg.save('after.png')
 
             # Before and after should NOT match.
             assert beforeImg != afterImg
@@ -104,6 +106,7 @@ class TestLayerWidget( ut.TestCase ):
             # Catch all exceptions and print them
             # We must finish so we can quit the app.
             import traceback
+
             traceback.print_exc()
             TestLayerWidget.errors = True
 
@@ -116,16 +119,16 @@ class TestLayerWidget( ut.TestCase ):
         self.o1.name = "Fancy Layer"
         self.o1.opacity = 0.5
         self.model.append(self.o1)
-        
+
         self.o2 = Layer([])
         self.o2.name = "Some other Layer"
         self.o2.opacity = 0.25
         self.model.append(self.o2)
-        
+
         self.view = LayerWidget(None, self.model)
         self.view.show()
         self.view.updateGeometry()
-    
+
         self.w = QWidget()
         self.lh = QHBoxLayout(self.w)
         self.lh.addWidget(self.view)
@@ -134,12 +137,12 @@ class TestLayerWidget( ut.TestCase ):
         self.w.raise_()
 
         # Run the test within the GUI event loop
-        QTimer.singleShot(500, self.impl )
+        QTimer.singleShot(500, self.impl)
         self.app.exec_()
-        
+
         # Were there errors?
-        assert not TestLayerWidget.errors, "There were GUI errors/failures.  See above."        
-        
-        
-if __name__=='__main__':
+        assert not TestLayerWidget.errors, "There were GUI errors/failures.  See above."
+
+
+if __name__ == "__main__":
     ut.main()

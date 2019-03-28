@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 ###############################################################################
 #   ilastik: interactive learning and segmentation toolkit
 #
@@ -17,19 +18,22 @@ from __future__ import print_function
 #
 # See the LICENSE file for details. License information is also available
 # on the ilastik web site at:
-#		   http://ilastik.org/license.html
+# 		   http://ilastik.org/license.html
 ###############################################################################
 from future import standard_library
+
 standard_library.install_aliases()
 from PyQt5.QtCore import QObject, QEvent
 from PyQt5.QtWidgets import QApplication
 from functools import partial
 
-class ThunkEvent( QEvent ):
+
+class ThunkEvent(QEvent):
     """
     A QEvent subclass that holds a callable which can be executed by its listeners.
     Sort of like a "queued connection" signal.
     """
+
     EventType = QEvent.Type(QEvent.registerEventType())
 
     def __init__(self, func, *args):
@@ -38,21 +42,22 @@ class ThunkEvent( QEvent ):
             self.thunk = partial(func, *args)
         else:
             self.thunk = func
-    
+
     def __call__(self):
         self.thunk()
 
     @classmethod
     def post(cls, handlerObject, func, *args):
-        e = ThunkEvent( func, *args )
+        e = ThunkEvent(func, *args)
         QApplication.postEvent(handlerObject, e)
 
     @classmethod
     def send(cls, handlerObject, func, *args):
-        e = ThunkEvent( func, *args )
+        e = ThunkEvent(func, *args)
         QApplication.sendEvent(handlerObject, e)
 
-class ThunkEventHandler( QObject ):
+
+class ThunkEventHandler(QObject):
     """
     GUI objects can instantiate an instance of this class and then start using it to 
     post ``ThunkEvents``, which execute a given callable in the GUI event loop.
@@ -73,13 +78,14 @@ class ThunkEventHandler( QObject ):
            def setCaption(self, text):
                self.thunkEventHandler.post( self.mywidget.setText, text )    
     """
+
     def __init__(self, parent):
         """
         Create a ThunkEventHandler that installs itself in the event loop for ``parent``.
         """
         QObject.__init__(self, parent)
         parent.installEventFilter(self)
-    
+
     def eventFilter(self, obj, event):
         if event.type() == ThunkEvent.EventType:
             # Execute the event
@@ -94,7 +100,7 @@ class ThunkEventHandler( QObject ):
         This is implemented using ``QApplication.post()``
         """
         ThunkEvent.post(self.parent(), func, *args)
-    
+
     def send(self, func, *args):
         """
         Send an event to the GUI event system that will eventually execute the given function with the given arguments.
@@ -102,24 +108,30 @@ class ThunkEventHandler( QObject ):
         """
         ThunkEvent.send(self.parent(), func, *args)
 
+
 import threading
+
+
 class GlobalThunkEventProcessor(QObject):
-        def __init__(self, parent=None):
-            super(GlobalThunkEventProcessor, self).__init__(parent)
-            self.thunkEventHandler = ThunkEventHandler(self)
-        
-        def execute(self, f, *args, **kwargs):
-            if threading.current_thread().name == "MainThread":
-                return f(*args, **kwargs)
-            
-            e = threading.Event()
-            result = [None]
-            def inner(f, *args, **kwargs):
-                result[0] = f(*args, **kwargs)
-                e.set()
-            self.thunkEventHandler.post( inner, f, *args, **kwargs )
-            e.wait()
-            return result[0]
+    def __init__(self, parent=None):
+        super(GlobalThunkEventProcessor, self).__init__(parent)
+        self.thunkEventHandler = ThunkEventHandler(self)
+
+    def execute(self, f, *args, **kwargs):
+        if threading.current_thread().name == "MainThread":
+            return f(*args, **kwargs)
+
+        e = threading.Event()
+        result = [None]
+
+        def inner(f, *args, **kwargs):
+            result[0] = f(*args, **kwargs)
+            e.set()
+
+        self.thunkEventHandler.post(inner, f, *args, **kwargs)
+        e.wait()
+        return result[0]
+
 
 global_thunk_event_processor = GlobalThunkEventProcessor()
 execute_in_main_thread = global_thunk_event_processor.execute
@@ -129,19 +141,19 @@ if __name__ == "__main__":
     import time
     from functools import partial
     from volumina.utility import execute_in_main_thread
-    
+
     from PyQt5.QtCore import QTimer
     from PyQt5.QtWidgets import QApplication
-    
+
     app = QApplication([])
-        
+
     event = threading.Event()
-    
+
     def g():
         time.sleep(0.5)
         print("in workload, thread is: ", threading.current_thread().name)
         return 7
-    
+
     def f():
         print("in thread:", threading.current_thread().name)
         result = execute_in_main_thread(g)
@@ -150,8 +162,7 @@ if __name__ == "__main__":
     thread = threading.Thread(target=f)
     print("Starting thread")
     thread.start()
-    
+
     app.exec_()
     thread.join()
     print("DONE")
-    

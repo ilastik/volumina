@@ -17,11 +17,10 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from .initialise import init, deinit, reinit
 from .ansi import Fore, Back, Style
 from .ansitowin32 import AnsiToWin32
 
-VERSION = '0.2.4'
-
+VERSION = "0.2.4"

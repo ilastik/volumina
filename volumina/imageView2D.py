@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import division
 from __future__ import absolute_import
@@ -38,9 +38,10 @@ from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 
 from PyQt5.QtOpenGL import QGLWidget
 
-#*******************************************************************************
+# *******************************************************************************
 # I m a g e V i e w 2 D                                                        *
-#*******************************************************************************
+# *******************************************************************************
+
 
 class ImageView2D(QGraphicsView):
     focusChanged = pyqtSignal()
@@ -50,6 +51,7 @@ class ImageView2D(QGraphicsView):
     scrolling, panning, zooming etc.
 
     """
+
     @property
     def sliceShape(self):
         """
@@ -70,6 +72,7 @@ class ImageView2D(QGraphicsView):
     @property
     def hud(self):
         return self._hud
+
     @hud.setter
     def hud(self, hud):
         """
@@ -79,7 +82,7 @@ class ImageView2D(QGraphicsView):
         """
         self._hud = hud
         self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(0,0,0,0)
+        self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().addWidget(self._hud)
         self.layout().addStretch()
 
@@ -106,11 +109,11 @@ class ImageView2D(QGraphicsView):
         # Maybe this will be fixed in Qt5?
         if False:
             self.setViewport(QGLWidget())
-        
+
         self.setScene(imagescene2d)
-        self.mousePos = QPointF(0,0)
+        self.mousePos = QPointF(0, 0)
         # FIXME: These int members shadow QWidget.x() and QWidget.y(), which can lead to confusion when debugging...
-        self.x, self.y = (0,0)
+        self.x, self.y = (0, 0)
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -118,33 +121,33 @@ class ImageView2D(QGraphicsView):
         self._isRubberBandZoom = False
         self._cursorBackup = None
 
-        #these attributes are exposed as public properties above
-        self._sliceShape  = None #2D shape of this view's shown image
-        self._slices = None #number of slices that are stacked
-        self._hud    = None
+        # these attributes are exposed as public properties above
+        self._sliceShape = None  # 2D shape of this view's shown image
+        self._slices = None  # number of slices that are stacked
+        self._hud = None
 
-        self._crossHairCursor         = None
+        self._crossHairCursor = None
         self._sliceIntersectionMarker = None
 
         self._ticker = QTimer(self)
         self._ticker.timeout.connect(self._tickerEvent)
-        
+
         #
         # Setup the Viewport for fast painting
         #
-        #With these flags turned on we could handle the drawing of the
-        #white background ourselves thus removing the flicker
-        #when scrolling fast through the slices
-        #self.viewport().setAttribute(Qt.WA_OpaquePaintEvent)
-        #self.viewport().setAttribute(Qt.WA_NoSystemBackground)
-        #self.viewport().setAttribute(Qt.WA_PaintOnScreen)
-        #self.viewport().setAutoFillBackground(False)
+        # With these flags turned on we could handle the drawing of the
+        # white background ourselves thus removing the flicker
+        # when scrolling fast through the slices
+        # self.viewport().setAttribute(Qt.WA_OpaquePaintEvent)
+        # self.viewport().setAttribute(Qt.WA_NoSystemBackground)
+        # self.viewport().setAttribute(Qt.WA_PaintOnScreen)
+        # self.viewport().setAutoFillBackground(False)
 
         self.setViewportUpdateMode(QGraphicsView.MinimalViewportUpdate)
-        #as rescaling images is slow if done in software,
-        #we use Qt's built-in background caching mode so that the cached
-        #image need only be blitted on the screen when we only move
-        #the cursor
+        # as rescaling images is slow if done in software,
+        # we use Qt's built-in background caching mode so that the cached
+        # image need only be blitted on the screen when we only move
+        # the cursor
         self.setCacheMode(QGraphicsView.CacheBackground)
         self.setRenderHint(QPainter.Antialiasing, False)
 
@@ -153,41 +156,40 @@ class ImageView2D(QGraphicsView):
         self._crossHairCursor.setZValue(99)
 
         self.posModel = self.scene()._posModel
-        self.axis = self.scene()._along[1] - 1 # axis is 0,1,2 for X,Y,Z
+        self.axis = self.scene()._along[1] - 1  # axis is 0,1,2 for X,Y,Z
         self._sliceIntersectionMarker = SliceIntersectionMarker(self.axis, self.posModel)
         self.scene().addItem(self._sliceIntersectionMarker)
         self._sliceIntersectionMarker.setZValue(100)
 
         self._sliceIntersectionMarker.setVisible(True)
 
-        self._croppingMarkers = CroppingMarkers( self.axis, cropModel )
-        self.scene().addItem( self._croppingMarkers )
+        self._croppingMarkers = CroppingMarkers(self.axis, cropModel)
+        self.scene().addItem(self._croppingMarkers)
 
-        #FIXME: this should be private, but is currently used from
+        # FIXME: this should be private, but is currently used from
         #       within the image scene renderer
         self.tempImageItems = []
 
         self._zoomFactor = 1.0
 
-        #for panning
+        # for panning
         self._lastPanPoint = QPoint()
         self._dragMode = False
-        self._deltaPan = QPointF(0,0)
+        self._deltaPan = QPointF(0, 0)
 
-        #FIXME: Is there are more elegant way to handle this?
+        # FIXME: Is there are more elegant way to handle this?
 
         self.setMouseTracking(True)
 
         # invisible cursor to enable custom cursor
         self._hiddenCursor = QCursor(Qt.BlankCursor)
         # For screen recording BlankCursor doesn't work
-        #self.hiddenCursor = QCursor(Qt.ArrowCursor)
+        # self.hiddenCursor = QCursor(Qt.ArrowCursor)
 
-#     def paintEvent(self, event):
-#         start = time.time()
-#         super( ImageView2D, self ).paintEvent(event)
-#         print "painting took {} ms".format( int((time.time() - start)*1000) )
-
+    #     def paintEvent(self, event):
+    #         start = time.time()
+    #         super( ImageView2D, self ).paintEvent(event)
+    #         print "painting took {} ms".format( int((time.time() - start)*1000) )
 
     def showCropLines(self, visible):
         self._croppingMarkers.setVisible(visible)
@@ -196,7 +198,7 @@ class ImageView2D(QGraphicsView):
         self._ticker.stop()
         del self._ticker
 
-    def setZoomFactor(self,zoom):
+    def setZoomFactor(self, zoom):
         if self._hud is not None:
             self._hud.zoomLevelIndicator.updateLevel(zoom)
         self._zoomFactor = zoom
@@ -209,7 +211,7 @@ class ImageView2D(QGraphicsView):
         Return a QRectF giving the part of the scene currently displayed in this
         widget's viewport in the scene's coordinates
         """
-        r =  self.mapToScene(self.viewport().geometry()).boundingRect()
+        r = self.mapToScene(self.viewport().geometry()).boundingRect()
         return r
 
     def mapScene2Data(self, pos):
@@ -230,15 +232,15 @@ class ImageView2D(QGraphicsView):
     def _deaccelerate(self, speed, a=1, maxVal=64):
         x = self._qBound(-maxVal, speed.x(), maxVal)
         y = self._qBound(-maxVal, speed.y(), maxVal)
-        ax ,ay = self._setdeaccelerateAxAy(speed.x(), speed.y(), a)
+        ax, ay = self._setdeaccelerateAxAy(speed.x(), speed.y(), a)
         if x > 0:
-            x = max(0.0, x - a*ax)
+            x = max(0.0, x - a * ax)
         elif x < 0:
-            x = min(0.0, x + a*ax)
+            x = min(0.0, x + a * ax)
         if y > 0:
-            y = max(0.0, y - a*ay)
+            y = max(0.0, y - a * ay)
         elif y < 0:
-            y = min(0.0, y + a*ay)
+            y = min(0.0, y + a * ay)
         return QPointF(x, y)
 
     def _qBound(self, minVal, current, maxVal):
@@ -255,14 +257,14 @@ class ImageView2D(QGraphicsView):
                 if ax != 0:
                     return ax, 1
             else:
-                return x/a, 1
+                return x / a, 1
         if y > x:
             if x > 0:
-                ay = y//x
+                ay = y // x
                 if ay != 0:
                     return 1, ay
             else:
-                return 1, y/a
+                return 1, y / a
         return 1, 1
 
     def _tickerEvent(self):
@@ -271,7 +273,7 @@ class ImageView2D(QGraphicsView):
         else:
             self._deltaPan = self._deaccelerate(self._deltaPan)
             self._panning()
-        
+
     def zoomOut(self):
         self.doScale(0.9)
 
@@ -280,25 +282,29 @@ class ImageView2D(QGraphicsView):
 
     def fitImage(self):
         width, height = self.sliceShape
-        if width*height > 10000*10000:
-            choice = QMessageBox.warning(self, "Large Image Warning",
-                                "This is a large image.\n"\
-                                "Are you sure you want to zoom out far enough to see the whole image?\n"
-                                "This may take a long time.",
-                                buttons=QMessageBox.Yes | QMessageBox.Cancel,
-                                defaultButton=QMessageBox.Cancel)
+        if width * height > 10000 * 10000:
+            choice = QMessageBox.warning(
+                self,
+                "Large Image Warning",
+                "This is a large image.\n"
+                "Are you sure you want to zoom out far enough to see the whole image?\n"
+                "This may take a long time.",
+                buttons=QMessageBox.Yes | QMessageBox.Cancel,
+                defaultButton=QMessageBox.Cancel,
+            )
             if choice == QMessageBox.Cancel:
                 return
 
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         width, height = self.size().width() / self.sceneRect().width(), self.height() / self.sceneRect().height()
         self.setZoomFactor(min(width, height))
-    
+
     def exportImages(self):
         settingsDlg = WysiwygExportOptionsDlg(self)
 
-        if (settingsDlg.exec_() == WysiwygExportOptionsDlg.Accepted):
+        if settingsDlg.exec_() == WysiwygExportOptionsDlg.Accepted:
             from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportHelper
+
             exportHelper = WysiwygExportHelper(self, settingsDlg)
             exportHelper.prepareExport()
             exportHelper.run()
@@ -307,7 +313,9 @@ class ImageView2D(QGraphicsView):
             return
 
     def centerImage(self):
-        self.centerOn(self.sceneRect().width()/2 + self.sceneRect().x(), self.sceneRect().height()/2 + self.sceneRect().y())
+        self.centerOn(
+            self.sceneRect().width() / 2 + self.sceneRect().x(), self.sceneRect().height() / 2 + self.sceneRect().y()
+        )
 
     def toggleHud(self):
         if self._hud is not None:
@@ -316,7 +324,7 @@ class ImageView2D(QGraphicsView):
     def setHudVisible(self, visible):
         if self._hud is not None:
             self._hud.setVisible(visible)
-            
+
     def hudVisible(self):
         return self._hud.isVisible()
 
@@ -327,8 +335,8 @@ class ImageView2D(QGraphicsView):
     def focusOutEvent(self, event):
         self.setStyleSheet(".QFrame {}")
 
-    def changeViewPort(self,qRectf):
-        self.fitInView(qRectf,mode = Qt.KeepAspectRatio)
+    def changeViewPort(self, qRectf):
+        self.fitInView(qRectf, mode=Qt.KeepAspectRatio)
         width, height = self.size().width() / qRectf.width(), self.height() / qRectf.height()
         self.setZoomFactor(min(width, height))
 
@@ -337,40 +345,42 @@ class ImageView2D(QGraphicsView):
         self.scale(factor, factor)
 
     def doScaleTo(self, zoom=1):
-        factor = ( 1 / self._zoomFactor ) * zoom
+        factor = (1 / self._zoomFactor) * zoom
         self.setZoomFactor(zoom)
         self.scale(factor, factor)
 
 
-#*******************************************************************************
+# *******************************************************************************
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
-#*******************************************************************************
-if __name__ == '__main__':
+# *******************************************************************************
+if __name__ == "__main__":
     import sys
-    #make the program quit on Ctrl+C
+
+    # make the program quit on Ctrl+C
     import signal
+
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     from PyQt5.QtWidgets import QMainWindow
     from scipy.misc import lena
 
     def checkerboard(shape, squareSize):
         cb = numpy.zeros(shape)
-        for i in range(shape[0]/squareSize):
-            for j in range(shape[1]/squareSize):
-                a = i*squareSize
-                b = min((i+1)*squareSize, shape[0])
-                c = j*squareSize
-                d = min((j+1)*squareSize, shape[1])
-                if i%2 == j%2:
-                    cb[a:b,c:d] = 255
+        for i in range(shape[0] / squareSize):
+            for j in range(shape[1] / squareSize):
+                a = i * squareSize
+                b = min((i + 1) * squareSize, shape[0])
+                c = j * squareSize
+                d = min((j + 1) * squareSize, shape[1])
+                if i % 2 == j % 2:
+                    cb[a:b, c:d] = 255
         return cb
 
     def cross(shape, width):
         c = numpy.zeros(shape)
-        w2 = shape[0]//2
-        h2 = shape[1]//2
-        c[0:shape[0], h2-width//2:h2+width//2] = 255
-        c[w2-width//2:w2+width//2, 0:shape[1]] = 255
+        w2 = shape[0] // 2
+        h2 = shape[1] // 2
+        c[0 : shape[0], h2 - width // 2 : h2 + width // 2] = 255
+        c[w2 - width // 2 : w2 + width // 2, 0 : shape[1]] = 255
         return c
 
     class ImageView2DTest(QMainWindow):
@@ -378,21 +388,23 @@ if __name__ == '__main__':
             assert False, "I'm broken. Please fixme."
             QMainWindow.__init__(self)
 
-            self.lena = lena().swapaxes(0,1)
+            self.lena = lena().swapaxes(0, 1)
             self.checkerboard = checkerboard(self.lena.shape, 20)
             self.cross = cross(self.lena.shape, 30)
 
             self.imageView2D = ImageView2D()
-            self.imageView2D.name = 'ImageView2D:'
+            self.imageView2D.name = "ImageView2D:"
             self.imageView2D.shape = self.lena.shape
             self.imageView2D.slices = 1
             self.setCentralWidget(self.imageView2D)
 
-            #imageSlice = OverlaySlice(self.lena, color = QColor("red"), alpha = 1.0, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-            #cbSlice    = OverlaySlice(self.checkerboard, color = QColor("green"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-            #crossSlice = OverlaySlice(self.cross, color = QColor("blue"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
+            # imageSlice = OverlaySlice(self.lena, color = QColor("red"), alpha = 1.0, colorTable = None, min = None, max = None, autoAlphaChannel = False)
+            # cbSlice    = OverlaySlice(self.checkerboard, color = QColor("green"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
+            # crossSlice = OverlaySlice(self.cross, color = QColor("blue"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
 
-            self.imageView2D.scene().setContent(self.imageView2D.viewportRect(), None, (imageSlice, cbSlice, crossSlice))
+            self.imageView2D.scene().setContent(
+                self.imageView2D.viewportRect(), None, (imageSlice, cbSlice, crossSlice)
+            )
 
     app = QApplication(sys.argv)
     i = ImageView2DTest()

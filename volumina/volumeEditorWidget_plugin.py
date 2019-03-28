@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from PyQt5.QtDesigner import QPyDesignerCustomWidgetPlugin
 from PyQt5.QtWidgets import QPixmap, QIcon
@@ -41,12 +41,12 @@ from volumina.pixelpipeline.datasources import ArraySource
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 
-class PyVolumeEditorWidgetPlugin(QPyDesignerCustomWidgetPlugin):
 
-    def __init__(self, parent = None):
+class PyVolumeEditorWidgetPlugin(QPyDesignerCustomWidgetPlugin):
+    def __init__(self, parent=None):
         QPyDesignerCustomWidgetPlugin.__init__(self)
         self.initialized = False
-        
+
     def initialize(self, core):
         if self.initialized:
             return
@@ -54,44 +54,41 @@ class PyVolumeEditorWidgetPlugin(QPyDesignerCustomWidgetPlugin):
 
     def isInitialized(self):
         return self.initialized
-    
+
     def createWidget(self, parent):
-        a = (numpy.random.random((1,100,200,300,1))*255).astype(numpy.uint8)
+        a = (numpy.random.random((1, 100, 200, 300, 1)) * 255).astype(numpy.uint8)
         source = ArraySource(a)
         layerstack = LayerStackModel()
-        layerstack.append( GrayscaleLayer( source ) )
+        layerstack.append(GrayscaleLayer(source))
 
-        editor = VolumeEditor(layerstack, labelsink=None, parent=self)  
+        editor = VolumeEditor(layerstack, labelsink=None, parent=self)
         widget = VolumeEditorWidget(parent=parent)
         if not _has_lazyflow:
             widget.setEnabled(False)
         widget.init(editor)
         editor.dataShape = a.shape
         return widget
-    
+
     def name(self):
         return "VolumeEditorWidget"
 
     def group(self):
         return "ilastik widgets"
-    
+
     def icon(self):
-        return QIcon(QPixmap(16,16))
-                           
+        return QIcon(QPixmap(16, 16))
+
     def toolTip(self):
         return ""
-    
+
     def whatsThis(self):
         return ""
-    
+
     def isContainer(self):
         return False
-    
+
     def domXml(self):
-        return (
-               '<widget class="VolumeEditorWidget" name=\"volumeEditorWidget\">\n'
-               "</widget>\n"
-               )
-    
+        return '<widget class="VolumeEditorWidget" name="volumeEditorWidget">\n' "</widget>\n"
+
     def includeFile(self):
         return "volumina.volumeEditorWidget"

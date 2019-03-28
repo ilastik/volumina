@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,21 +19,22 @@ from __future__ import absolute_import
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
-#Python
+# Python
 import os
 from functools import partial
 
-#Qt
+# Qt
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QMessageBox
 
-#volumina
+# volumina
 from .dataExportOptionsDlg import DataExportOptionsDlg
 from .multiStepProgressDialog import MultiStepProgressDialog
 
 import logging
+
 logger = logging.getLogger(__name__)
 from volumina.utility import log_exception, PreferencesManager
 
@@ -56,46 +58,51 @@ def get_settings_and_export_layer(layer, parent_widget=None):
     sourceTags = [True for l in layer.datasources]
     for i, source in enumerate(layer.datasources):
         if not hasattr(source, "dataSlot"):
-             sourceTags[i] = False
+            sourceTags[i] = False
     if not any(sourceTags):
-        raise RuntimeError("can not export from a non-lazyflow data source (layer=%r, datasource=%r)" % (type(layer), type(layer.datasources[0])) )
-
+        raise RuntimeError(
+            "can not export from a non-lazyflow data source (layer=%r, datasource=%r)"
+            % (type(layer), type(layer.datasources[0]))
+        )
 
     if not _has_lazyflow:
-        raise RuntimeError("lazyflow not installed") 
+        raise RuntimeError("lazyflow not installed")
     import lazyflow
-    dataSlots = [slot.dataSlot for (slot, isSlot) in
-                 zip(layer.datasources, sourceTags) if isSlot is True]
+
+    dataSlots = [slot.dataSlot for (slot, isSlot) in zip(layer.datasources, sourceTags) if isSlot is True]
 
     opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
     for slot in dataSlots:
         assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (type(slot))
-        assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (type(slot.getRealOperator()))
+        assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (
+            type(slot.getRealOperator())
+        )
     opStackChannels.AxisFlag.setValue("c")
     opStackChannels.Images.resize(len(dataSlots))
-    for i,islot in enumerate(opStackChannels.Images):
+    for i, islot in enumerate(opStackChannels.Images):
         islot.connect(dataSlots[i])
 
     export_dir = PreferencesManager().get("layer", "export-dir", default=os.path.expanduser("~"))
 
     # Create an operator to do the work
     from lazyflow.operators.ioOperators import OpFormattedDataExport
-    opExport = OpFormattedDataExport( parent=opStackChannels.parent )
-    opExport.OutputFilenameFormat.setValue( os.path.join(export_dir, layer.name) )
-    opExport.Input.connect( opStackChannels.Output )
+
+    opExport = OpFormattedDataExport(parent=opStackChannels.parent)
+    opExport.OutputFilenameFormat.setValue(os.path.join(export_dir, layer.name))
+    opExport.Input.connect(opStackChannels.Output)
     opExport.TransactionSlot.setValue(True)
-    
+
     # Use this dialog to populate the operator's slot settings
-    settingsDlg = DataExportOptionsDlg( parent_widget, opExport )
+    settingsDlg = DataExportOptionsDlg(parent_widget, opExport)
 
     # If user didn't cancel, run the export now.
-    if ( settingsDlg.exec_() == DataExportOptionsDlg.Accepted ):
+    if settingsDlg.exec_() == DataExportOptionsDlg.Accepted:
         export_dir = PathComponents(opExport.ExportPath.value).externalDirectory
         PreferencesManager().set("layer", "export-dir", export_dir)
 
-        helper = ExportHelper( parent_widget )
+        helper = ExportHelper(parent_widget)
         helper.run(opExport)
-        
+
     # Clean up our temporary operators
     opExport.cleanUp()
     opStackChannels.cleanUp()
@@ -105,17 +112,18 @@ class ExportHelper(QObject):
     """
     Executes a layer export in the background, shows a progress dialog, and displays errors (if any).
     """
-    # This signal is used to ensure that request 
+
+    # This signal is used to ensure that request
     #  callbacks are executed in the gui thread
-    _forwardingSignal = pyqtSignal( object )
+    _forwardingSignal = pyqtSignal(object)
 
     def _handleForwardedCall(self, fn):
         # Execute the callback
         fn()
-    
+
     def __init__(self, parent):
-        super( ExportHelper, self ).__init__(parent)
-        self._forwardingSignal.connect( self._handleForwardedCall )
+        super(ExportHelper, self).__init__(parent)
+        self._forwardingSignal.connect(self._handleForwardedCall)
 
     def run(self, opExport):
         """
@@ -126,28 +134,29 @@ class ExportHelper(QObject):
         """
         progressDlg = MultiStepProgressDialog(parent=self.parent())
         progressDlg.setNumberOfSteps(1)
-        
-        def _forwardProgressToGui(progress):
-            self._forwardingSignal.emit( partial( progressDlg.setStepProgress, progress ) )
-        opExport.progressSignal.subscribe( _forwardProgressToGui )
-    
-        def _onFinishExport( *args ): # Also called on cancel
-            self._forwardingSignal.emit( progressDlg.finishStep )
-    
-        def _onFail( exc, exc_info ):
-            log_exception( logger, "Failed to export layer.", exc_info=exc_info )
-            msg = "Failed to export layer due to the following error:\n{}".format( exc )
-            self._forwardingSignal.emit( partial(QMessageBox.critical, self.parent(), "Export Failed", msg) )
-            self._forwardingSignal.emit( progressDlg.setFailed )
 
-        # Use a request to execute in the background    
-        req = Request( opExport.run_export )
-        req.notify_cancelled( _onFinishExport )
-        req.notify_finished( _onFinishExport )
-        req.notify_failed( _onFail )
+        def _forwardProgressToGui(progress):
+            self._forwardingSignal.emit(partial(progressDlg.setStepProgress, progress))
+
+        opExport.progressSignal.subscribe(_forwardProgressToGui)
+
+        def _onFinishExport(*args):  # Also called on cancel
+            self._forwardingSignal.emit(progressDlg.finishStep)
+
+        def _onFail(exc, exc_info):
+            log_exception(logger, "Failed to export layer.", exc_info=exc_info)
+            msg = "Failed to export layer due to the following error:\n{}".format(exc)
+            self._forwardingSignal.emit(partial(QMessageBox.critical, self.parent(), "Export Failed", msg))
+            self._forwardingSignal.emit(progressDlg.setFailed)
+
+        # Use a request to execute in the background
+        req = Request(opExport.run_export)
+        req.notify_cancelled(_onFinishExport)
+        req.notify_finished(_onFinishExport)
+        req.notify_failed(_onFail)
 
         # Allow cancel.
-        progressDlg.rejected.connect( req.cancel )
+        progressDlg.rejected.connect(req.cancel)
 
         # Start the export
         req.submit()
