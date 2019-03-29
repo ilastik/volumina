@@ -120,7 +120,7 @@ class ThresholdingInterpreter(QObject):
     def set_active_layer(self):
         """
         determines the layer postion in the stack and the currently displayed
-        channel. Needs to be called constantly, because the user can change the 
+        channel. Needs to be called constantly, because the user can change the
         position of the input layer within the stack
         """
         for idx, layer in enumerate(self._layerStack):
@@ -142,8 +142,8 @@ class ThresholdingInterpreter(QObject):
         pass
 
     def get_drange(self):
-        """ 
-        returns tuple of drange (min, max) as set in hdf5 file or None 
+        """
+        returns tuple of drange (min, max) as set in hdf5 file or None
         if nothing is specified
         """
         return self._active_layer._datasources[0]._rawSource._op5.Output.meta.drange
@@ -163,7 +163,7 @@ class ThresholdingInterpreter(QObject):
 
     def get_min_max_of_current_view(self, imageview):
         """
-        Function returns min and max value of the current view 
+        Function returns min and max value of the current view
         based on the raw data.
         Ugly hack, but all we got for now
         """

@@ -37,7 +37,7 @@ class TestLayerWidget(ut.TestCase):
     """
     Create two layers and add them to a LayerWidget.
     Then change one of the layer visibilities and verify that the layer widget appearance updates.
-    
+
     At the time of this writing, the widget doesn't properly repaint the selected layer (all others repaint correctly).
     """
 

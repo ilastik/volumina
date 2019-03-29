@@ -180,7 +180,7 @@ class RelabelingArraySource(ArraySource):
     def setRelabelingEntry(self, index, value, setDirty=True):
         """Sets the entry for data value index to value, such that afterwards
            relabeling[index] =  value.
-           
+
            If setDirty is true, the source will signal dirtyness. If you plan to issue many calls to this function
            in a loop, setDirty to true only on the last call."""
         self._relabeling[index] = value
@@ -209,7 +209,7 @@ if _has_lazyflow:
     def translate_lf_exceptions(func):
         """
         Decorator.
-        Since volumina doesn't know about lazyflow, this datasource is responsible 
+        Since volumina doesn't know about lazyflow, this datasource is responsible
         for translating SlotNotReady errors into the volumina equivalent.
         """
 

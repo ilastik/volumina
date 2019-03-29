@@ -31,7 +31,7 @@ class PrioritizedThreadPoolExecutor(ThreadPoolExecutor):
     """
     The executor type for the render_pool
     (a thread pool for executing requests for layer data.)
-    
+
     Differences from base class (ThreadPoolExecutor):
       - self._work_queue is a PriorityQueue, not a plain Queue.Queue
       - self.submit() creates a PrioritizedTask (which has a less-than operator

@@ -305,7 +305,7 @@ class QuadView(QWidget):
 
         Keyword arguments:
         axis -- the axis which is represented by the widget (no default)
-                either string or integer 
+                either string or integer
                 'x' - 0
                 'y' - 1
                 'z' - 2

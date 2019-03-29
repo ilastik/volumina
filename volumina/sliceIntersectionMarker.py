@@ -33,7 +33,7 @@ from PyQt5.QtGui import QPen, QCursor
 
 class SliceIntersectionMarker(QGraphicsItem):
     """
-    Marks a line within a ImageView2D/ImageScene2D.  
+    Marks a line within a ImageView2D/ImageScene2D.
     Used within a VolumeEditor to show the current slicing position.
     """
 

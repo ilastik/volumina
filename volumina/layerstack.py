@@ -205,11 +205,11 @@ class LayerStackModel(QAbstractListModel):
         return 0
 
     def insertRows(self, row, count, parent=QModelIndex()):
-        """Insert empty rows in the stack. 
-        
+        """Insert empty rows in the stack.
+
         DO NOT USE THIS METHOD TO INSERT NEW LAYERS!
         Always use the insert() or append() method.
-        
+
         """
         if parent.isValid():
             return False
@@ -229,11 +229,11 @@ class LayerStackModel(QAbstractListModel):
         return True
 
     def removeRows(self, row, count, parent=QModelIndex()):
-        """Remove rows from the stack. 
-        
+        """Remove rows from the stack.
+
         DO NOT USE THIS METHOD TO REMOVE LAYERS!
         Use the deleteSelected() method instead.
-        
+
         """
 
         if parent.isValid():
@@ -274,11 +274,11 @@ class LayerStackModel(QAbstractListModel):
             return None
 
     def setData(self, index, value, role=Qt.EditRole):
-        """Replace one layer with another. 
-        
+        """Replace one layer with another.
+
         DO NOT USE THIS METHOD TO INSERT NEW LAYERS!
         Use deleteSelected() followed by insert() or append().
-        
+
         """
         if role == Qt.EditRole:
             layer = value

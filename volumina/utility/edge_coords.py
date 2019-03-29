@@ -62,10 +62,10 @@ def edge_coords_along_axis(label_img, axis):
     """
     Find the edges between label segments along a particular axis
     Return all edges as keys in a dict, along with the list of coordinates that belong to the edge.
-    
+
     Returns a dict of edges -> coordinate lists
     That is: { (id1, id2) : [coord, coord, coord, coord...] }
-    
+
     For all edge ids (id1, id2), id1 < id2.
 
     Where:

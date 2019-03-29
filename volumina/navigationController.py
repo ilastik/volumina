@@ -406,7 +406,7 @@ class NavigationController(QObject):
         This function can be used if all layers are synced along the
         channel axis and the new channel value exists for all
         layers. Use 'layerChangeChannel()' otherwise.
-        
+
         """
         for pump in self._imagePumps:
             if 2 not in pump.syncedSliceSources.getSyncAlong():

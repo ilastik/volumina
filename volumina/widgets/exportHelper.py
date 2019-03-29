@@ -128,7 +128,7 @@ class ExportHelper(QObject):
     def run(self, opExport):
         """
         Start the export and return immediately (after showing the progress dialog).
-        
+
         :param opExport: The export object to execute.
                          It must have a 'run_export()' method and a 'progressSignal' member.
         """

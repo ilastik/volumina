@@ -51,7 +51,7 @@ class WysiwygExportOptionsDlg(QDialog):
     def __init__(self, view):
         """
         Constructor.
-        
+
         :param view: The parent widget -> ImageView2D
         """
         super(WysiwygExportOptionsDlg, self).__init__(view)

@@ -34,12 +34,12 @@ from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, Color
 
 class StackedImageSources(QObject):
     """Manages an ordered stack of image sources.
-    
+
     The StackedImageSources manages the 'add' and 'remove' operation to a stack
     of objects derived from 'ImageSource'. The stacking order mirrors the
     LayerStackModel, and each Layer object has a corresponding ImageSource
     object that can be queried to produce images which adhere to the
-    specification as defined in the Layer object. 
+    specification as defined in the Layer object.
 
     Imagesource indices in the stack correspond to row numbers. So the
     topmost imagesource has an index 0, the second-to-the-top an index
@@ -220,7 +220,7 @@ class StackedImageSources(QObject):
         * its opacity is 1.0
         * the corresponding layer is opaque (i.e. there are
           no transparent 'holes' in the layer)
-        
+
         """
         return self._firstOpaqueIdx
 
@@ -230,7 +230,7 @@ class StackedImageSources(QObject):
         An occluded imagesource cannot be 'seen' when looking at the
         stack from 'above'. This property is useful to tune the image
         rendering.
-        
+
         """
         return self._imsOccluded[ims]
 
@@ -353,7 +353,7 @@ class ImagePump(object):
     # mappings
     def layerToSliceSources(self, layer):
         """Map from Layer instance to SliceSource instances.
-       
+
         returns: list of one or more SliceSource instances
 
         """

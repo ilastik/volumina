@@ -398,7 +398,7 @@ def create_default_8bit():
     """Create a colortable suitable for 8bit data.
 
     Repeatedly applies the default16 colortable to the whole 8bit range.
-    
+
     """
     return [color for color in itertools.islice(itertools.cycle(default16), 0, 2 ** 8)]
 
@@ -407,21 +407,21 @@ def create_default_16bit():
     """Create a colortable suitable for 16bit data.
 
     Repeatedly applies the default16 colortable to the whole 16bit range.
-    
+
     """
     return [color for color in itertools.islice(itertools.cycle(default16), 0, 2 ** 16)]
 
 
 def create_random_8bit():
     """Create a colortable suitable for 8bit data.
-    
+
     Creates a pseudo-random colortable in the 8bit range"""
     return random256
 
 
 def create_random_16bit():
     """Create a colortable suitable for 16bit data.
-    
+
     Repeatedly applies a pseudo-random colortable to the whole 16bit range"""
     return [color for color in itertools.islice(itertools.cycle(random256), 0, 2 ** 16)]
 

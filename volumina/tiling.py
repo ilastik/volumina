@@ -250,11 +250,11 @@ class _MultiCache(object):
 class _TilesCache(object):
     """
     Contains the following caches, with convenience accessor functions for each.
-    
+
         layerCache: A cache of 'layers', i.e. for every patch a QImage or QGraphicsItem
                     for every "image source" in the stack
-        
-        tileCache: A cache of 'tiles', i.e. the blended QImage objects 
+
+        tileCache: A cache of 'tiles', i.e. the blended QImage objects
                    that were created by combining all QImage layers from layerCache for a given patch.
                    (The QGraphicsItem layers do not contribute to the composite tiles in the tileCache.
                    They are merely stored.)
@@ -358,7 +358,7 @@ class _TilesCache(object):
     def graphicsitem_layers(self, stack_id, tile_id):
         """
         Return a list of the 'layers' in the cache that are of type QGraphicsItem.
-        Unlike the QImage layers, the QGraphicsItem layers are not composited into the 'tile'. 
+        Unlike the QImage layers, the QGraphicsItem layers are not composited into the 'tile'.
         """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
 
@@ -375,7 +375,7 @@ class _TilesCache(object):
     def setAllTilesDirty(self):
         """
         Mark all tiles in all stacks as dirty.
-        For speed, this is done by simply deleting all entries 
+        For speed, this is done by simply deleting all entries
         (by default missing entries are considered dirty).
         """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
@@ -401,7 +401,7 @@ class _TilesCache(object):
     def setLayerDirtyAllTiles(self, layer_id):
         """
         For a given layer, marks all tiles in all stacks as dirty.
-        This is achieved by simply deleting all tiles for the given 
+        This is achieved by simply deleting all tiles for the given
             layer (by default, missing entries are dirty)
         """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
@@ -493,7 +493,7 @@ class TileProvider(QObject):
                                      maximal number of simultaneously running requests
                                      to the pixelpipeline (default: 2)
         parent                    -- QObject
-    
+
         """
 
         QObject.__init__(self, parent=parent)
@@ -590,20 +590,20 @@ class TileProvider(QObject):
     def _refreshTile(self, stack_id, tile_no, prefetch=False, layer_indexes=None):
         """
         Trigger a refresh of a particular tile.
-        
+
         In the common case**, this function does the following:
-        
+
         For every layer in the patch specified by (stackid, tile_no):
-            
-            1. Blend the layers (ims) -- in their current, 
+
+            1. Blend the layers (ims) -- in their current,
                (possibly incomplete) state -- into a composite tile,
                and update the tile cache with it.
-            
+
             2. Then, for dirty layers *that are actually visible*,
                create a request to fetch their data.
-            
+
             3. Submit all the layer requests to the thread pool.
-        
+
         **Less common cases:
              - In 'prefetch' mode: don't bother rendering composite tile, just fetch the layers.
              - For 'direct' layers, don't submit the request to the threadpool,
@@ -748,7 +748,7 @@ class TileProvider(QObject):
     def _fetch_tile_layer(self, timestamp, ims, transform, tile_nr, stack_id, ims_req, cache):
         """
         Fetch a single tile from a layer (ImageSource).
-        
+
         Parameters
         ----------
         timestamp
@@ -760,9 +760,9 @@ class TileProvider(QObject):
         tile_nr
             The ID of the fetched tile
         stack_id
-            The stack ID of the tile we're fetching (e.g. which T-slice and Z-slice this tile belongs to) 
+            The stack ID of the tile we're fetching (e.g. which T-slice and Z-slice this tile belongs to)
         ims_req
-            A request object (e.g. GrayscaleImageRequest) with a wait() method that produces an item of 
+            A request object (e.g. GrayscaleImageRequest) with a wait() method that produces an item of
             the appropriate type for the layer (i.e. either a QImage or a QGraphicsItem)
         cache
             The value of self._cache at the time the ims_req was created.

@@ -114,7 +114,7 @@ class VolumeEditor(QObject):
                  for example the meaning of (0,1) is: time and orthogonal space axes
                  are synced for all layers, channel is not. (For the x-y slice, the space
                  axis would be z and so on.)
- 
+
         """
         return tuple(self._sync_along)
 

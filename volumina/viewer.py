@@ -50,7 +50,7 @@ class ClickableSegmentationLayer(QObject):
     clickedValue = pyqtSignal(int, bool, QColor)
 
     def __init__(self, seg, viewer, name=None, direct=None, parent=None, colortable=None, reuseColors=True):
-        """ seg:         segmentation image/volume (5D) 
+        """ seg:         segmentation image/volume (5D)
             reuseColors: if True, colors are assigned based on the number of currently visible objects,
                          if False, a segment with 'label' is assigned colortable[label] as color
         """

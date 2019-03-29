@@ -32,7 +32,7 @@ class PositionModel(QObject):
     """
     Currently viewed position within a 5D data volume
     (time, x,y,z, channels).
-    
+
     By writing into the public properties of the PositionModel,
     the user can manipulate the volume viewer by writing code
     in the same way as would be possible by manipulating the

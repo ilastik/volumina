@@ -339,7 +339,7 @@ class NormalizableLayer(Layer):
         normalize - If normalize is a tuple (dmin, dmax), the data is normalized from (dmin, dmax) to (0,255) before it is displayed.
                     If normalize=None, then (dmin, dmax) is automatically determined before normalization.
                     If normalize=False, then no normalization is applied before displaying the data.
-        
+
         """
         self._normalize = []
         self._range = []
@@ -498,10 +498,10 @@ class ColortableLayer(NormalizableLayer):
         assert isinstance(datasource, SourceABC)
 
         """
-        By default, no normalization is performed on ColortableLayers.  
-        If the normalize parameter is set to 'auto', 
-        your data will be automatically normalized to the length of your colorable.  
-        If a tuple (dmin, dmax) is passed, this specifies the range of your data, 
+        By default, no normalization is performed on ColortableLayers.
+        If the normalize parameter is set to 'auto',
+        your data will be automatically normalized to the length of your colorable.
+        If a tuple (dmin, dmax) is passed, this specifies the range of your data,
         which is used to normalize the data before the colorable is applied.
         """
 
@@ -636,8 +636,8 @@ class SegmentationEdgesLayer(Layer):
     def handle_edge_clicked(self, id_pair, event):
         """
         Handles clicks from our associated SegmentationEdgesItem(s).
-        (See connection made in SegmentationEdgesItemRequest.) 
-        
+        (See connection made in SegmentationEdgesItemRequest.)
+
         id_pair: The edge that was clicked.
         """
         DEBUG_BEHAVIOR = False

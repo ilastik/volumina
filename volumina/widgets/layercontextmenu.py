@@ -112,7 +112,7 @@ def layercontextmenu(layer, pos, parent=None):
     """Show a context menu to manipulate properties of layer.
 
     layer -- a volumina layer instance
-    pos -- QPoint 
+    pos -- QPoint
 
     """
     menu = QMenu("Menu", parent)

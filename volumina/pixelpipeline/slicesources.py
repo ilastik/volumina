@@ -123,10 +123,10 @@ class SliceSource(QObject):
         the slicing. Optionally, some or all through values can
         be set to a another value (useful for requesting out-of-view
         slices as necessary for prefetching).
-        
+
         Arguments:
         slicing2D    -- pair of 'slice' objects: abscissa, ordinate
-        along_trough -- sequence of pairs or None; 
+        along_trough -- sequence of pairs or None;
                         pair is '(along axis, through value)'
 
         Returns: a SliceRequest for a 2d array

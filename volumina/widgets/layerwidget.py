@@ -319,7 +319,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     def editorForIndex(self, modelIndex):
         """
-        Return the editor (if any) that has already been 
+        Return the editor (if any) that has already been
         opened for the layer at the given index.
         """
         layer = modelIndex.data()
@@ -348,7 +348,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     def onSelectionChanged(self, selected, deselected):
         """
-        Since we use persistent editors for every item, we have to handle 
+        Since we use persistent editors for every item, we have to handle
         highlighting/highlighting the selected editor ourselves whenever the selection changes.
         """
         if len(deselected) > 0:
@@ -442,7 +442,7 @@ class LayerWidget(QListView):
 
     def onSelectionChanged(self, selected, deselected):
         """
-        Since we use persistent editors for every item, we have to handle 
+        Since we use persistent editors for every item, we have to handle
         highlighting/highlighting the selected editor ourselves whenever the selection changes.
         """
         self._itemDelegate.onSelectionChanged(selected, deselected)

@@ -35,10 +35,10 @@ def _has_attributes(cls, attrs):
 
 class IndeterminateRequestError(Exception):
     """
-    Raised if a request cannot be created or cannot be executed 
+    Raised if a request cannot be created or cannot be executed
       because its underlying datasource is in an indeterminate state.
     In such cases, the requester should simply ignore the error.
-    The datasource has the responsibility of sending a dirty notification 
+    The datasource has the responsibility of sending a dirty notification
       when the source is ready again.
     """
 

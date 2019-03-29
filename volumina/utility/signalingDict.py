@@ -6,10 +6,10 @@ from PyQt5.QtCore import QObject
 class SignalingDict(QObject):
     """
     Provides a dict-like interface, but emits a signal whenever the dict is updated.
-    
-    Note: To simplify the API, this offers only one signal, 
+
+    Note: To simplify the API, this offers only one signal,
           which is used any time a value is updated, even for deleted items.
-          
+
     TODO: Some dict functions are not implemented yet:
           - pop()
           - popitem()

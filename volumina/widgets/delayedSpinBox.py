@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QSpinBox
 
 class DelayedSpinBox(QSpinBox):
     """
-    Same as a QSpinBox, but provides the delayedValueChanged() signal, 
+    Same as a QSpinBox, but provides the delayedValueChanged() signal,
     which waits for a bit before signaling with the user's new input.
     """
 

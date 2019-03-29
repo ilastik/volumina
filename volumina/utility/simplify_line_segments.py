@@ -13,16 +13,16 @@ except ImportError:
 def simplify_line_segments(lines, tolerance=0.707):
     """
     Given a list of line segments (in any order) of the form
-        [((x1, y1), (x2, y2)), 
+        [((x1, y1), (x2, y2)),
          ((x1, y1), (x2, y2)),
          ...]
 
     do the following:
-    
+
     - Aggregate all of the line segments into a shapely MultiLineString
     - 'Merge' connected line segments
     - 'Simplify' each contiguous LineString, constrained to the given tolerancea
-    
+
     Returns a list of the segment point arrays (one array per segment),
     where each point array is already in order, ready to be drawn on screen.
     """
@@ -63,16 +63,16 @@ except ImportError:
 def simplify_line_segments_OLD(lines, tolerance=0.707):
     """
     Given a list of line segments (in any order) of the form
-        [((x1, y1), (x2, y2)), 
+        [((x1, y1), (x2, y2)),
          ((x1, y1), (x2, y2)),
          ...]
 
     do the following:
-    
+
     - Join all line segments into a graph
     - Separate the graph into 'segments' that can be independently "simplified"
     - Simplify each segment, constrained to the given tolerance
-    
+
     Returns a list of the segment point arrays (one array per segment),
     where each point array is already in order, ready to be drawn on screen.
     """
@@ -95,15 +95,15 @@ def simplify_line_segments_OLD(lines, tolerance=0.707):
 def merge_line_segments(lines):
     """
     Given a list of line segments (in any order) of the form
-        [((x1, y1), (x2, y2)), 
+        [((x1, y1), (x2, y2)),
          ((x1, y1), (x2, y2)),
          ...]
 
     do the following:
-    
+
     - Join all line segments into a graph
     - Split the graph into segments that do not contain internal branch points
-    
+
     Returns a list of the segment point arrays (one array per segment),
     where each point array is already in order, ready to be drawn on screen.
     """
@@ -150,17 +150,17 @@ def split_into_branchless_segments(undirected_graph):
     first/last node of the segment.
 
     Note: The graph must not contain cycles.
-    
+
     For example:
-    
+
         a - b - c - d
                  \
                   e - f - g
-    
+
         h - i - j
-    
+
     The above graph would be split into four segments:
-    
+
         ['a', 'b', 'c'],
         ['c', 'd'],
         ['c', 'e', 'f', 'g']

@@ -27,14 +27,14 @@ class SegmentationEdgesItem(QGraphicsObject):
         """
         path_items: A dict of { edge_id : SingleEdgeItem }
                     Use generate_path_items_for_labels() to produce this dict.
-        
+
         edge_pen_table: Must be of type SignalingDict, mapping from id_pair -> QPen.
                         May contain id_pair elements that are not present in the label_img.
                         Such elements are ignored.
                         (It is assumed that edge_pen_table may be shared among several SegmentationEdgeItems)
 
         default_pen: What pen to use for id_pairs that are not found in the edge_pen_table
-        
+
         is_clickable: If this item will be used for interactive labeling, change the Z-order when an
                       edge becomes visible/invisible, to make it easier for small edges to be accessible
                       despite overlapping neighbors, as explained in

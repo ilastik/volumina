@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 def getMainWindow() -> QMainWindow:
     """
     Attempt to return the main window for the app.
-    There's no guaranteed way to find *the* main window, 
+    There's no guaranteed way to find *the* main window,
     so we use some heuristics and make a guess:
     - Prefer instances of QMainWindow
     - Prefer the biggest window without a parent.

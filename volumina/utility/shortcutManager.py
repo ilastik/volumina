@@ -17,9 +17,9 @@ class ShortcutManager(with_metaclass(Singleton, object)):
     A singleton class that serves as a registry for all keyboard shortcuts in the app.
     All shortcuts should be configured using this class, not using the plain Qt shortcut API.
     This class handles details of directing a shortcut trigger to the intended target,
-    even if the normal Qt shortcut API would get confused about whether or not the shortcut 
+    even if the normal Qt shortcut API would get confused about whether or not the shortcut
     is active based on the current 'context'.
-    
+
     See __init__ for implementation details.
     """
 
@@ -43,12 +43,12 @@ class ShortcutManager(with_metaclass(Singleton, object)):
     def __init__(self):
         """
         Implementation details:
-        
+
         - All shortcuts are tracked by an id consisting of 2 strings: (group, name). (The description field is used for displaying to the user.)
         - In _keyseq_target_actions, all known shortcut key sequences are mapped to a set of (group, name) pairs, i.e. the possible targets for the key sequence
         - For a given (group, name) id, the associated action(s) can be looked up using _action_infos
         - We register a single, universal shortcut handler with Qt (_handle_shortcut_pressed) for every shortcut key sequence we are aware of.
-          In that handler, we determine which target action (if any) should be triggered in response to the shortcut, and trigger it by calling its target_callable. 
+          In that handler, we determine which target action (if any) should be triggered in response to the shortcut, and trigger it by calling its target_callable.
         """
         self._keyseq_target_actions = {}  # { keyseq : set([(group,name), (group,name), ...]) }
         self._action_infos = collections.OrderedDict()  # { group : { name : set([ActionInfo, ActionInfo, ...]) } }
@@ -59,7 +59,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
     def register(self, default_keyseq, action_info):
         """
         Register a new shortcut.
-        
+
         :param default_keyseq: A string specifying the shortcut key, e.g. 's' or 'Ctrl+P'
         :param action_info: The details of the shortcut's target action.  Must be of type ActionInfo (see above).
         """
@@ -171,7 +171,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
     def _load_from_preferences(self):
         """
         Read previously-saved preferences file and return the dict of shortcut keys -> targets (a 'reversemap').
-        Called during initialization only.  
+        Called during initialization only.
         """
         return PreferencesManager().get(self.PreferencesGroup, "all_shortcuts", default={})
 
@@ -248,8 +248,8 @@ class ShortcutManager(with_metaclass(Singleton, object)):
 
     def _focused_widget_ancestor_index(self, widget):
         """
-        If widget is an ancestor (parent, parent-parent, etc.) of the 
-        currently focused widget, return the number of parent steps 
+        If widget is an ancestor (parent, parent-parent, etc.) of the
+        currently focused widget, return the number of parent steps
         between widget and the focused widget.  Otherwise, return None.
         """
         focused_widget = QApplication.focusWidget()
@@ -274,7 +274,7 @@ class ShortcutManager(with_metaclass(Singleton, object)):
 
     def _update_tooltip(self, group, name, new_keyseq=None):
         """
-        If this shortcut is associated with an object with tooltip text, 
+        If this shortcut is associated with an object with tooltip text,
             the tooltip text is updated to include the shortcut key.
 
         For example, a button with shortcut 'b' and tooltip "Make it happen!"
@@ -332,8 +332,8 @@ class ObjectWithToolTipABC(with_metaclass(abc.ABCMeta, object)):
     """
     Defines an ABC for objects that have toolTip() and setToolTip() members.
     Note: All QWidgets already implement this ABC.
-    
-    When a shortcut is registered with the shortcut manager, clients can (optionally) 
+
+    When a shortcut is registered with the shortcut manager, clients can (optionally)
     provide an object that updates the tooltip text for the shortcut.
     That object must adhere to this interface.
     """

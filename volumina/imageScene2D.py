@@ -528,9 +528,9 @@ class ImageScene2D(QGraphicsScene):
     def triggerPrefetch(self, layer_indexes, time_range="current", spatial_axis_range="current", sceneRectF=None):
         """
         Trigger a one-time prefetch for the given set of layers.
-        
+
         TODO: I'm not 100% sure what happens here for layers with multiple channels.
-        
+
         layer_indexes: list-of-ints, or None, which means 'all visible'.
         time_range: (start_time, stop_time)
         spatial_axis_range: (start_slice, stop_slice), meaning Z/Y/X depending on our projection (self.along)
