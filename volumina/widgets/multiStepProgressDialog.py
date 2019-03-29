@@ -1,4 +1,5 @@
 from __future__ import division
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,7 +19,7 @@ from __future__ import division
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from past.utils import old_div
 import os, time
@@ -26,11 +27,12 @@ import os, time
 from PyQt5 import uic
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox
 
+
 class MultiStepProgressDialog(QDialog):
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
         self._initUic()
-        
+
         self._numberOfSteps = 1
         self._currentStep = 0
         self._steps = []
@@ -43,11 +45,11 @@ class MultiStepProgressDialog(QDialog):
         self._update()
         self.time1 = time.time()
         self.times = []
-    
+
     def setSteps(self, steps):
         self._steps = steps
         self.setNumberOfSteps(len(self._steps))
-    
+
     def finishStep(self):
         self._currentStep = self._currentStep + 1
         self._update()
@@ -69,16 +71,16 @@ class MultiStepProgressDialog(QDialog):
         self.overallProgress.setFormat("step %d of %d" % (self._currentStep, self._numberOfSteps))
 
         self.overallProgress.setValue(self._currentStep)
-    
+
     def setStepProgress(self, x):
         oldx = self.currentStepProgress.value()
         self.time2 = time.time()
         self.currentStepProgress.setValue(x)
         if x - oldx > 0:
             timeLeft = (100 - x) * (self.time2 - self.time1) / (x - oldx)
-            self._updateCurrentStepLabel( timeLeft)
+            self._updateCurrentStepLabel(timeLeft)
         self.time1 = self.time2
-    
+
     def _updateCurrentStepLabel(self, singlet):
         self.times.append(singlet)
         t = old_div(sum(self.times), len(self.times))
@@ -90,21 +92,21 @@ class MultiStepProgressDialog(QDialog):
             self.currentStepLabel.setText("Estimated time left: %.02f min" % (old_div(t, 60)))
 
     def _initUic(self):
-        p = os.path.split(__file__)[0]+'/'
-        if p == "/": p = "."+p
-        uic.loadUi(p+"ui/multiStepProgressDialog.ui", self)
+        p = os.path.split(__file__)[0] + "/"
+        if p == "/":
+            p = "." + p
+        uic.loadUi(p + "ui/multiStepProgressDialog.ui", self)
         self.buttonBox.button(QDialogButtonBox.Ok).hide()
         self.failedLabel.hide()
-        
+
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     import vigra, numpy
+
     app = QApplication(list())
-   
+
     d = MultiStepProgressDialog()
     d.setNumberOfSteps(5)
     d.show()
     app.exec_()
-
-    

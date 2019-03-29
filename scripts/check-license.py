@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,7 +19,7 @@ from __future__ import print_function
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 #!/usr/bin/env/python
 
@@ -48,21 +49,24 @@ lgplv2orlater = """#############################################################
 ###############################################################################
 """
 
+
 def check_file(fname):
     print("checking %s" % fname)
     assert os.path.exists(fname)
-    f = open(fname, 'r')
+    f = open(fname, "r")
     c = "".join(f.readlines())
     f.close()
     if not c.startswith(lgplv2orlater):
-        f = open(fname, 'w')
+        f = open(fname, "w")
         f.write(lgplv2orlater)
         f.write(c)
         f.close()
+
 
 def check_directory(arg, dirname, name):
     for fname in sorted(glob.glob("%s/*.py" % dirname)):
         check_file(fname)
 
+
 if __name__ == "__main__":
-    os.path.walk("../", check_directory, "") 
+    os.path.walk("../", check_directory, "")

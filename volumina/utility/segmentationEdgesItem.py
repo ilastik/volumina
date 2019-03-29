@@ -14,39 +14,42 @@ from volumina.utility import SignalingDict, edge_coords_nd, simplify_line_segmen
 
 logger = logging.getLogger(__name__)
 
-class SegmentationEdgesItem( QGraphicsObject ):
+
+class SegmentationEdgesItem(QGraphicsObject):
     """
     A parent item for a collection of SingleEdgeItems.
     """
-    edgeClicked = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
-    edgeSwiped = pyqtSignal( tuple, object ) # id_pair, QGraphicsSceneMouseEvent
-    
+
+    edgeClicked = pyqtSignal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
+    edgeSwiped = pyqtSignal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
+
     def __init__(self, path_items, edge_pen_table, default_pen, is_clickable=False, parent=None):
         """
         path_items: A dict of { edge_id : SingleEdgeItem }
                     Use generate_path_items_for_labels() to produce this dict.
-        
+
         edge_pen_table: Must be of type SignalingDict, mapping from id_pair -> QPen.
                         May contain id_pair elements that are not present in the label_img.
                         Such elements are ignored.
                         (It is assumed that edge_pen_table may be shared among several SegmentationEdgeItems)
 
         default_pen: What pen to use for id_pairs that are not found in the edge_pen_table
-        
+
         is_clickable: If this item will be used for interactive labeling, change the Z-order when an
                       edge becomes visible/invisible, to make it easier for small edges to be accessible
                       despite overlapping neighbors, as explained in
                       https://github.com/ilastik/volumina/pull/222
         """
-        assert threading.current_thread().name == 'MainThread', \
-            "SegmentationEdgesItem objects may only be created in the main thread."
-        
+        assert (
+            threading.current_thread().name == "MainThread"
+        ), "SegmentationEdgesItem objects may only be created in the main thread."
+
         super(SegmentationEdgesItem, self).__init__(parent=parent)
         self.setFlag(QGraphicsObject.ItemHasNoContents)
-        
+
         assert isinstance(edge_pen_table, SignalingDict)
         self.edge_pen_table = edge_pen_table
-        self.edge_pen_table.updated.connect( self.handle_updated_pen_table )
+        self.edge_pen_table.updated.connect(self.handle_updated_pen_table)
         self.set_path_items(path_items)
         self.default_pen = default_pen
         self.is_clickable = is_clickable
@@ -66,26 +69,26 @@ class SegmentationEdgesItem( QGraphicsObject ):
         return QRectF()
 
     def handle_edge_clicked(self, id_pair, event):
-        self.edgeClicked.emit( id_pair, event )
-    
+        self.edgeClicked.emit(id_pair, event)
+
     def handle_mouse_drag(self, id_pair, event):
-        self.edgeSwiped.emit( id_pair, event )
+        self.edgeSwiped.emit(id_pair, event)
 
     def handle_updated_pen_table(self, updated_path_ids):
         updated_path_ids = self.path_ids.intersection(updated_path_ids)
         for id_pair in updated_path_ids:
             item = self.path_items[id_pair]
             pen = self.edge_pen_table.get(id_pair, self.default_pen)
-            item.setPen( pen )
-            
+            item.setPen(pen)
+
             if not self.is_clickable:
                 continue
-            
+
             # Find colliding items and filter to keep siblings only
             colliding = [c for c in item.collidingItems() if c.parentItem() is item.parentItem()]
             if not colliding:
                 continue
-            
+
             # If the item was made transparent, send it to the bottom so that
             # nearby overlapping items that are still visible can be clicked.
             # Otherwise, send it to the top.
@@ -101,16 +104,16 @@ class SegmentationEdgesItem( QGraphicsObject ):
                 for c in colliding:
                     max_z = max(max_z, c.zValue())
                 item.setZValue(max_z + 1.0)
-                
 
-def painter_paths_for_labels_PURE_PYTHON( label_img, simplify_with_tolerance=None ):
+
+def painter_paths_for_labels_PURE_PYTHON(label_img, simplify_with_tolerance=None):
     # Find edge coordinates.
     # Note: 'x_axis' edges are those found when sweeping along the x axis.
     #       That is, the line separating the two segments will be *vertical*.
     assert label_img.ndim == 2
     x_axis_edge_coords, y_axis_edge_coords = edge_coords_nd(label_img)
-    #x_axis_edge_coords, y_axis_edge_coords = edgeCoords2D(label_img)
-  
+    # x_axis_edge_coords, y_axis_edge_coords = edgeCoords2D(label_img)
+
     # Populate the path_items dict.
     painter_paths = {}
     for id_pair in set(list(x_axis_edge_coords.keys()) + list(y_axis_edge_coords.keys())):
@@ -119,43 +122,51 @@ def painter_paths_for_labels_PURE_PYTHON( label_img, simplify_with_tolerance=Non
             horizontal_edge_coords = y_axis_edge_coords[id_pair]
         if id_pair in x_axis_edge_coords:
             vertical_edge_coords = x_axis_edge_coords[id_pair]
-        painter_paths[id_pair] = painter_path_from_edge_coords(horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance)
-  
+        painter_paths[id_pair] = painter_path_from_edge_coords(
+            horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance
+        )
+
     return painter_paths
+
 
 try:
     import vigra
     from ilastiktools import line_segments_for_labels
 
-    def painter_paths_for_labels( label_img, simplify_with_tolerance=None ):
+    def painter_paths_for_labels(label_img, simplify_with_tolerance=None):
         if simplify_with_tolerance is not None:
             return painter_paths_for_labels_PURE_PYTHON(label_img, simplify_with_tolerance)
-        line_seg_lookup = line_segments_for_labels(vigra.taggedView(label_img, 'xy') )
+        line_seg_lookup = line_segments_for_labels(vigra.taggedView(label_img, "xy"))
         painter_paths = {}
         for edge_id, line_segments in list(line_seg_lookup.items()):
             point_list = line_segments.reshape(-1, 2)
-            painter_paths[edge_id] = arrayToQPath(point_list[:,0], point_list[:,1], connect='pairs')
+            painter_paths[edge_id] = arrayToQPath(point_list[:, 0], point_list[:, 1], connect="pairs")
         return painter_paths
+
 
 except ImportError:
     painter_paths_for_labels = painter_paths_for_labels_PURE_PYTHON
 
 try:
     from ilastiktools import edgeCoords2D
+
     edge_coords_nd = edgeCoords2D
 except ImportError:
     pass
 
+
 def generate_path_items_for_labels(edge_pen_table, default_pen, label_img, simplify_with_tolerance=None):
     painter_paths = painter_paths_for_labels(label_img, simplify_with_tolerance)
-    
+
     path_items = {}
     for id_pair in list(painter_paths.keys()):
-        path_items[id_pair] = SingleEdgeItem(id_pair, painter_paths[id_pair],
-                                             initial_pen=edge_pen_table.get(id_pair, default_pen))
+        path_items[id_pair] = SingleEdgeItem(
+            id_pair, painter_paths[id_pair], initial_pen=edge_pen_table.get(id_pair, default_pen)
+        )
     return path_items
 
-def line_segments_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None ):
+
+def line_segments_from_edge_coords(horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None):
     """
     simplify_with_tolerance: If None, no simplification.
                              If float, use as a tolerance constraint.
@@ -175,45 +186,49 @@ def line_segments_from_edge_coords( horizontal_edge_coords, vertical_edge_coords
         horizontal_edge_coords = np.array(horizontal_edge_coords)
     else:
         horizontal_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
-        
+
     if vertical_edge_coords:
         vertical_edge_coords = np.array(vertical_edge_coords)
     else:
         vertical_edge_coords = np.ndarray((0, 2), dtype=np.uint32)
-    
+
     num_segments = len(horizontal_edge_coords) + len(vertical_edge_coords)
-    line_segments = np.zeros( (num_segments, 2, 2), dtype=np.uint32 )
-    line_segments[:len(horizontal_edge_coords), 0, :] = horizontal_edge_coords + (0,1)
-    line_segments[:len(horizontal_edge_coords), 1, :] = horizontal_edge_coords + (1,1)
-    line_segments[len(horizontal_edge_coords):, 0, :] = vertical_edge_coords + (1,0)
-    line_segments[len(horizontal_edge_coords):, 1, :] = vertical_edge_coords + (1,1)
+    line_segments = np.zeros((num_segments, 2, 2), dtype=np.uint32)
+    line_segments[: len(horizontal_edge_coords), 0, :] = horizontal_edge_coords + (0, 1)
+    line_segments[: len(horizontal_edge_coords), 1, :] = horizontal_edge_coords + (1, 1)
+    line_segments[len(horizontal_edge_coords) :, 0, :] = vertical_edge_coords + (1, 0)
+    line_segments[len(horizontal_edge_coords) :, 1, :] = vertical_edge_coords + (1, 1)
 
     if simplify_with_tolerance is not None:
         sequential_points = simplify_line_segments(line_segments, tolerance=simplify_with_tolerance)
         line_segments = []
         for point_list in sequential_points:
-            # Since these points are already in order, doubling the size of the point list like this 
+            # Since these points are already in order, doubling the size of the point list like this
             # is slightly inefficient, but it simplifies things because we can use the same QPath
             # generation method.
             line_segments += list(zip(point_list[:-1], point_list[1:]))
         line_segments = np.array(line_segments)
     return line_segments
 
-def painter_path_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None ):
-    line_segments = line_segments_from_edge_coords( horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance )
-    line_segments = line_segments.reshape( (-1, 2) )
-    path = arrayToQPath( line_segments[:,0], line_segments[:,1], connect='pairs' )
+
+def painter_path_from_edge_coords(horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance=None):
+    line_segments = line_segments_from_edge_coords(
+        horizontal_edge_coords, vertical_edge_coords, simplify_with_tolerance
+    )
+    line_segments = line_segments.reshape((-1, 2))
+    path = arrayToQPath(line_segments[:, 0], line_segments[:, 1], connect="pairs")
     return path
 
-class SingleEdgeItem( QGraphicsPathItem ):
+
+class SingleEdgeItem(QGraphicsPathItem):
     """
     Represents a single edge between two superpixels.
     Must be owned by a SegmentationEdgesItem object
     """
-    
+
     def __init__(self, id_pair, painter_path, initial_pen=None):
-        super( SingleEdgeItem, self ).__init__()
-        self.parent = None # Should be initialized with set_parent()
+        super(SingleEdgeItem, self).__init__()
+        self.parent = None  # Should be initialized with set_parent()
         self.id_pair = id_pair
 
         if not initial_pen:
@@ -225,9 +240,9 @@ class SingleEdgeItem( QGraphicsPathItem ):
 
         self.setPen(initial_pen)
         self.setPath(painter_path)
-        
+
     def mousePressEvent(self, event):
-        self.parent.handle_edge_clicked( self.id_pair, event )
+        self.parent.handle_edge_clicked(self.id_pair, event)
 
     def mouseMoveEvent(self, event):
         """
@@ -235,8 +250,7 @@ class SingleEdgeItem( QGraphicsPathItem ):
               In such cases, the event.pos() may be invalid, so don't use it.
         """
         if event.buttons() != Qt.NoButton:
-            self.parent.handle_mouse_drag( self.id_pair, event )
-            
+            self.parent.handle_mouse_drag(self.id_pair, event)
 
     def set_parent(self, parent):
         assert isinstance(parent, SegmentationEdgesItem)
@@ -244,9 +258,10 @@ class SingleEdgeItem( QGraphicsPathItem ):
         self.parent = parent
 
     ## Default implementation automatically already calls mousePressEvent()...
-    #def mouseDoubleClickEvent(self, event):
+    # def mouseDoubleClickEvent(self, event):
     #    event.accept()
     #    self.parent.handle_edge_clicked( self.id_pair )
+
 
 def pop_matching(l, match_f):
     for i, item in enumerate(l):
@@ -255,22 +270,27 @@ def pop_matching(l, match_f):
             return item
     return None
 
+
 class defaultdict_with_key(defaultdict):
     """
     Like defaultdict, but calls default_factory(key) instead of default_factory()
     """
+
     def __missing__(self, key):
         if self.default_factory is None:
-            raise KeyError( key )
+            raise KeyError(key)
         ret = self[key] = self.default_factory(key)
         return ret
+
 
 ##
 ## Copied from PyQtGraph with slight modifications
 ##
 from PyQt5 import QtWidgets, QtCore
 import struct
-def arrayToQPath(x, y, connect='all'):
+
+
+def arrayToQPath(x, y, connect="all"):
     """Convert an array of x,y coordinats to QPainterPath as efficiently as possible.
     The *connect* argument may be 'all', indicating that each point should be
     connected to the next; 'pairs', indicating that each pair of points
@@ -281,24 +301,24 @@ def arrayToQPath(x, y, connect='all'):
     ## Create all vertices in path. The method used below creates a binary format so that all
     ## vertices can be read in at once. This binary format may change in future versions of Qt,
     ## so the original (slower) method is left here for emergencies:
-        #path.moveTo(x[0], y[0])
-        #if connect == 'all':
-            #for i in range(1, y.shape[0]):
-                #path.lineTo(x[i], y[i])
-        #elif connect == 'pairs':
-            #for i in range(1, y.shape[0]):
-                #if i%2 == 0:
-                    #path.lineTo(x[i], y[i])
-                #else:
-                    #path.moveTo(x[i], y[i])
-        #elif isinstance(connect, np.ndarray):
-            #for i in range(1, y.shape[0]):
-                #if connect[i] == 1:
-                    #path.lineTo(x[i], y[i])
-                #else:
-                    #path.moveTo(x[i], y[i])
-        #else:
-            #raise Exception('connect argument must be "all", "pairs", or array')
+    # path.moveTo(x[0], y[0])
+    # if connect == 'all':
+    # for i in range(1, y.shape[0]):
+    # path.lineTo(x[i], y[i])
+    # elif connect == 'pairs':
+    # for i in range(1, y.shape[0]):
+    # if i%2 == 0:
+    # path.lineTo(x[i], y[i])
+    # else:
+    # path.moveTo(x[i], y[i])
+    # elif isinstance(connect, np.ndarray):
+    # for i in range(1, y.shape[0]):
+    # if connect[i] == 1:
+    # path.lineTo(x[i], y[i])
+    # else:
+    # path.moveTo(x[i], y[i])
+    # else:
+    # raise Exception('connect argument must be "all", "pairs", or array')
 
     ## Speed this up using >> operator
     ## Format is:
@@ -312,50 +332,51 @@ def arrayToQPath(x, y, connect='all'):
 
     path = QPainterPath()
 
-    #profiler = debug.Profiler()
+    # profiler = debug.Profiler()
     n = x.shape[0]
     # create empty array, pad with extra space on either end
-    arr = np.empty(n+2, dtype=[('x', '>f8'), ('y', '>f8'), ('c', '>i4')])
+    arr = np.empty(n + 2, dtype=[("x", ">f8"), ("y", ">f8"), ("c", ">i4")])
     # write first two integers
-    #profiler('allocate empty')
+    # profiler('allocate empty')
     byteview = arr.view(dtype=np.ubyte)
     byteview[:12] = 0
-    byteview.data[12:20] = struct.pack('>ii', n, 0)
-    #profiler('pack header')
+    byteview.data[12:20] = struct.pack(">ii", n, 0)
+    # profiler('pack header')
     # Fill array with vertex values
-    arr[1:-1]['x'] = x
-    arr[1:-1]['y'] = y
+    arr[1:-1]["x"] = x
+    arr[1:-1]["y"] = y
 
     # decide which points are connected by lines
-    assert connect == 'pairs', \
-        "I modified this function and now 'pairs' is the only allowed 'connect' option."
-    arr[1:-1]['c'][::2] = 1
-    arr[1:-1]['c'][1::2] = 0
+    assert connect == "pairs", "I modified this function and now 'pairs' is the only allowed 'connect' option."
+    arr[1:-1]["c"][::2] = 1
+    arr[1:-1]["c"][1::2] = 0
 
-    #profiler('fill array')
+    # profiler('fill array')
     # write last 0
-    lastInd = 20*(n+1)
-    byteview.data[lastInd:lastInd+4] = struct.pack('>i', 0)
-    #profiler('footer')
+    lastInd = 20 * (n + 1)
+    byteview.data[lastInd : lastInd + 4] = struct.pack(">i", 0)
+    # profiler('footer')
     # create datastream object and stream into path
 
     ## Avoiding this method because QByteArray(str) leaks memory in PySide
-    #buf = QtCore.QByteArray(arr.data[12:lastInd+4])  # I think one unnecessary copy happens here
+    # buf = QtCore.QByteArray(arr.data[12:lastInd+4])  # I think one unnecessary copy happens here
 
-    path.strn = byteview.data[12:lastInd+4] # make sure data doesn't run away
+    path.strn = byteview.data[12 : lastInd + 4]  # make sure data doesn't run away
     try:
         buf = QtCore.QByteArray.fromRawData(path.strn)
     except TypeError:
         buf = QtCore.QByteArray(bytes(path.strn))
-    #profiler('create buffer')
+    # profiler('create buffer')
     ds = QtCore.QDataStream(buf)
 
     def load_path():
         ds >> path
-    #profiler('load')
+
+    # profiler('load')
     load_path()
 
     return path
+
 
 if __name__ == "__main__":
     import time
@@ -366,9 +387,10 @@ if __name__ == "__main__":
     app = QApplication([])
 
     import h5py
-    with h5py.File('/magnetic/data/multicut-testdata/2d/256/Superpixels.h5', 'r') as superpixels_f:
-        labels_img = superpixels_f['data'][:]
-        labels_img = labels_img[...,0] # drop channel
+
+    with h5py.File("/magnetic/data/multicut-testdata/2d/256/Superpixels.h5", "r") as superpixels_f:
+        labels_img = superpixels_f["data"][:]
+        labels_img = labels_img[..., 0]  # drop channel
 
     default_pen = QPen()
     default_pen.setCosmetic(True)
@@ -381,31 +403,31 @@ if __name__ == "__main__":
 
     start = time.time()
     path_items = generate_path_items_for_labels(pen_table, default_pen, labels_img, None)
-    print("generate took {}".format(time.time() - start)) # 52 ms
+    print("generate took {}".format(time.time() - start))  # 52 ms
 
     edges_item = SegmentationEdgesItem(path_items, pen_table, default_pen)
-    
-    def assign_random_color( id_pair, buttons ):
+
+    def assign_random_color(id_pair, buttons):
         print("handling click: {}".format(id_pair))
         pen = pen_table[id_pair]
         if pen:
             pen = QPen(pen)
         else:
             pen = QPen()
-        random_color = QColor( *list( np.random.randint(0,255,(3,)) ) )
+        random_color = QColor(*list(np.random.randint(0, 255, (3,))))
         pen.setColor(random_color)
-        pen_table[id_pair] = pen        
-        
+        pen_table[id_pair] = pen
+
     edges_item.edgeClicked.connect(assign_random_color)
-    
+
     scene = QGraphicsScene()
     scene.addItem(edges_item)
-    
+
     transform = QTransform()
     transform.scale(2.0, 2.0)
-    
+
     view = QGraphicsView(scene)
     view.setTransform(transform)
     view.show()
-    view.raise_()         
+    view.raise_()
     app.exec_()

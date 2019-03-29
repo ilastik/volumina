@@ -1,4 +1,5 @@
 from __future__ import division
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,12 +19,13 @@ from __future__ import division
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from builtins import range
 from past.utils import old_div
 from PyQt5.QtCore import QPointF, QObject, pyqtSignal
 from PyQt5.QtGui import QColor
+
 
 class SkeletonNode(QObject):
     selected = pyqtSignal(bool)
@@ -32,17 +34,18 @@ class SkeletonNode(QObject):
         super(SkeletonNode, self).__init__()
 
         from volumina.skeletons import Skeletons
+
         assert isinstance(skeletons, Skeletons)
         assert len(pos3D) == 3
-        assert axis in [0,1,2]
+        assert axis in [0, 1, 2]
 
         self.pos = pos3D
-        self.shape = [6,6,6]
+        self.shape = [6, 6, 6]
         self.axis = axis
         self._skeletons = skeletons
         self._selected = False
         self._isMovable = True
-        self._color = QColor(0,0,255)
+        self._color = QColor(0, 0, 255)
         self._name = "unnamed node"
 
     def setColor(self, c):
@@ -62,7 +65,7 @@ class SkeletonNode(QObject):
 
     def setMovable(self, movable):
         self._isMovable = movable
-    
+
     def __str__(self):
         return "SkeletonNode(pos=%r, axis=%r)" % (self.pos, self.axis)
 
@@ -71,19 +74,22 @@ class SkeletonNode(QObject):
 
     def move(self, pos):
         self.pos = pos
-        
+
     def intersectsBbox(self, point):
         assert len(point) == 3
         for i in range(3):
-            if not (self.pos[i] - old_div(self.shape,2.0) >= point[i] and self.pos[i] + old_div(self.shape,2.0) <= point[i]):
-                return False 
+            if not (
+                self.pos[i] - old_div(self.shape, 2.0) >= point[i]
+                and self.pos[i] + old_div(self.shape, 2.0) <= point[i]
+            ):
+                return False
         return True
 
     def shape2D(self, axis):
         shape = list(self.shape)
         del shape[axis]
         return shape
-    
+
     def setNewShape(self, axis, newShape):
         self.shape[axis] = newShape
 

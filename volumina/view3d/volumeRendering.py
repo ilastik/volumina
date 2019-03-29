@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from PyQt5.QtWidgets import QApplication
 import numpy
@@ -37,7 +37,7 @@ class LabelManager(object):
 
     def request(self):
         if len(self._available) == 0:
-            raise RuntimeError('out of labels')
+            raise RuntimeError("out of labels")
         label = min(self._available)
         self._available.remove(label)
         self._used.add(label)
@@ -61,6 +61,7 @@ class RenderingManager(object):
     map, renders the objects in the appropriate color.
 
     """
+
     def __init__(self, overview_scene):
         self._overview_scene = overview_scene
         self.labelmgr = LabelManager(NUM_OBJECTS)
@@ -70,10 +71,11 @@ class RenderingManager(object):
         self._dirty = False
 
         def _handle_scene_init():
-            self.setup( self._overview_scene.dataShape )
+            self.setup(self._overview_scene.dataShape)
             self.update()
-        self._overview_scene.reinitialized.connect( _handle_scene_init )
-        
+
+        self._overview_scene.reinitialized.connect(_handle_scene_init)
+
     def setup(self, shape):
         shape = shape[::-1]
         self._volume = numpy.zeros(shape, dtype=numpy.uint8)
@@ -81,8 +83,9 @@ class RenderingManager(object):
         self.ready = True
 
     def update(self):
-        assert current_thread().name == 'MainThread', \
-            "RenderingManager.update() must be called from the main thread to avoid segfaults."
+        assert (
+            current_thread().name == "MainThread"
+        ), "RenderingManager.update() must be called from the main thread to avoid segfaults."
 
         if not self._dirty:
             return
@@ -109,7 +112,7 @@ class RenderingManager(object):
         """
         Slot for the mesh generated signal from the MeshGenerator
         """
-        assert current_thread().name == 'MainThread'
+        assert current_thread().name == "MainThread"
         if label == 0 and mesh is None:
             self._overview_scene.set_busy(False)
         else:
@@ -150,7 +153,6 @@ class RenderingManager(object):
     def invalidateObject(self, name):
         self._overview_scene.invalidate_object(name)
 
-    def clear(self, ):
+    def clear(self,):
         self._volume[:] = 0
         self.labelmgr.free()
-

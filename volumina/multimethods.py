@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 import sys
 import inspect
@@ -25,20 +25,24 @@ import inspect
 registry = {}
 calling_modules = {}
 
+
 class MultiMethod(object):
     def __init__(self, name):
         self.name = name
         self.typemap = {}
+
     def __call__(self, *args):
         types = tuple(arg.__class__ for arg in args)
         function = self.typemap.get(types)
         if function is None:
             raise TypeError("no match: %s" % str(types))
         return function(*args)
+
     def register(self, types, function):
         if types in self.typemap:
             raise TypeError("duplicate registration: %s" % str(types))
         self.typemap[types] = function
+
 
 # decorator
 def multimethod(*types):
@@ -51,9 +55,9 @@ def multimethod(*types):
         return mm
 
     def noop(function):
-        assert(function.__name__ in registry) # noop is only returned,
-                                              # when we have seen the
-                                              # function at least once
+        assert function.__name__ in registry  # noop is only returned,
+        # when we have seen the
+        # function at least once
         return registry[function.__name__]
 
     # a single module can appear more than once under different names
@@ -67,7 +71,7 @@ def multimethod(*types):
     # multi registration errors
     # volumina.pixelpipeline.submodule:
     #     uses multimethod decorator
-    #     imports another module with fqp volumina.pixelpipeline.submodule2 
+    #     imports another module with fqp volumina.pixelpipeline.submodule2
     #         executes __init__.py in fq namespace
     # volumina.__init__:
     #     import pixelpipeline.submodule # executes decorators
@@ -76,9 +80,9 @@ def multimethod(*types):
     #
     # The following code handles this case.
 
-    caller = sys.modules.get(inspect.currentframe().f_back.f_globals['__name__'])
+    caller = sys.modules.get(inspect.currentframe().f_back.f_globals["__name__"])
     # there is a caller and it is a non built-in in module (not a function etc.)
-    if caller and inspect.ismodule(caller) and hasattr(caller, '__file__'):
+    if caller and inspect.ismodule(caller) and hasattr(caller, "__file__"):
         module_file = caller.__file__
         module_name = caller.__name__
         # Have we encountered the module before?

@@ -10,9 +10,8 @@ class SlicingPlanes(object):
 
     :ivar Sequence[Sequence[int]] BOX_COLORS: the 3 colors for the boxes, e.g. [r, g, b, a]
     """
-    BOX_COLORS = ([255, 0, 0, 255],
-                  [0, 255, 0, 255],
-                  [0, 0, 255, 255])
+
+    BOX_COLORS = ([255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255])
 
     def __init__(self, view):
         """
@@ -117,7 +116,7 @@ class SlicingPlanes(object):
         for axis, plane in enumerate((self._x, self._y, self._z)):
             if item is plane:
                 r, g, b, a = item.color()
-                item.setColor([r/2, g/2, b/2, a])
+                item.setColor([r / 2, g / 2, b / 2, a])
                 item.update()
                 self._selection = item
                 self._selected_axis = axis
@@ -129,7 +128,7 @@ class SlicingPlanes(object):
         """
         if self._selection is not None:
             r, g, b, a = self._selection.color()
-            self._selection.setColor([r*2, g*2, b*2, a])
+            self._selection.setColor([r * 2, g * 2, b * 2, a])
             self._selection.update()
         self._selection = None
 

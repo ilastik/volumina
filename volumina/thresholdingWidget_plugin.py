@@ -17,19 +17,19 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from PyQt5.QtDesigner import QPyDesignerCustomWidgetPlugin
 from PyQt5.QtWidgets import QPixmap, QIcon, QColor
 
 from volumina.widgets.thresholdingWidget import ThresholdingWidget
 
-class PyThresholdingWidgetPlugin(QPyDesignerCustomWidgetPlugin):
 
-    def __init__(self, parent = None):
+class PyThresholdingWidgetPlugin(QPyDesignerCustomWidgetPlugin):
+    def __init__(self, parent=None):
         QPyDesignerCustomWidgetPlugin.__init__(self)
         self.initialized = False
-        
+
     def initialize(self, core):
         if self.initialized:
             return
@@ -37,34 +37,30 @@ class PyThresholdingWidgetPlugin(QPyDesignerCustomWidgetPlugin):
 
     def isInitialized(self):
         return self.initialized
-    
+
     def createWidget(self, parent):
         return ThresholdingWidget(parent)
-    
+
     def name(self):
         return "ThresholdingWidget"
 
     def group(self):
         return "ilastik widgets"
-    
+
     def icon(self):
-        return QIcon(QPixmap(16,16))
-                           
+        return QIcon(QPixmap(16, 16))
+
     def toolTip(self):
         return ""
-    
+
     def whatsThis(self):
         return ""
-    
+
     def isContainer(self):
         return False
-    
+
     def domXml(self):
-        return (
-               '<widget class="ThresholdingWidget" name=\"thresholdingWidget\">\n'
-               "</widget>\n"
-               )
-    
+        return '<widget class="ThresholdingWidget" name="thresholdingWidget">\n' "</widget>\n"
+
     def includeFile(self):
         return "volumina.widgets.thresholdingWidget"
- 
