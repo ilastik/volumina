@@ -12,7 +12,8 @@ from volumina.pixelpipeline import imagesources as imsrc
 
 _counter = count()
 
-@pytest.fixture(scope='function')
+
+@pytest.fixture(scope="function")
 def src():
     src = mock.Mock(spec=SourceABC)
     src.numberOfChannels = 1
@@ -20,7 +21,7 @@ def src():
     return src
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def layer_obj(request, src):
     layer_cls = request.param
     if issubclass(layer_cls, layer.ColortableLayer):
@@ -30,36 +31,38 @@ def layer_obj(request, src):
     else:
         l = layer_cls(src)
 
-    l.name = 'name%d' % next(_counter)
+    l.name = "name%d" % next(_counter)
     return l
 
 
-@pytest.mark.parametrize("layer_obj,expected_source_cls", [
-    (layer.AlphaModulatedLayer, imsrc.AlphaModulatedImageSource),
-    (layer.GrayscaleLayer, imsrc.GrayscaleImageSource),
-    (layer.ColortableLayer, imsrc.ColortableImageSource),
-    (layer.DummyGraphicsItemLayer, imsrc.DummyItemSource),
-    (layer.DummyRasterItemLayer, imsrc.DummyRasterItemSource),
-    (layer.SegmentationEdgesLayer, imsrc.SegmentationEdgesItemSource),
-    (layer.LabelableSegmentationEdgesLayer, imsrc.SegmentationEdgesItemSource),
-], indirect=["layer_obj"])
+@pytest.mark.parametrize(
+    "layer_obj,expected_source_cls",
+    [
+        (layer.AlphaModulatedLayer, imsrc.AlphaModulatedImageSource),
+        (layer.GrayscaleLayer, imsrc.GrayscaleImageSource),
+        (layer.ColortableLayer, imsrc.ColortableImageSource),
+        (layer.DummyGraphicsItemLayer, imsrc.DummyItemSource),
+        (layer.DummyRasterItemLayer, imsrc.DummyRasterItemSource),
+        (layer.SegmentationEdgesLayer, imsrc.SegmentationEdgesItemSource),
+        (layer.LabelableSegmentationEdgesLayer, imsrc.SegmentationEdgesItemSource),
+    ],
+    indirect=["layer_obj"],
+)
 def test_create_image_source_returns_correct_type(src, layer_obj, expected_source_cls):
     new_src = layer_obj.createImageSource([src])
 
     assert isinstance(new_src, expected_source_cls)
 
 
-@pytest.mark.parametrize("layer_obj", [
-    layer.AlphaModulatedLayer,
-    layer.GrayscaleLayer,
-    layer.ColortableLayer,
-], indirect=["layer_obj"])
+@pytest.mark.parametrize(
+    "layer_obj", [layer.AlphaModulatedLayer, layer.GrayscaleLayer, layer.ColortableLayer], indirect=["layer_obj"]
+)
 def test_reacts_on_name_change(src, layer_obj):
     new_src = layer_obj.createImageSource([src])
     assert new_src.objectName() == layer_obj.name
 
-    layer_obj.name = 'newName'
-    assert new_src.objectName() == 'newName'
+    layer_obj.name = "newName"
+    assert new_src.objectName() == "newName"
 
 
 def test_create_rgba_sourse(src):
@@ -69,5 +72,5 @@ def test_create_rgba_sourse(src):
 
     assert new_src.objectName() == layer_obj.name
 
-    layer_obj.name = 'newName'
-    assert new_src.objectName() == 'newName'
+    layer_obj.name = "newName"
+    assert new_src.objectName() == "newName"

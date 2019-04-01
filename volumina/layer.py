@@ -418,12 +418,13 @@ class GrayscaleLayer(NormalizableLayer):
 
     def createImageSource(self, data_sources):
         if len(data_sources) != 1:
-            raise ValueError('Expected 1 data source got %s' % len(data_sources))
+            raise ValueError("Expected 1 data source got %s" % len(data_sources))
 
         src = imsrc.GrayscaleImageSource(data_sources[0], self)
         src.setObjectName(self.name)
         self.nameChanged.connect(lambda x: src.setObjectName(str(x)))
         return src
+
 
 # *******************************************************************************
 # A l p h a M o d u l a t e d L a y e r                                        *
@@ -451,7 +452,7 @@ class AlphaModulatedLayer(NormalizableLayer):
 
     def createImageSource(self, data_sources):
         if len(data_sources) != 1:
-            raise ValueError('Expected 1 data source got %s' % len(data_sources))
+            raise ValueError("Expected 1 data source got %s" % len(data_sources))
 
         src = imsrc.AlphaModulatedImageSource(data_sources[0], self)
         src.setObjectName(self.name)
@@ -541,7 +542,7 @@ class ColortableLayer(NormalizableLayer):
 
     def createImageSource(self, data_sources):
         if len(data_sources) != 1:
-            raise ValueError('Expected 1 data source got %s' % len(data_sources))
+            raise ValueError("Expected 1 data source got %s" % len(data_sources))
 
         src = imsrc.ColortableImageSource(data_sources[0], self)
         src.setObjectName(self.name)
@@ -622,7 +623,7 @@ class RGBALayer(NormalizableLayer):
 
     def createImageSource(self, data_sources):
         if len(data_sources) != 4:
-            raise ValueError('Expected 4 data sources got %s' % len(data_sources))
+            raise ValueError("Expected 4 data sources got %s" % len(data_sources))
 
         ds = copy.copy(data_sources)
         for i in range(3):
@@ -714,6 +715,7 @@ class SegmentationEdgesLayer(Layer):
 
     def createImageSource(self, data_sources):
         return imsrc.SegmentationEdgesItemSource(self, data_sources[0], False)
+
 
 class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
     """
