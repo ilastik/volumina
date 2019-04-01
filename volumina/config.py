@@ -30,8 +30,20 @@ default_config = """
 verbose: false
 """
 
-cfg = configparser.ConfigParser()
-cfg.read_string(default_config)
+_cfg = configparser.ConfigParser()
+_cfg.read_string(default_config)
 userConfig = os.path.expanduser("~/.voluminarc")
 if os.path.exists(userConfig):
-    cfg.read(userConfig)
+    _cfg.read(userConfig)
+
+
+class Config:
+    def __init__(self, cfg):
+        self._cfg = cfg
+
+    @property
+    def verbose_pixelpipeline(self):
+        return self._cfg.getboolean("pixelpipeline", "verbose")
+
+
+CONFIG = Config(_cfg)

@@ -22,13 +22,14 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
+import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
 from .asyncabcs import SourceABC, RequestABC
-from .log import pixelpipeline_logger
 import numpy as np
 import volumina
 from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
+from volumina.config import CONFIG
 
 projectionAlongTXC = SliceProjection(abscissa=2, ordinate=3, along=[0, 1, 4])
 projectionAlongTYC = SliceProjection(abscissa=1, ordinate=3, along=[0, 2, 4])
@@ -37,6 +38,8 @@ projectionAlongTZC = SliceProjection(abscissa=1, ordinate=2, along=[0, 3, 4])
 # *******************************************************************************
 # S l i c e R e q u e s t                                                      *
 # *******************************************************************************
+
+logger = logging.getLogger(__name__)
 
 
 class SliceRequest(object):
@@ -143,11 +146,8 @@ class SliceSource(QObject):
 
         slicing = self.sliceProjection.domain(through, slicing2D[0], slicing2D[1])
 
-        if volumina.verboseRequests:
-            pixelpipeline_logger.info(
-                "SliceSource requests '%r' from data source '%s'",
-                slicing, self._datasource.name
-            )
+        if CONFIG.verbose_pixelpipeline:
+            logger.info("SliceSource requests '%r' from data source '%s'", slicing, type(self._datasource).__qualname__)
 
         return SliceRequest(self._datasource.request(slicing), self.sliceProjection)
 

@@ -46,10 +46,9 @@ if not has_handler(volumina_logger):
 NO3D = False
 from . import api
 
-verboseRequests = False
-
 # volumina.icons_rc is needed on some machines for the icons to be displayed correctly
 import volumina.icons_rc
+
 
 def strSlicing(slicing):
     str = "("

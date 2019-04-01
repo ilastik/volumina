@@ -36,9 +36,8 @@ from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
 from .asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
-from volumina.config import cfg
+from volumina.config import CONFIG
 from volumina.utility import execute_in_main_thread
-from .log import pixelpipeline_logger
 import numpy as np
 
 _has_vigra = True
@@ -48,20 +47,26 @@ except ImportError:
     _has_vigra = False
 
 
+logger = logging.getLogger(__name__)
+
+
 def log_request(func):
-    if cfg.getboolean("pixelpipeline", "verbose"):
-        def _log_request(source: 'ImageSource', qrect, *args, **kwargs):
-            pixelpipeline_logger.error(
+    @functools.wraps(func)
+    def _log_request(source: "ImageSource", qrect, *args, **kwargs):
+        if CONFIG.verbose_pixelpipeline:
+            logger.error(
                 "%s '%s' requests (x=%d, y=%d, w=%d, h=%d)",
-                type(source).__qualname__, source.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height()
+                type(source).__qualname__,
+                source.objectName(),
+                qrect.x(),
+                qrect.y(),
+                qrect.width(),
+                qrect.height(),
             )
-            return func(source, qrect, *args, **kwargs)
+        return func(source, qrect, *args, **kwargs)
 
-    else:
-        def _log_request(source: 'ImageSource', qrect: QRect, *args, **kwargs):
-            return func(source, qrect, *args, **kwargs)
+    return _log_request
 
-    return functools.wraps(func)(_log_request)
 
 # *******************************************************************************
 # I m a g e S o u r c e                                                        *
