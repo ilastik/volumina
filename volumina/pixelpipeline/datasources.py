@@ -28,6 +28,7 @@ import weakref
 from functools import partial, wraps
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from .asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
+from .log import pixelpipeline_logger
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, make_bounded, index2slice, sl
 from volumina.config import cfg
@@ -333,9 +334,11 @@ if _has_lazyflow:
         @translate_lf_exceptions
         def request(self, slicing):
             if cfg.getboolean("pixelpipeline", "verbose"):
-                volumina.printLock.acquire()
-                print("  LazyflowSource '%s' requests %s" % (self.objectName(), volumina.strSlicing(slicing)))
-                volumina.printLock.release()
+                pixelpipeline_logger.info(
+                    "%s '%s' requests %s'",
+                    type(self).__name__, self.objectName(), volumina.strSlicing(slicing)
+                )
+
             if not is_pure_slicing(slicing):
                 raise Exception("LazyflowSource: slicing is not pure")
             assert (

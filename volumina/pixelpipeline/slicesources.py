@@ -25,10 +25,10 @@ from __future__ import absolute_import
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
 from .asyncabcs import SourceABC, RequestABC
+from .log import pixelpipeline_logger
 import numpy as np
 import volumina
 from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
-from volumina.colorama import Fore
 
 projectionAlongTXC = SliceProjection(abscissa=2, ordinate=3, along=[0, 1, 4])
 projectionAlongTYC = SliceProjection(abscissa=1, ordinate=3, along=[0, 2, 4])
@@ -144,13 +144,11 @@ class SliceSource(QObject):
         slicing = self.sliceProjection.domain(through, slicing2D[0], slicing2D[1])
 
         if volumina.verboseRequests:
-            volumina.printLock.acquire()
-            print(
-                Fore.RED
-                + "SliceSource requests '%r' from data source '%s'" % (slicing, self._datasource.name)
-                + Fore.RESET
+            pixelpipeline_logger.info(
+                "SliceSource requests '%r' from data source '%s'",
+                slicing, self._datasource.name
             )
-            volumina.printLock.release()
+
         return SliceRequest(self._datasource.request(slicing), self.sliceProjection)
 
     def setDirty(self, slicing):
