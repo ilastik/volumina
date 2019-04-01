@@ -743,6 +743,10 @@ class DummyRasterRequest(object):
 
 
 class DummyRasterItemSource(ImageSource):
+    def __init__(self, arraySource2D):
+        super().__init__("dummy item")
+        self._arraySource2D = arraySource2D
+
     def request(self, qrect, along_through=None):
         return DummyRasterRequest(qrect)
 
