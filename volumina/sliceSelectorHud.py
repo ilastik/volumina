@@ -40,6 +40,7 @@ from PyQt5.QtWidgets import (
     QToolButton,
     QVBoxLayout,
     QWidget,
+    QLineEdit,
 )
 from volumina.utility import ShortcutManager
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
@@ -421,53 +422,16 @@ class ImageView2DHud(QWidget):
         self.buttons["swap-axes"].swapped = swapped
 
 
-def _get_pos_widget(name, backgroundColor, foregroundColor):
-    label = QLabel()
-    label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-
-    pixmap = QPixmap(25 * 10, 25 * 10)
-    pixmap.fill(backgroundColor)
-    painter = QPainter()
-    painter.begin(pixmap)
-    pen = QPen(foregroundColor)
-    painter.setPen(pen)
-    painter.setRenderHint(QPainter.Antialiasing)
-    font = QFont()
-    font.setBold(True)
-    font.setPixelSize(25 * 10 - 30)
-    path = QPainterPath()
-    path.addText(QPointF(50, 25 * 10 - 50), font, name)
-    brush = QBrush(foregroundColor)
-    painter.setBrush(brush)
-    painter.drawPath(path)
-    painter.setFont(font)
-    painter.end()
-    pixmap = pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-    label.setPixmap(pixmap)
-
-    spinbox = DelayedSpinBox(750)
-    spinbox.setAlignment(Qt.AlignCenter)
-    spinbox.setToolTip("{0} Spin Box".format(name))
-    spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
-    spinbox.setMaximumHeight(20)
-    font = spinbox.font()
-    font.setPixelSize(14)
-    spinbox.setFont(font)
-    sheet = TEMPLATE.format(foregroundColor.name(), backgroundColor.name())
-    spinbox.setStyleSheet(sheet)
-    return label, spinbox
-
-
 class QuadStatusBar(QHBoxLayout):
 
-    positionChanged = pyqtSignal(int, int, int)  # x,y,z
-
-    def __init__(self, parent=None):
+    positionChanged = pyqtSignal(int, int, int) # x,y,z
+    
+    def __init__(self, volumeEditor, parent=None):
         QHBoxLayout.__init__(self, parent)
         self.setContentsMargins(0, 4, 0, 0)
         self.setSpacing(0)
         self.timeControlFontSize = 12
-        self.layerStack = layerStack
+        self.editor = volumeEditor
 
     def showXYCoordinates(self):
         self.zLabel.setHidden(True)
@@ -496,11 +460,14 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSlider.setToolTip("Choose the time coordinate of the current dataset.")
 
     def createQuadViewStatusBar(
-        self, xbackgroundColor, xforegroundColor, ybackgroundColor, yforegroundColor, zbackgroundColor, zforegroundColor
+        self, xbackgroundColor, xforegroundColor, ybackgroundColor, yforegroundColor, zbackgroundColor,
+        zforegroundColor, labelbackgroundColor, labelforegroundColor
     ):
-        self.xLabel, self.xSpinBox = _get_pos_widget("X", xbackgroundColor, xforegroundColor)
-        self.yLabel, self.ySpinBox = _get_pos_widget("Y", ybackgroundColor, yforegroundColor)
-        self.zLabel, self.zSpinBox = _get_pos_widget("Z", zbackgroundColor, zforegroundColor)
+        self.xLabel, self.xSpinBox = self._get_pos_widget("X", xbackgroundColor, xforegroundColor)
+        self.yLabel, self.ySpinBox = self._get_pos_widget("Y", ybackgroundColor, yforegroundColor)
+        self.zLabel, self.zSpinBox = self._get_pos_widget("Z", zbackgroundColor, zforegroundColor)
+        self.labelWidget = self._get_posMeta_widget(labelbackgroundColor, labelforegroundColor)
+        self.labelbackgroundColor = labelbackgroundColor
 
         self.xSpinBox.delayedValueChanged.connect(partial(self._handlePositionBoxValueChanged, "x"))
         self.ySpinBox.delayedValueChanged.connect(partial(self._handlePositionBoxValueChanged, "y"))
@@ -629,10 +596,7 @@ class QuadStatusBar(QHBoxLayout):
         spinbox.setStyleSheet(sheet)
         return label, spinbox
 
-    def _get_label_widget(self, backgroundColor, foregroundColor):
-        ticker = QTimer()
-        ticker.setInterval(200)
-        ticker.setSingleShot(True)
+    def _get_posMeta_widget(self, backgroundColor, foregroundColor):
         ledit = QLineEdit()
         ledit.setAlignment(Qt.AlignCenter)
         ledit.setMaximumHeight(20)
@@ -646,58 +610,39 @@ class QuadStatusBar(QHBoxLayout):
                             f"background-color: {backgroundColor.name()};"
                             f"border: none")
 
-        return ledit, ticker
+        return ledit
 
-    def _set_label_widget(self, x, y, z, t):
+    def _set_posMeta_widget(self, x, y, z):
         """Updates the label widget according to current mouse cursor position (x,y,z) and selectet time frame (t)"""
-        # from lazyflow.roi import TinyVector
-        # from collections import namedtuple
-
-        # no need for the color dimension (last element) here.
-        slicing = [slice(int(i), int(i + 1)) for i in [t, x, y, z]] + [slice(0,1)]
-        # Roi = namedtuple('Roi', 'start stop')
-        # roi = Roi(start=TinyVector([int(t),int(y),int(x),int(z)]), stop=TinyVector([int(t+1),int(y+1),int(x+1),int(z+1)]))
         label = None
+        coords = [int(val) for val in [x,y,z]]
+        imgView = self.editor.posModel.activeView
+        blockSize = self.editor.imageViews[imgView].scene()._tileProvider.tiling.blockSize
+        del coords[imgView]
+        x,y = (val for val in coords)
+        if imgView == 0:
+            x,y = (y,x)
         try:
-            def findLayer(layer):
-                if "Segmentation (Label " in layer.name:
-                    return True
-            labelings = self.layerStack.findMatchingIndices(findLayer)  # this throws exception if no layer found
-            for lbl in labelings:
-                try:
-                    fixed = []
-                    # FIXME This is really hacky, need to find another way of retrieving the cached values without the cache blocking the request
-                    for op in self.layerStack[lbl].datasources[0].dataSlot.getRealOperator().opPredictionPipeline.innerOperators[0].prediction_cache_gui._innerOps:
-                        fixed.append(op._opCacheFixer._fixed)
-                        op._opCacheFixer._fixed = False
+            for layer in self.editor.layerStack:
+                if layer.visible:
+                    layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
+                    stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
+                    tile_id = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(QRect(QPoint(x,y), QPoint(x,y)))[0]  # There will be just one tile, since we have just a single point
 
-                    # Get the whole dataset (debugging purposes)
-                    # whole_set_roi = Roi(start=TinyVector([0, 0, 0, 0]),
-                    # whole_set_slicing = [slice(int(0), int(i)) for i in [2, 1343, 1022, 1]] + [slice(0,1)]
-                    # set_fromRoi = self.layerStack[lbl].datasources[0].dataSlot.get(whole_set_roi).wait()
-                    # set_fromSlice = self.layerStack[lbl].datasources[0].request(whole_set_slicing).wait()
-                    # set_fromVal = self.layerStack[lbl].datasources[0].dataSlot.value
-
-                    # Equivalent calls to opCacheFixer
-                    # val = self.layerStack[lbl].datasources[0].dataSlot.get(roi).wait()
-                    # val = self.layerStack[lbl].datasources[0].dataSlot(roi.start, roi.stop).wait()
-                    val = self.layerStack[lbl].datasources[0].request(slicing).wait()
-
-                    # This does not call cached values, hence no need to hack the cache. But it is way to slow
-                    # val = self.layerStack[lbl].datasources[0].dataSlot.value[int(t),int(y),int(x),int(z)]
-                finally:
-                    if fixed:
-                        for fx, op in zip(fixed, self.layerStack[lbl].datasources[0].dataSlot.getRealOperator().opPredictionPipeline.innerOperators[0].prediction_cache_gui._innerOps):
-                            op._opCacheFixer._fixed = fx
-                if val == 1:  # indicates, that 'sclicing' is labelled with the label 'lbl'
-                    name = self.layerStack[lbl].name
-                    label = name[name.find("(") + 1:name.find(")")]
-                    color = self.layerStack[lbl].tintColor.name()
-                    self.labelWidget.setStyleSheet(f"color: white;"
-                                                   f"background-color: {color};"
-                                                   f"border: none")
-                    self.labelWidget.setText(f"{label}")
-                    break
+                    with self.editor.imageViews[imgView].scene()._tileProvider._cache:
+                        image = self.editor.imageViews[imgView].scene()._tileProvider._cache.layer(stack_id, layer_id,
+                                                                                                   tile_id)
+                        if image is not None:
+                            colorVal = image.pixelColor(x%blockSize,y%blockSize)
+                            if "Segmentation (Label " in layer.name and colorVal.getRgb() != (0,0,0,0):
+                                name = layer.name
+                                label = name[name.find("(") + 1:name.find(")")]
+                                color = layer.tintColor.name()
+                                self.labelWidget.setStyleSheet(f"color: white;"
+                                                               f"background-color: {color};"
+                                                               f"border: none")
+                                self.labelWidget.setText(f"{label}")
+                                break
             if label is None:
                 raise ValueError("No matching layer in stack.")
         except ValueError as e:
@@ -708,6 +653,8 @@ class QuadStatusBar(QHBoxLayout):
 
             if str(e) != "No matching layer in stack.":
                 raise
+        except:
+            raise
 
     def _registerTimeframeShortcuts(self, enabled=True, remove=True):
         """ Register or deregister "," and "." as keyboard shortcuts for scrolling in time """
@@ -822,13 +769,11 @@ class QuadStatusBar(QHBoxLayout):
         self.zSpinBox.setValue(shape5DcropMin[3])
         self.timeSlider.setValue(shape5DcropMin[0])
 
-    def setMouseCoords(self, x, y, z, t):
+    def setMouseCoords(self, x, y, z):
         self.xSpinBox.setValueWithoutSignal(x)
         self.ySpinBox.setValueWithoutSignal(y)
         self.zSpinBox.setValueWithoutSignal(z)
-        if not self.pos_info_ticker.isActive():
-            self._set_label_widget(x, y, z, t)
-            self.pos_info_ticker.start()
+        self._set_posMeta_widget(x, y, z)
 
 
 if __name__ == "__main__":
