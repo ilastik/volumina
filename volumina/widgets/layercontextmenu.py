@@ -100,12 +100,21 @@ def _add_actions_colortablelayer(layer, menu):
 
 
 def _add_actions(layer, menu):
+    def show_value_callback(checked):
+        layer.showValue = checked
+
     if isinstance(layer, GrayscaleLayer):
         _add_actions_grayscalelayer(layer, menu)
     elif isinstance(layer, RGBALayer):
         _add_actions_rgbalayer(layer, menu)
     elif isinstance(layer, (ColortableLayer, ClickableColortableLayer)):
         _add_actions_colortablelayer(layer, menu)
+
+    showVal = QAction("%s" % 'show pixel value', menu)
+    showVal.setCheckable(True)
+    showVal.setChecked(layer.showValue)
+    menu.addAction(showVal)
+    showVal.triggered.connect(show_value_callback)
 
 
 def layercontextmenu(layer, pos, parent=None):

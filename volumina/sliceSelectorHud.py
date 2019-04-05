@@ -596,7 +596,16 @@ class QuadStatusBar(QHBoxLayout):
         spinbox.setStyleSheet(sheet)
         return label, spinbox
 
+    def _layer_show_value_Changed(self, layer, visible):
+        return
+
+    def _layer_added(self, layer, row):
+        layer.showValueChanged.connect(self._layer_show_value_Changed)
+        pass
+
     def _get_posMeta_widget(self, backgroundColor, foregroundColor):
+        self.editor.layerStack.layerAdded.connect(self._layer_added)
+
         ledit = QLineEdit()
         ledit.setAlignment(Qt.AlignCenter)
         ledit.setMaximumHeight(20)
@@ -612,37 +621,49 @@ class QuadStatusBar(QHBoxLayout):
 
         return ledit
 
-    def _set_posMeta_widget(self, x, y, z):
-        """Updates the label widget according to current mouse cursor position (x,y,z) and selectet time frame (t)"""
-        label = None
+    def _get_visible_layerData(self, x, y, z):
+        """Returns the value of all curretnly visible layers at the x,y,z position of currently active image scene
+            :return [...,(layername, value) ,...]
+        """
+        layer_values = []
         coords = [int(val) for val in [x,y,z]]
         imgView = self.editor.posModel.activeView
         blockSize = self.editor.imageViews[imgView].scene()._tileProvider.tiling.blockSize
+
         del coords[imgView]
         x,y = (val for val in coords)
         if imgView == 0:
             x,y = (y,x)
-        try:
-            for layer in self.editor.layerStack:
-                if layer.visible:
-                    layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
-                    stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
-                    tile_id = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(QRect(QPoint(x,y), QPoint(x,y)))[0]  # There will be just one tile, since we have just a single point
 
-                    with self.editor.imageViews[imgView].scene()._tileProvider._cache:
-                        image = self.editor.imageViews[imgView].scene()._tileProvider._cache.layer(stack_id, layer_id,
-                                                                                                   tile_id)
-                        if image is not None:
-                            colorVal = image.pixelColor(x%blockSize,y%blockSize)
-                            if "Segmentation (Label " in layer.name and colorVal.getRgb() != (0,0,0,0):
-                                name = layer.name
-                                label = name[name.find("(") + 1:name.find(")")]
-                                color = layer.tintColor.name()
-                                self.labelWidget.setStyleSheet(f"color: white;"
-                                                               f"background-color: {color};"
-                                                               f"border: none")
-                                self.labelWidget.setText(f"{label}")
-                                break
+        for layer in self.editor.layerStack:
+            if layer.visible:
+                layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
+                stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
+                tile_id = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(
+                    QRect(QPoint(x, y), QPoint(x, y)))[
+                    0]  # There will be just one tile, since we have just a single point
+                with self.editor.imageViews[imgView].scene()._tileProvider._cache:
+                    image = self.editor.imageViews[imgView].scene()._tileProvider._cache.layer(stack_id, layer_id,
+                                                                                               tile_id)
+                if image is not None:
+                    layer_values.append((layer, image.pixelColor(x % blockSize, y % blockSize).getRgb()))
+        return layer_values
+
+    def _set_posMeta_widget(self, x, y, z):
+        """Updates the label widget according to current mouse cursor position (x,y,z) and selectet time frame (t)"""
+        try:
+            dataValues = self._get_visible_layerData(x, y, z)
+            label = None
+            for item in dataValues:
+                layer, data = item
+                if "Segmentation (Label " in layer.name and data != (0,0,0,0):
+                    label = layer.name[layer.name.find("(") + 1:layer.name.find(")")]
+                    color = layer.tintColor.name()
+                    self.labelWidget.setStyleSheet(f"color: white;"
+                                                   f"background-color: {color};"
+                                                   f"border: none")
+                    self.labelWidget.setText(f"{label}")
+                    break
             if label is None:
                 raise ValueError("No matching layer in stack.")
         except ValueError as e:

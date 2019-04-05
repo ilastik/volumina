@@ -62,6 +62,7 @@ class Layer(QObject):
     somethingChanged signals is emitted."""
     changed = pyqtSignal()
 
+    showValueChanged = pyqtSignal(object, bool)
     visibleChanged = pyqtSignal(bool)
     opacityChanged = pyqtSignal(float)
     nameChanged = pyqtSignal(object)  # sends a python str object, not unicode!
@@ -81,6 +82,15 @@ class Layer(QObject):
         if value != self._visible and self._allowToggleVisible:
             self._visible = value
             self.visibleChanged.emit(value)
+
+    @property
+    def showValue(self):
+        return self._showValue
+
+    @showValue.setter
+    def showValue(self, value):
+        self._showValue = value
+        self.showValueChanged.emit(self, value)
 
     def toggleVisible(self):
         """Convenience function."""
@@ -184,6 +194,7 @@ class Layer(QObject):
         super(Layer, self).__init__()
         self._name = u"Unnamed Layer"
         self._visible = True
+        self._showValue = False
         self._opacity = 1.0
         self._datasources = datasources
         self._layerId = None
