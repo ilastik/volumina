@@ -466,8 +466,7 @@ class QuadStatusBar(QHBoxLayout):
         self.xLabel, self.xSpinBox = self._get_pos_widget("X", xbackgroundColor, xforegroundColor)
         self.yLabel, self.ySpinBox = self._get_pos_widget("Y", ybackgroundColor, yforegroundColor)
         self.zLabel, self.zSpinBox = self._get_pos_widget("Z", zbackgroundColor, zforegroundColor)
-        self.labelWidget = self._get_posMeta_widget(labelbackgroundColor, labelforegroundColor)
-        self.labelbackgroundColor = labelbackgroundColor
+        self.layerValueWidgets = self._get_layer_value_widgets()
 
         self.xSpinBox.delayedValueChanged.connect(partial(self._handlePositionBoxValueChanged, "x"))
         self.ySpinBox.delayedValueChanged.connect(partial(self._handlePositionBoxValueChanged, "y"))
@@ -479,7 +478,8 @@ class QuadStatusBar(QHBoxLayout):
         self.addWidget(self.ySpinBox)
         self.addWidget(self.zLabel)
         self.addWidget(self.zSpinBox)
-        self.addWidget(self.labelWidget)
+        for valueWidget in self.layerValueWidgets.values():
+            self.addWidget(valueWidget)
 
         self.addSpacing(10)
 
@@ -596,16 +596,7 @@ class QuadStatusBar(QHBoxLayout):
         spinbox.setStyleSheet(sheet)
         return label, spinbox
 
-    def _layer_show_value_Changed(self, layer, visible):
-        return
-
-    def _layer_added(self, layer, row):
-        layer.showValueChanged.connect(self._layer_show_value_Changed)
-        pass
-
-    def _get_posMeta_widget(self, backgroundColor, foregroundColor):
-        self.editor.layerStack.layerAdded.connect(self._layer_added)
-
+    def _get_posMeta_widget(self):
         ledit = QLineEdit()
         ledit.setAlignment(Qt.AlignCenter)
         ledit.setMaximumHeight(20)
@@ -615,67 +606,74 @@ class QuadStatusBar(QHBoxLayout):
         font.setPixelSize(14)
         font.setBold(True)
         ledit.setFont(font)
-        ledit.setStyleSheet(f"color: {foregroundColor.name()};"
-                            f"background-color: {backgroundColor.name()};"
+        ledit.setStyleSheet(f"color: white;"
+                            f"background-color: black;"
                             f"border: none")
-
         return ledit
 
-    def _get_visible_layerData(self, x, y, z):
-        """Returns the value of all curretnly visible layers at the x,y,z position of currently active image scene
-            :return [...,(layername, value) ,...]
-        """
-        layer_values = []
-        coords = [int(val) for val in [x,y,z]]
-        imgView = self.editor.posModel.activeView
-        blockSize = self.editor.imageViews[imgView].scene()._tileProvider.tiling.blockSize
+    def _layer_show_value_Changed(self, layer, showVal):
+        if showVal:
+            if "Segmentation (Label " in layer.name:
+                for key in self.layerValueWidgets.keys():
+                    if "Segmentation (Label " in key.name:
+                        self.layerValueWidgets[layer] = self.layerValueWidgets[key]
+                        return
+            self.layerValueWidgets[layer] = self._get_posMeta_widget()
+            self.addWidget(self.layerValueWidgets[layer])
+        else:
+            widget = self.layerValueWidgets[layer]
+            del self.layerValueWidgets[layer]
+            if "Segmentation (Label " in layer.name:
+                for key in self.layerValueWidgets.keys():
+                    if "Segmentation (Label " in key.name:
+                        return
+            self.removeWidget(widget)
+            widget.deleteLater()
 
-        del coords[imgView]
-        x,y = (val for val in coords)
-        if imgView == 0:
-            x,y = (y,x)
+    def _layer_added(self, layer, row):
+        layer.showValueChanged.connect(self._layer_show_value_Changed)
+        if layer.showValue:
+            if "Segmentation (Label " in layer.name:
+                for key in self.layerValueWidgets.keys():
+                    if "Segmentation (Label " in key.name:
+                        self.layerValueWidgets[layer] = self.layerValueWidgets[key]
+                        break
+                    else:
+                        continue
+                    continue
+            self.layerValueWidgets[layer] = self._get_posMeta_widget()
+            self.addWidget(self.layerValueWidgets[layer])
 
-        for layer in self.editor.layerStack:
-            if layer.visible:
-                layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
-                stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
-                tile_id = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(
-                    QRect(QPoint(x, y), QPoint(x, y)))[
-                    0]  # There will be just one tile, since we have just a single point
-                with self.editor.imageViews[imgView].scene()._tileProvider._cache:
-                    image = self.editor.imageViews[imgView].scene()._tileProvider._cache.layer(stack_id, layer_id,
-                                                                                               tile_id)
-                if image is not None:
-                    layer_values.append((layer, image.pixelColor(x % blockSize, y % blockSize).getRgb()))
-        return layer_values
+    def _layer_removed(self, layer, row):
+        layer.showValueChanged.disconnect(self._layer_show_value_Changed)
+        if layer in self.layerValueWidgets:
+            widget = self.layerValueWidgets[layer]
+            del self.layerValueWidgets[layer]
+            if "Segmentation (Label " in layer.name:
+                for key in self.layerValueWidgets.keys():
+                    if "Segmentation (Label " in key.name:
+                        return
+            self.removeWidget(widget)
+            widget.deleteLater()
 
-    def _set_posMeta_widget(self, x, y, z):
-        """Updates the label widget according to current mouse cursor position (x,y,z) and selectet time frame (t)"""
-        try:
-            dataValues = self._get_visible_layerData(x, y, z)
-            label = None
-            for item in dataValues:
-                layer, data = item
-                if "Segmentation (Label " in layer.name and data != (0,0,0,0):
-                    label = layer.name[layer.name.find("(") + 1:layer.name.find(")")]
-                    color = layer.tintColor.name()
-                    self.labelWidget.setStyleSheet(f"color: white;"
-                                                   f"background-color: {color};"
-                                                   f"border: none")
-                    self.labelWidget.setText(f"{label}")
-                    break
-            if label is None:
-                raise ValueError("No matching layer in stack.")
-        except ValueError as e:
-            self.labelWidget.setStyleSheet(f"color: white;"
-                                     f"background-color: black;"
-                                     f"border: none")
-            self.labelWidget.setText(f"Label: -")
+    def _get_layer_value_widgets(self):
+        layerValueWidgets = {}
+        self.editor.layerStack.layerAdded.connect(self._layer_added)
+        self.editor.layerStack.layerRemoved.connect(self._layer_removed)
+        for layer in self.editor.layerStack:   # Just to be sure, however layerStack should be empty at this point
+            layer.showValueChanged.connect(self._layer_show_value_Changed())
+            if layer.showValue:
+                if "Segmentation (Label " in layer.name:
+                    for key in positionMeta.keys():
+                        if "Segmentation (Label " in key.name:
+                            layerValueWidgets[layer] = layerValueWidgets[key]
+                            break
+                        else:
+                            continue
+                        continue
+                layerValueWidgets[layer] = self._get_posMeta_widget()
 
-            if str(e) != "No matching layer in stack.":
-                raise
-        except:
-            raise
+        return layerValueWidgets
 
     def _registerTimeframeShortcuts(self, enabled=True, remove=True):
         """ Register or deregister "," and "." as keyboard shortcuts for scrolling in time """
@@ -794,7 +792,55 @@ class QuadStatusBar(QHBoxLayout):
         self.xSpinBox.setValueWithoutSignal(x)
         self.ySpinBox.setValueWithoutSignal(y)
         self.zSpinBox.setValueWithoutSignal(z)
-        self._set_posMeta_widget(x, y, z)
+
+        coords = [int(val) for val in [x,y,z]]
+        imgView = self.editor.posModel.activeView
+        blockSize = self.editor.imageViews[imgView].scene()._tileProvider.tiling.blockSize
+        labelSet = False
+
+        del coords[imgView]
+        x,y = (val for val in coords)
+        if imgView == 0:  # the y-z view is inverted in tileProvider
+            x,y = (y,x)
+
+        for layer, widget in self.layerValueWidgets.items():
+            value = None
+            layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
+            stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
+            tile_id = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(
+                QRect(QPoint(x, y), QPoint(x, y)))[
+                0]  # There will be just one tile, since we have just a single point
+            with self.editor.imageViews[imgView].scene()._tileProvider._cache:
+                image = self.editor.imageViews[imgView].scene()._tileProvider._cache.layer(stack_id, layer_id,
+                                                                                           tile_id)
+            if image is not None:
+                value = image.pixelColor(x % blockSize, y % blockSize)
+
+            lbl, foreground, background = layer.setValueWidget(value)
+
+            if "Segmentation (Label " in layer.name:
+                if not labelSet:
+                    if lbl is None:
+                        widget.setStyleSheet(f"color: {foreground.name()};"
+                                             f"background-color: {background.name()};"
+                                             f"border: none")
+                        widget.setText(f"{'-'}")
+                        continue
+                    widget.setStyleSheet(f"color: {foreground.name()};"
+                                                   f"background-color: {background.name()};"
+                                                   f"border: none")
+                    widget.setText(f"{lbl}")
+                    labelSet = True
+            elif lbl is not None:
+                widget.setStyleSheet(f"color: {foreground.name()};"
+                                     f"background-color: {background.name()};"
+                                     f"border: none")
+                widget.setText(f"{lbl}")
+            else:
+                widget.setStyleSheet(f"color: {foreground.name()};"
+                                     f"background-color: {background.name()};"
+                                     f"border: none")
+                widget.setText(f"-")
 
 
 if __name__ == "__main__":

@@ -180,6 +180,18 @@ class Layer(QObject):
     def createImageSource(self, data_sources):
         raise NotImplementedError
 
+    def setValueWidget(self, value):
+        """
+        This function needs to be overwritten by every layer.
+        This function is called by QuadStatusBar.setMouseCoords. It is expected to return a tuple of information for
+        the position widgets, showing current pixelvalues of respective layer.
+        :param val: layer value at current cursor position
+        :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
+        """
+        if value is not None:
+            return self.name + str(value), QColor(255, 255, 255), QColor(0, 0, 0)
+        return None, QColor(255, 255, 255), QColor(0, 0, 0)
+
     def isDifferentEnough(self, other_layer):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
         if type(other_layer) != type(self):
@@ -422,6 +434,11 @@ class GrayscaleLayer(NormalizableLayer):
             return True
         return self._window_leveling != other_layer._window_leveling
 
+    def setValueWidget(self, value):
+        if value is not None:
+            return 'Gray:' + str(value.black()), QColor(value.black(), value.black(), value.black()), value
+        return None, QColor(255, 255, 255), QColor(0, 0, 0)
+
     def __init__(self, datasource, range=None, normalize=None, direct=False, window_leveling=False):
         assert isinstance(datasource, DataSourceABC)
         super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
@@ -454,6 +471,16 @@ class AlphaModulatedLayer(NormalizableLayer):
         if self._tintColor != c:
             self._tintColor = c
             self.tintColorChanged.emit()
+
+    def setValueWidget(self, value):
+        if value is None:
+            return None, QColor(255, 255, 255), QColor(0, 0, 0)
+        elif "Segmentation (Label " in self.name:
+            if value.getRgb() == (0,0,0,0):
+                return None, QColor(255, 255, 255), QColor(0, 0, 0)
+            return self.name[self.name.find("(") + 1:self.name.find(")")], QColor(255, 255, 255), self.tintColor
+        else:
+            return self.name + str(value.getRgb()), QColor(255, 255, 255), QColor(0, 0, 0)
 
     def __init__(self, datasource, tintColor=QColor(255, 0, 0), range=(0, 255), normalize=None):
         assert isinstance(datasource, DataSourceABC)
