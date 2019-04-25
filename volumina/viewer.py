@@ -219,19 +219,18 @@ class Viewer(QMainWindow):
         assert len(s) == 5
 
         self._dataShape = s
-        self.editor.dataShape = s
         if not self._viewerInitialized:
             self._viewerInitialized = True
-            self.viewer.init(self.editor)
+            self.volumeEditorWidget.init(self.editor)
             # make sure the data shape is correctly set
             # (some signal/slot connections may be set up in the above init)
-            self.editor.dataShape = s
-
             # FIXME: this code is broken
             # if its 2D, maximize the corresponding window
             # if len([i for i in list(self.dataShape)[1:4] if i == 1]) == 1:
             #    viewAxis = [i for i in range(1,4) if self.dataShape[i] == 1][0] - 1
-            #    self.viewer.quadview.switchMinMax(viewAxis)
+            #    self.volumeEditorWidget.quadview.switchMinMax(viewAxis)
+
+        self.editor.dataShape = s
 
     def addGrayscaleLayer(self, a, name=None, direct=False):
         source, self.dataShape = createDataSource(a, True)
