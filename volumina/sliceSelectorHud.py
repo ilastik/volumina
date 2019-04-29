@@ -796,6 +796,7 @@ class QuadStatusBar(QHBoxLayout):
         coords = [int(val) for val in [x,y,z]]
         imgView = self.editor.posModel.activeView
         blockSize = self.editor.imageViews[imgView].scene()._tileProvider.tiling.blockSize
+        sliceShape = self.editor.imageViews[imgView].scene()._tileProvider.tiling.sliceShape
         labelSet = False
 
         del coords[imgView]
@@ -807,14 +808,26 @@ class QuadStatusBar(QHBoxLayout):
             value = None
             layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
             stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
-            tile_id = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(
-                QRect(QPoint(x, y), QPoint(x, y)))[
-                0]  # There will be just one tile, since we have just a single point
+            tile_ids = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(
+                QRect(QPoint(x, y), QPoint(x, y)))
+            if tile_ids:
+                tile_id = tile_ids[0]  # There will be just one tile, since we have just a single point
+            else:
+                return
+
             with self.editor.imageViews[imgView].scene()._tileProvider._cache:
                 image = self.editor.imageViews[imgView].scene()._tileProvider._cache.layer(stack_id, layer_id,
                                                                                            tile_id)
             if image is not None:
-                value = image.pixelColor(x % blockSize, y % blockSize)
+                x_r = x % blockSize
+                y_r = y % blockSize
+
+                if x >= blockSize and x >= int(sliceShape[0]/blockSize) * blockSize:
+                    x_r = x_r + blockSize
+                if y >= blockSize and y >= int(sliceShape[1]/blockSize) * blockSize:
+                    y_r = y_r + blockSize
+
+                value = image.pixelColor(x_r, y_r)
 
             lbl, foreground, background = layer.setValueWidget(value)
 
