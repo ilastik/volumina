@@ -66,7 +66,9 @@ def _get_export_slots(layer: Layer):
         RuntimeError: will be raised if the is no dataSource that has the "dataSlot" attribute, aka
           that is a lazyflow dataSource (slot)
     """
-    sourceTags = [hasattr(l, "dataSlot") for l in layer.datasources]
+    sourceTags = [
+        hasattr(l, "dataSlot") and l.dataSlot is not None for l in layer.datasources
+    ]
     if not any(sourceTags):
         raise RuntimeError(
             "can not export from a non-lazyflow data source (layer=%r, datasource=%r)"
