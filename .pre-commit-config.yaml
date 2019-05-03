@@ -3,4 +3,6 @@ repos:
     rev: stable
     hooks:
     - id: black
-language_version: python3.6
+    args:
+    - --max-line-length=120
+language_version: python3.7
