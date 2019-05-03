@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -39,21 +37,17 @@ import logging
 from volumina.utility import log_exception, PreferencesManager
 from volumina.layer import Layer
 
+import lazyflow
+from lazyflow.request import Request
+from lazyflow.utility import PathComponents
+from lazyflow.operators import OpMultiArrayStacker
+from lazyflow.operators.ioOperators import OpFormattedDataExport
+
+
 logger = logging.getLogger(__name__)
-###
-### lazyflow
-###
-_has_lazyflow = True
-try:
-    from lazyflow.graph import Graph
-    from lazyflow.request import Request
-    from lazyflow.utility import PathComponents
-except ImportError as e:
-    exceptStr = str(e)
-    _has_lazyflow = False
 
 
-def _get_export_slots(layer: Layer):
+def _get_export_slots(layer: Layer) -> typing.List[lazyflow.slot.Slot]:
     """Returns export slots for layer
 
     Args:
@@ -81,9 +75,17 @@ def _get_export_slots(layer: Layer):
     ]
 
 
-def _get_stacked_data_sources(layer: Layer):
-    import lazyflow
+def _get_stacked_data_sources(layer: Layer) -> OpMultiArrayStacker:
+    """Get operator with stacked output from all slots of layer
 
+    Args:
+        layer (Layer): layer containing datasources that can be exported
+          (datasource.dataSlot -> Slot)
+
+    Returns:
+        OpMultiArrayStacker: Operator configured with all stackable input slots
+        from layer.
+    """
     dataSlots = _get_export_slots(layer)
 
     opStackChannels = lazyflow.operators.OpMultiArrayStacker(
@@ -104,9 +106,17 @@ def _get_stacked_data_sources(layer: Layer):
     return opStackChannels
 
 
-def get_export_operator(layer: Layer):
-    from lazyflow.operators.ioOperators import OpFormattedDataExport
+def get_export_operator(layer: Layer) -> OpFormattedDataExport:
+    """Get export operator configured with stacked output from layer
 
+    Args:
+        layer (Layer): layer containing datasources that can be exported
+          (datasource.dataSlot -> Slot)
+
+    Returns:
+        OpFormattedDataExport: Operator configured with all stackable input slots
+        from layer.
+    """
     opStackChannels = _get_stacked_data_sources(layer)
     # Create an operator to do the work
 
@@ -117,12 +127,10 @@ def get_export_operator(layer: Layer):
     return opExport
 
 
-def get_settings_and_export_layer(layer: Layer, parent_widget=None):
+def get_settings_and_export_layer(layer: Layer, parent_widget=None) -> None:
     """
     Prompt the user for layer export settings, and perform the layer export.
     """
-    if not _has_lazyflow:
-        raise RuntimeError("lazyflow not installed")
     opExport = get_export_operator(layer)
 
     export_dir = PreferencesManager().get(

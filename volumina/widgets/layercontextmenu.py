@@ -27,13 +27,25 @@ from functools import partial
 
 # Qt
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem
+from PyQt5.QtWidgets import (
+    QMenu,
+    QAction,
+    QDialog,
+    QHBoxLayout,
+    QTableWidget,
+    QSizePolicy,
+    QTableWidgetItem,
+)
 from PyQt5.QtGui import QColor
 
 # volumina
-from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
+from volumina.layer import (
+    ColortableLayer,
+    GrayscaleLayer,
+    RGBALayer,
+    ClickableColortableLayer,
+)
 from .layerDialog import GrayscaleLayerDialog, RGBALayerDialog
-from .exportHelper import get_settings_and_export_layer
 
 # ===----------------------------------------------------------------------------------------------------------------===
 
@@ -44,6 +56,7 @@ try:
     import lazyflow
 
     _has_lazyflow = True
+    from .exportHelper import get_settings_and_export_layer
 except ImportError as e:
     _has_lazyflow = False
 
@@ -104,7 +117,9 @@ def _add_actions(layer, menu):
         _add_actions_grayscalelayer(layer, menu)
     elif isinstance(layer, RGBALayer):
         _add_actions_rgbalayer(layer, menu)
-    elif isinstance(layer, ColortableLayer) or isinstance(layer, ClickableColortableLayer):
+    elif isinstance(layer, ColortableLayer) or isinstance(
+        layer, ClickableColortableLayer
+    ):
         _add_actions_colortablelayer(layer, menu)
 
 
