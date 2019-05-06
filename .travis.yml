@@ -55,4 +55,4 @@ script:
   - cd ${TEST_ENV_PREFIX}/ilastik-meta/volumina 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then xvfb-run pytest --capture=no --cov=volumina; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pytest --capture=no --cov=volumina; fi
-  - cd $TRAVIS_BUILD_DIR && git diff --name-only --diff-filter=AM master.. | grep ".*\.py" | xargs black --check --line-length=120
+  - cd $TRAVIS_BUILD_DIR && git diff --name-only --diff-filter=AM master.. | grep ".*\.py" | xargs black --check
