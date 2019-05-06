@@ -27,24 +27,11 @@ from functools import partial
 
 # Qt
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QMenu,
-    QAction,
-    QDialog,
-    QHBoxLayout,
-    QTableWidget,
-    QSizePolicy,
-    QTableWidgetItem,
-)
+from PyQt5.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem
 from PyQt5.QtGui import QColor
 
 # volumina
-from volumina.layer import (
-    ColortableLayer,
-    GrayscaleLayer,
-    RGBALayer,
-    ClickableColortableLayer,
-)
+from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
 from .layerDialog import GrayscaleLayerDialog, RGBALayerDialog
 
 # ===----------------------------------------------------------------------------------------------------------------===
@@ -56,7 +43,7 @@ try:
     import lazyflow
 
     _has_lazyflow = True
-    from .exportHelper import get_settings_and_export_layer
+    from .exportHelper import prompt_export_settings_and_export_layer
 except ImportError as e:
     _has_lazyflow = False
 
@@ -117,9 +104,7 @@ def _add_actions(layer, menu):
         _add_actions_grayscalelayer(layer, menu)
     elif isinstance(layer, RGBALayer):
         _add_actions_rgbalayer(layer, menu)
-    elif isinstance(layer, ColortableLayer) or isinstance(
-        layer, ClickableColortableLayer
-    ):
+    elif isinstance(layer, (ColortableLayer, ClickableColortableLayer)):
         _add_actions_colortablelayer(layer, menu)
 
 
@@ -142,7 +127,7 @@ def layercontextmenu(layer, pos, parent=None):
     if _has_lazyflow:
         export = QAction("Export...", menu)
         export.setStatusTip("Export Layer...")
-        export.triggered.connect(partial(get_settings_and_export_layer, layer, menu))
+        export.triggered.connect(partial(prompt_export_settings_and_export_layer, layer, menu))
         menu.addAction(export)
 
     menu.addSeparator()

@@ -51,7 +51,7 @@ def _get_export_slots(layer: Layer) -> typing.List[lazyflow.slot.Slot]:
     """Returns export slots for layer
 
     Args:
-        layer (Layer): Volumina Layer, its datasources will be checked for "dataSlot" member.
+        layer: Volumina Layer, its datasources will be checked for "dataSlot" member.
 
     Returns:
         List of slots that can be exported from layer
@@ -60,44 +60,34 @@ def _get_export_slots(layer: Layer) -> typing.List[lazyflow.slot.Slot]:
         RuntimeError: will be raised if the is no dataSource that has the "dataSlot" attribute, aka
           that is a lazyflow dataSource (slot)
     """
-    sourceTags = [
-        hasattr(l, "dataSlot") and l.dataSlot is not None for l in layer.datasources
-    ]
+    sourceTags = [getattr(src, "dataSlot", None) is not None for src in layer.datasources]
     if not any(sourceTags):
         raise RuntimeError(
-            "can not export from a non-lazyflow data source (layer=%r, datasource=%r)"
-            % (type(layer), type(layer.datasources[0]))
+            f"can not export from a non-lazyflow data source (layer={type(layer)!r}, "
+            f"datasource={type(layer.datasources[0])!r})"
         )
-    return [
-        slot.dataSlot
-        for (slot, isSlot) in zip(layer.datasources, sourceTags)
-        if isSlot is True
-    ]
+    return [slot.dataSlot for (slot, isSlot) in zip(layer.datasources, sourceTags) if isSlot]
 
 
 def _get_stacked_data_sources(layer: Layer) -> OpMultiArrayStacker:
     """Get operator with stacked output from all slots of layer
 
     Args:
-        layer (Layer): layer containing datasources that can be exported
+        layer: layer containing datasources that can be exported
           (datasource.dataSlot -> Slot)
 
     Returns:
-        OpMultiArrayStacker: Operator configured with all stackable input slots
+        OpMultiArrayStacker configured with all stackable input slots
         from layer.
     """
     dataSlots = _get_export_slots(layer)
 
-    opStackChannels = lazyflow.operators.OpMultiArrayStacker(
-        dataSlots[0].getRealOperator().parent
-    )
+    opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
     for slot in dataSlots:
-        assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (
-            type(slot)
-        )
+        assert isinstance(slot, lazyflow.graph.Slot), f"slot is of type {type(slot)!r}"
         assert isinstance(
             slot.getRealOperator(), lazyflow.graph.Operator
-        ), "slot's operator is of type %r" % (type(slot.getRealOperator()))
+        ), f"slot's operator is of type {type(slot.getRealOperator())!r}"
     opStackChannels.AxisFlag.setValue("c")
     opStackChannels.Images.resize(len(dataSlots))
     for i, islot in enumerate(opStackChannels.Images):
@@ -110,11 +100,11 @@ def get_export_operator(layer: Layer) -> OpFormattedDataExport:
     """Get export operator configured with stacked output from layer
 
     Args:
-        layer (Layer): layer containing datasources that can be exported
+        layer: layer containing datasources that can be exported
           (datasource.dataSlot -> Slot)
 
     Returns:
-        OpFormattedDataExport: Operator configured with all stackable input slots
+        OpFormattedDataExport configured with all stackable input slots
         from layer.
     """
     opStackChannels = _get_stacked_data_sources(layer)
@@ -127,15 +117,13 @@ def get_export_operator(layer: Layer) -> OpFormattedDataExport:
     return opExport
 
 
-def get_settings_and_export_layer(layer: Layer, parent_widget=None) -> None:
+def prompt_export_settings_and_export_layer(layer: Layer, parent_widget=None) -> None:
     """
     Prompt the user for layer export settings, and perform the layer export.
     """
     opExport = get_export_operator(layer)
 
-    export_dir = PreferencesManager().get(
-        "layer", "export-dir", default=os.path.expanduser("~")
-    )
+    export_dir = PreferencesManager().get("layer", "export-dir", default=os.path.expanduser("~"))
     opExport.OutputFilenameFormat.setValue(os.path.join(export_dir, layer.name))
 
     # Use this dialog to populate the operator's slot settings
@@ -191,10 +179,8 @@ class ExportHelper(QObject):
 
         def _onFail(exc, exc_info):
             log_exception(logger, "Failed to export layer.", exc_info=exc_info)
-            msg = "Failed to export layer due to the following error:\n{}".format(exc)
-            self._forwardingSignal.emit(
-                partial(QMessageBox.critical, self.parent(), "Export Failed", msg)
-            )
+            msg = f"Failed to export layer due to the following error:\n{exc}"
+            self._forwardingSignal.emit(partial(QMessageBox.critical, self.parent(), "Export Failed", msg))
             self._forwardingSignal.emit(progressDlg.setFailed)
 
         # Use a request to execute in the background
