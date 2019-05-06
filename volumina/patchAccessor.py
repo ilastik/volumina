@@ -19,9 +19,6 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from __future__ import division
-from builtins import range
-from builtins import object
 from PyQt5.QtCore import QPointF, QRectF
 
 import numpy
@@ -34,6 +31,9 @@ import numpy
 class PatchAccessor(object):
     """
     Cut a given 2D shape into patches of given rectangular size
+
+    .. note:: If the last block size is less than a third of given block size,
+    then this block will be merged with the previous one
     """
 
     def __init__(self, size_x, size_y, blockSize=128):
@@ -42,7 +42,7 @@ class PatchAccessor(object):
         blockSize        -- maximum width/height of patches
 
         Constructs a PatchAccessor that will divide the given shape
-        into patches that have a maximum given size.
+        into patches of block size.
         """
 
         self._blockSize = blockSize
@@ -94,28 +94,26 @@ class PatchAccessor(object):
         return QRectF(QPointF(startx, starty), QPointF(endx, endy))
 
     def getPatchesForRect(self, startx, starty, endx, endy):
+        """
+        Looks up patches for specified block
+        x in [startx, endx)
+        y in [starty, endy)
+        :returns: list of patch ids
+        """
         sx = int(numpy.floor(1.0 * startx / self._blockSize))
         ex = int(numpy.ceil(1.0 * endx / self._blockSize))
         sy = int(numpy.floor(1.0 * starty / self._blockSize))
         ey = int(numpy.ceil(1.0 * endy / self._blockSize))
 
         # Clip to rect bounds
-        sx = max(sx, 0)
-        sy = max(sy, 0)
         ex = min(ex, self._cX)
         ey = min(ey, self._cY)
+
+        sx = max(min(sx, ex - 1), 0)
+        sy = max(min(sy, ey - 1), 0)
 
         nums = []
         for y in range(sy, ey):
             nums += list(range(y * self._cX + sx, y * self._cX + ex))
+
         return nums
-
-
-if __name__ == "__main__":
-    pa = PatchAccessor(1000, 1000, 100)
-
-    assert pa.patchCount == 100
-    assert pa.patchRectF(0) == QRectF(0, 0, 100, 100)
-    assert pa.patchRectF(1) == QRectF(100, 0, 100, 100)
-
-    assert pa.getPatchesForRect(50, 50, 150, 150) == [0, 1, 10, 11]
