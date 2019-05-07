@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -19,11 +17,12 @@ from __future__ import absolute_import
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-# 		   http://ilastik.org/license/
+#          http://ilastik.org/license/
 ###############################################################################
 # Python
 import os
 from functools import partial
+import typing
 
 # Qt
 from PyQt5.QtCore import pyqtSignal, QObject
@@ -35,62 +34,97 @@ from .multiStepProgressDialog import MultiStepProgressDialog
 
 import logging
 
-logger = logging.getLogger(__name__)
 from volumina.utility import log_exception, PreferencesManager
+from volumina.layer import Layer
 
-###
-### lazyflow
-###
-_has_lazyflow = True
-try:
-    from lazyflow.graph import Graph
-    from lazyflow.request import Request
-    from lazyflow.utility import PathComponents
-except ImportError as e:
-    exceptStr = str(e)
-    _has_lazyflow = False
+import lazyflow
+from lazyflow.request import Request
+from lazyflow.utility import PathComponents
+from lazyflow.operators import OpMultiArrayStacker
+from lazyflow.operators.ioOperators import OpFormattedDataExport
 
 
-def get_settings_and_export_layer(layer, parent_widget=None):
+logger = logging.getLogger(__name__)
+
+
+def _get_export_slots(layer: Layer) -> typing.List[lazyflow.slot.Slot]:
+    """Returns export slots for layer
+
+    Args:
+        layer: Volumina Layer, its datasources will be checked for "dataSlot" member.
+
+    Returns:
+        List of slots that can be exported from layer
+
+    Raises:
+        RuntimeError: will be raised if the is no dataSource that has the "dataSlot" attribute, aka
+          that is a lazyflow dataSource (slot)
     """
-    Prompt the user for layer export settings, and perform the layer export.
-    """
-    sourceTags = [True for l in layer.datasources]
-    for i, source in enumerate(layer.datasources):
-        if not hasattr(source, "dataSlot"):
-            sourceTags[i] = False
+    sourceTags = [getattr(src, "dataSlot", None) is not None for src in layer.datasources]
     if not any(sourceTags):
         raise RuntimeError(
-            "can not export from a non-lazyflow data source (layer=%r, datasource=%r)"
-            % (type(layer), type(layer.datasources[0]))
+            f"can not export from a non-lazyflow data source (layer={type(layer)!r}, "
+            f"datasource={type(layer.datasources[0])!r})"
         )
+    return [slot.dataSlot for (slot, isSlot) in zip(layer.datasources, sourceTags) if isSlot]
 
-    if not _has_lazyflow:
-        raise RuntimeError("lazyflow not installed")
-    import lazyflow
 
-    dataSlots = [slot.dataSlot for (slot, isSlot) in zip(layer.datasources, sourceTags) if isSlot is True]
+def _get_stacked_data_sources(layer: Layer) -> OpMultiArrayStacker:
+    """Get operator with stacked output from all slots of layer
+
+    Args:
+        layer: layer containing datasources that can be exported
+          (datasource.dataSlot -> Slot)
+
+    Returns:
+        OpMultiArrayStacker configured with all stackable input slots
+        from layer.
+    """
+    dataSlots = _get_export_slots(layer)
 
     opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
     for slot in dataSlots:
-        assert isinstance(slot, lazyflow.graph.Slot), "slot is of type %r" % (type(slot))
-        assert isinstance(slot.getRealOperator(), lazyflow.graph.Operator), "slot's operator is of type %r" % (
-            type(slot.getRealOperator())
-        )
+        assert isinstance(slot, lazyflow.graph.Slot), f"slot is of type {type(slot)!r}"
+        assert isinstance(
+            slot.getRealOperator(), lazyflow.graph.Operator
+        ), f"slot's operator is of type {type(slot.getRealOperator())!r}"
     opStackChannels.AxisFlag.setValue("c")
     opStackChannels.Images.resize(len(dataSlots))
     for i, islot in enumerate(opStackChannels.Images):
         islot.connect(dataSlots[i])
 
-    export_dir = PreferencesManager().get("layer", "export-dir", default=os.path.expanduser("~"))
+    return opStackChannels
 
+
+def get_export_operator(layer: Layer) -> OpFormattedDataExport:
+    """Get export operator configured with stacked output from layer
+
+    Args:
+        layer: layer containing datasources that can be exported
+          (datasource.dataSlot -> Slot)
+
+    Returns:
+        OpFormattedDataExport configured with all stackable input slots
+        from layer.
+    """
+    opStackChannels = _get_stacked_data_sources(layer)
     # Create an operator to do the work
-    from lazyflow.operators.ioOperators import OpFormattedDataExport
 
     opExport = OpFormattedDataExport(parent=opStackChannels.parent)
-    opExport.OutputFilenameFormat.setValue(os.path.join(export_dir, layer.name))
     opExport.Input.connect(opStackChannels.Output)
     opExport.TransactionSlot.setValue(True)
+
+    return opExport
+
+
+def prompt_export_settings_and_export_layer(layer: Layer, parent_widget=None) -> None:
+    """
+    Prompt the user for layer export settings, and perform the layer export.
+    """
+    opExport = get_export_operator(layer)
+
+    export_dir = PreferencesManager().get("layer", "export-dir", default=os.path.expanduser("~"))
+    opExport.OutputFilenameFormat.setValue(os.path.join(export_dir, layer.name))
 
     # Use this dialog to populate the operator's slot settings
     settingsDlg = DataExportOptionsDlg(parent_widget, opExport)
@@ -145,7 +179,7 @@ class ExportHelper(QObject):
 
         def _onFail(exc, exc_info):
             log_exception(logger, "Failed to export layer.", exc_info=exc_info)
-            msg = "Failed to export layer due to the following error:\n{}".format(exc)
+            msg = f"Failed to export layer due to the following error:\n{exc}"
             self._forwardingSignal.emit(partial(QMessageBox.critical, self.parent(), "Export Failed", msg))
             self._forwardingSignal.emit(progressDlg.setFailed)
 
