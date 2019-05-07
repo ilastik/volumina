@@ -139,7 +139,6 @@ def prompt_export_settings_and_export_layer(layer: Layer, parent_widget=None) ->
 
     # Clean up our temporary operators
     opExport.cleanUp()
-    opStackChannels.cleanUp()
 
 
 class ExportHelper(QObject):
