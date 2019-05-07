@@ -28,13 +28,7 @@ from past.utils import old_div
 import logging
 import time
 import warnings
-
-
-try:
-    import volumina
-    from volumina.colorama import Fore, Back, Style
-except:
-    from colorama import Fore, Back, Style
+import functools
 
 
 from PyQt5.QtCore import QObject, QRect, pyqtSignal, QMutex
@@ -42,7 +36,7 @@ from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
 from .asyncabcs import SourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
-from volumina.config import cfg
+from volumina.config import CONFIG
 from volumina.utility import execute_in_main_thread
 import numpy as np
 
@@ -51,6 +45,28 @@ try:
     import vigra
 except ImportError:
     _has_vigra = False
+
+
+logger = logging.getLogger(__name__)
+
+
+def log_request(func):
+    @functools.wraps(func)
+    def _log_request(source: "ImageSource", qrect, *args, **kwargs):
+        if CONFIG.verbose_pixelpipeline:
+            logger.error(
+                "%s '%s' requests (x=%d, y=%d, w=%d, h=%d)",
+                type(source).__qualname__,
+                source.objectName(),
+                qrect.x(),
+                qrect.y(),
+                qrect.width(),
+                qrect.height(),
+            )
+        return func(source, qrect, *args, **kwargs)
+
+    return _log_request
+
 
 # *******************************************************************************
 # I m a g e S o u r c e                                                        *
@@ -139,17 +155,8 @@ class GrayscaleImageSource(ImageSource):
         if hasattr(self._layer, "normalizeChanged"):
             self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None, None), slice(None, None))))
 
+    @log_request
     def request(self, qrect, along_through=None):
-        if cfg.getboolean("pixelpipeline", "verbose"):
-            volumina.printLock.acquire()
-            print(
-                Fore.RED
-                + "  GrayscaleImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)"
-                % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height())
-                + Fore.RESET
-            )
-            volumina.printLock.release()
-
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s, along_through)
@@ -258,17 +265,8 @@ class AlphaModulatedImageSource(ImageSource):
 
         self._arraySource2D.isDirty.connect(self.setDirty)
 
+    @log_request
     def request(self, qrect, along_through=None):
-        if cfg.getboolean("pixelpipeline", "verbose"):
-            volumina.printLock.acquire()
-            print(
-                Fore.RED
-                + "  AlphaModulatedImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)"
-                % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height())
-                + Fore.RESET
-            )
-            volumina.printLock.release()
-
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s, along_through)
@@ -386,17 +384,8 @@ class ColortableImageSource(ImageSource):
 
         self.isDirty.emit(QRect())  # empty rect == everything is dirty
 
+    @log_request
     def request(self, qrect, along_through=None):
-        if cfg.getboolean("pixelpipeline", "verbose"):
-            volumina.printLock.acquire()
-            print(
-                Fore.RED
-                + "  ColortableImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d) = %r"
-                % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height(), rect2slicing(qrect))
-                + Fore.RESET
-            )
-            volumina.printLock.release()
-
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         req = self._arraySource2D.request(s, along_through)
@@ -557,17 +546,8 @@ class RGBAImageSource(ImageSource):
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)
 
+    @log_request
     def request(self, qrect, along_through=None):
-        if cfg.getboolean("pixelpipeline", "verbose"):
-            volumina.printLock.acquire()
-            print(
-                Fore.RED
-                + "  RGBAImageSource '%s' requests (x=%d, y=%d, w=%d, h=%d)"
-                % (self.objectName(), qrect.x(), qrect.y(), qrect.width(), qrect.height())
-                + Fore.RESET
-            )
-            volumina.printLock.release()
-
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
         r = self._channels[0].request(s, along_through)
