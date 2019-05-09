@@ -1,52 +1,55 @@
 language: generic
-os:
-  - linux
-  - osx
+
 env:
   global:
     - CONDA_ROOT=$HOME/miniconda
     - TEST_ENV=test-env
     - TEST_ENV_PREFIX=$CONDA_ROOT/envs/$TEST_ENV
-
+    - secure: XfurIBq0z+fiU8cRDdJB/ittCMZAmsOQHjeEVHIvAaJHEYthvqxMQURzP/+UiZ6Xn0ToDfFRm7CW0MDaYZvN7qX/MxVY7MhFtgFSk3YYOGDKeY7ODQuKMPsfiQPL+16AQB4OVO9ITiIgJSMlvitN0lfgZb4TXvcmZW0mfBAoNHc=
 cache:
   directories:
     - CONDA_ROOT
 
+# Default test stage, not in jobs, since multiple osses seem not to be supported there
+os:
+  - linux
+  - osx
+
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export MINICONDA=https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export MINICONDA=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh; fi
-  - echo $CONDA_ROOT
-  - echo $TEST_ENV
-  - echo $TEST_ENV_PREFIX
-  - if [[ ! -d ${CONDA_ROOT} ]]; then
-      echo "Installing Miniconda...";
-      wget $MINICONDA -O miniconda.sh &&
-      bash miniconda.sh -b -p ${CONDA_ROOT};
-    else
-      echo "Using cached Miniconda install";
-    fi
-  - echo ". $CONDA_ROOT/etc/profile.d/conda.sh" >> ~/.bashrc
-  - source ~/.bashrc
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export MINICONDA=https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export MINICONDA=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh; fi
+- echo $CONDA_ROOT
+- echo $TEST_ENV
+- echo $TEST_ENV_PREFIX
+- if [[ ! -d ${CONDA_ROOT} ]]; then
+    echo "Installing Miniconda...";
+    wget $MINICONDA -O miniconda.sh &&
+    bash miniconda.sh -b -p ${CONDA_ROOT};
+  else
+    echo "Using cached Miniconda install";
+  fi
+- echo ". $CONDA_ROOT/etc/profile.d/conda.sh" >> ~/.bashrc
+- source ~/.bashrc
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
 
-  # Useful for debugging any issues with conda
-  # - conda info -a
+# Useful for debugging any issues with conda
+# - conda info -a
 
-  - if [[ ! -d $TEST_ENV_PREFIX ]]; then
-      conda create -q -n $TEST_ENV -c ilastik-forge -c conda-forge ilastik-dependencies-no-solvers flake8 pytest-cov coveralls black;
-    else
-      conda install -y -n ${TEST_ENV} -c ilastik-forge -c conda-forge ilastik-dependencies-no-solvers flake8 pytest-cov coveralls black;
-    fi
-  # remove installed ilastik
-  - rm -rf ${TEST_ENV_PREFIX}/ilastik-meta
-  # install current master
-  - git clone http://github.com/ilastik/ilastik-meta ${TEST_ENV_PREFIX}/ilastik-meta
-  - cd ${TEST_ENV_PREFIX}/ilastik-meta && git submodule init && git submodule update --recursive && git submodule foreach "git checkout master"
-  - rm -rf ${TEST_ENV_PREFIX}/ilastik-meta/volumina
-  - ln -s $TRAVIS_BUILD_DIR ${TEST_ENV_PREFIX}/ilastik-meta/volumina
+- if [[ ! -d $TEST_ENV_PREFIX ]]; then
+    conda create -q -n $TEST_ENV -c ilastik-forge -c conda-forge ilastik-dependencies-no-solvers flake8 pytest-cov coveralls black;
+  else
+    conda install -y -n ${TEST_ENV} -c ilastik-forge -c conda-forge ilastik-dependencies-no-solvers flake8 pytest-cov coveralls black;
+  fi
+# remove installed ilastik
+- rm -rf ${TEST_ENV_PREFIX}/ilastik-meta
+# install current master
+- git clone http://github.com/ilastik/ilastik-meta ${TEST_ENV_PREFIX}/ilastik-meta
+- cd ${TEST_ENV_PREFIX}/ilastik-meta && git submodule init && git submodule update --recursive && git submodule foreach "git checkout master"
+- rm -rf ${TEST_ENV_PREFIX}/ilastik-meta/volumina
+- ln -s $TRAVIS_BUILD_DIR ${TEST_ENV_PREFIX}/ilastik-meta/volumina
 
 script:
   - conda activate $TEST_ENV
@@ -56,3 +59,52 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then xvfb-run pytest --capture=no --cov=volumina; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pytest --capture=no --cov=volumina; fi
   - cd $TRAVIS_BUILD_DIR && git diff --name-only --diff-filter=AM master.. | grep ".*\.py" | xargs black --check
+
+
+
+jobs:
+  include:
+    - stage: deploy
+      os:
+        - linux
+      on:
+        branch: test
+        condition: $TRAVIS_OS_NAME = "linux"
+      name: "Deploy github pages"
+      install:
+        - sudo apt-get update
+        - export MINICONDA=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+        - echo $CONDA_ROOT
+        - if [[ ! -d ${CONDA_ROOT} ]]; then
+            echo "Installing Miniconda...";
+            wget $MINICONDA -O miniconda.sh &&
+            bash miniconda.sh -b -p ${CONDA_ROOT};
+          else
+            echo "Using cached Miniconda install";
+          fi
+        - echo ". $CONDA_ROOT/etc/profile.d/conda.sh" >> ~/.bashrc
+        - source ~/.bashrc
+        - conda config --set always_yes yes --set changeps1 no
+        - conda update -q conda
+        - if [[ ! -d deploy ]]; then
+            conda create -q -n deploy -c ilastik-forge -c conda-forge ilastik-dependencies-no-solvers sphinx;
+          else
+            conda install -y -n deploy -c ilastik-forge -c conda-forge ilastik-dependencies-no-solvers sphinx;
+          fi
+      script:
+        - conda activate deploy
+        - cd docs
+        - make html
+        - touch _build/html/.nojekyll
+        - echo `pwd`
+        - ls
+      deploy:
+        provider: pages
+        on:
+          branch: test
+        local_dir: docs/_build/html
+        name: ilastik-bot
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+        keep_history: true
+
