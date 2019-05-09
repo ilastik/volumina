@@ -10,25 +10,10 @@ from volumina.pixelpipeline import datasources as ds
 @pytest.fixture
 def lazyflow_op():
     graph = pytest.importorskip("lazyflow.graph")
-
-    class OpPiper(graph.Operator):
-
-        Input = graph.InputSlot()
-        Output = graph.OutputSlot()
-
-        def setupOutputs(self):
-            self.outputs["Output"].meta.assignFrom(self.inputs["Input"].meta)
-            self.outputs["Output"].connect(self.inputs["Input"])
-
-        def execute(self, slot, subindex, roi, result):
-            result[:] = self.outputs["Output"](roi).wait()
-            return result
-
-        def propagateDirty(self, inputSlot, subindex, roi):
-            self.Output.setDirty(roi)
+    operators = pytest.importorskip("lazyflow.operators.operators")
 
     g = graph.Graph()
-    op = OpPiper(graph=g)
+    op = operators.OpArrayPiper(graph=g)
 
     return op
 
@@ -38,21 +23,40 @@ def vigra():
     return pytest.importorskip("vigra")
 
 
-@pytest.mark.parametrize("ndims", range(2, 6))
-def test_lazyflow_factory(lazyflow_op, vigra, ndims):
-    shape = (10,) * ndims
+def select(dct, keys):
+    return tuple(dct[k] for k in keys)
 
-    array = rand(*shape).view(vigra.VigraArray)
-    array.axistags = vigra.defaultAxistags("txyzc"[:ndims])
-    lazyflow_op.inputs["Input"].setValue(array)
+
+DIMS = {
+    't': 2,
+    'c': 3,
+    'z': 10,
+    'x': 32,
+    'y': 64,
+}
+
+
+@pytest.mark.parametrize("dims,expected_shape", [
+    [('x', 'y'), (1, DIMS['x'], DIMS['y'], 1, 1)],
+    [('x', 'y', 'z'), (1, DIMS['x'], DIMS['y'], DIMS['z'], 1)],
+    [('c', 'x', 'y', 'z'), (1, DIMS['x'], DIMS['y'], DIMS['z'], DIMS['c'])],
+    [('t', 'c', 'x', 'y', 'z'), (DIMS['t'], DIMS['x'], DIMS['y'], DIMS['z'], DIMS['c'])],
+])
+def test_lazyflow_factory(lazyflow_op, vigra, dims, expected_shape):
+    shape = select(DIMS, dims)
+    len_ = np.product(shape)
+
+    array = np.array(range(len_)).reshape(shape).view(vigra.VigraArray)
+    array.axistags = vigra.defaultAxistags(''.join(dims))
+    lazyflow_op.Input.setValue(array)
 
     src = factories.createDataSource(lazyflow_op.Input)
     assert isinstance(src, ds.LazyflowSource)
-    assert np.squeeze(np.ndarray(src._op5.Output.meta.shape)).shape == array.shape
+    assert src._op5.Output.meta.shape == expected_shape
 
     outsrc = factories.createDataSource(lazyflow_op.Output)
     assert isinstance(outsrc, ds.LazyflowSource)
-    assert np.squeeze(np.ndarray(outsrc._op5.Output.meta.shape)).shape == array.shape
+    assert outsrc._op5.Output.meta.shape == expected_shape
 
 
 @pytest.mark.parametrize("ndims", range(2, 6))
