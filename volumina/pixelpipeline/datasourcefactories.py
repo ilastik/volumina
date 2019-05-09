@@ -122,8 +122,6 @@ if hasH5py:
             self.shape, self.real_axes = normalize_shape(dset.shape)
             self.dset = dset
             self.dtype = dset.dtype
-            self.shape = shape_5d
-            self.real_axes = real_axes
 
         def __getitem__(self, slicing_5d):
             real_slicing = tuple(slicing_5d[i] for i in self.real_axes)
