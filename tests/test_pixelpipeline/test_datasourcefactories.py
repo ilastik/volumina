@@ -27,27 +27,46 @@ def select(dct, keys):
     return tuple(dct[k] for k in keys)
 
 
-DIMS = {
-    't': 2,
-    'c': 3,
-    'z': 10,
-    'x': 32,
-    'y': 64,
-}
+@pytest.fixture(params=["h5py", "numpy"])
+def make_source(request):
+    if request.param == "h5py":
+        h5py = pytest.importorskip("h5py")
+
+        def _make_source(shape):
+            f = h5py.File("file", driver="core", backing_store=False)
+            data = f.create_dataset("ds", shape)
+            data[:] = rand(*shape)
+            return data
+
+    if request.param == "numpy":
+
+        def _make_source(shape):
+            return rand(*shape)
+
+    return _make_source
 
 
-@pytest.mark.parametrize("dims,expected_shape", [
-    [('x', 'y'), (1, DIMS['x'], DIMS['y'], 1, 1)],
-    [('x', 'y', 'z'), (1, DIMS['x'], DIMS['y'], DIMS['z'], 1)],
-    [('c', 'x', 'y', 'z'), (1, DIMS['x'], DIMS['y'], DIMS['z'], DIMS['c'])],
-    [('t', 'c', 'x', 'y', 'z'), (DIMS['t'], DIMS['x'], DIMS['y'], DIMS['z'], DIMS['c'])],
-])
+DIMS = {"t": 2, "c": 3, "z": 10, "x": 32, "y": 64}
+
+
+@pytest.mark.parametrize(
+    "dims,expected_shape",
+    [
+        [("x", "y"), (1, DIMS["x"], DIMS["y"], 1, 1)],
+        [("x", "y", "z"), (1, DIMS["x"], DIMS["y"], DIMS["z"], 1)],
+        [("c", "x", "y", "z"), (1, DIMS["x"], DIMS["y"], DIMS["z"], DIMS["c"])],
+        [
+            ("t", "c", "x", "y", "z"),
+            (DIMS["t"], DIMS["x"], DIMS["y"], DIMS["z"], DIMS["c"]),
+        ],
+    ],
+)
 def test_lazyflow_factory(lazyflow_op, vigra, dims, expected_shape):
     shape = select(DIMS, dims)
     len_ = np.product(shape)
 
     array = np.array(range(len_)).reshape(shape).view(vigra.VigraArray)
-    array.axistags = vigra.defaultAxistags(''.join(dims))
+    array.axistags = vigra.defaultAxistags("".join(dims))
     lazyflow_op.Input.setValue(array)
 
     src = factories.createDataSource(lazyflow_op.Input)
@@ -57,15 +76,6 @@ def test_lazyflow_factory(lazyflow_op, vigra, dims, expected_shape):
     outsrc = factories.createDataSource(lazyflow_op.Output)
     assert isinstance(outsrc, ds.LazyflowSource)
     assert outsrc._op5.Output.meta.shape == expected_shape
-
-
-@pytest.mark.parametrize("ndims", range(2, 6))
-def test_numpy_factory(ndims):
-    shape = (10,) * ndims
-    array = rand(*shape)
-    source = factories.createDataSource(array)
-    assert isinstance(source, ds.ArraySource)
-    assert np.squeeze(np.ndarray(source._array.shape)).shape == array.shape
 
 
 @pytest.mark.parametrize(
@@ -78,8 +88,8 @@ def test_numpy_factory(ndims):
         ((9, 3, 5, 6, 7), (9, 3, 5, 6, 7)),
     ],
 )
-def test_shapes(shape, expected_shape):
-    array = rand(*shape)
+def test_shapes(make_source, shape, expected_shape):
+    array = make_source(shape)
     source, shape = factories.createDataSource(array, True)
     assert isinstance(source, ds.ArraySource)
     assert np.squeeze(np.ndarray(source._array.shape)).shape == array.shape
