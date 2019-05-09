@@ -49,7 +49,7 @@ except ImportError:
 
 @singledispatch
 def createDataSource(source, withShape=False):
-    raise NotImplementedError("createDataSource for %s" % type(source).__qualname__)
+    raise NotImplementedError(f"createDataSource for {type(source)}")
 
 
 def normalize_shape(shape):

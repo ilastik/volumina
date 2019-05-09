@@ -55,10 +55,7 @@ DIMS = {"t": 2, "c": 3, "z": 10, "x": 32, "y": 64}
         [("x", "y"), (1, DIMS["x"], DIMS["y"], 1, 1)],
         [("x", "y", "z"), (1, DIMS["x"], DIMS["y"], DIMS["z"], 1)],
         [("c", "x", "y", "z"), (1, DIMS["x"], DIMS["y"], DIMS["z"], DIMS["c"])],
-        [
-            ("t", "c", "x", "y", "z"),
-            (DIMS["t"], DIMS["x"], DIMS["y"], DIMS["z"], DIMS["c"]),
-        ],
+        [("t", "c", "x", "y", "z"), (DIMS["t"], DIMS["x"], DIMS["y"], DIMS["z"], DIMS["c"])],
     ],
 )
 def test_lazyflow_factory(lazyflow_op, vigra, dims, expected_shape):
