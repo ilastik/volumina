@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 import numpy as np
 
@@ -23,8 +25,8 @@ def vigra():
     return pytest.importorskip("vigra")
 
 
-def select(dct, keys):
-    return tuple(dct[k] for k in keys)
+def select(dims, keys):
+    return tuple(getattr(dims, k) for k in keys)
 
 
 @pytest.fixture(params=["h5py", "numpy"])
@@ -46,19 +48,19 @@ def make_source(request):
     return _make_source
 
 
-DIMS = {"t": 2, "c": 3, "z": 10, "x": 32, "y": 64}
+DIMS = SimpleNamespace(t=2, c=3, z=10, x=32, y=64)
 
 
 @pytest.mark.parametrize(
     "dims,expected_shape",
     [
-        [("x", "y"), (1, DIMS["x"], DIMS["y"], 1, 1)],
-        [("x", "y", "z"), (1, DIMS["x"], DIMS["y"], DIMS["z"], 1)],
-        [("c", "x", "y", "z"), (1, DIMS["x"], DIMS["y"], DIMS["z"], DIMS["c"])],
-        [("t", "c", "x", "y", "z"), (DIMS["t"], DIMS["x"], DIMS["y"], DIMS["z"], DIMS["c"])],
+        ["xy", (1, DIMS.x, DIMS.y, 1, 1)],
+        ["xyz", (1, DIMS.x, DIMS.y, DIMS.z, 1)],
+        ["cxyz", (1, DIMS.x, DIMS.y, DIMS.z, DIMS.c)],
+        ["tcxyz", (DIMS.t, DIMS.x, DIMS.y, DIMS.z, DIMS.c)],
     ],
 )
-def test_lazyflow_factory(lazyflow_op, vigra, dims, expected_shape):
+def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shape):
     shape = select(DIMS, dims)
     len_ = np.product(shape)
 
@@ -78,14 +80,18 @@ def test_lazyflow_factory(lazyflow_op, vigra, dims, expected_shape):
 @pytest.mark.parametrize(
     "shape,expected_shape",
     [
-        ((3, 5), (1, 3, 5, 1, 1)),
-        ((3, 5, 3), (1, 3, 5, 1, 3)),  # xyc see datasourcefactories normalize_shape
-        ((3, 5, 6), (1, 3, 5, 6, 1)),  # xyz
-        ((3, 5, 6, 7), (1, 3, 5, 6, 7)),
-        ((9, 3, 5, 6, 7), (9, 3, 5, 6, 7)),
+        ((3, 5), (1, 3, 5, 1, 1)),  # xy
+        # For if shape if 3D and last element is <= 4 then we should guess that it's a channel dimension
+        ((3, 5, 2), (1, 3, 5, 1, 2)),  # xyc
+        ((3, 5, 3), (1, 3, 5, 1, 3)),  # xyc
+        ((3, 5, 4), (1, 3, 5, 1, 4)),  # xyc
+        # Now we are done with channels and continue with z dimension
+        ((3, 7, 5), (1, 3, 7, 5, 1)),  # xyz
+        ((3, 5, 6, 7), (1, 3, 5, 6, 7)),  # xyzc
+        ((9, 3, 5, 6, 7), (9, 3, 5, 6, 7)),  # txyzc
     ],
 )
-def test_shapes(make_source, shape, expected_shape):
+def test_array_untagged_shape_embedding(make_source, shape, expected_shape):
     array = make_source(shape)
     source, shape = factories.createDataSource(array, True)
     assert isinstance(source, ds.ArraySource)
