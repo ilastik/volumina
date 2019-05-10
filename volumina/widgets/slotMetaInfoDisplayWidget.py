@@ -47,14 +47,14 @@ class SlotMetaInfoDisplayWidget(QWidget):
     def _refresh(self, *args):
         shape = axes = dtype = ""
         if self._slot.ready():
-            shape = tuple(self._slot.meta.getOriginalShape())
+            shape = str(tuple(self._slot.meta.getOriginalShape()))
             axes = "".join(self._slot.meta.getOriginalAxisKeys())
             dtype = self._slot.meta.dtype.__name__
         self._do_refresh(shape, axes, dtype)
 
     def _do_refresh(self, shape, axes, dtype):
         if not sip.isdeleted(self.shapeEdit):
-            self.shapeEdit.setText(str(shape))
+            self.shapeEdit.setText(shape)
             self.axisOrderEdit.setText(axes)
             self.dtypeEdit.setText(dtype)
 
@@ -62,7 +62,7 @@ class OutputSlotMetaInfoDisplayWidget(SlotMetaInfoDisplayWidget):
     def _refresh(self, *args):
         shape = axes = dtype = ""
         if self._slot.ready():
-            shape = tuple(self._slot.meta.shape)
+            shape = str(tuple(self._slot.meta.shape))
             axes = "".join(self._slot.meta.getAxisKeys())
             dtype = self._slot.meta.dtype.__name__
         self._do_refresh(shape, axes, dtype)
