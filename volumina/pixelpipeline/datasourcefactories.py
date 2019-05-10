@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -22,8 +20,10 @@ from __future__ import absolute_import
 # 		   http://ilastik.org/license/
 ###############################################################################
 from functools import singledispatch
-from .datasources import ArraySource
+
 import numpy
+
+from .datasources import ArraySource
 
 hasLazyflow = True
 try:
@@ -49,28 +49,32 @@ except ImportError:
 
 @singledispatch
 def createDataSource(source, withShape=False):
+    """
+    Creates datasource based on type of supplied argument
+    Resulting souce will have following dimensions: txyzc
+    """
     raise NotImplementedError(f"createDataSource for {type(source)}")
 
 
 def normalize_shape(shape):
     """
-    :returns: Normalized shape and position of real axes
+    :returns: Normalized shape and position of real axes to "txyzc" axes order
     """
     # xy
     if len(shape) == 2:
-        return (1,) + shape + (1, 1), (1, 2)
+        return (1, shape[0], shape[1], 1, 1), (1, 2)
 
     # xyc shape[2] <= 4 implies that it's a channel dimension
     elif len(shape) == 3 and shape[2] <= 4:
-        return (1,) + shape[0:2] + (1, shape[2]), (1, 2, 4)
+        return (1, shape[0], shape[1], 1, shape[2]), (1, 2, 4)
 
     # xyz
     elif len(shape) == 3:
-        return (1,) + shape + (1,), (1, 2, 3)
+        return (1, shape[0], shape[1], shape[2], 1), (1, 2, 3)
 
     # xyzc
     elif len(shape) == 4:
-        return (1,) + shape, (1, 2, 3, 4)
+        return (1, shape[0], shape[1], shape[2], shape[3]), (1, 2, 3, 4)
 
     # txyzc
     elif len(shape) == 5:

@@ -65,7 +65,7 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
     len_ = np.product(shape)
 
     array = np.array(range(len_)).reshape(shape).view(vigra.VigraArray)
-    array.axistags = vigra.defaultAxistags("".join(dims))
+    array.axistags = vigra.defaultAxistags(dims)
     lazyflow_op.Input.setValue(array)
 
     src = factories.createDataSource(lazyflow_op.Input)
@@ -92,8 +92,18 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
     ],
 )
 def test_array_untagged_shape_embedding(make_source, shape, expected_shape):
+    def _mid_point(_shape):
+        for d in _shape:
+            mid = d // 2
+            yield slice(mid, mid + 1)
+
     array = make_source(shape)
-    source, shape = factories.createDataSource(array, True)
+    mid_point = tuple(_mid_point(shape))
+
+    source, src_shape = factories.createDataSource(array, True)
+    src_mid_point = tuple(_mid_point(src_shape))
+
     assert isinstance(source, ds.ArraySource)
     assert np.squeeze(np.ndarray(source._array.shape)).shape == array.shape
-    assert shape == expected_shape
+    assert src_shape == expected_shape
+    assert array[mid_point] == source.request(src_mid_point).wait()
