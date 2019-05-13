@@ -32,7 +32,7 @@ class SlotMetaInfoDisplayWidget(QWidget):
     """
 
     def __init__(self, parent):
-        super(SlotMetaInfoDisplayWidget, self).__init__(parent)
+        super().__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
         self._slot = None
 
@@ -42,6 +42,7 @@ class SlotMetaInfoDisplayWidget(QWidget):
                 self._slot.unregisterMetaChanged(self._refresh)
             self._slot = slot
             slot.notifyMetaChanged(self._refresh)
+            #slot.notifyReady(self._refresh)
         self._refresh()
 
     def _refresh(self, *args):
@@ -53,10 +54,10 @@ class SlotMetaInfoDisplayWidget(QWidget):
         self._do_refresh(shape, axes, dtype)
 
     def _do_refresh(self, shape, axes, dtype):
-        if not sip.isdeleted(self.shapeEdit):
-            self.shapeEdit.setText(shape)
-            self.axisOrderEdit.setText(axes)
-            self.dtypeEdit.setText(dtype)
+        if not sip.isdeleted(self.shapeDisplay):
+            self.shapeDisplay.setText(shape)
+            self.axisOrderDisplay.setText(axes)
+            self.dtypeDisplay.setText(dtype)
 
 class OutputSlotMetaInfoDisplayWidget(SlotMetaInfoDisplayWidget):
     def _refresh(self, *args):
@@ -66,22 +67,3 @@ class OutputSlotMetaInfoDisplayWidget(SlotMetaInfoDisplayWidget):
             axes = "".join(self._slot.meta.getAxisKeys())
             dtype = self._slot.meta.dtype.__name__
         self._do_refresh(shape, axes, dtype)
-
-if __name__ == "__main__":
-    import numpy
-    import vigra
-    from PyQt5.QtWidgets import QApplication
-    from lazyflow.graph import Graph
-    from lazyflow.operators import OpArrayCache
-
-    data = numpy.zeros((10, 20, 30, 3), dtype=numpy.float32)
-    data = vigra.taggedView(data, "zyxc")
-
-    op = OpArrayCache(graph=Graph())
-    op.Input.setValue(data)
-
-    app = QApplication([])
-    w = SlotMetaInfoDisplayWidget(None)
-    w.initSlot(op.Output)
-    w.show()
-    app.exec_()
