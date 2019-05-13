@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>2.1. Pixel pipeline &#8212; volumina 1.2 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="2. Low-level" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="index.html" title="2. Low-level"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">volumina 1.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">2. Low-level</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pixel-pipeline">
+<h1>2.1. Pixel pipeline<a class="headerlink" href="#pixel-pipeline" title="Permalink to this headline">¶</a></h1>
+<div class="figure align-center" id="id1">
+<span id="fig-pixelpipeline"></span><a class="reference internal image-reference" href="../_images/pixelpipeline.png"><img alt="pixel pipeline class interaction diagram" src="../_images/pixelpipeline.png" style="width: 640px;" /></a>
+<p class="caption"><span class="caption-text">Pixel pipeline architecture.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<p>The pixel rendering pipeline or short <em>pixel pipeline</em> renders 2d
+bitmap images from several multidimensional scalar data sources. It
+can produces several kinds of images, amongst others: grayscale, rgba,
+alpha-modulated, and colortable images. Each image type needs up to
+four scalar data sources as input, for example one source for each
+channel (red, green, blue, and alpha) in case of a rgba image.</p>
+<p>Furthermore, these images can be combined into a stack using alpha
+blending with an image of the rendered stack as output. A schematic of
+the pixel pipeline architecture is shown in the
+<a class="reference internal" href="#fig-pixelpipeline"><span class="std std-ref">above Figure</span></a>. The visual properties of one image are contained
+in a <em>layer</em> object and a ordered stack of layers is organized in a
+<em>LayerStack</em>. They serve as a rendering blueprint used in <em>image
+pumps</em>. A image pump takes the blueprint together with the data
+sources and renders a 2d image. Internally, a image pump consists of
+subcomponents that take care of slicing through the correct axes of
+the multidimensional data sources and the blending of several layers
+into a stack image. Furthermore, several image pumps can be connected
+to the same layer stack and data sources allowing to render different
+slice views simultaneously.</p>
+<p>The pixel pipeline is a lazy data flow processing pipeline, that is,
+subregions of images can be requested from the pipeline and only the
+calculations necessary to complete the request are actually performed.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">2. Low-level</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/ll/pixelpipeline.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="index.html" title="2. Low-level"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">volumina 1.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >2. Low-level</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013, Bernhard X. Kausler, Thorben Kröger, Stuart Berg.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.0.1.
+    </div>
+  </body>
+</html>

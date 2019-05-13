@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Volumina 1.x documentation &#8212; volumina 1.2 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="1. High-level" href="hl/index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="hl/index.html" title="1. High-level"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">volumina 1.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="volumina-1-x-documentation">
+<h1>Volumina 1.x documentation<a class="headerlink" href="#volumina-1-x-documentation" title="Permalink to this headline">¶</a></h1>
+<p>The <em>volumina</em> library is concerned with displaying slice views of high
+dimensional image data and user interactions with the slice views. It is
+written in <a class="reference external" href="http://python.org/">Python</a> and makes heavy use of the
+<a class="reference external" href="https://qt-project.org/">Qt</a>
+graphical user interface library. <em>volumina</em> implements the following features:</p>
+<ul class="simple">
+<li><p>handling of data larger than main memory employing tile-based
+streaming</p></li>
+<li><p>support for 3d+t volumes with multiple channels and various numeric datatypes</p></li>
+<li><p>display of several volumes simultaneously rendered as a stack of layers</p></li>
+<li><p>slice views of any axes pair like x-y or z-time</p></li>
+<li><p>interaction modes like brushing labels or selecting objects</p></li>
+<li><p>ready-to-use viewer widgets</p></li>
+</ul>
+<p>The library is structured into a low level and high level part. The
+low level part consists of a collection of loosely coupled classes
+which can be combined to design a variety of systems
+for slicing and editing multidimensional volumetric data. Besides
+others the central low level components are the <em>pixel rendering
+pipeline</em> (see: <a class="reference internal" href="ll/pixelpipeline.html"><span class="doc">Pixel pipeline</span></a>)  and the <em>interaction modes</em>
+(see: <a class="reference internal" href="hl/interactionmodes.html"><span class="doc">Interaction modes</span></a>). The design of these components is
+governed by the Observer and Model-View-Controller design
+patterns. The high level part builds upon the low level components and
+provides ready-to-use classes and widgets to be used in other applications; with the
+<em>volume editor</em> (see: <a class="reference internal" href="hl/volumeeditor.html"><span class="doc">Volume editor</span></a>) being the most important one.</p>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hl/index.html">1. High-level</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hl/volumeeditor.html">1.1. Volume editor</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hl/volumeeditor.html#code-example">1.1.1. Code example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hl/interactionmodes.html">1.2. Interaction modes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ll/index.html">2. Low-level</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ll/pixelpipeline.html">2.1. Pixel pipeline</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Volumina 1.x documentation</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="hl/index.html"
+                        title="next chapter">1. High-level</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="hl/index.html" title="1. High-level"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">volumina 1.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013, Bernhard X. Kausler, Thorben Kröger, Stuart Berg.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.0.1.
+    </div>
+  </body>
+</html>
