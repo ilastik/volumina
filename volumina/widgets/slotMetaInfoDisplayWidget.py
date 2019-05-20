@@ -25,6 +25,11 @@ import sip
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget
 
+class SlotMetaDisplayData:
+    def __init__(self, shape=None, axes='', dtype=None):
+        self.shape = str(tuple(shape)) if shape is not None else ''
+        self.axes = ''.join(axes)
+        self.dtype = dtype.__name__ if dtype is not None else ''
 
 class SlotMetaInfoDisplayWidget(QWidget):
     """
@@ -39,31 +44,27 @@ class SlotMetaInfoDisplayWidget(QWidget):
     def initSlot(self, slot):
         if self._slot is not slot:
             if self._slot:
-                self._slot.unregisterMetaChanged(self._refresh)
+                self._slot.unregisterMetaChanged(self.update_labels)
             self._slot = slot
-            slot.notifyMetaChanged(self._refresh)
-            #slot.notifyReady(self._refresh)
-        self._refresh()
+            slot.notifyMetaChanged(self.update_labels)
+        self.update_labels()
 
-    def _refresh(self, *args):
-        shape = axes = dtype = ""
-        if self._slot.ready():
-            shape = str(tuple(self._slot.meta.getOriginalShape()))
-            axes = "".join(self._slot.meta.getOriginalAxisKeys())
-            dtype = self._slot.meta.dtype.__name__
-        self._do_refresh(shape, axes, dtype)
+    @property
+    def _labels(self) -> SlotMetaDisplayData:
+        return SlotMetaDisplayData(shape=self._slot.meta.getOriginalShape(),
+                                   axes=self._slot.meta.getOriginalAxisKeys(),
+                                   dtype=self._slot.meta.dtype)
 
-    def _do_refresh(self, shape, axes, dtype):
+    def update_labels(self, *args):
+        labels = self._labels if self._slot.ready() else SlotMetaDisplayData()
         if not sip.isdeleted(self.shapeDisplay):
-            self.shapeDisplay.setText(shape)
-            self.axisOrderDisplay.setText(axes)
-            self.dtypeDisplay.setText(dtype)
+            self.shapeDisplay.setText(labels.shape)
+            self.axisOrderDisplay.setText(labels.axes)
+            self.dtypeDisplay.setText(labels.dtype)
 
 class OutputSlotMetaInfoDisplayWidget(SlotMetaInfoDisplayWidget):
-    def _refresh(self, *args):
-        shape = axes = dtype = ""
-        if self._slot.ready():
-            shape = str(tuple(self._slot.meta.shape))
-            axes = "".join(self._slot.meta.getAxisKeys())
-            dtype = self._slot.meta.dtype.__name__
-        self._do_refresh(shape, axes, dtype)
+    @property
+    def _labels(self):
+        return SlotMetaDisplayData(shape=self._slot.meta.shape,
+                                   axes=self._slot.meta.getAxisKeys(),
+                                   dtype=self._slot.meta.dtype)
