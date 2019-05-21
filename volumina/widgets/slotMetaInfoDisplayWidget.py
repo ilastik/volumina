@@ -25,11 +25,13 @@ import sip
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget
 
+
 class SlotMetaDisplayData:
-    def __init__(self, shape=None, axes='', dtype=None):
-        self.shape = str(tuple(shape)) if shape is not None else ''
-        self.axes = ''.join(axes)
-        self.dtype = dtype.__name__ if dtype is not None else ''
+    def __init__(self, shape=None, axes="", dtype=None):
+        self.shape = str(tuple(shape)) if shape is not None else ""
+        self.axes = "".join(axes)
+        self.dtype = dtype.__name__ if dtype is not None else ""
+
 
 class SlotMetaInfoDisplayWidget(QWidget):
     """
@@ -51,9 +53,11 @@ class SlotMetaInfoDisplayWidget(QWidget):
 
     @property
     def _labels(self) -> SlotMetaDisplayData:
-        return SlotMetaDisplayData(shape=self._slot.meta.getOriginalShape(),
-                                   axes=self._slot.meta.getOriginalAxisKeys(),
-                                   dtype=self._slot.meta.dtype)
+        return SlotMetaDisplayData(
+            shape=self._slot.meta.getOriginalShape(),
+            axes=self._slot.meta.getOriginalAxisKeys(),
+            dtype=self._slot.meta.dtype,
+        )
 
     def update_labels(self, *args):
         labels = self._labels if self._slot.ready() else SlotMetaDisplayData()
@@ -62,9 +66,10 @@ class SlotMetaInfoDisplayWidget(QWidget):
             self.axisOrderDisplay.setText(labels.axes)
             self.dtypeDisplay.setText(labels.dtype)
 
+
 class OutputSlotMetaInfoDisplayWidget(SlotMetaInfoDisplayWidget):
     @property
     def _labels(self):
-        return SlotMetaDisplayData(shape=self._slot.meta.shape,
-                                   axes=self._slot.meta.getAxisKeys(),
-                                   dtype=self._slot.meta.dtype)
+        return SlotMetaDisplayData(
+            shape=self._slot.meta.shape, axes=self._slot.meta.getAxisKeys(), dtype=self._slot.meta.dtype
+        )
