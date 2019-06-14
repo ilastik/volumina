@@ -43,7 +43,7 @@ if not has_handler(volumina_logger):
     volumina_logger.setLevel(logging.INFO)
     volumina_logging_handler.setLevel(logging.INFO)
 
-NO3D = False
+
 from . import api
 
 # volumina.icons_rc is needed on some machines for the icons to be displayed correctly
