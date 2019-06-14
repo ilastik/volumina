@@ -249,7 +249,9 @@ class SliceProjection(object):
         slicing[self.abscissa] = abscissa_range
         slicing[self.ordinate] = ordinate_range
         for i in range(len(self.along)):
-            slicing[self.along[i]] = slice(through[i], through[i] + 1)
+            # @param through contains np.int64 types which some iterator based classes don't accept in slices.
+            slicing[self.along[i]] = slice(int(through[i]), int(through[i] + 1))
+
         return tuple(slicing)
 
     def __call__(self, domainArray):
