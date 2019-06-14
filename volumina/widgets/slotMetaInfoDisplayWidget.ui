@@ -33,7 +33,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="shapeEdit">
+      <widget class="QLabel" name="shapeDisplay">
        <property name="minimumSize">
         <size>
          <width>200</width>
@@ -67,7 +67,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="axisOrderEdit">
+      <widget class="QLabel" name="axisOrderDisplay">
       </widget>
      </item>
      <item>
@@ -95,7 +95,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="dtypeEdit">
+      <widget class="QLabel" name="dtypeDisplay">
       </widget>
      </item>
      <item>

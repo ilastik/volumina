@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 import h5py
 import numpy
@@ -26,18 +26,18 @@ from volumina.api import Viewer
 from volumina.pixelpipeline.datasources import LazyflowSource
 
 from lazyflow.graph import Graph
-from lazyflow.operators.ioOperators.opStreamingHdf5Reader import OpStreamingHdf5Reader
+from lazyflow.operators.ioOperators.opStreamingH5N5Reader import OpStreamingH5N5Reader
 from lazyflow.operators import OpCompressedCache
 
 from PyQt5.QtWidgets import QApplication
 
-f = h5py.File("raw.h5", 'w')
-d = (255*numpy.random.random((100,200,300))).astype(numpy.uint8)
+f = h5py.File("raw.h5", "w")
+d = (255 * numpy.random.random((100, 200, 300))).astype(numpy.uint8)
 f.create_dataset("raw", data=d)
 f.close()
 
-f = h5py.File("seg.h5", 'w')
-d = (10*numpy.random.random((100,200,300))).astype(numpy.uint32)
+f = h5py.File("seg.h5", "w")
+d = (10 * numpy.random.random((100, 200, 300))).astype(numpy.uint32)
 f.create_dataset("seg", data=d)
 f.close()
 
@@ -48,17 +48,19 @@ v = Viewer()
 
 graph = Graph()
 
+
 def mkH5source(fname, gname):
     h5file = h5py.File(fname)
-    source = OpStreamingHdf5Reader(graph=graph)
-    source.Hdf5File.setValue(h5file)
+    source = OpStreamingH5N5Reader(graph=graph)
+    source.H5N5File.setValue(h5file)
     source.InternalPath.setValue(gname)
 
-    op = OpCompressedCache( parent=None, graph=graph )
-    op.BlockShape.setValue( [100, 100, 100] )
-    op.Input.connect( source.OutputImage )
+    op = OpCompressedCache(parent=None, graph=graph)
+    op.BlockShape.setValue([100, 100, 100])
+    op.Input.connect(source.OutputImage)
 
     return op.Output
+
 
 rawSource = mkH5source("raw.h5", "raw")
 segSource = mkH5source("seg.h5", "seg")

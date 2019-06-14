@@ -21,6 +21,7 @@ class GLView(GLViewWidget):
     signal:
         slice_changed: emitted when the user dragged one of the slicing planes
     """
+
     slice_changed = pyqtSignal()
 
     def __init__(self, parent=None):

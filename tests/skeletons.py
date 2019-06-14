@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 #
 # Work in progress: Skeletonization
@@ -31,8 +31,8 @@ from volumina.skeletons import Skeletons, SkeletonInterpreter
 
 from optparse import OptionParser
 
-#import sys
-#sys.argv.append('/magnetic/gigacube.h5/volume/data')
+# import sys
+# sys.argv.append('/magnetic/gigacube.h5/volume/data')
 
 usage = "usage: %prog <filename.h5/groupname>"
 parser = OptionParser(usage)
@@ -41,12 +41,12 @@ if len(args) != 1:
     parser.error("no hdf5 dataset supplied")
 
 x = args[0].find(".h5")
-fname = args[0][:x+3] 
-gname = args[0][x+4:]
+fname = args[0][: x + 3]
+gname = args[0][x + 4 :]
 
-#load data
+# load data
 try:
-    f = h5py.File(fname, 'r')       
+    f = h5py.File(fname, "r")
 except:
     raise RuntimeError("Could not load '%s'" % fname)
 raw = f[gname].value.squeeze()
@@ -58,7 +58,7 @@ app = QApplication([])
 v = Viewer()
 direct = True
 
-raw.shape = (1,)+raw.shape+(1,)
+raw.shape = (1,) + raw.shape + (1,)
 
 l1 = v.addGrayscaleLayer(raw, name="raw", direct=True)
 

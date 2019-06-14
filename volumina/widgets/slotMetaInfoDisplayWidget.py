@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 import os
 
@@ -25,53 +25,51 @@ import sip
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget
 
+
+class SlotMetaDisplayData:
+    def __init__(self, shape=None, axes="", dtype=None):
+        self.shape = str(tuple(shape)) if shape is not None else ""
+        self.axes = "".join(axes)
+        self.dtype = dtype.__name__ if dtype is not None else ""
+
+
 class SlotMetaInfoDisplayWidget(QWidget):
     """
     Simple display widget for a slot's meta-info (shape, axes, dtype).
     """
-    
+
     def __init__(self, parent):
-        super( SlotMetaInfoDisplayWidget, self ).__init__(parent)
-        uic.loadUi(os.path.splitext(__file__)[0] + '.ui', self)
+        super().__init__(parent)
+        uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
         self._slot = None
-    
+
     def initSlot(self, slot):
         if self._slot is not slot:
-            if self._slot: 
-                self._slot.unregisterMetaChanged( self._refresh )
+            if self._slot:
+                self._slot.unregisterMetaChanged(self.update_labels)
             self._slot = slot
-            slot.notifyMetaChanged( self._refresh )
-        self._refresh()
-    
-    def _refresh(self, *args):
-        if self._slot.ready():
-            shape = tuple( self._slot.meta.getOriginalShape() )
-            axes = "".join( self._slot.meta.getOriginalAxisKeys() )
-            dtype = self._slot.meta.dtype.__name__
-        else:
-            shape = axes = dtype = ""
+            slot.notifyMetaChanged(self.update_labels)
+        self.update_labels()
 
-        if not sip.isdeleted(self.shapeEdit):
-            self.shapeEdit.setText( str(shape) )
-            self.axisOrderEdit.setText( axes )
-            self.dtypeEdit.setText( dtype )
+    @property
+    def _labels(self) -> SlotMetaDisplayData:
+        return SlotMetaDisplayData(
+            shape=self._slot.meta.getOriginalShape(),
+            axes=self._slot.meta.getOriginalAxisKeys(),
+            dtype=self._slot.meta.dtype,
+        )
 
-if __name__ == "__main__":
-    import numpy
-    import vigra
-    from PyQt5.QtWidgets import QApplication
-    from lazyflow.graph import Graph
-    from lazyflow.operators import OpArrayCache
+    def update_labels(self, *args):
+        labels = self._labels if self._slot.ready() else SlotMetaDisplayData()
+        if not sip.isdeleted(self.shapeDisplay):
+            self.shapeDisplay.setText(labels.shape)
+            self.axisOrderDisplay.setText(labels.axes)
+            self.dtypeDisplay.setText(labels.dtype)
 
-    data = numpy.zeros( (10,20,30,3), dtype=numpy.float32 )
-    data = vigra.taggedView(data, 'zyxc')
 
-    op = OpArrayCache(graph=Graph())
-    op.Input.setValue( data )
-
-    app = QApplication([])
-    w = SlotMetaInfoDisplayWidget(None)
-    w.initSlot(op.Output)
-    w.show()
-    app.exec_()
-
+class OutputSlotMetaInfoDisplayWidget(SlotMetaInfoDisplayWidget):
+    @property
+    def _labels(self):
+        return SlotMetaDisplayData(
+            shape=self._slot.meta.shape, axes=self._slot.meta.getAxisKeys(), dtype=self._slot.meta.dtype
+        )

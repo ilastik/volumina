@@ -28,6 +28,7 @@ class AxesSymbols(object):
     :ivar float RADIUS_SCALE: the factor to scale the axis arrow's radius depending on the data set's shape
     :ivar float LENGTH_SCALE: the factor to scale the axis arrow's length depending on the data set's shape
     """
+
     RADIUS_SCALE = 1 / 40.0
     LENGTH_SCALE = 1 / 2.0
 

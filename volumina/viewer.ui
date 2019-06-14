@@ -20,7 +20,7 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="VolumeEditorWidget" name="viewer" native="true"/>
+      <widget class="VolumeEditorWidget" name="volumeEditorWidget" native="true"/>
       <widget class="QWidget" name="">
        <layout class="QVBoxLayout" name="rightPaneLayout">
         <item>

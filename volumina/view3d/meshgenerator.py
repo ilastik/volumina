@@ -21,8 +21,11 @@ except ImportError:
         return verts, None, faces
 
 
-ShaderProgram('toon', [
-    VertexShader("""
+ShaderProgram(
+    "toon",
+    [
+        VertexShader(
+            """
         varying vec3 normal;
 
         void main() {
@@ -32,8 +35,10 @@ ShaderProgram('toon', [
             gl_FrontColor = gl_Color;
             gl_BackColor = gl_Color;
         }
-    """),
-    FragmentShader("""
+    """
+        ),
+        FragmentShader(
+            """
         varying vec3 normal;
 
         void main() {
@@ -45,8 +50,10 @@ ShaderProgram('toon', [
             //gl_FragColor = max(round(intensity * 3), 0.3) / 3 * gl_Color / 2;
             gl_FragColor = intensity * gl_Color;
         }
-    """)
-])
+    """
+        ),
+    ],
+)
 
 
 def labeling_to_mesh(labeling, labels):
@@ -56,7 +63,7 @@ def labeling_to_mesh(labeling, labels):
         data = MeshData(vertices, faces)
         if normals is not None:
             data._vertexNormals = normals
-        
+
         yield label, data
 
 
@@ -88,6 +95,7 @@ class MeshGenerator(QThread):
     signal:
         mesh_generated: emitted when the generation finished, passes the label/name and generated mesh
     """
+
     mesh_generated = pyqtSignal(object, object)
 
     def __init__(self, receiver, labeling, labels, name_mapping=None):
@@ -116,8 +124,7 @@ class MeshGenerator(QThread):
         When finished the signal mesh_generated is emitted again with label 0 and mesh None
         """
         for label, mesh in labeling_to_mesh(self._labeling, self._labels):
-            item = GLMeshItem(meshdata=mesh, smooth=True,
-                              shader="toon")
+            item = GLMeshItem(meshdata=mesh, smooth=True, shader="toon")
             self.mesh_generated.emit(self._mapping.get(label, label), item)
         self.mesh_generated.emit(0, None)
 
@@ -129,6 +136,7 @@ class MeshGeneratorDialog(QDialog):
     signals:
         finished: emitted when the export is finished. Passes the generated MeshData
     """
+
     finished = pyqtSignal(object)
 
     def __init__(self, parent=None):

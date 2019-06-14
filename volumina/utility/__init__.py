@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,7 +19,7 @@ from __future__ import absolute_import
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from .log_exception import log_exception
 from .getMainWindow import getMainWindow
@@ -29,6 +30,6 @@ from .shortcutManagerDlg import ShortcutManagerDlg
 from volumina.utility.thunkEvent import execute_in_main_thread
 from volumina.utility.edge_coords import edge_coords_along_axis, edge_coords_nd
 from volumina.utility.simplify_line_segments import simplify_line_segments
-from volumina.utility.signalingDefaultDict import SignalingDefaultDict
+from volumina.utility.signalingDict import SignalingDict
 from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem
 from volumina.utility.prioritizedThreadPool import PrioritizedThreadPoolExecutor

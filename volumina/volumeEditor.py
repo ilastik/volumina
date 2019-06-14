@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -18,20 +19,20 @@ from __future__ import absolute_import
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
-#Python
+# Python
 import copy
 from functools import partial
 
-#SciPy
+# SciPy
 import numpy
 
-#PyQt
+# PyQt
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication, QWidget
 
-#volumina
+# volumina
 import volumina.pixelpipeline.imagepump
 from .eventswitch import EventSwitch
 from .imageScene2D import ImageScene2D
@@ -39,27 +40,29 @@ from .imageView2D import ImageView2D
 from .positionModel import PositionModel
 from .croppingMarkers import CropExtentsModel
 from .navigationController import NavigationController, NavigationInterpreter
-from .brushingcontroller import BrushingInterpreter, BrushingController, \
-                              CrosshairController
+from .brushingcontroller import BrushingInterpreter, BrushingController, CrosshairController
 from .thresholdingcontroller import ThresholdingInterpreter
 from .brushingmodel import BrushingModel
 from .slicingtools import SliceProjection
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
-#*******************************************************************************
+# *******************************************************************************
 # V o l u m e E d i t o r                                                      *
-#*******************************************************************************
+# *******************************************************************************
 
-class VolumeEditor( QObject ):
+
+class VolumeEditor(QObject):
     newImageView2DFocus = pyqtSignal()
     shapeChanged = pyqtSignal()
 
     @property
     def showDebugPatches(self):
         return self._showDebugPatches
+
     @showDebugPatches.setter
     def showDebugPatches(self, show):
         for s in self.imageScenes:
@@ -69,6 +72,7 @@ class VolumeEditor( QObject ):
     @property
     def showTileProgress(self):
         return self._showTileProgress
+
     @showDebugPatches.setter
     def showTileProgress(self, show):
         for s in self.imageScenes:
@@ -78,6 +82,7 @@ class VolumeEditor( QObject ):
     @property
     def cacheSize(self):
         return self._cacheSize
+
     @cacheSize.setter
     def cacheSize(self, cache_size):
         self._cacheSize = cache_size
@@ -87,8 +92,9 @@ class VolumeEditor( QObject ):
     @property
     def navigationInterpreterType(self):
         return type(self.navInterpret)
+
     @navigationInterpreterType.setter
-    def navigationInterpreterType(self,navInt):
+    def navigationInterpreterType(self, navInt):
         self.navInterpret = navInt(self.navCtrl)
         self.eventSwitch.interpreter = self.navInterpret
 
@@ -97,8 +103,8 @@ class VolumeEditor( QObject ):
         self.eventSwitch.interpreter = self.navInterpret
 
     @property
-    def syncAlongAxes( self ):
-        '''Axes orthogonal to slices, whose values are synced between layers.
+    def syncAlongAxes(self):
+        """Axes orthogonal to slices, whose values are synced between layers.
 
         Returns: a tuple of up to three values, encoding:
                  0 - time
@@ -108,20 +114,21 @@ class VolumeEditor( QObject ):
                  for example the meaning of (0,1) is: time and orthogonal space axes
                  are synced for all layers, channel is not. (For the x-y slice, the space
                  axis would be z and so on.)
- 
-        '''
+
+        """
         return tuple(self._sync_along)
 
     @property
     def dataShape(self):
         return self.posModel.shape5D
+
     @dataShape.setter
     def dataShape(self, s):
-        self.cropModel.set_volume_shape_3d_cropped([0,0,0],s[1:4])
-        self.cropModel.set_time_shape_cropped(0,s[0])
+        self.cropModel.set_volume_shape_3d_cropped([0, 0, 0], s[1:4])
+        self.cropModel.set_time_shape_cropped(0, s[0])
 
         self.posModel.shape5D = s
-        #for 2D images, disable the slice intersection marker
+        # for 2D images, disable the slice intersection marker
         is_2D = (numpy.asarray(s[1:4]) == 1).any()
         if is_2D:
             self.navCtrl.indicateSliceIntersection = False
@@ -139,15 +146,17 @@ class VolumeEditor( QObject ):
         self._lastImageViewFocus = axis
         self.newImageView2DFocus.emit()
 
-    def __init__( self, layerStackModel, parent, labelsink=None, crosshair=True, is_3d_widget_visible=False, syncAlongAxes=(0,1)):
+    def __init__(
+        self, layerStackModel, parent, labelsink=None, crosshair=True, is_3d_widget_visible=False, syncAlongAxes=(0, 1)
+    ):
         super(VolumeEditor, self).__init__(parent=parent)
         self._sync_along = tuple(syncAlongAxes)
 
         ##
         ## properties
         ##
-        self._showDebugPatches   = False
-        self._showTileProgress   = True
+        self._showDebugPatches = False
+        self._showTileProgress = True
 
         ##
         ## base components
@@ -155,15 +164,17 @@ class VolumeEditor( QObject ):
         self.layerStack = layerStackModel
         self.posModel = PositionModel(self)
         self.brushingModel = BrushingModel()
-        self.cropModel = CropExtentsModel( self )
+        self.cropModel = CropExtentsModel(self)
 
-        self.imageScenes = [ImageScene2D(self.posModel, (0,1,4), swapped_default=True),
-                            ImageScene2D(self.posModel, (0,2,4)),
-                            ImageScene2D(self.posModel, (0,3,4))]
-        self.imageViews = [ImageView2D(parent, self.cropModel, self.imageScenes[i]) for i in [0,1,2]]
-        self.imageViews[0].focusChanged.connect(lambda arg=0 : self.lastImageViewFocus(arg))
-        self.imageViews[1].focusChanged.connect(lambda arg=1 : self.lastImageViewFocus(arg))
-        self.imageViews[2].focusChanged.connect(lambda arg=2 : self.lastImageViewFocus(arg))
+        self.imageScenes = [
+            ImageScene2D(self.posModel, (0, 1, 4), swapped_default=True),
+            ImageScene2D(self.posModel, (0, 2, 4)),
+            ImageScene2D(self.posModel, (0, 3, 4)),
+        ]
+        self.imageViews = [ImageView2D(parent, self.cropModel, self.imageScenes[i]) for i in [0, 1, 2]]
+        self.imageViews[0].focusChanged.connect(lambda arg=0: self.lastImageViewFocus(arg))
+        self.imageViews[1].focusChanged.connect(lambda arg=1: self.lastImageViewFocus(arg))
+        self.imageViews[2].focusChanged.connect(lambda arg=2: self.lastImageViewFocus(arg))
         self._lastImageViewFocus = 0
 
         if not crosshair:
@@ -174,7 +185,7 @@ class VolumeEditor( QObject ):
 
         self.view3d = self._initView3d(is_3d_widget_visible)
 
-        names = ['x', 'y', 'z']
+        names = ["x", "y", "z"]
         for scene, name, pump in zip(self.imageScenes, names, self.imagepumps):
             scene.setObjectName(name)
             scene.stackedImageSources = pump.stackedImageSources
@@ -189,7 +200,7 @@ class VolumeEditor( QObject ):
 
         # navigation control
         v3d = self.view3d
-        self.navCtrl      = NavigationController(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
+        self.navCtrl = NavigationController(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
         self.navInterpret = NavigationInterpreter(self.navCtrl)
 
         # brushing control
@@ -202,9 +213,7 @@ class VolumeEditor( QObject ):
             self.brushingController._brushingModel.brushSizeChanged.connect(v._sliceIntersectionMarker._set_diameter)
 
         # thresholding control
-        self.thresInterpreter = ThresholdingInterpreter(self.navCtrl, 
-                                                        self.layerStack,
-                                                        self.posModel)
+        self.thresInterpreter = ThresholdingInterpreter(self.navCtrl, self.layerStack, self.posModel)
         # initial interaction mode
         self.eventSwitch.interpreter = self.navInterpret
 
@@ -220,7 +229,7 @@ class VolumeEditor( QObject ):
             self.posModel.cursorPositionChanged.connect(self.navCtrl.moveCrosshair)
         self.posModel.slicingPositionSettled.connect(self.navCtrl.settleSlicingPosition)
 
-        self.layerStack.layerAdded.connect( self._onLayerAdded )
+        self.layerStack.layerAdded.connect(self._onLayerAdded)
         self.parent = parent
 
     def _reset(self):
@@ -231,10 +240,12 @@ class VolumeEditor( QObject ):
         for s in self.imageScenes:
             s._invalidateRect()
 
-    def setInteractionMode( self, name):
-        modes = {'navigation': self.navInterpret, 
-                 'brushing': self.brushingInterpreter,
-                 'thresholding' : self.thresInterpreter}
+    def setInteractionMode(self, name):
+        modes = {
+            "navigation": self.navInterpret,
+            "brushing": self.brushingInterpreter,
+            "thresholding": self.thresInterpreter,
+        }
         self.eventSwitch.interpreter = modes[name]
 
     def showCropLines(self, visible):
@@ -258,20 +269,21 @@ class VolumeEditor( QObject ):
     ##
     ## private
     ##
-    def _initImagePumps( self ):
-        alongTXC = SliceProjection( abscissa = 2, ordinate = 3, along = [0,1,4] )
-        alongTYC = SliceProjection( abscissa = 1, ordinate = 3, along = [0,2,4] )
-        alongTZC = SliceProjection( abscissa = 1, ordinate = 2, along = [0,3,4] )
+    def _initImagePumps(self):
+        alongTXC = SliceProjection(abscissa=2, ordinate=3, along=[0, 1, 4])
+        alongTYC = SliceProjection(abscissa=1, ordinate=3, along=[0, 2, 4])
+        alongTZC = SliceProjection(abscissa=1, ordinate=2, along=[0, 3, 4])
 
         imagepumps = []
-        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTXC, self._sync_along ))
-        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTYC, self._sync_along ))
-        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump( self.layerStack, alongTZC, self._sync_along ))
+        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump(self.layerStack, alongTXC, self._sync_along))
+        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump(self.layerStack, alongTYC, self._sync_along))
+        imagepumps.append(volumina.pixelpipeline.imagepump.ImagePump(self.layerStack, alongTZC, self._sync_along))
 
         return imagepumps
 
-    def _initView3d( self, is_3d_widget_visible):
+    def _initView3d(self, is_3d_widget_visible):
         from .view3d.overview3d import Overview3D
+
         view3d = Overview3D(is_3d_widget_visible=is_3d_widget_visible)
 
         def onSliceDragged():
@@ -280,6 +292,6 @@ class VolumeEditor( QObject ):
         view3d.slice_changed.connect(onSliceDragged)
         return view3d
 
-    def _onLayerAdded( self, layer, row ):
-        self.navCtrl.layerChangeChannel( layer)
-        layer.channelChanged.connect( partial(self.navCtrl.layerChangeChannel, layer=layer) )
+    def _onLayerAdded(self, layer, row):
+        self.navCtrl.layerChangeChannel(layer)
+        layer.channelChanged.connect(partial(self.navCtrl.layerChangeChannel, layer=layer))

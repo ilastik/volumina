@@ -27,6 +27,7 @@ class Overview3D(QWidget):
         reinitialized: probably obsolete, used to indicate to some containers that this view is ready?
         dock_status_changed: indicates that the dock button was toggled
     """
+
     slice_changed = pyqtSignal()
     reinitialized = pyqtSignal()  # TODO: this should not be necessary: remove
     dock_status_changed = pyqtSignal(bool)
@@ -174,4 +175,3 @@ class Overview3D(QWidget):
         """
         self._view.setVisible(state != 0)
         self.update()
-

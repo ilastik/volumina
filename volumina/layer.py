@@ -17,7 +17,7 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-#		   http://ilastik.org/license/
+# 		   http://ilastik.org/license/
 ###############################################################################
 from builtins import range
 import colorsys
@@ -30,21 +30,23 @@ from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource
 
-from volumina.utility import SignalingDefaultDict
+from volumina.utility import SignalingDict
 
 from functools import partial
 from collections import defaultdict
 
 import sys
+
 if sys.version_info.major > 2:
     unicode = str
 
-#*******************************************************************************
+# *******************************************************************************
 # L a y e r                                                                    *
-#*******************************************************************************
+# *******************************************************************************
 
-class Layer( QObject ):
-    '''
+
+class Layer(QObject):
+    """
     properties:
     datasources -- list of ArraySourceABC; read-only
     visible -- boolean
@@ -52,60 +54,64 @@ class Layer( QObject ):
     name -- unicode
     numberOfChannels -- int
     layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
-    '''
+    """
 
-    '''changed is emitted whenever one of the more specialized
-    somethingChanged signals is emitted.'''
+    """changed is emitted whenever one of the more specialized
+    somethingChanged signals is emitted."""
     changed = pyqtSignal()
 
-    visibleChanged = pyqtSignal(bool) 
-    opacityChanged = pyqtSignal(float) 
+    visibleChanged = pyqtSignal(bool)
+    opacityChanged = pyqtSignal(float)
     nameChanged = pyqtSignal(object)  # sends a python str object, not unicode!
     channelChanged = pyqtSignal(int)
     numberOfChannelsChanged = pyqtSignal(int)
 
     @property
-    def normalize( self ):
+    def normalize(self):
         return None
 
     @property
-    def visible( self ):
+    def visible(self):
         return self._visible
+
     @visible.setter
-    def visible( self, value ):
+    def visible(self, value):
         if value != self._visible and self._allowToggleVisible:
             self._visible = value
-            self.visibleChanged.emit( value )
-    
+            self.visibleChanged.emit(value)
+
     def toggleVisible(self):
         """Convenience function."""
         if self._allowToggleVisible:
             self.visible = not self._visible
 
     @property
-    def opacity( self ):
+    def opacity(self):
         return self._opacity
+
     @opacity.setter
-    def opacity( self, value ):
+    def opacity(self, value):
         if value != self._opacity:
             self._opacity = value
-            self.opacityChanged.emit( value )
-            
+            self.opacityChanged.emit(value)
+
     @property
-    def name( self ):
+    def name(self):
         return self._name
+
     @name.setter
-    def name( self, n ):
+    def name(self, n):
         assert isinstance(n, unicode)
         if self._name != n:
             self._name = n
             self.nameChanged.emit(n)
 
     @property
-    def numberOfChannels( self ):
+    def numberOfChannels(self):
         return self._numberOfChannels
+
     @numberOfChannels.setter
-    def numberOfChannels( self, n ):
+    def numberOfChannels(self, n):
         if self._numberOfChannels == n:
             return
         if self._channel >= n and n > 0:
@@ -116,36 +122,36 @@ class Layer( QObject ):
         self.numberOfChannelsChanged.emit(n)
 
     @property
-    def channel( self ):
+    def channel(self):
         return self._channel
-    
+
     @channel.setter
-    def channel( self, n ):
+    def channel(self, n):
         if self._channel == n:
             return
         if n < self.numberOfChannels:
             self._channel = n
         else:
             raise ValueError("Layer.channel.setter: channel value has to be less than number of channels")
-        self.channelChanged.emit( self._channel ) 
+        self.channelChanged.emit(self._channel)
 
     @property
-    def datasources( self ):
+    def datasources(self):
         return self._datasources
 
     @property
-    def layerId( self ):
+    def layerId(self):
         # If we have no real id, use the name
         if self._layerId is None:
             return self._name
         else:
             return self._layerId
-    
+
     @layerId.setter
-    def layerId( self, lid ):
+    def layerId(self, lid):
         self._layerId = lid
 
-    def setActive( self, active ):
+    def setActive(self, active):
         """This function is called whenever the layer is selected (active = True) or deselected (active = False)
            by the user.
            As an example, this can be used to enable a specific event interpreter when the layer is active
@@ -158,7 +164,7 @@ class Layer( QObject ):
 
     def setToolTip(self, tip):
         self._toolTip = tip
-        
+
     def isDifferentEnough(self, other_layer):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
         if type(other_layer) != type(self):
@@ -169,7 +175,7 @@ class Layer( QObject ):
             return True
         return False
 
-    def __init__( self, datasources, direct=False ):
+    def __init__(self, datasources, direct=False):
         super(Layer, self).__init__()
         self._name = u"Unnamed Layer"
         self._visible = True
@@ -185,7 +191,7 @@ class Layer( QObject ):
 
         self._updateNumberOfChannels()
         for datasource in [_f for _f in self._datasources if _f]:
-            datasource.numberOfChannelsChanged.connect( self._updateNumberOfChannels )
+            datasource.numberOfChannelsChanged.connect(self._updateNumberOfChannels)
 
         self.visibleChanged.connect(self.changed)
         self.opacityChanged.connect(self.changed)
@@ -221,98 +227,103 @@ class Layer( QObject ):
         Cleans up resources in this layer's datasources.
         Must not be called more than once.
         """
-        assert not self._cleaned_up, "Bug: You're attempting to clean layer {} twice.".format( self.name )
+        assert not self._cleaned_up, "Bug: You're attempting to clean layer {} twice.".format(self.name)
         for src in self.datasources:
             if src is not None:
                 src.clean_up()
         self._cleaned_up = True
 
-        
-#*******************************************************************************
-# C l i c k a b l e L a y e r                                                  *
-#*******************************************************************************
 
-class ClickableLayer( Layer ):
+# *******************************************************************************
+# C l i c k a b l e L a y e r                                                  *
+# *******************************************************************************
+
+
+class ClickableLayer(Layer):
     """A layer that, when being activated/selected, switches to an interpreter than can intercept
        right click events"""
-    def __init__( self, datasource, editor, clickFunctor, direct=False, right=True ):
+
+    def __init__(self, datasource, editor, clickFunctor, direct=False, right=True):
         super(ClickableLayer, self).__init__([datasource], direct=direct)
         self._editor = editor
         self._clickInterpreter = ClickInterpreter(editor, self, clickFunctor, right=right)
         self._inactiveInterpreter = self._editor.eventSwitch.interpreter
-    
+
     def setActive(self, active):
         if active:
             self._editor.eventSwitch.interpreter = self._clickInterpreter
         else:
             self._editor.eventSwitch.interpreter = self._inactiveInterpreter
 
-#*******************************************************************************
+
+# *******************************************************************************
 # N o r m a l i z a b l e L a y e r                                            *
-#*******************************************************************************
+# *******************************************************************************
+
 
 def dtype_to_range(dsource):
     if dsource is not None:
         dtype = dsource.dtype()
     else:
         dtype = numpy.uint8
-    
-    if (dtype == numpy.bool_ or dtype == bool):
+
+    if dtype == numpy.bool_ or dtype == bool:
         # Special hack for bool
-        rng = (0,1)
+        rng = (0, 1)
     elif issubclass(dtype, (int, int, numpy.integer)):
         rng = (0, numpy.iinfo(dtype).max)
-    elif (dtype == numpy.float32 or dtype == numpy.float64):
+    elif dtype == numpy.float32 or dtype == numpy.float64:
         # Is there a way to get the min and max values of the actual dataset(s)?
         # arbitrary range choice
-        rng = (-4096,4096)
+        rng = (-4096, 4096)
     else:
-        # raise error 
-        raise Exception('dtype_to_range: unknown dtype {}'.format(dtype))
+        # raise error
+        raise Exception("dtype_to_range: unknown dtype {}".format(dtype))
     return rng
 
-class NormalizableLayer( Layer ):
-    '''
+
+class NormalizableLayer(Layer):
+    """
     int -- datasource index
     int -- lower threshold
     int -- upper threshold
-    '''
+    """
+
     normalizeChanged = pyqtSignal()
 
-    '''
+    """
     int -- datasource index
     int -- minimum
     int -- maximum
-    '''
+    """
     rangeChanged = pyqtSignal(int, int, int)
 
     @property
-    def range( self ):
+    def range(self):
         return self._range
 
-    def set_range( self, datasourceIdx, value ):
-        '''
+    def set_range(self, datasourceIdx, value):
+        """
         value -- (rmin, rmax)
-        '''
+        """
         if value is not None:
             self._range[datasourceIdx] = value
         else:
-            value = self._range[datasourceIdx] = \
-                dtype_to_range(self._datasources[datasourceIdx])
+            value = self._range[datasourceIdx] = dtype_to_range(self._datasources[datasourceIdx])
         self.rangeChanged.emit(datasourceIdx, value[0], value[1])
-    
+
     @property
-    def normalize( self ):
+    def normalize(self):
         return self._normalize
 
-    def set_normalize( self, datasourceIdx, value ):
-        '''
+    def set_normalize(self, datasourceIdx, value):
+        """
         value -- (nmin, nmax)
         value -- None : grabs (min, max) from the MinMaxSource
-        '''
+        """
         if self._datasources[datasourceIdx] is None:
             return
-        
+
         if value is None:
             value = self._datasources[datasourceIdx]._bounds
             self._autoMinMax[datasourceIdx] = True
@@ -321,25 +332,25 @@ class NormalizableLayer( Layer ):
         self._normalize[datasourceIdx] = value
         self.normalizeChanged.emit()
 
-    def __init__( self, datasources, range=None, normalize=None, direct=False ):
+    def __init__(self, datasources, range=None, normalize=None, direct=False):
         """
         datasources - a list of raw data sources
         range - Not sure.  I think this parameter should be removed.
         normalize - If normalize is a tuple (dmin, dmax), the data is normalized from (dmin, dmax) to (0,255) before it is displayed.
                     If normalize=None, then (dmin, dmax) is automatically determined before normalization.
                     If normalize=False, then no normalization is applied before displaying the data.
-        
+
         """
         self._normalize = []
         self._range = []
         self._autoMinMax = []
         self._mmSources = []
 
-        wrapped_datasources = [None]*len( datasources )
+        wrapped_datasources = [None] * len(datasources)
 
-        for i,datasource in enumerate(datasources):
+        for i, datasource in enumerate(datasources):
             if datasource is not None:
-                self._autoMinMax.append(normalize is None) # Don't auto-set normalization if the caller provided one.
+                self._autoMinMax.append(normalize is None)  # Don't auto-set normalization if the caller provided one.
                 mmSource = MinMaxSource(datasource)
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
                 wrapped_datasources[i] = mmSource
@@ -354,8 +365,8 @@ class NormalizableLayer( Layer ):
                 self.set_range(i, range)
                 self.set_normalize(i, normalize)
             else:
-                self._normalize.append((0,1))
-                self._range.append((0,1))
+                self._normalize.append((0, 1))
+                self._range.append((0, 1))
                 self._autoMinMax.append(True)
 
         self.rangeChanged.connect(self.changed)
@@ -376,17 +387,18 @@ class NormalizableLayer( Layer ):
             mm.resetBounds()
 
 
-#*******************************************************************************
+# *******************************************************************************
 # G r a y s c a l e L a y e r                                                  *
-#*******************************************************************************
+# *******************************************************************************
 
-class GrayscaleLayer( NormalizableLayer ):
+
+class GrayscaleLayer(NormalizableLayer):
     @property
-    def window_leveling( self ):
+    def window_leveling(self):
         return self._window_leveling
-    
+
     @window_leveling.setter
-    def window_leveling( self, wl ):
+    def window_leveling(self, wl):
         self._window_leveling = wl
 
     def isDifferentEnough(self, other_layer):
@@ -394,36 +406,41 @@ class GrayscaleLayer( NormalizableLayer ):
             return True
         return self._window_leveling != other_layer._window_leveling
 
-    def __init__( self, datasource, range = None, normalize = None, direct=False, window_leveling=False):
+    def __init__(self, datasource, range=None, normalize=None, direct=False, window_leveling=False):
         assert isinstance(datasource, SourceABC)
         super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
         self._window_leveling = window_leveling
 
-#*******************************************************************************
-# A l p h a M o d u l a t e d L a y e r                                        *
-#*******************************************************************************
 
-class AlphaModulatedLayer( NormalizableLayer ):
+# *******************************************************************************
+# A l p h a M o d u l a t e d L a y e r                                        *
+# *******************************************************************************
+
+
+class AlphaModulatedLayer(NormalizableLayer):
     tintColorChanged = pyqtSignal()
 
     @property
     def tintColor(self):
         return self._tintColor
+
     @tintColor.setter
     def tintColor(self, c):
         if self._tintColor != c:
             self._tintColor = c
             self.tintColorChanged.emit()
-    
-    def __init__( self, datasource, tintColor = QColor(255,0,0), range = (0,255), normalize = None ):
+
+    def __init__(self, datasource, tintColor=QColor(255, 0, 0), range=(0, 255), normalize=None):
         assert isinstance(datasource, SourceABC)
         super(AlphaModulatedLayer, self).__init__([datasource], range, normalize)
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
-        
-#*******************************************************************************
+
+
+# *******************************************************************************
 # C o l o r t a b l e L a y e r                                                *
-#*******************************************************************************
+# *******************************************************************************
+
 
 def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=False):
     """Generate a colortable with M entries.
@@ -434,9 +451,9 @@ def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=
                    to lie uniformly in the allowed range. """
     r = numpy.random.random((M, 3))
     if clamp is not None:
-        for k,v in clamp.items():
+        for k, v in clamp.items():
             idx = colormodel.index(k)
-            r[:,idx] = v
+            r[:, idx] = v
 
     colors = []
     if colormodel == "hsv":
@@ -444,7 +461,7 @@ def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=
             if zeroIsTransparent and i == 0:
                 colors.append(QColor(0, 0, 0, 0).rgba())
             else:
-                h, s, v = r[i,:] 
+                h, s, v = r[i, :]
                 color = numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255
                 qColor = QColor(*color)
                 colors.append(qColor.rgba())
@@ -452,21 +469,22 @@ def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=
     else:
         raise RuntimeError("unknown color model '%s'" % colormodel)
 
-class ColortableLayer( NormalizableLayer ):
+
+class ColortableLayer(NormalizableLayer):
     colorTableChanged = pyqtSignal()
 
     @property
-    def colorTable( self ):
+    def colorTable(self):
         return self._colorTable
 
     @colorTable.setter
-    def colorTable( self, colorTable ):
+    def colorTable(self, colorTable):
         self._colorTable = colorTable
         self.colorTableChanged.emit()
 
     def randomizeColors(self):
         self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, self.zeroIsTransparent)
-        
+
     def isDifferentEnough(self, other_layer):
         if type(other_layer) != type(self):
             return True
@@ -475,79 +493,90 @@ class ColortableLayer( NormalizableLayer ):
         if other_layer.datasources != self.datasources:
             return True
         return False
-        
 
-    def __init__( self, datasource , colorTable, normalize=False, direct=False ):
+    def __init__(self, datasource, colorTable, normalize=False, direct=False):
         assert isinstance(datasource, SourceABC)
-        
+
         """
-        By default, no normalization is performed on ColortableLayers.  
-        If the normalize parameter is set to 'auto', 
-        your data will be automatically normalized to the length of your colorable.  
-        If a tuple (dmin, dmax) is passed, this specifies the range of your data, 
+        By default, no normalization is performed on ColortableLayers.
+        If the normalize parameter is set to 'auto',
+        your data will be automatically normalized to the length of your colorable.
+        If a tuple (dmin, dmax) is passed, this specifies the range of your data,
         which is used to normalize the data before the colorable is applied.
         """
 
-
-        if normalize is 'auto':
+        if normalize is "auto":
             normalize = None
-        range = (0,len(colorTable)-1)
-        super(ColortableLayer, self).__init__([datasource], range = range, normalize=normalize, direct=direct)
+        range = (0, len(colorTable) - 1)
+        super(ColortableLayer, self).__init__([datasource], range=range, normalize=normalize, direct=direct)
         self.data = datasource
         self._colorTable = colorTable
-        
+
         self.colortableIsRandom = False
-        self.zeroIsTransparent = (QColor.fromRgba(colorTable[0]).alpha() == 0)
-        
+        self.zeroIsTransparent = QColor.fromRgba(colorTable[0]).alpha() == 0
+
+
 class ClickableColortableLayer(ClickableLayer):
     colorTableChanged = pyqtSignal()
-    
-    def __init__( self, editor, clickFunctor, datasource , colorTable, direct=False, right=True ):
+
+    def __init__(self, editor, clickFunctor, datasource, colorTable, direct=False, right=True):
         assert isinstance(datasource, SourceABC)
         super(ClickableColortableLayer, self).__init__(datasource, editor, clickFunctor, direct=direct, right=right)
         self._colorTable = colorTable
         self.data = datasource
-        
+
         self.colortableIsRandom = False
-        self.zeroIsTransparent = (QColor.fromRgba(colorTable[0]).alpha() == 0)
+        self.zeroIsTransparent = QColor.fromRgba(colorTable[0]).alpha() == 0
 
     @property
-    def colorTable( self ):
+    def colorTable(self):
         return self._colorTable
 
     @colorTable.setter
-    def colorTable( self, colorTable ):
+    def colorTable(self, colorTable):
         self._colorTable = colorTable
         self.colorTableChanged.emit()
 
     def randomizeColors(self):
         self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
 
-#*******************************************************************************
-# R G B A L a y e r                                                            *
-#*******************************************************************************
 
-class RGBALayer( NormalizableLayer ):
-    channelIdx = {'red': 0, 'green': 1, 'blue': 2, 'alpha': 3}
-    channelName = {0: 'red', 1: 'green', 2: 'blue', 3: 'alpha'}
-    
+# *******************************************************************************
+# R G B A L a y e r                                                            *
+# *******************************************************************************
+
+
+class RGBALayer(NormalizableLayer):
+    channelIdx = {"red": 0, "green": 1, "blue": 2, "alpha": 3}
+    channelName = {0: "red", 1: "green", 2: "blue", 3: "alpha"}
+
     @property
-    def color_missing_value( self ):
+    def color_missing_value(self):
         return self._color_missing_value
 
     @property
-    def alpha_missing_value( self ):
+    def alpha_missing_value(self):
         return self._alpha_missing_value
 
-    def __init__( self, red = None, green = None, blue = None, alpha = None, \
-                  color_missing_value = 0, alpha_missing_value = 255,
-                  range = (None,)*4,
-                  normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None):
+    def __init__(
+        self,
+        red=None,
+        green=None,
+        blue=None,
+        alpha=None,
+        color_missing_value=0,
+        alpha_missing_value=255,
+        range=(None,) * 4,
+        normalizeR=None,
+        normalizeG=None,
+        normalizeB=None,
+        normalizeA=None,
+    ):
         assert red is None or isinstance(red, SourceABC)
         assert green is None or isinstance(green, SourceABC)
         assert blue is None or isinstance(blue, SourceABC)
         assert alpha is None or isinstance(alpha, SourceABC)
-        super(RGBALayer, self).__init__([red,green,blue,alpha])
+        super(RGBALayer, self).__init__([red, green, blue, alpha])
         self._color_missing_value = color_missing_value
         self._alpha_missing_value = alpha_missing_value
 
@@ -557,18 +586,21 @@ class RGBALayer( NormalizableLayer ):
         l = RGBALayer()
         return l
 
+
 ##
 ## GraphicsItem layers
 ##
-class DummyGraphicsItemLayer( Layer ):
+class DummyGraphicsItemLayer(Layer):
     def __init__(self, datasource):
-        super( DummyGraphicsItemLayer, self ).__init__( [datasource] )
+        super(DummyGraphicsItemLayer, self).__init__([datasource])
 
-class DummyRasterItemLayer( Layer ):
+
+class DummyRasterItemLayer(Layer):
     def __init__(self, datasource):
-        super( DummyRasterItemLayer, self ).__init__( [datasource] )
+        super(DummyRasterItemLayer, self).__init__([datasource])
 
-class SegmentationEdgesLayer( Layer ):
+
+class SegmentationEdgesLayer(Layer):
     """
     A layer that displays segmentation edge boundaries using vector graphics.
     (See imagesources.SegmentationEdgesItem.)
@@ -595,16 +627,17 @@ class SegmentationEdgesLayer( Layer ):
         datasource: A single-channel label image.
         default_pen: The initial pen style for each edge.
         """
-        super( SegmentationEdgesLayer, self ).__init__( [datasource], direct=direct )
+        super(SegmentationEdgesLayer, self).__init__([datasource], direct=direct)
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
-        self._pen_table = SignalingDefaultDict(parent=self, default_factory=lambda:default_pen )
+        self._pen_table = SignalingDict(self)
+        self.default_pen = default_pen
 
     def handle_edge_clicked(self, id_pair, event):
         """
         Handles clicks from our associated SegmentationEdgesItem(s).
-        (See connection made in SegmentationEdgesItemRequest.) 
-        
+        (See connection made in SegmentationEdgesItemRequest.)
+
         id_pair: The edge that was clicked.
         """
         DEBUG_BEHAVIOR = False
@@ -612,7 +645,7 @@ class SegmentationEdgesLayer( Layer ):
             # Simple debug functionality: change to a random color.
             # Please verify in the viewer that edges spanning multiple tiles changed color
             # together, even though only one of the tiles was clicked.
-            random_color = QColor( *list( numpy.random.randint(0,255,(3,)) ) )
+            random_color = QColor(*list(numpy.random.randint(0, 255, (3,))))
             pen = QPen(self.pen_table[id_pair])
             pen.setColor(random_color)
             self.pen_table[id_pair] = pen
@@ -621,22 +654,23 @@ class SegmentationEdgesLayer( Layer ):
     def handle_edge_swiped(self, id_pair, event):
         pass
 
-class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
+
+class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
     """
     Shows a set of user-labeled edges.
     """
-    
-    labelsChanged = pyqtSignal( dict ) # { id_pair, label_class }
-    
+
+    labelsChanged = pyqtSignal(dict)  # { id_pair, label_class }
+
     def __init__(self, datasource, label_class_pens, initial_labels={}, delay_ms=1000):
         # Class 0 (no label) is the default pen
-        super(LabelableSegmentationEdgesLayer, self).__init__( datasource, default_pen=label_class_pens[0] )
+        super(LabelableSegmentationEdgesLayer, self).__init__(datasource, default_pen=label_class_pens[0])
         self._delay_ms = delay_ms
         self._label_class_pens = label_class_pens
 
         # Initialize the labels and pens
         self.overwrite_edge_labels(initial_labels)
-        
+
         self._buffered_updates = {}
 
         # To avoid sending lots of single updates if the user is clicking quickly,
@@ -644,7 +678,7 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
         self._timer = QTimer(self)
         self._timer.setInterval(self._delay_ms)
         self._timer.setSingleShot(True)
-        self._timer.timeout.connect( self._signal_buffered_updates )
+        self._timer.timeout.connect(self._signal_buffered_updates)
 
     def overwrite_edge_labels(self, new_edge_labels):
         self._edge_labels = defaultdict(lambda: 0, new_edge_labels)
@@ -652,9 +686,12 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
         # Change the pens accordingly
         pen_table = {}
         for id_pair, label_class in list(self._edge_labels.items()):
-            pen_table[id_pair] = self._label_class_pens[label_class]
+            # Omit unlabeled edges; there are usually a lot of them
+            # and the default is class 0 anyway.
+            if label_class != 0:
+                pen_table[id_pair] = self._label_class_pens[label_class]
         self.pen_table.overwrite(pen_table)
-    
+
     def handle_edge_clicked(self, id_pair, event):
         """
         Overridden from SegmentationEdgesLayer
@@ -680,10 +717,10 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
 
         # Buffer the update for listeners
         self._buffered_updates[id_pair] = new_class
-        
+
         # Reset the timer
         self._timer.start()
-        
+
         event.accept()
 
     def handle_edge_swiped(self, id_pair, event):
@@ -697,17 +734,17 @@ class LabelableSegmentationEdgesLayer( SegmentationEdgesLayer ):
             return
 
         self._edge_labels[id_pair] = new_class
-        
+
         # Update the display immediately
         self.pen_table[id_pair] = self._label_class_pens[new_class]
 
         # Notify listeners immediately
-        self.labelsChanged.emit( {id_pair: new_class} )
+        self.labelsChanged.emit({id_pair: new_class})
 
         event.accept()
 
     def _signal_buffered_updates(self):
         updates = self._buffered_updates
         self._buffered_updates = {}
-        self.labelsChanged.emit( updates )
-        
+        if updates:
+            self.labelsChanged.emit(updates)
