@@ -45,7 +45,17 @@ from PyQt5.QtWidgets import (
 from volumina.utility import ShortcutManager
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
-TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
+lineEdit_Stylesheet = "QLineEdit {{ " \
+                      "color: black; " \
+                      "background-color: white; " \
+                      "max-height: 20;" \
+                      "max-width: 50;" \
+                      "font-size: 14;" \
+                      "font-style: bold;" \
+                      "text-align: center;}}"
+
+SB_TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
+LE_TEMPLATE = "QLineEdit {{ color: {0}; background-color: {1}; }}"
 
 
 def _load_icon(filename, backgroundColor, width, height):
@@ -183,7 +193,7 @@ class SpinBoxImageView(QHBoxLayout):
     def do_draw(self):
         r, g, b, a = self.foregroundColor.getRgb()
         rgb = "rgb({0},{1},{2})".format(r, g, b)
-        sheet = TEMPLATE.format(rgb, self.backgroundColor.name())
+        sheet = SB_TEMPLATE.format(rgb, self.backgroundColor.name())
         self.spinBox.setStyleSheet(sheet)
 
     def spinBoxValueChanged(self, value):
@@ -422,6 +432,69 @@ class ImageView2DHud(QWidget):
         self.buttons["swap-axes"].swapped = swapped
 
 
+class PosCoordWidget(DelayedSpinBox):
+    def __init__(self, name, foregroundColor, backgroundColor):
+        super().__init__(750)
+        self.label = QLabel()
+        self.label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+        pixmap = QPixmap(25 * 10, 25 * 10)
+        pixmap.fill(backgroundColor)
+        painter = QPainter()
+        painter.begin(pixmap)
+        pen = QPen(foregroundColor)
+        painter.setPen(pen)
+        painter.setRenderHint(QPainter.Antialiasing)
+        font = QFont()
+        font.setBold(True)
+        font.setPixelSize(25 * 10 - 30)
+        path = QPainterPath()
+        path.addText(QPointF(50, 25 * 10 - 50), font, name)
+        brush = QBrush(foregroundColor)
+        painter.setBrush(brush)
+        painter.drawPath(path)
+        painter.setFont(font)
+        painter.end()
+        pixmap = pixmap.scaled(QSize(20, 20),
+                               Qt.KeepAspectRatio,
+                               Qt.SmoothTransformation)
+        self.label.setPixmap(pixmap)
+
+        self.setAlignment(Qt.AlignCenter)
+        self.setToolTip("{0} Spin Box".format(name))
+        self.setButtonSymbols(QAbstractSpinBox.NoButtons)
+        self.setMaximumHeight(20)
+        font = self.font()
+        font.setPixelSize(14)
+        self.setFont(font)
+        sheet = SB_TEMPLATE.format(foregroundColor.name(),
+                                   backgroundColor.name())
+        self.setStyleSheet(sheet)
+
+
+class PosLayerInfoWidget(QLineEdit):
+    def __init__(self):
+        super().__init__()
+        self.setAlignment(Qt.AlignCenter)
+        self.setMaximumHeight(20)
+        self.setMaximumWidth(100)
+
+        font = self.font()
+        font.setPixelSize(14)
+        font.setBold(True)
+        self.setFont(font)
+        self.setReadOnly(True)
+        self.setStyleSheet(lineEdit_Stylesheet)
+
+    def setInfo(self, text, foregroundColor, backgroundColor):
+        sheet = LE_TEMPLATE.format(foregroundColor.name(), backgroundColor.name())
+        self.setStyleSheet(sheet)
+        if text is None:
+            self.setText("-")
+        else:
+            self.setText(text)
+
+
 class QuadStatusBar(QHBoxLayout):
 
     positionChanged = pyqtSignal(int, int, int) # x,y,z
@@ -434,11 +507,11 @@ class QuadStatusBar(QHBoxLayout):
         self.editor = volumeEditor
 
     def showXYCoordinates(self):
-        self.zLabel.setHidden(True)
+        self.zSpinBox.label.setHidden(True)
         self.zSpinBox.setHidden(True)
 
     def showXYZCoordinates(self):
-        self.zLabel.setHidden(False)
+        self.zSpinBox.label.setHidden(False)
         self.zSpinBox.setHidden(False)
 
     def hideTimeSlider(self, flag):
@@ -463,23 +536,24 @@ class QuadStatusBar(QHBoxLayout):
         self, xbackgroundColor, xforegroundColor, ybackgroundColor, yforegroundColor, zbackgroundColor,
         zforegroundColor, labelbackgroundColor, labelforegroundColor
     ):
-        self.xLabel, self.xSpinBox = self._get_pos_widget("X", xbackgroundColor, xforegroundColor)
-        self.yLabel, self.ySpinBox = self._get_pos_widget("Y", ybackgroundColor, yforegroundColor)
-        self.zLabel, self.zSpinBox = self._get_pos_widget("Z", zbackgroundColor, zforegroundColor)
+        self.xSpinBox = PosCoordWidget("X", xforegroundColor, xbackgroundColor)
+        self.ySpinBox = PosCoordWidget("Y", yforegroundColor, ybackgroundColor)
+        self.zSpinBox = PosCoordWidget("Z", zforegroundColor, zbackgroundColor)
         self.layerValueWidgets = self._get_layer_value_widgets()
 
         self.xSpinBox.delayedValueChanged.connect(partial(self._handlePositionBoxValueChanged, "x"))
         self.ySpinBox.delayedValueChanged.connect(partial(self._handlePositionBoxValueChanged, "y"))
         self.zSpinBox.delayedValueChanged.connect(partial(self._handlePositionBoxValueChanged, "z"))
 
-        self.addWidget(self.xLabel)
+        self.addWidget(self.xSpinBox.label)
         self.addWidget(self.xSpinBox)
-        self.addWidget(self.yLabel)
+        self.addWidget(self.ySpinBox.label)
         self.addWidget(self.ySpinBox)
-        self.addWidget(self.zLabel)
+        self.addWidget(self.zSpinBox.label)
         self.addWidget(self.zSpinBox)
+        self.zSpinBoxIndex = self.indexOf(self.zSpinBox)
         for valueWidget in self.layerValueWidgets.values():
-            self.addWidget(valueWidget)
+            self.insertWidget(self.zSpinBoxIndex+1, valueWidget)
 
         self.addSpacing(10)
 
@@ -557,60 +631,6 @@ class QuadStatusBar(QHBoxLayout):
 
         self._registerTimeframeShortcuts()
 
-    def _get_pos_widget(self, name, backgroundColor, foregroundColor):
-        label = QLabel()
-        label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-
-        pixmap = QPixmap(25 * 10, 25 * 10)
-        pixmap.fill(backgroundColor)
-        painter = QPainter()
-        painter.begin(pixmap)
-        pen = QPen(foregroundColor)
-        painter.setPen(pen)
-        painter.setRenderHint(QPainter.Antialiasing)
-        font = QFont()
-        font.setBold(True)
-        font.setPixelSize(25 * 10 - 30)
-        path = QPainterPath()
-        path.addText(QPointF(50, 25 * 10 - 50), font, name)
-        brush = QBrush(foregroundColor)
-        painter.setBrush(brush)
-        painter.drawPath(path)
-        painter.setFont(font)
-        painter.end()
-        pixmap = pixmap.scaled(QSize(20, 20),
-                               Qt.KeepAspectRatio,
-                               Qt.SmoothTransformation)
-        label.setPixmap(pixmap)
-
-        spinbox = DelayedSpinBox(750)
-        spinbox.setAlignment(Qt.AlignCenter)
-        spinbox.setToolTip("{0} Spin Box".format(name))
-        spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
-        spinbox.setMaximumHeight(20)
-        font = spinbox.font()
-        font.setPixelSize(14)
-        spinbox.setFont(font)
-        sheet = TEMPLATE.format(foregroundColor.name(),
-                                backgroundColor.name())
-        spinbox.setStyleSheet(sheet)
-        return label, spinbox
-
-    def _get_posMeta_widget(self):
-        ledit = QLineEdit()
-        ledit.setAlignment(Qt.AlignCenter)
-        ledit.setMaximumHeight(20)
-        ledit.setMaximumWidth(100)
-
-        font = ledit.font()
-        font.setPixelSize(14)
-        font.setBold(True)
-        ledit.setFont(font)
-        ledit.setStyleSheet(f"color: white;"
-                            f"background-color: black;"
-                            f"border: none")
-        return ledit
-
     def _layer_show_value_Changed(self, layer, showVal):
         if showVal:
             if "Segmentation (Label " in layer.name:
@@ -618,8 +638,9 @@ class QuadStatusBar(QHBoxLayout):
                     if "Segmentation (Label " in key.name:
                         self.layerValueWidgets[layer] = self.layerValueWidgets[key]
                         return
-            self.layerValueWidgets[layer] = self._get_posMeta_widget()
-            self.addWidget(self.layerValueWidgets[layer])
+            self.layerValueWidgets[layer] = PosLayerInfoWidget()
+            self.insertWidget(self.zSpinBoxIndex + 1, self.layerValueWidgets[layer])
+            # self.addWidget(self.layerValueWidgets[layer])
         else:
             widget = self.layerValueWidgets[layer]
             del self.layerValueWidgets[layer]
@@ -631,8 +652,8 @@ class QuadStatusBar(QHBoxLayout):
             widget.deleteLater()
 
     def _layer_added(self, layer, row):
-        layer.showValueChanged.connect(self._layer_show_value_Changed)
-        if layer.showValue:
+        layer.showPosValueChanged.connect(self._layer_show_value_Changed)
+        if layer.showPosValue:
             if "Segmentation (Label " in layer.name:
                 for key in self.layerValueWidgets.keys():
                     if "Segmentation (Label " in key.name:
@@ -641,11 +662,12 @@ class QuadStatusBar(QHBoxLayout):
                     else:
                         continue
                     continue
-            self.layerValueWidgets[layer] = self._get_posMeta_widget()
-            self.addWidget(self.layerValueWidgets[layer])
+            self.layerValueWidgets[layer] = PosLayerInfoWidget()
+            self.insertWidget(self.zSpinBoxIndex + 1, self.layerValueWidgets[layer])
+            # self.addWidget(self.layerValueWidgets[layer])
 
     def _layer_removed(self, layer, row):
-        layer.showValueChanged.disconnect(self._layer_show_value_Changed)
+        layer.showPosValueChanged.disconnect(self._layer_show_value_Changed)
         if layer in self.layerValueWidgets:
             widget = self.layerValueWidgets[layer]
             del self.layerValueWidgets[layer]
@@ -661,8 +683,8 @@ class QuadStatusBar(QHBoxLayout):
         self.editor.layerStack.layerAdded.connect(self._layer_added)
         self.editor.layerStack.layerRemoved.connect(self._layer_removed)
         for layer in self.editor.layerStack:   # Just to be sure, however layerStack should be empty at this point
-            layer.showValueChanged.connect(self._layer_show_value_Changed())
-            if layer.showValue:
+            layer.showPosValueChanged.connect(self._layer_show_value_Changed)
+            if layer.showPosValue:
                 if "Segmentation (Label " in layer.name:
                     for key in positionMeta.keys():
                         if "Segmentation (Label " in key.name:
@@ -671,7 +693,7 @@ class QuadStatusBar(QHBoxLayout):
                         else:
                             continue
                         continue
-                layerValueWidgets[layer] = self._get_posMeta_widget()
+                layerValueWidgets[layer] = PosLayerInfoWidget()
 
         return layerValueWidgets
 
@@ -788,7 +810,7 @@ class QuadStatusBar(QHBoxLayout):
         self.zSpinBox.setValue(shape5DcropMin[3])
         self.timeSlider.setValue(shape5DcropMin[0])
 
-    def setMouseCoords(self, x, y, z):
+    def setMousePosInfos(self, x, y, z):
         self.xSpinBox.setValueWithoutSignal(x)
         self.ySpinBox.setValueWithoutSignal(y)
         self.zSpinBox.setValueWithoutSignal(z)
@@ -797,7 +819,7 @@ class QuadStatusBar(QHBoxLayout):
         imgView = self.editor.posModel.activeView
         blockSize = self.editor.imageViews[imgView].scene()._tileProvider.tiling.blockSize
         sliceShape = self.editor.imageViews[imgView].scene()._tileProvider.tiling.sliceShape
-        labelSet = False
+        labelSetDone = False
 
         del coords[imgView]
         x,y = (val for val in coords)
@@ -809,7 +831,7 @@ class QuadStatusBar(QHBoxLayout):
             layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
             stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
             tile_ids = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(
-                QRect(QPoint(x, y), QPoint(x, y)))
+                QRect(QPoint(x, y), QPoint(x+1, y+1)))
             if tile_ids:
                 tile_id = tile_ids[0]  # There will be just one tile, since we have just a single point
             else:
@@ -822,38 +844,24 @@ class QuadStatusBar(QHBoxLayout):
                 x_r = x % blockSize
                 y_r = y % blockSize
 
-                if x >= blockSize and x >= int(sliceShape[0]/blockSize) * blockSize:
+                if x >= blockSize and x >= (sliceShape[0]//blockSize)*blockSize and sliceShape[0]%blockSize<blockSize//3:
                     x_r = x_r + blockSize
-                if y >= blockSize and y >= int(sliceShape[1]/blockSize) * blockSize:
+                if y >= blockSize and y >= int(sliceShape[1]/blockSize) * blockSize and sliceShape[0]%blockSize<blockSize//3:
                     y_r = y_r + blockSize
 
                 value = image.pixelColor(x_r, y_r)
 
-            lbl, foreground, background = layer.setValueWidget(value)
+            lbl, foreground, background = layer.getPosInfo(value)
 
             if "Segmentation (Label " in layer.name:
-                if not labelSet:
+                if not labelSetDone:
                     if lbl is None:
-                        widget.setStyleSheet(f"color: {foreground.name()};"
-                                             f"background-color: {background.name()};"
-                                             f"border: none")
-                        widget.setText(f"{'-'}")
+                        widget.setInfo(lbl, foreground, background)
                         continue
-                    widget.setStyleSheet(f"color: {foreground.name()};"
-                                                   f"background-color: {background.name()};"
-                                                   f"border: none")
-                    widget.setText(f"{lbl}")
-                    labelSet = True
-            elif lbl is not None:
-                widget.setStyleSheet(f"color: {foreground.name()};"
-                                     f"background-color: {background.name()};"
-                                     f"border: none")
-                widget.setText(f"{lbl}")
+                    widget.setInfo(lbl, foreground, background)
+                    labelSetDone = True
             else:
-                widget.setStyleSheet(f"color: {foreground.name()};"
-                                     f"background-color: {background.name()};"
-                                     f"border: none")
-                widget.setText(f"-")
+                widget.setInfo(lbl, foreground, background)
 
 
 if __name__ == "__main__":
