@@ -28,6 +28,9 @@ import os
 default_config = """
 [pixelpipeline]
 verbose: false
+
+[viewport]
+use_opengl: true
 """
 
 _cfg = configparser.ConfigParser()
@@ -40,10 +43,25 @@ if os.path.exists(userConfig):
 class Config:
     def __init__(self, cfg):
         self._cfg = cfg
+        self._env = os.environ
 
     @property
     def verbose_pixelpipeline(self):
-        return self._cfg.getboolean("pixelpipeline", "verbose")
+        return self._get_boolean("pixelpipeline", "verbose")
+
+    @property
+    def use_opengl_viewport(self):
+        return self._get_boolean("viewport", "use_opengl")
+
+    def _get_boolean(self, section: str, option: str) -> bool:
+        val = self._env.get(f"{section.upper()}_{option.upper()}")
+        if val is not None:
+            try:
+                return bool(int(val))
+            except ValueError:
+                pass
+
+        return self._cfg.getboolean(section, option)
 
 
 CONFIG = Config(_cfg)
