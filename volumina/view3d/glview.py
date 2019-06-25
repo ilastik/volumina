@@ -203,7 +203,9 @@ class GLViewMock(QLabel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setText("3D widget disabled via $HOME/.voluminarc or environment variable\n" "FEATURES_USE_OPENGL_WIDGET.")
+        self.setText(
+            "3D widget disabled via $HOME/.voluminarc or environment variable" "<pre>FEATURES_USE_OPENGL_WIDGET</pre>"
+        )
 
     def add_mesh(self, name, mesh=None):
         pass
@@ -238,4 +240,7 @@ class GLViewMock(QLabel):
         pass
 
 
-GLView = volumina.config.CONFIG.show_3d_widget and GLViewReal or GLViewMock
+if volumina.config.Config.show_3d_widget:
+    GLView = GLViewReal
+else:
+    GLView = GLViewMock

@@ -53,13 +53,13 @@ class Config:
 
     def _get_boolean(self, section: str, option: str) -> bool:
         val = self._env.get(f"{section.upper()}_{option.upper()}")
-        if val is not None:
-            try:
-                return bool(int(val))
-            except ValueError:
-                pass
+        if val is None:
+            return self._cfg.getboolean(section, option)
 
-        return self._cfg.getboolean(section, option)
+        try:
+            return bool(int(val))
+        except ValueError as e:
+            raise ValueError(f"environment variable {val!r} is not a boolean") from e
 
 
 CONFIG = Config(_cfg)
