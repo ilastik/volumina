@@ -55,6 +55,6 @@ script:
   - cd ${TEST_ENV_PREFIX}/ilastik-meta/volumina 
   # added -s "-screen 0 1024x768x16", to make overview3d_test.py pass,
   # failure was related to xvfb-run on travis running the screen per default on 8 bit.
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then VIEWPORT_USE_OPENGL=0 xvfb-run -s "-screen 0 1024x768x16" pytest --capture=no --cov=volumina; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then VOLUMINA_SHOW_3D_WIDGET=0 xvfb-run -s "-screen 0 1024x768x16" pytest --capture=no --cov=volumina; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pytest --capture=no --cov=volumina; fi
   - cd $TRAVIS_BUILD_DIR && git diff --name-only --diff-filter=AM master.. | grep ".*\.py" | xargs black --check

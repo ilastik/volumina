@@ -238,4 +238,4 @@ class GLViewMock(QLabel):
         pass
 
 
-GLView = volumina.config.CONFIG.use_opengl_viewport and GLViewReal or GLViewMock
+GLView = volumina.config.CONFIG.show_3d_widget and GLViewReal or GLViewMock

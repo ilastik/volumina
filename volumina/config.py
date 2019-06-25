@@ -26,11 +26,9 @@ import configparser
 import os
 
 default_config = """
-[pixelpipeline]
-verbose: false
-
-[viewport]
-use_opengl: true
+[volumina]
+pixelpipeline_verbose: false
+show_3d_widget: true
 """
 
 _cfg = configparser.ConfigParser()
@@ -47,11 +45,11 @@ class Config:
 
     @property
     def verbose_pixelpipeline(self):
-        return self._get_boolean("pixelpipeline", "verbose")
+        return self._get_boolean("volumina", "pixelpipeline_verbose")
 
     @property
-    def use_opengl_viewport(self):
-        return self._get_boolean("viewport", "use_opengl")
+    def show_3d_widget(self):
+        return self._get_boolean("volumina", "show_3d_widget")
 
     def _get_boolean(self, section: str, option: str) -> bool:
         val = self._env.get(f"{section.upper()}_{option.upper()}")
