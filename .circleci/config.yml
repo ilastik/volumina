@@ -9,6 +9,7 @@ jobs:
       CONDA_ROOT: /home/ubuntu/miniconda
       TEST_ENV_NAME: test-env
       TEST_ENV_PREFIX: /home/ubuntu/miniconda/envs/test-env
+      VOLUMINA_SHOW_3D_WIDGET: 0
     docker:
     - image: circleci/build-image:ubuntu-14.04-XXL-upstart-1189-5614f37
       command: /sbin/init

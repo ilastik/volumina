@@ -26,8 +26,9 @@ import configparser
 import os
 
 default_config = """
-[pixelpipeline]
-verbose: false
+[volumina]
+pixelpipeline_verbose: false
+show_3d_widget: true
 """
 
 _cfg = configparser.ConfigParser()
@@ -40,10 +41,25 @@ if os.path.exists(userConfig):
 class Config:
     def __init__(self, cfg):
         self._cfg = cfg
+        self._env = os.environ
 
     @property
     def verbose_pixelpipeline(self):
-        return self._cfg.getboolean("pixelpipeline", "verbose")
+        return self._get_boolean("volumina", "pixelpipeline_verbose")
+
+    @property
+    def show_3d_widget(self):
+        return self._get_boolean("volumina", "show_3d_widget")
+
+    def _get_boolean(self, section: str, option: str) -> bool:
+        val = self._env.get(f"{section.upper()}_{option.upper()}")
+        if val is None:
+            return self._cfg.getboolean(section, option)
+
+        try:
+            return bool(int(val))
+        except ValueError as e:
+            raise ValueError(f"environment variable {val!r} is not a boolean") from e
 
 
 CONFIG = Config(_cfg)
