@@ -22,8 +22,8 @@
 from __future__ import division
 from __future__ import absolute_import
 from builtins import range
-from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
-from PyQt5.QtGui import QCursor, QPainter, QImage
+from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF, QLineF, QEvent
+from PyQt5.QtGui import QCursor, QPainter, QImage, QTransform
 from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox
 
 import numpy
@@ -128,6 +128,7 @@ class ImageView2D(QGraphicsView):
 
         self._crossHairCursor = None
         self._sliceIntersectionMarker = None
+        self._total_scale_factor = 1
 
         self._ticker = QTimer(self)
         self._ticker.timeout.connect(self._tickerEvent)
@@ -273,6 +274,25 @@ class ImageView2D(QGraphicsView):
         else:
             self._deltaPan = self._deaccelerate(self._deltaPan)
             self._panning()
+
+    def viewportEvent(self, event: QEvent):
+        if event.type() in (QEvent.TouchBegin, QEvent.TouchUpdate, QEvent.TouchEnd):
+            points = event.touchPoints()
+            print("POINTS", points)
+            if len(points) == 2:
+                current_scale_factor = (
+                    QLineF(points[0].pos(), points[1].pos()).length()
+                    / QLineF(points[0].startPos(), points[1].startPos())
+                ).length()
+
+                if event.touchPointStates() & Qt.TouchPointReleased:
+                    self._total_scale_factor *= current_scale_factor
+                    current_scale_factor = 1
+
+                scale = self._total_scale_factor * current_scale_factor
+                self.setTransform(QTransform().scale(scale, scale))
+            return True
+        return False
 
     def zoomOut(self):
         self.doScale(0.9)
