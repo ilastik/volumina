@@ -38,7 +38,7 @@ class TestPatchAccessorExactBorders:
 
 
 class TestPatchAccessorWithThinEdge:
-    # Layout 19x1 blocksize 9
+    # Layout 29x1 blocksize 9
     # +---+---+----+
     # |9x1|9x1|11x1|
     # +---+---+----+
