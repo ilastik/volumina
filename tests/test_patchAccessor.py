@@ -5,7 +5,7 @@ from volumina.patchAccessor import PatchAccessor
 
 class TestPatchAccessorExactBorders:
     # Given cell size of 3
-    # And following numbering sceme of patch coordinate system
+    # And following numbering scheme of patch coordinate system
     # +---+---+---+
     # | 0 | 1 | 2 |
     # +---+---+---+
