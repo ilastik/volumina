@@ -276,14 +276,17 @@ class ImageView2D(QGraphicsView):
             self._panning()
 
     def viewportEvent(self, event: QEvent):
+        result = super().viewportEvent(event)
+        if result:
+            return result
+
         if event.type() in (QEvent.TouchBegin, QEvent.TouchUpdate, QEvent.TouchEnd):
             points = event.touchPoints()
-            print("POINTS", points)
             if len(points) == 2:
                 current_scale_factor = (
                     QLineF(points[0].pos(), points[1].pos()).length()
-                    / QLineF(points[0].startPos(), points[1].startPos())
-                ).length()
+                    / QLineF(points[0].startPos(), points[1].startPos()).length()
+                )
 
                 if event.touchPointStates() & Qt.TouchPointReleased:
                     self._total_scale_factor *= current_scale_factor
@@ -292,6 +295,7 @@ class ImageView2D(QGraphicsView):
                 scale = self._total_scale_factor * current_scale_factor
                 self.setTransform(QTransform().scale(scale, scale))
             return True
+
         return False
 
     def zoomOut(self):
