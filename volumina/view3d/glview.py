@@ -204,7 +204,10 @@ class GLViewMock(QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setText(
-            "3D widget disabled via $HOME/.voluminarc or environment variable" "<pre>VOLUMINA_SHOW_3D_WIDGET</pre>"
+            "3D widget disabled via $HOME/.voluminarc or environment variable"
+            "<pre>VOLUMINA_SHOW_3D_WIDGET</pre>\n\n"
+            "Example .voluminarc:\n"
+            "<pre>[volumina]\nshow_3d_widget: true\n</pre>"
         )
 
     def add_mesh(self, name, mesh=None):
