@@ -19,9 +19,6 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from future import standard_library
-
-standard_library.install_aliases()
 import configparser
 import os
 
@@ -38,7 +35,7 @@ if os.path.exists(userConfig):
     _cfg.read(userConfig)
 
 
-class Config:
+class _Config:
     def __init__(self, cfg):
         self._cfg = cfg
         self._env = os.environ
@@ -62,4 +59,4 @@ class Config:
             raise ValueError(f"environment variable {val!r} is not a boolean") from e
 
 
-CONFIG = Config(_cfg)
+CONFIG = _Config(_cfg)
