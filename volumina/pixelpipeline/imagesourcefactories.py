@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,35 +19,40 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from builtins import range
+
 import copy
-from volumina.multimethods import multimethod
+import functools
+
 from volumina.layer import (
-    GrayscaleLayer,
-    RGBALayer,
-    ColortableLayer,
     AlphaModulatedLayer,
     ClickableColortableLayer,
+    ColortableLayer,
     DummyGraphicsItemLayer,
     DummyRasterItemLayer,
-    SegmentationEdgesLayer,
+    GrayscaleLayer,
     LabelableSegmentationEdgesLayer,
+    RGBALayer,
+    SegmentationEdgesLayer,
 )
-from .imagesources import (
-    GrayscaleImageSource,
-    ColortableImageSource,
-    RGBAImageSource,
+from volumina.pixelpipeline.datasources import ConstantSource
+from volumina.pixelpipeline.imagesources import (
     AlphaModulatedImageSource,
+    ColortableImageSource,
     DummyItemSource,
     DummyRasterItemSource,
+    GrayscaleImageSource,
+    RGBAImageSource,
     SegmentationEdgesItemSource,
 )
 
-from .datasources import ConstantSource
+
+@functools.singledispatch
+def createImageSource(layer, _datasources2d):
+    raise TypeError(f"'createImageSource' not supported for 'layer' instance of {layer.__class__.__name__!r}")
 
 
-@multimethod(AlphaModulatedLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(layer: AlphaModulatedLayer, datasources2d):
     assert len(datasources2d) == 1
     src = AlphaModulatedImageSource(datasources2d[0], layer)
     src.setObjectName(layer.name)
@@ -58,8 +61,8 @@ def createImageSource(layer, datasources2d):
     return src
 
 
-@multimethod(GrayscaleLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(layer: GrayscaleLayer, datasources2d):
     assert len(datasources2d) == 1
     src = GrayscaleImageSource(datasources2d[0], layer)
     src.setObjectName(layer.name)
@@ -67,8 +70,8 @@ def createImageSource(layer, datasources2d):
     return src
 
 
-@multimethod(ColortableLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(layer: ColortableLayer, datasources2d):
     assert len(datasources2d) == 1
     src = ColortableImageSource(datasources2d[0], layer)
     src.setObjectName(layer.name)
@@ -76,8 +79,8 @@ def createImageSource(layer, datasources2d):
     return src
 
 
-@multimethod(ClickableColortableLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(layer: ClickableColortableLayer, datasources2d):
     assert len(datasources2d) == 1
     src = ColortableImageSource(datasources2d[0], layer)
     src.setObjectName(layer.name)
@@ -85,15 +88,15 @@ def createImageSource(layer, datasources2d):
     return src
 
 
-@multimethod(RGBALayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(layer: RGBALayer, datasources2d):
     assert len(datasources2d) == 4
     ds = copy.copy(datasources2d)
     for i in range(3):
-        if datasources2d[i] == None:
+        if datasources2d[i] is None:
             ds[i] = ConstantSource(layer.color_missing_value)
     guarantees_opaqueness = False
-    if datasources2d[3] == None:
+    if datasources2d[3] is None:
         ds[3] = ConstantSource(layer.alpha_missing_value)
         guarantees_opaqueness = True if layer.alpha_missing_value == 255 else False
     src = RGBAImageSource(ds[0], ds[1], ds[2], ds[3], layer, guarantees_opaqueness=guarantees_opaqueness)
@@ -103,24 +106,24 @@ def createImageSource(layer, datasources2d):
     return src
 
 
-@multimethod(DummyGraphicsItemLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(_layer: DummyGraphicsItemLayer, datasources2d):
     assert len(datasources2d) == 1
     return DummyItemSource(datasources2d[0])
 
 
-@multimethod(DummyRasterItemLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(_layer: DummyRasterItemLayer, _datasources2d):
     return DummyRasterItemSource()
 
 
-@multimethod(SegmentationEdgesLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(layer: SegmentationEdgesLayer, datasources2d):
     assert len(datasources2d) == 1
     return SegmentationEdgesItemSource(layer, datasources2d[0], False)
 
 
-@multimethod(LabelableSegmentationEdgesLayer, list)
-def createImageSource(layer, datasources2d):
+@createImageSource.register
+def _(layer: LabelableSegmentationEdgesLayer, datasources2d):
     assert len(datasources2d) == 1
     return SegmentationEdgesItemSource(layer, datasources2d[0], True)

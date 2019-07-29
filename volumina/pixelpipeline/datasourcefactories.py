@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,136 +19,139 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from volumina.multimethods import multimethod
-from .datasources import ArraySource
+
+import contextlib
+import functools
+from typing import Sequence, Tuple, TypeVar, Union
+
 import numpy
 
-hasLazyflow = True
-try:
+from volumina.pixelpipeline import datasources
+
+_T = TypeVar("_T")
+
+
+def _to_shape5d(
+    shape: Sequence[int], fillval: _T = 1
+) -> Tuple[Union[int, _T], Union[int, _T], Union[int, _T], Union[int, _T], Union[int, _T]]:
+    """Make a 5D shape out of an ND shape.
+
+    Examples:
+
+        >>> _to_shape5d([5, 6])
+        (1, 5, 6, 1, 1)
+        >>> _to_shape5d([5, 6, 7])
+        (1, 5, 6, 7, 1)
+        >>> _to_shape5d([5, 6, 7, 8])
+        (1, 5, 6, 7, 8)
+        >>> _to_shape5d([5, 6, 7, 8, 9])
+        (5, 6, 7, 8, 9)
+
+        Custom fill value::
+
+            >>> _to_shape5d([5, 6, 7], fillval=None)
+            (None, 5, 6, 7, None)
+
+        Only shapes with lengths from 2 to 5 are supported::
+
+            >>> _to_shape5d([5])  # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+              ...
+            ValueError
+            >>> _to_shape5d([5, 6, 7, 8, 9, 42])  # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+              ...
+            ValueError
+
+        Special case for 3D shapes with the small last dimension ``shape[2] <= 4``::
+
+            >>> _to_shape5d([5, 6, 4])
+            (1, 5, 6, 1, 4)
+    """
+    n = len(shape)
+
+    if n == 2:
+        return fillval, shape[0], shape[1], fillval, fillval
+    if n == 3 and shape[2] <= 4:
+        return fillval, shape[0], shape[1], fillval, shape[2]
+    if n == 3:
+        return fillval, shape[0], shape[1], shape[2], fillval
+    if n == 4:
+        return fillval, shape[0], shape[1], shape[2], shape[3]
+    if n == 5:
+        return shape[0], shape[1], shape[2], shape[3], shape[4]
+
+    raise ValueError(f"invalid dimension count {n} for shape {shape}")
+
+
+class _DatasetWrapper5D:
+    def __init__(self, dset):
+        self._dset = dset
+        self.dtype = dset.dtype
+        self.shape = _to_shape5d(dset.shape)
+
+    def __getitem__(self, slicing_5d):
+        assert len(slicing_5d) == 5
+
+        # Index HDF5 dataset first to get an ndarray, then expand that array to 5D.
+
+        h5_idx = []
+        np_idx = []
+
+        for idx, dim in zip(slicing_5d, _to_shape5d(self._dset.shape, fillval=None)):
+            if dim is None:
+                np_idx.append(numpy.newaxis)
+            else:
+                np_idx.append(slice(None))
+                h5_idx.append(idx)
+
+        return self._dset[tuple(h5_idx)][tuple(np_idx)]
+
+
+@functools.singledispatch
+def createDataSource(source, _withShape=False):
+    raise TypeError(f"'createDataSource' not supported for 'source' instance of {source.__class__.__name__!r}")
+
+
+with contextlib.suppress(ImportError):
     import lazyflow
-    from .datasources import LazyflowSource
-except ImportError:
-    hasLazyflow = False
 
-try:
-    import h5py
-
-    hasH5py = True
-except ImportError:
-    hasH5py = False
-
-try:
-    import vigra
-
-    hasVigra = True
-except ImportError:
-    hasVigra = False
-
-
-if hasLazyflow:
-
-    def _createDataSourceLazyflow(slot, withShape):
-        # has to handle Lazyflow source
-        src = LazyflowSource(slot)
-        shape = src._op5.Output.meta.shape
+    @createDataSource.register
+    def _(slot: lazyflow.graph.Slot, withShape=False):
+        src = datasources.LazyflowSource(slot)
         if withShape:
-            return src, shape
+            return src, src._op5.Output.meta.shape
         else:
             return src
 
-    @multimethod(lazyflow.graph.OutputSlot, bool)
-    def createDataSource(source, withShape=False):
-        return _createDataSourceLazyflow(source, withShape)
 
-    @multimethod(lazyflow.graph.InputSlot, bool)
-    def createDataSource(source, withShape=False):
-        return _createDataSourceLazyflow(source, withShape)
-
-    @multimethod(lazyflow.graph.OutputSlot)
-    def createDataSource(source):
-        return _createDataSourceLazyflow(source, False)
-
-    @multimethod(lazyflow.graph.InputSlot)
-    def createDataSource(source):
-        return _createDataSourceLazyflow(source, False)
+@createDataSource.register
+def _(source: numpy.ndarray, withShape=False):
+    source = source.reshape(_to_shape5d(source.shape))
+    array_source = datasources.ArraySource(source)
+    if withShape:
+        return array_source, source.shape
+    else:
+        return array_source
 
 
-@multimethod(numpy.ndarray, bool)
-def createDataSource(source, withShape=False):
-    return _createArrayDataSource(source, withShape)
+with contextlib.suppress(ImportError):
+    import vigra
+
+    @createDataSource.register
+    def _(source: vigra.VigraArray, withShape=False):
+        source = source.withAxes(*"txyzc").view(numpy.ndarray)
+        createDataSource.registry[numpy.ndarray](source, withShape)
 
 
-if hasH5py:
+with contextlib.suppress(ImportError):
+    import h5py
 
-    class H5pyDset5DWrapper(object):
-        def __init__(self, dset):
-            if len(dset.shape) == 2:
-                shape_5d = (1,) + dset.shape + (1, 1)
-                real_axes = (1, 2)
-            elif len(dset.shape) == 3 and dset.shape[2] <= 4:
-                shape_5d = (1,) + dset.shape[0:2] + (1,) + (dset.shape[2],)
-                real_axes = (1, 2, 4)
-            elif len(dset.shape) == 3:
-                shape_5d = (1,) + dset.shape + (1,)
-                real_axes = (1, 2, 3)
-            elif len(dset.shape) == 4:
-                shape_5d = (1,) + dset.shape
-                real_axes = (1, 2, 3, 4)
-            elif len(dset.shape) == 5:
-                shape_5d = dset.shape
-                real_axes = (0, 1, 2, 3, 4)
-            else:
-                assert False, "Can't handle h5py.Datasets with {} axes".format(len(dset.shape))
-
-            self.dset = dset
-            self.dtype = dset.dtype
-            self.shape = shape_5d
-            self.real_axes = real_axes
-
-        def __getitem__(self, slicing_5d):
-            real_slicing = tuple(slicing_5d[i] for i in self.real_axes)
-            data = self.dset[real_slicing]
-            expanded_slicing = [None] * 5
-            for axis in self.real_axes:
-                expanded_slicing[axis] = slice(None)
-            return data[expanded_slicing]
-
-    @multimethod(h5py.Dataset, bool)
-    def createDataSource(dset, withShape=False):
-        dset_5d = H5pyDset5DWrapper(dset)
-        src = ArraySource(dset_5d)
+    @createDataSource.register
+    def _(dset: h5py.Dataset, withShape=False):
+        dset_5d = _DatasetWrapper5D(dset)
+        src = datasources.ArraySource(dset_5d)
         if withShape:
             return src, dset_5d.shape
         else:
             return src
-
-
-if hasVigra:
-
-    @multimethod(vigra.VigraArray, bool)
-    def createDataSource(source, withShape=False):
-        source = source.withAxes(*"txyzc").view(numpy.ndarray)
-        return _createArrayDataSource(source, withShape)
-
-
-def _createArrayDataSource(source, withShape=False):
-    # has to handle NumpyArray
-    # check if the array is 5d, if not so embed it in a canonical way
-    if len(source.shape) == 2:
-        source = source.reshape((1,) + source.shape + (1, 1))
-    elif len(source.shape) == 3 and source.shape[2] <= 4:
-        source = source.reshape((1,) + source.shape[0:2] + (1,) + (source.shape[2],))
-    elif len(source.shape) == 3:
-        source = source.reshape((1,) + source.shape + (1,))
-    elif len(source.shape) == 4:
-        source = source.reshape((1,) + source.shape)
-    src = ArraySource(source)
-    if withShape:
-        return src, source.shape
-    else:
-        return src
-
-
-@multimethod(numpy.ndarray)
-def createDataSource(source):
-    return createDataSource(source, False)
