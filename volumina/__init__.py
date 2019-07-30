@@ -43,18 +43,8 @@ if not has_handler(volumina_logger):
     volumina_logger.setLevel(logging.INFO)
     volumina_logging_handler.setLevel(logging.INFO)
 
-NO3D = False
+
 from . import api
-
-verboseRequests = False
-
-from . import colorama
-
-colorama.init()
-
-import threading
-
-printLock = threading.Lock()
 
 # volumina.icons_rc is needed on some machines for the icons to be displayed correctly
 import volumina.icons_rc

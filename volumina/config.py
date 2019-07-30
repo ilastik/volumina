@@ -19,19 +19,44 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from future import standard_library
-
-standard_library.install_aliases()
 import configparser
 import os
 
 default_config = """
-[pixelpipeline]
-verbose: false
+[volumina]
+pixelpipeline_verbose: false
+show_3d_widget: true
 """
 
-cfg = configparser.ConfigParser()
-cfg.read_string(default_config)
+_cfg = configparser.ConfigParser()
+_cfg.read_string(default_config)
 userConfig = os.path.expanduser("~/.voluminarc")
 if os.path.exists(userConfig):
-    cfg.read(userConfig)
+    _cfg.read(userConfig)
+
+
+class _Config:
+    def __init__(self, cfg):
+        self._cfg = cfg
+        self._env = os.environ
+
+    @property
+    def verbose_pixelpipeline(self):
+        return self._get_boolean("volumina", "pixelpipeline_verbose")
+
+    @property
+    def show_3d_widget(self):
+        return self._get_boolean("volumina", "show_3d_widget")
+
+    def _get_boolean(self, section: str, option: str) -> bool:
+        val = self._env.get(f"{section.upper()}_{option.upper()}")
+        if val is None:
+            return self._cfg.getboolean(section, option)
+
+        try:
+            return bool(int(val))
+        except ValueError as e:
+            raise ValueError(f"environment variable {val!r} is not a boolean") from e
+
+
+CONFIG = _Config(_cfg)

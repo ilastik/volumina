@@ -25,7 +25,6 @@ packages = [
     "volumina",
     "volumina.pixelpipeline",
     "volumina.skeletons",
-    "volumina.colorama",
     "volumina.widgets",
     "volumina.utility",
     "volumina.view3d",
