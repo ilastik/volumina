@@ -22,14 +22,12 @@
 """High-level API.
 
 """
-from __future__ import print_function
-from builtins import range
 from volumina.pixelpipeline.datasources import *
 from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
-from volumina.navigationController import NavigationInterpreter
 from volumina.colortables import default16
+from volumina.volumeEditor import VolumeEditor
 
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QIcon
@@ -173,9 +171,6 @@ class Viewer(QMainWindow):
         f = self.actionCurrentView.font()
         f.setBold(True)
         self.actionCurrentView.setFont(f)
-
-        # Lazy import here to prevent this module from ignoring volumine.NO3D flag.
-        from volumina.volumeEditor import VolumeEditor
 
         self.editor = VolumeEditor(self.layerstack, parent=self)
 

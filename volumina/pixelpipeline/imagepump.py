@@ -28,7 +28,6 @@ from PyQt5.QtCore import QObject, pyqtSignal, QRect
 
 # volumina
 from volumina.pixelpipeline.slicesources import SliceSource, SyncedSliceSources
-from volumina.pixelpipeline.imagesourcefactories import createImageSource
 from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, ColortableImageSource
 
 
@@ -408,7 +407,7 @@ class ImagePump(object):
             return None
 
         slicesrcs = list(map(sliceSrcOrNone, layer.datasources))
-        ims = createImageSource(layer, slicesrcs)
+        ims = layer.createImageSource(slicesrcs)
         # remove Nones
         slicesrcs = [src for src in slicesrcs if src != None]
         return slicesrcs, ims

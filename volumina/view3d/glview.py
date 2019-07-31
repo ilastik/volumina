@@ -2,13 +2,19 @@ from pyqtgraph.opengl import GLViewWidget
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QVector4D
+from PyQt5.QtWidgets import QLabel
 
 from volumina.view3d.slicingplanes import SlicingPlanes
 from volumina.view3d.axessymbols import AxesSymbols
 from volumina.utility import PreferencesManager
+import volumina.config
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-class GLView(GLViewWidget):
+class GLViewReal(GLViewWidget):
     """
     The actual 3D view seen in the bottom right corner of ilastik.
 
@@ -190,3 +196,54 @@ class GLView(GLViewWidget):
         """
         self._slice_planes.release()
         return GLViewWidget.mousePressEvent(self, event)
+
+
+class GLViewMock(QLabel):
+    slice_changed = pyqtSignal()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setText(
+            "3D widget disabled via $HOME/.voluminarc or environment variable"
+            "<pre>VOLUMINA_SHOW_3D_WIDGET</pre>\n\n"
+            "Example .voluminarc:\n"
+            "<pre>[volumina]\nshow_3d_widget: true\n</pre>"
+        )
+
+    def add_mesh(self, name, mesh=None):
+        pass
+
+    def remove_mesh(self, name):
+        pass
+
+    def is_cached(self, name):
+        return False
+
+    def invalidate_cache(self, name):
+        pass
+
+    @property
+    def visible_meshes(self):
+        return []
+
+    @property
+    def slice(self):
+        return (0, 0, 0)
+
+    @slice.setter
+    def slice(self, slice_):
+        pass
+
+    def set_shape(self, shape):
+        pass
+
+    shape = property(fset=set_shape)
+
+    def toggle_slice(self, axis, visible):
+        pass
+
+
+if volumina.config.CONFIG.show_3d_widget:
+    GLView = GLViewReal
+else:
+    GLView = GLViewMock

@@ -35,7 +35,6 @@ from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.tiling import Tiling
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
-import volumina.pixelpipeline.imagesourcefactories as imsfac
 
 
 class DirtyIndicatorTest(ut.TestCase):
@@ -160,7 +159,7 @@ class ImageScene2D_RenderTest(ut.TestCase):
         self.layer = GrayscaleLayer(self.ds)
         self.layer.set_normalize(0, False)
         self.layerstack.append(self.layer)
-        self.ims = imsfac.createImageSource(self.layer, [self.ds])
+        self.ims = self.layer.createImageSource([self.ds])
         self.sims.register(self.layer, self.ims)
 
         self.scene = ImageScene2D(PositionModel(), (0, 3, 4), preemptive_fetch_number=0)

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,9 +19,11 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from volumina.multimethods import multimethod
-from .datasources import ArraySource
+from functools import singledispatch
+
 import numpy
+
+from .datasources import ArraySource
 
 hasLazyflow = True
 try:
@@ -47,6 +47,61 @@ except ImportError:
     hasVigra = False
 
 
+@singledispatch
+def createDataSource(source, withShape=False):
+    """
+    Creates datasource based on type of supplied argument
+    Resulting souce will have following dimensions: txyzc
+    """
+    raise NotImplementedError(f"createDataSource for {type(source)}")
+
+
+def normalize_shape(shape):
+    """
+    :returns: Normalized shape and position of real axes to "txyzc" axes order
+    """
+    # xy
+    if len(shape) == 2:
+        return (1, shape[0], shape[1], 1, 1), (1, 2)
+
+    # xyc shape[2] <= 4 implies that it's a channel dimension
+    elif len(shape) == 3 and shape[2] <= 4:
+        return (1, shape[0], shape[1], 1, shape[2]), (1, 2, 4)
+
+    # xyz
+    elif len(shape) == 3:
+        return (1, shape[0], shape[1], shape[2], 1), (1, 2, 3)
+
+    # xyzc
+    elif len(shape) == 4:
+        return (1, shape[0], shape[1], shape[2], shape[3]), (1, 2, 3, 4)
+
+    # txyzc
+    elif len(shape) == 5:
+        return shape, (0, 1, 2, 3, 4)
+
+    raise ValueError("Can process only shapes with ndims <= 5")
+
+
+def _createArrayDataSource(source, withShape=False):
+    # has to handle NumpyArray
+    # check if the array is 5d, if not so embed it in a canonical way
+    new_shp, _ = normalize_shape(source.shape)
+    if new_shp != source.shape:
+        source = source.reshape(new_shp)
+
+    src = ArraySource(source)
+    if withShape:
+        return src, source.shape
+    else:
+        return src
+
+
+@createDataSource.register(numpy.ndarray)
+def _numpy_ds(source, withShape=False):
+    return _createArrayDataSource(source, withShape)
+
+
 if hasLazyflow:
 
     def _createDataSourceLazyflow(slot, withShape):
@@ -58,54 +113,19 @@ if hasLazyflow:
         else:
             return src
 
-    @multimethod(lazyflow.graph.OutputSlot, bool)
-    def createDataSource(source, withShape=False):
+    @createDataSource.register(lazyflow.graph.OutputSlot)
+    @createDataSource.register(lazyflow.graph.InputSlot)
+    def _lazyflow_ds(source, withShape=False):
         return _createDataSourceLazyflow(source, withShape)
-
-    @multimethod(lazyflow.graph.InputSlot, bool)
-    def createDataSource(source, withShape=False):
-        return _createDataSourceLazyflow(source, withShape)
-
-    @multimethod(lazyflow.graph.OutputSlot)
-    def createDataSource(source):
-        return _createDataSourceLazyflow(source, False)
-
-    @multimethod(lazyflow.graph.InputSlot)
-    def createDataSource(source):
-        return _createDataSourceLazyflow(source, False)
-
-
-@multimethod(numpy.ndarray, bool)
-def createDataSource(source, withShape=False):
-    return _createArrayDataSource(source, withShape)
 
 
 if hasH5py:
 
     class H5pyDset5DWrapper(object):
         def __init__(self, dset):
-            if len(dset.shape) == 2:
-                shape_5d = (1,) + dset.shape + (1, 1)
-                real_axes = (1, 2)
-            elif len(dset.shape) == 3 and dset.shape[2] <= 4:
-                shape_5d = (1,) + dset.shape[0:2] + (1,) + (dset.shape[2],)
-                real_axes = (1, 2, 4)
-            elif len(dset.shape) == 3:
-                shape_5d = (1,) + dset.shape + (1,)
-                real_axes = (1, 2, 3)
-            elif len(dset.shape) == 4:
-                shape_5d = (1,) + dset.shape
-                real_axes = (1, 2, 3, 4)
-            elif len(dset.shape) == 5:
-                shape_5d = dset.shape
-                real_axes = (0, 1, 2, 3, 4)
-            else:
-                assert False, "Can't handle h5py.Datasets with {} axes".format(len(dset.shape))
-
+            self.shape, self.real_axes = normalize_shape(dset.shape)
             self.dset = dset
             self.dtype = dset.dtype
-            self.shape = shape_5d
-            self.real_axes = real_axes
 
         def __getitem__(self, slicing_5d):
             real_slicing = tuple(slicing_5d[i] for i in self.real_axes)
@@ -115,8 +135,8 @@ if hasH5py:
                 expanded_slicing[axis] = slice(None)
             return data[expanded_slicing]
 
-    @multimethod(h5py.Dataset, bool)
-    def createDataSource(dset, withShape=False):
+    @createDataSource.register(h5py.Dataset)
+    def _h5py_ds(dset, withShape=False):
         dset_5d = H5pyDset5DWrapper(dset)
         src = ArraySource(dset_5d)
         if withShape:
@@ -127,30 +147,7 @@ if hasH5py:
 
 if hasVigra:
 
-    @multimethod(vigra.VigraArray, bool)
-    def createDataSource(source, withShape=False):
+    @createDataSource.register(vigra.VigraArray)
+    def _vigra_ds(source, withShape=False):
         source = source.withAxes(*"txyzc").view(numpy.ndarray)
         return _createArrayDataSource(source, withShape)
-
-
-def _createArrayDataSource(source, withShape=False):
-    # has to handle NumpyArray
-    # check if the array is 5d, if not so embed it in a canonical way
-    if len(source.shape) == 2:
-        source = source.reshape((1,) + source.shape + (1, 1))
-    elif len(source.shape) == 3 and source.shape[2] <= 4:
-        source = source.reshape((1,) + source.shape[0:2] + (1,) + (source.shape[2],))
-    elif len(source.shape) == 3:
-        source = source.reshape((1,) + source.shape + (1,))
-    elif len(source.shape) == 4:
-        source = source.reshape((1,) + source.shape)
-    src = ArraySource(source)
-    if withShape:
-        return src, source.shape
-    else:
-        return src
-
-
-@multimethod(numpy.ndarray)
-def createDataSource(source):
-    return createDataSource(source, False)
