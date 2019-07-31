@@ -29,6 +29,7 @@ from PyQt5.QtGui import QColor, QPen
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.datasources import MinMaxSource
+from volumina.pixelpipeline import imagesources as imsrc
 
 from volumina.utility import SignalingDict
 
@@ -164,6 +165,9 @@ class Layer(QObject):
 
     def setToolTip(self, tip):
         self._toolTip = tip
+
+    def createImageSource(self, data_sources):
+        raise NotImplementedError
 
     def isDifferentEnough(self, other_layer):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
@@ -411,6 +415,15 @@ class GrayscaleLayer(NormalizableLayer):
         super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
         self._window_leveling = window_leveling
 
+    def createImageSource(self, data_sources):
+        if len(data_sources) != 1:
+            raise ValueError("Expected 1 data source got %s" % len(data_sources))
+
+        src = imsrc.GrayscaleImageSource(data_sources[0], self)
+        src.setObjectName(self.name)
+        self.nameChanged.connect(lambda x: src.setObjectName(str(x)))
+        return src
+
 
 # *******************************************************************************
 # A l p h a M o d u l a t e d L a y e r                                        *
@@ -435,6 +448,17 @@ class AlphaModulatedLayer(NormalizableLayer):
         super(AlphaModulatedLayer, self).__init__([datasource], range, normalize)
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
+
+    def createImageSource(self, data_sources):
+        if len(data_sources) != 1:
+            raise ValueError("Expected 1 data source got %s" % len(data_sources))
+
+        src = imsrc.AlphaModulatedImageSource(data_sources[0], self)
+        src.setObjectName(self.name)
+
+        self.nameChanged.connect(lambda x: src.setObjectName(str(x)))
+        self.tintColorChanged.connect(lambda: src.setDirty((slice(None, None), slice(None, None))))
+        return src
 
 
 # *******************************************************************************
@@ -515,6 +539,16 @@ class ColortableLayer(NormalizableLayer):
         self.colortableIsRandom = False
         self.zeroIsTransparent = QColor.fromRgba(colorTable[0]).alpha() == 0
 
+    def createImageSource(self, data_sources):
+        if len(data_sources) != 1:
+            raise ValueError("Expected 1 data source got %s" % len(data_sources))
+
+        src = imsrc.ColortableImageSource(data_sources[0], self)
+        src.setObjectName(self.name)
+
+        self.nameChanged.connect(lambda x: src.setObjectName(str(x)))
+        return src
+
 
 class ClickableColortableLayer(ClickableLayer):
     colorTableChanged = pyqtSignal()
@@ -586,6 +620,24 @@ class RGBALayer(NormalizableLayer):
         l = RGBALayer()
         return l
 
+    def createImageSource(self, data_sources):
+        if len(data_sources) != 4:
+            raise ValueError("Expected 4 data sources got %s" % len(data_sources))
+
+        ds = data_sources.copy()
+        for i in range(3):
+            if data_sources[i] == None:
+                ds[i] = ConstantSource(self.color_missing_value)
+        guarantees_opaqueness = False
+        if data_sources[3] == None:
+            ds[3] = ConstantSource(self.alpha_missing_value)
+            guarantees_opaqueness = True if self.alpha_missing_value == 255 else False
+        src = imsrc.RGBAImageSource(ds[0], ds[1], ds[2], ds[3], self, guarantees_opaqueness=guarantees_opaqueness)
+        src.setObjectName(self.name)
+        self.nameChanged.connect(lambda x: src.setObjectName(str(x)))
+        self.normalizeChanged.connect(lambda: src.setDirty((slice(None, None), slice(None, None))))
+        return src
+
 
 ##
 ## GraphicsItem layers
@@ -594,10 +646,16 @@ class DummyGraphicsItemLayer(Layer):
     def __init__(self, datasource):
         super(DummyGraphicsItemLayer, self).__init__([datasource])
 
+    def createImageSource(self, data_sources):
+        return imsrc.DummyItemSource(data_sources[0])
+
 
 class DummyRasterItemLayer(Layer):
     def __init__(self, datasource):
         super(DummyRasterItemLayer, self).__init__([datasource])
+
+    def createImageSource(self, data_sources):
+        return imsrc.DummyRasterItemSource(data_sources[0])
 
 
 class SegmentationEdgesLayer(Layer):
@@ -653,6 +711,9 @@ class SegmentationEdgesLayer(Layer):
 
     def handle_edge_swiped(self, id_pair, event):
         pass
+
+    def createImageSource(self, data_sources):
+        return imsrc.SegmentationEdgesItemSource(self, data_sources[0], False)
 
 
 class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
@@ -748,3 +809,6 @@ class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
         self._buffered_updates = {}
         if updates:
             self.labelsChanged.emit(updates)
+
+    def createImageSource(self, data_sources):
+        return imsrc.SegmentationEdgesItemSource(self, data_sources[0], True)
