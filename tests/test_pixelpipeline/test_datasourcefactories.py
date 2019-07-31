@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 
 from numpy.random import rand
+from numpy.testing import assert_array_equal
 
 from volumina.pixelpipeline import datasourcefactories as factories
 from volumina.pixelpipeline import datasources as ds
@@ -52,15 +53,15 @@ DIMS = SimpleNamespace(t=2, c=3, z=10, x=32, y=64)
 
 
 @pytest.mark.parametrize(
-    "dims,expected_shape",
+    "dims,expected_shape,transpose",
     [
-        ["xy", (1, DIMS.x, DIMS.y, 1, 1)],
-        ["xyz", (1, DIMS.x, DIMS.y, DIMS.z, 1)],
-        ["cxyz", (1, DIMS.x, DIMS.y, DIMS.z, DIMS.c)],
-        ["tcxyz", (DIMS.t, DIMS.x, DIMS.y, DIMS.z, DIMS.c)],
+        ["xy", (1, DIMS.x, DIMS.y, 1, 1), (0, 1)],
+        ["xyz", (1, DIMS.x, DIMS.y, DIMS.z, 1), (0, 1, 2)],
+        ["cxyz", (1, DIMS.x, DIMS.y, DIMS.z, DIMS.c), (1, 2, 3, 0)],
+        ["tcxyz", (DIMS.t, DIMS.x, DIMS.y, DIMS.z, DIMS.c), (0, 2, 3, 4, 1)],
     ],
 )
-def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shape):
+def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shape, transpose):
     shape = select(DIMS, dims)
     len_ = np.product(shape)
 
@@ -75,6 +76,11 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
     outsrc = factories.createDataSource(lazyflow_op.Output)
     assert isinstance(outsrc, ds.LazyflowSource)
     assert outsrc._op5.Output.meta.shape == expected_shape
+
+    src_array = outsrc.request(np.s_[:, :, :, :, :]).wait()
+    expected_array = np.array(array[:]).transpose(*transpose)
+    expected_array.shape = src_array.shape
+    assert_array_equal(expected_array, src_array)
 
 
 @pytest.mark.parametrize(
@@ -92,18 +98,14 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
     ],
 )
 def test_array_untagged_shape_embedding(make_source, shape, expected_shape):
-    def _mid_point(_shape):
-        for d in _shape:
-            mid = d // 2
-            yield slice(mid, mid + 1)
-
     array = make_source(shape)
-    mid_point = tuple(_mid_point(shape))
 
     source, src_shape = factories.createDataSource(array, True)
-    src_mid_point = tuple(_mid_point(src_shape))
 
     assert isinstance(source, ds.ArraySource)
     assert np.squeeze(np.ndarray(source._array.shape)).shape == array.shape
     assert src_shape == expected_shape
-    assert array[mid_point] == source.request(src_mid_point).wait()
+    src_array = source.request(np.s_[:, :, :, :, :]).wait()
+    array = array[:]
+    array.shape = src_array.shape
+    assert_array_equal(array, src_array)

@@ -22,7 +22,6 @@
 from builtins import range
 import colorsys
 import numpy
-import copy
 
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer
 from PyQt5.QtGui import QColor, QPen
@@ -625,7 +624,7 @@ class RGBALayer(NormalizableLayer):
         if len(data_sources) != 4:
             raise ValueError("Expected 4 data sources got %s" % len(data_sources))
 
-        ds = copy.copy(data_sources)
+        ds = data_sources.copy()
         for i in range(3):
             if data_sources[i] == None:
                 ds[i] = ConstantSource(self.color_missing_value)
