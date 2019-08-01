@@ -28,7 +28,7 @@ from PyQt5.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.asyncabcs import SourceABC
-from volumina.pixelpipeline.datasources import MinMaxSource
+from volumina.pixelpipeline.datasources import MinMaxSource, ConstantSource
 from volumina.pixelpipeline import imagesources as imsrc
 
 from volumina.utility import SignalingDict
