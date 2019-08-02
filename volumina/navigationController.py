@@ -19,21 +19,16 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from __future__ import division
-from __future__ import absolute_import
-from builtins import range
-from PyQt5.QtCore import QObject, QTimer, QEvent, Qt, QPointF, pyqtSignal
-from PyQt5.QtGui import QColor, QCursor
 
 import copy
-import warnings
 from functools import partial
 
-from .eventswitch import InterpreterABC
-
-from volumina.sliceIntersectionMarker import SliceIntersectionMarker
-from volumina.imageScene2D import DirtyIndicator
 import volumina
+from PyQt5.QtCore import QEvent, QObject, QPointF, Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QColor, QCursor
+from volumina.eventswitch import InterpreterABC
+from volumina.imageScene2D import DirtyIndicator
+from volumina.sliceIntersectionMarker import SliceIntersectionMarker
 
 
 def posView2D(pos3d, axis):
@@ -187,9 +182,7 @@ class NavigationInterpreter(QObject):
             return False
 
         self.updateCursorPosition(imageview, event)
-        # do not accept event
-        event.ignore()
-        return False
+        return True
 
     def updateCursorPosition(self, imageview, event):
         """Update the position model's cursor position according to the given event position."""
