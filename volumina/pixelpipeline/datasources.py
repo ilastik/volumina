@@ -416,6 +416,99 @@ if _has_lazyflow:
 # *******************************************************************************
 
 
+class CachableSource(QObject):
+    isDirty = pyqtSignal(object)
+    numberOfChannelsChanged = pyqtSignal(int)
+
+    class _Request:
+        def __init__(self, cache, slicing, key):
+            self._cache = cache
+            self._slicing = slicing
+            self._key = key
+            self._result = None
+            self._rq = self._cache._source.request(self._slicing)
+
+        def wait(self):
+            self._result = res = self._rq.wait()
+            self._cache._cache[self._key] = res
+            return res
+
+        def getResult(self):
+            return self._result
+
+        def cancel(self):
+            print("SUBMIT")
+            self._rq.cancel()
+
+        def submit(self):
+            print("SUBMIT")
+            self._rq.submit()
+
+    class _CachedRequest:
+        def __init__(self, result):
+            self._result = result
+
+        def getResult(sefl):
+            return self._result
+
+        def wait(self):
+            return self._result
+
+        def cancel(self):
+            pass
+
+        def submit(self):
+            pass
+
+    def __init__(self, source):
+        super().__init__()
+        self._source = source
+        self._lock = threading.Lock()
+        self._cache = {}
+        self._req = {}
+
+    def cache_key(self, slicing):
+        parts = []
+
+        for el in slicing:
+            _, key_part = el.__reduce__()
+            parts.append(key_part)
+
+        return tuple(parts)
+
+    def request(self, slicing):
+        key = self.cache_key(slicing)
+
+        with self._lock:
+            if key in self._cache:
+                return self._CachedRequest(self._cache[key])
+
+            else:
+                if key not in self._req:
+                    self._req[key] = self._Request(self, slicing, key)
+
+                return self._req[key]
+
+    def __getattr__(self, attr):
+        return getattr(self._source, attr)
+
+    def setDirty(self, slicing):
+        if not is_pure_slicing(slicing):
+            raise Exception("dirty region: slicing is not pure")
+        self.isDirty.emit(slicing)
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self._source is other._source
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash(self._source)
+
+
 class ConstantRequest(object):
     def __init__(self, result):
         self._result = result
