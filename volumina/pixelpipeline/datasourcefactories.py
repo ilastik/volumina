@@ -28,7 +28,7 @@ from .datasources import ArraySource
 hasLazyflow = True
 try:
     import lazyflow
-    from .datasources import LazyflowSource
+    from .datasources import LazyflowSource, CachableSource
 except ImportError:
     hasLazyflow = False
 
@@ -108,6 +108,7 @@ if hasLazyflow:
         # has to handle Lazyflow source
         src = LazyflowSource(slot)
         shape = src._op5.Output.meta.shape
+        src = CachableSource(src)
         if withShape:
             return src, shape
         else:
