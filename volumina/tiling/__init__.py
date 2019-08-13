@@ -50,7 +50,7 @@ from volumina.utility import log_exception, PrioritizedThreadPoolExecutor
 
 import logging
 
-from .cache import _TilesCache
+from .cache import TilesCache
 
 
 logger = logging.getLogger(__name__)
@@ -267,7 +267,7 @@ class TileProvider(QObject):
         self._n_threads = n_threads
 
         self._current_stack_id = self._sims.stackId
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=cache_size)
+        self._cache = TilesCache(self._current_stack_id, self._sims, maxstacks=cache_size)
 
         self._sims.layerDirty.connect(self._onLayerDirty)
         self._sims.visibleChanged.connect(self._onVisibleChanged)
@@ -651,7 +651,7 @@ class TileProvider(QObject):
         Called when the StackedImageSources object we depend on has changed it's size.
         This is rare, but it means that the entire tile cache is obsolete.
         """
-        self._cache = _TilesCache(self._current_stack_id, self._sims, maxstacks=self.cache_size)
+        self._cache = TilesCache(self._current_stack_id, self._sims, maxstacks=self.cache_size)
         self.sceneRectChanged.emit(QRectF())
 
     def _onOrderChanged(self):

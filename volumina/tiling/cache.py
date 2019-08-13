@@ -5,10 +5,10 @@ from collections import OrderedDict, defaultdict
 import numpy
 from PyQt5.QtWidgets import QGraphicsItem
 
-__all__ = ["_TilesCache"]
+__all__ = ["TilesCache"]
 
 
-class _MultiCache(object):
+class MultiCache:
     """
     A utility class for caching items in a of a dict-of-dicts
     """
@@ -43,7 +43,7 @@ class _MultiCache(object):
             old_uid, v = self.caches.popitem(False)  # removes item in FIFO order
 
 
-class _TilesCache(object):
+class TilesCache:
     """
     Contains the following caches, with convenience accessor functions for each.
 
@@ -71,19 +71,19 @@ class _TilesCache(object):
         kwargs = {"first_uid": first_stack_id, "maxcaches": maxstacks}
 
         # [stack_id][tile_id] -> QImage or QGraphicsItem
-        self._tileCache = _MultiCache(default_factory=lambda: (None, 0.0), **kwargs)
+        self._tileCache = MultiCache(default_factory=lambda: (None, 0.0), **kwargs)
 
         # [stack_id][tile_id] -> bool
-        self._tileCacheDirty = _MultiCache(default_factory=lambda: True, **kwargs)
+        self._tileCacheDirty = MultiCache(default_factory=lambda: True, **kwargs)
 
         # [stack_id][(ims, tile_id)] -> QImage or QGraphicsItem
-        self._layerCache = _MultiCache(**kwargs)
+        self._layerCache = MultiCache(**kwargs)
 
         # [stack_id][(ims, tile_id)] -> bool
-        self._layerCacheDirty = _MultiCache(default_factory=lambda: True, **kwargs)
+        self._layerCacheDirty = MultiCache(default_factory=lambda: True, **kwargs)
 
         # [stack_id][(ims, tile_id)] -> float
-        self._layerCacheTimestamp = _MultiCache(default_factory=float, **kwargs)
+        self._layerCacheTimestamp = MultiCache(default_factory=float, **kwargs)
 
     @property
     def maxstacks(self):
@@ -160,7 +160,7 @@ class _TilesCache(object):
 
         warnings.warn(
             "FIXME: This is a slow way to look for the items we want.\n"
-            "_TilesCache._layerCache should be a dict-of-dict-of-dict for faster lookup!"
+            "TilesCache._layerCache should be a dict-of-dict-of-dict for faster lookup!"
         )
         qgraphicsitems = []
         for (layer_id, t_id), img in self._layerCache.caches[stack_id].items():
