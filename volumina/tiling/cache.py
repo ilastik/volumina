@@ -55,11 +55,12 @@ class MultiCache:
         self._policy = policy
         self._policy.subscribe(self._clean)
         self._caches = OrderedDict()
-        self.add(first_uid, default_factory=default_factory)
+        self._default_factory = default_factory
+        self.add(first_uid)
 
-    def add(self, uid, default_factory=lambda: None) -> None:
+    def add(self, uid) -> None:
         if uid not in self._caches:
-            cache = defaultdict(default_factory)
+            cache = defaultdict(self._default_factory)
             self._caches[uid] = cache
         else:
             raise Exception("MultiCache.add: uid %s is already in use" % str(uid))
@@ -261,10 +262,10 @@ class TilesCache:
     def addStack(self, stack_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         self._tileCache.add(stack_id)
-        self._tileCacheDirty.add(stack_id, default_factory=lambda: True)
+        self._tileCacheDirty.add(stack_id)
         self._layerCache.add(stack_id)
-        self._layerCacheDirty.add(stack_id, default_factory=lambda: True)
-        self._layerCacheTimestamp.add(stack_id, default_factory=float)
+        self._layerCacheDirty.add(stack_id)
+        self._layerCacheTimestamp.add(stack_id)
 
     def touchStack(self, stack_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
