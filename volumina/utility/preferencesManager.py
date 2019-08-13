@@ -26,18 +26,27 @@ from builtins import object
 import os
 import threading
 import warnings
+from pathlib import Path
 import pickle as pickle
-from volumina.utility import Singleton
 from future.utils import with_metaclass
 
 
-class PreferencesManager(with_metaclass(Singleton, object)):
+class PreferencesManagerMeta(type):
+    _instance_cache = {}
+
+    def __call__(cls, path: Path = Path("~/.ilastik_preferences")):
+        expanded_path = Path(path).expanduser().absolute()
+        instance = cls._instance_cache.get(expanded_path, super().__call__(expanded_path))
+        cls._instance_cache[expanded_path] = instance
+        return instance
+
+
+class PreferencesManager(metaclass=PreferencesManagerMeta):
     # TODO: Maybe this should be a wrapper API around QSettings (but with pickle strings)
     #       Pros:
     #         - Settings would be stored in standard locations for each platform
     #       Cons:
     #         - QT dependency (currently there are no non-gui preferences, but maybe someday)
-
     def get(self, group, setting, default=None):
         try:
             return self._prefs[group][setting]
@@ -53,8 +62,8 @@ class PreferencesManager(with_metaclass(Singleton, object)):
         if not self._poolingSave:
             self._save()
 
-    def __init__(self):
-        self._filePath = os.path.expanduser("~/.ilastik_preferences")
+    def __init__(self, path: Path):
+        self._filePath = path
         self._lock = threading.Lock()
         self._prefs = self._load()
         self._poolingSave = False
@@ -109,25 +118,3 @@ class PreferencesManager(with_metaclass(Singleton, object)):
 
         def set(self, value):
             PreferencesManager().set(self._group, self._setting, value)
-
-
-if __name__ == "__main__":
-    prefsMgr = PreferencesManager()
-    prefsMgr2 = PreferencesManager()
-    assert id(prefsMgr) == id(prefsMgr2), "It's supposed to be a singleton!"
-
-    with PreferencesManager() as prefsMgr:
-        prefsMgr.set("Group 1", "Setting1", [1, 2, 3])
-        prefsMgr.set("Group 1", "Setting2", ["a", "b", "c"])
-
-        prefsMgr.set("Group 2", "Setting1", "Forty-two")
-
-    # Force a new instance
-    PreferencesManager.instance = None
-    prefsMgr = PreferencesManager()
-    assert prefsMgr != prefsMgr2, "For this test, I want a separate instance"
-
-    assert prefsMgr.get("Group 1", "Setting1") == [1, 2, 3]
-    assert prefsMgr.get("Group 1", "Setting2") == ["a", "b", "c"]
-
-    assert prefsMgr.get("Group 2", "Setting1") == "Forty-two"
