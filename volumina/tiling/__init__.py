@@ -242,29 +242,21 @@ class TileProvider(QObject):
     def axesSwapped(self, value):
         self._axesSwapped = value
 
-    def __init__(
-        self, tiling, stackedImageSources, cache_size=100, request_queue_size=100000, n_threads=2, parent=None
-    ):
+    def __init__(self, tiling, stackedImageSources, cache_size: int = 100) -> None:
         """
         Keyword Arguments:
         cache_size                -- maximal number of encountered stacks
                                      to cache, i.e. slices if the imagesources
                                      draw from slicesources (default 10)
-        request_queue_size        -- maximal number of request to queue up (default 100000)
-        n_threads                 -- maximal number of request threads; this determines the
-                                     maximal number of simultaneously running requests
-                                     to the pixelpipeline (default: 2)
         parent                    -- QObject
 
         """
 
-        QObject.__init__(self, parent=parent)
+        QObject.__init__(self, parent=None)
 
         self.tiling = tiling
         self.axesSwapped = False
         self._sims = stackedImageSources
-        self._request_queue_size = request_queue_size
-        self._n_threads = n_threads
 
         self._current_stack_id = self._sims.stackId
         self._cache = TilesCache(self._current_stack_id, self._sims, maxstacks=cache_size)
@@ -275,8 +267,6 @@ class TileProvider(QObject):
         self._sims.sizeChanged.connect(self._onSizeChanged)
         self._sims.orderChanged.connect(self._onOrderChanged)
         self._sims.stackIdChanged.connect(self._onStackIdChanged)
-
-        self._keepRendering = True
 
     @property
     def cache_size(self):
