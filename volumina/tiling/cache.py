@@ -54,34 +54,43 @@ class MultiCache:
     def __init__(self, first_uid, default_factory=lambda: None, policy=None):
         self._policy = policy
         self._policy.subscribe(self._clean)
-        self.caches = OrderedDict()
+        self._caches = OrderedDict()
         self.add(first_uid, default_factory=default_factory)
 
     def add(self, uid, default_factory=lambda: None) -> None:
-        if uid not in self.caches:
+        if uid not in self._caches:
             cache = defaultdict(default_factory)
-            self.caches[uid] = cache
+            self._caches[uid] = cache
         else:
             raise Exception("MultiCache.add: uid %s is already in use" % str(uid))
 
         # remove oldest cache, if necessary
         self._clean()
 
-    def __len__(self):
-        return len(self.caches)
+    def __contains__(self, key):
+        return key in self._caches
 
-    def _evict_one(self):
-        self.caches.popitem(last=False)  # removes item in FIFO order
+    def __getitem__(self, key):
+        return self._caches[key]
+
+    def __iter__(self):
+        return iter(self._caches)
+
+    def __len__(self):
+        return len(self._caches)
 
     def touch(self, uid):
-        self.caches.move_to_end(uid)
+        self._caches.move_to_end(uid)
 
     @property
     def maxsize(self):
         return self._policy.size
 
+    def _evict_one(self):
+        self._caches.popitem(last=False)  # removes item in FIFO order
+
     def _clean(self):
-        while len(self.caches) > self.maxsize:
+        while len(self._caches) > self.maxsize:
             self._evict_one()
 
 
@@ -145,15 +154,15 @@ class TilesCache:
 
     def __contains__(self, stack_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        return stack_id in self._tileCache.caches
+        return stack_id in self._tileCache
 
     def __len__(self):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        return len(self._tileCache.caches)
+        return len(self._tileCache)
 
     def tile(self, stack_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        return self._tileCache.caches[stack_id][tile_id]
+        return self._tileCache[stack_id][tile_id]
 
     def setTile(self, stack_id, tile_id, img, stack_visible, stack_occluded):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
@@ -163,7 +172,7 @@ class TilesCache:
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
             if visibleAndNotOccluded.any():
                 dirty = numpy.asarray(
-                    [self._layerCacheDirty.caches[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()]
+                    [self._layerCacheDirty[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()]
                 )
                 num = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)
                 denom = float(numpy.count_nonzero(visibleAndNotOccluded))
@@ -172,20 +181,20 @@ class TilesCache:
                 progress = 1.0
         else:
             progress = 1.0
-        self._tileCache.caches[stack_id][tile_id] = (img, progress)
+        self._tileCache[stack_id][tile_id] = (img, progress)
 
     def tileDirty(self, stack_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        return self._tileCacheDirty.caches[stack_id][tile_id]
+        return self._tileCacheDirty[stack_id][tile_id]
 
     def setTileDirty(self, stack_id, tile_id, b):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        self._tileCacheDirty.caches[stack_id][tile_id] = b
+        self._tileCacheDirty[stack_id][tile_id] = b
 
     def setTileDirtyAllStacks(self, tile_id, b):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        for stack_id in self._tileCacheDirty.caches:
-            self._tileCacheDirty.caches[stack_id][tile_id] = b
+        for stack_id in self._tileCacheDirty:
+            self._tileCacheDirty[stack_id][tile_id] = b
 
     def graphicsitem_layers(self, stack_id, tile_id):
         """
@@ -199,7 +208,7 @@ class TilesCache:
             "TilesCache._layerCache should be a dict-of-dict-of-dict for faster lookup!"
         )
         qgraphicsitems = []
-        for (layer_id, t_id), img in self._layerCache.caches[stack_id].items():
+        for (layer_id, t_id), img in self._layerCache[stack_id].items():
             if t_id == tile_id and isinstance(img, QGraphicsItem):
                 qgraphicsitems.append(img)
         return qgraphicsitems
@@ -211,24 +220,24 @@ class TilesCache:
         (by default missing entries are considered dirty).
         """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        for stack_id in self._tileCacheDirty.caches:
-            self._tileCacheDirty.caches[stack_id].clear()
+        for stack_id in self._tileCacheDirty:
+            self._tileCacheDirty[stack_id].clear()
 
     def layer(self, stack_id, layer_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        return self._layerCache.caches[stack_id][(layer_id, tile_id)]
+        return self._layerCache[stack_id][(layer_id, tile_id)]
 
     def layerDirty(self, stack_id, layer_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        return self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)]
+        return self._layerCacheDirty[stack_id][(layer_id, tile_id)]
 
     def setLayerDirtyAllStacks(self, layer_id, tile_id, b):
         """
         Mark the given tile as dirty in all stacks.
         """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        for stack_id in self._layerCacheDirty.caches:
-            self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = b
+        for stack_id in self._layerCacheDirty:
+            self._layerCacheDirty[stack_id][(layer_id, tile_id)] = b
 
     def setLayerDirtyAllTiles(self, layer_id):
         """
@@ -237,17 +246,17 @@ class TilesCache:
             layer (by default, missing entries are dirty)
         """
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        for stack_id in self._layerCacheDirty.caches:
+        for stack_id in self._layerCacheDirty:
             dirty_entries = [
-                (l_id, t_id) for (l_id, t_id) in list(self._layerCacheDirty.caches[stack_id].keys()) if l_id == layer_id
+                (l_id, t_id) for (l_id, t_id) in list(self._layerCacheDirty[stack_id].keys()) if l_id == layer_id
             ]
-            # dirty_entries = filter( lambda (l_id, t_id): l_id == layer_id, self._layerCacheDirty.caches[stack_id].keys() )
+            # dirty_entries = filter( lambda (l_id, t_id): l_id == layer_id, self._layerCacheDirty[stack_id].keys() )
             for entry in dirty_entries:
-                del self._layerCacheDirty.caches[stack_id][entry]
+                del self._layerCacheDirty[stack_id][entry]
 
     def layerTimestamp(self, stack_id, layer_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        return self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]
+        return self._layerCacheTimestamp[stack_id][(layer_id, tile_id)]
 
     def addStack(self, stack_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
@@ -267,10 +276,10 @@ class TilesCache:
 
     def updateTileIfNecessary(self, stack_id, layer_id, tile_id, req_timestamp, img):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
-        if req_timestamp > self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)]:
-            self._layerCache.caches[stack_id][(layer_id, tile_id)] = img
-            self._layerCacheDirty.caches[stack_id][(layer_id, tile_id)] = False
-            self._layerCacheTimestamp.caches[stack_id][(layer_id, tile_id)] = req_timestamp
+        if req_timestamp > self._layerCacheTimestamp[stack_id][(layer_id, tile_id)]:
+            self._layerCache[stack_id][(layer_id, tile_id)] = img
+            self._layerCacheDirty[stack_id][(layer_id, tile_id)] = False
+            self._layerCacheTimestamp[stack_id][(layer_id, tile_id)] = req_timestamp
 
             # FIXME: We are currently keeping track of only 1 dirty bit.
             #        It is set if any layer in the tile is dirty, regardless of
@@ -282,4 +291,4 @@ class TilesCache:
             #        We could fix this inefficiency by tracking 2 dirty bits, for
             #        QImage layers and QGraphicsLayers, respectively, and checking
             #        those bits in _blendTile()
-            self._tileCacheDirty.caches[stack_id][tile_id] = True
+            self._tileCacheDirty[stack_id][tile_id] = True

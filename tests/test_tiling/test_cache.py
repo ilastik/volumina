@@ -24,7 +24,7 @@ class TestMultiCache:
 
     def test_add_creates_entry_in_caches(self, cache):
         cache.add("mytestid1")
-        assert "mytestid1" in cache.caches
+        assert "mytestid1" in cache
 
     def test_resize_eviction(self, cache, policy):
         cache.add("mytestid1")
@@ -32,9 +32,9 @@ class TestMultiCache:
         cache.add("mytestid3")
         policy.set_size(2)
 
-        assert "mytestid1" not in cache.caches
-        assert "mytestid2" in cache.caches
-        assert "mytestid3" in cache.caches
+        assert "mytestid1" not in cache
+        assert "mytestid2" in cache
+        assert "mytestid3" in cache
 
     def test_displace_eviction(self, cache, policy):
         policy.set_size(2)
@@ -42,9 +42,9 @@ class TestMultiCache:
         cache.add("mytestid2")
         cache.add("mytestid3")
 
-        assert "mytestid1" not in cache.caches
-        assert "mytestid2" in cache.caches
-        assert "mytestid3" in cache.caches
+        assert "mytestid1" not in cache
+        assert "mytestid2" in cache
+        assert "mytestid3" in cache
 
     def test_displace_eviction(self, cache, policy):
         policy.set_size(2)
@@ -52,9 +52,9 @@ class TestMultiCache:
         cache.add("mytestid2")
         cache.add("mytestid3")
 
-        assert "mytestid1" not in cache.caches
-        assert "mytestid2" in cache.caches
-        assert "mytestid3" in cache.caches
+        assert "mytestid1" not in cache
+        assert "mytestid2" in cache
+        assert "mytestid3" in cache
 
     def test_displace_eviction_touch(self, cache, policy):
         policy.set_size(2)
@@ -63,9 +63,19 @@ class TestMultiCache:
         cache.touch("mytestid1")
         cache.add("mytestid3")
 
-        assert "mytestid2" not in cache.caches
-        assert "mytestid1" in cache.caches
-        assert "mytestid3" in cache.caches
+        assert "mytestid2" not in cache
+        assert "mytestid1" in cache
+        assert "mytestid3" in cache
+
+    def test_iteration(self, cache):
+        cache.add("mytestid1")
+        cache.add("mytestid2")
+
+        keys = []
+        for key in cache:
+            keys.append(key)
+
+        assert ["testid", "mytestid1", "mytestid2"] == keys
 
 
 class TestCachePolicy:
