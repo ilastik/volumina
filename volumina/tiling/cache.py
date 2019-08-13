@@ -18,8 +18,7 @@ class MultiCache:
         self.caches = OrderedDict()
         self.add(first_uid, default_factory=default_factory)
 
-    def add(self, uid, default_factory=lambda: None):
-        assert isinstance(uid[1], tuple)
+    def add(self, uid, default_factory=lambda: None) -> None:
         if uid not in self.caches:
             cache = defaultdict(default_factory)
             self.caches[uid] = cache
@@ -27,20 +26,19 @@ class MultiCache:
             raise Exception("MultiCache.add: uid %s is already in use" % str(uid))
 
         # remove oldest cache, if necessary
-        old_uid = None
         if self._maxcaches and len(self.caches) > self._maxcaches:
-            old_uid, v = self.caches.popitem(False)  # removes item in FIFO order
-        return old_uid
+            self._evict_one()
+
+    def _evict_one(self):
+        self.caches.popitem(last=False)  # removes item in FIFO order
 
     def touch(self, uid):
-        c = self.caches[uid]
-        del self.caches[uid]
-        self.caches[uid] = c
+        self.caches.move_to_end(uid)
 
     def set_maxcaches(self, newmax):
         self._maxcaches = newmax
         while len(self.caches) > self._maxcaches:
-            old_uid, v = self.caches.popitem(False)  # removes item in FIFO order
+            self._evict_one()
 
 
 class TilesCache:
