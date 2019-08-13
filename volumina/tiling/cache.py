@@ -1,11 +1,49 @@
 import threading
 import warnings
+import logging
 from collections import OrderedDict, defaultdict
 
 import numpy
 from PyQt5.QtWidgets import QGraphicsItem
 
+logger = logging.getLogger()
+
 __all__ = ["TilesCache"]
+
+
+class CachePolicy:
+    def __init__(self, size):
+        self._validate_size(size)
+        self._size = size
+        self._subsribers = []
+
+    @property
+    def size(self):
+        return self._size
+
+    def _validate_size(self, value):
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError("size should non negative integer")
+
+    def set_size(self, value):
+        if self._size == value:
+            return
+
+        self._validate_size(value)
+
+        self._size = value
+
+        for sub in self._subsribers:
+            sub()
+
+    def subscribe(self, fn):
+        self._subsribers.append(fn)
+
+    def unsubsribe(self, fn):
+        try:
+            self._subsribers.remove(fn)
+        except ValueError:
+            pass
 
 
 class MultiCache:
@@ -13,8 +51,9 @@ class MultiCache:
     A utility class for caching items in a of a dict-of-dicts
     """
 
-    def __init__(self, first_uid, default_factory=lambda: None, maxcaches=None):
-        self._maxcaches = maxcaches
+    def __init__(self, first_uid, default_factory=lambda: None, policy=None):
+        self._policy = policy
+        self._policy.subscribe(self._clean)
         self.caches = OrderedDict()
         self.add(first_uid, default_factory=default_factory)
 
@@ -26,8 +65,10 @@ class MultiCache:
             raise Exception("MultiCache.add: uid %s is already in use" % str(uid))
 
         # remove oldest cache, if necessary
-        if self._maxcaches and len(self.caches) > self._maxcaches:
-            self._evict_one()
+        self._clean()
+
+    def __len__(self):
+        return len(self.caches)
 
     def _evict_one(self):
         self.caches.popitem(last=False)  # removes item in FIFO order
@@ -35,9 +76,12 @@ class MultiCache:
     def touch(self, uid):
         self.caches.move_to_end(uid)
 
-    def set_maxcaches(self, newmax):
-        self._maxcaches = newmax
-        while len(self.caches) > self._maxcaches:
+    @property
+    def maxsize(self):
+        return self._policy.size
+
+    def _clean(self):
+        while len(self.caches) > self.maxsize:
             self._evict_one()
 
 
@@ -61,12 +105,13 @@ class TilesCache:
                         is dirty, then the tile for that patch is dirty)
     """
 
-    def __init__(self, first_stack_id, sims, maxstacks=None):
+    def __init__(self, first_stack_id, sims, maxstacks):
         self._lock = threading.Lock()
         self._sims = sims
         self._maxstacks = maxstacks
+        self._policy = CachePolicy(maxstacks)
 
-        kwargs = {"first_uid": first_stack_id, "maxcaches": maxstacks}
+        kwargs = {"first_uid": first_stack_id, "policy": self._policy}
 
         # [stack_id][tile_id] -> QImage or QGraphicsItem
         self._tileCache = MultiCache(default_factory=lambda: (None, 0.0), **kwargs)
@@ -88,14 +133,7 @@ class TilesCache:
         return self._maxstacks
 
     def set_maxstacks(self, maxstacks):
-        if self._maxstacks == maxstacks:
-            return
-        self._maxstacks = maxstacks
-        self._tileCache.set_maxcaches(self._maxstacks)
-        self._tileCacheDirty.set_maxcaches(self._maxstacks)
-        self._layerCache.set_maxcaches(self._maxstacks)
-        self._layerCacheDirty.set_maxcaches(self._maxstacks)
-        self._layerCacheTimestamp.set_maxcaches(self._maxstacks)
+        self._policy.set_size(maxstacks)
 
     def __enter__(self):
         self._lock.acquire()
