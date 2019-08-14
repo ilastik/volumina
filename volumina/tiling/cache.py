@@ -224,15 +224,15 @@ class TilesCache:
         for stack_id in self._tileCacheDirty:
             self._tileCacheDirty[stack_id].clear()
 
-    def layer(self, stack_id, layer_id, tile_id):
+    def layerTile(self, stack_id, layer_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCache[stack_id][(layer_id, tile_id)]
 
-    def layerDirty(self, stack_id, layer_id, tile_id):
+    def layerTileDirty(self, stack_id, layer_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCacheDirty[stack_id][(layer_id, tile_id)]
 
-    def setLayerDirtyAllStacks(self, layer_id, tile_id, b):
+    def setLayerTileDirtyAllStacks(self, layer_id, tile_id, b):
         """
         Mark the given tile as dirty in all stacks.
         """
@@ -240,7 +240,7 @@ class TilesCache:
         for stack_id in self._layerCacheDirty:
             self._layerCacheDirty[stack_id][(layer_id, tile_id)] = b
 
-    def setLayerDirtyAllTiles(self, layer_id):
+    def setLayerTilesDirty(self, layer_id):
         """
         For a given layer, marks all tiles in all stacks as dirty.
         This is achieved by simply deleting all tiles for the given
@@ -255,7 +255,7 @@ class TilesCache:
             for entry in dirty_entries:
                 del self._layerCacheDirty[stack_id][entry]
 
-    def layerTimestamp(self, stack_id, layer_id, tile_id):
+    def layerTileTimestamp(self, stack_id, layer_id, tile_id):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
         return self._layerCacheTimestamp[stack_id][(layer_id, tile_id)]
 

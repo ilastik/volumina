@@ -393,7 +393,7 @@ class TileProvider(QObject):
             need_reblend = False
             for ims in layers:
                 with self._cache:
-                    layer_dirty = self._cache.layerDirty(stack_id, ims, tile_no)
+                    layer_dirty = self._cache.layerTileDirty(stack_id, ims, tile_no)
 
                 # Don't bother fetching layers that are not visible or not dirty.
                 if not (layer_dirty and not self._sims.isOccluded(ims) and self._sims.isVisible(ims)):
@@ -415,7 +415,7 @@ class TileProvider(QObject):
 
                 timestamp = time.time()
                 fetch_fn = partial(
-                    self._fetch_tile_layer, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache
+                    self._fetch_layer_tile, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache
                 )
 
                 if ims.direct and not prefetch:
@@ -453,7 +453,7 @@ class TileProvider(QObject):
             image_type = layerImageSource.image_type()
             if issubclass(image_type, QGraphicsItem):
                 with self._cache:
-                    patch = self._cache.layer(stack_id, layerImageSource, tile_nr)
+                    patch = self._cache.layerTile(stack_id, layerImageSource, tile_nr)
                 if patch is not None:
                     assert isinstance(
                         patch, image_type
@@ -475,7 +475,7 @@ class TileProvider(QObject):
                 continue
 
             with self._cache:
-                patch = self._cache.layer(stack_id, layerImageSource, tile_nr)
+                patch = self._cache.layerTile(stack_id, layerImageSource, tile_nr)
 
             # patch might be a QGraphicsItem instead of QImage,
             # in which case it is handled separately,
@@ -497,7 +497,7 @@ class TileProvider(QObject):
 
         return qimg
 
-    def _fetch_tile_layer(self, timestamp, ims, transform, tile_nr, stack_id, ims_req, cache):
+    def _fetch_layer_tile(self, timestamp, ims, transform, tile_nr, stack_id, ims_req, cache):
         """
         Fetch a single tile from a layer (ImageSource).
 
@@ -523,7 +523,7 @@ class TileProvider(QObject):
         try:
             try:
                 with cache:
-                    layerTimestamp = cache.layerTimestamp(stack_id, ims, tile_nr)
+                    layerTimestamp = cache.layerTileTimestamp(stack_id, ims, tile_nr)
             except KeyError:
                 # May not be a timestamp yet (especially when prefetching)
                 layerTimestamp = 0
@@ -587,14 +587,14 @@ class TileProvider(QObject):
             # This is a FAST PATH for quickly setting all tiles dirty.
             # (It makes a HUGE difference for very large tiling scenes.)
             with self._cache:
-                self._cache.setLayerDirtyAllTiles(dirtyImgSrc)
+                self._cache.setLayerTilesDirty(dirtyImgSrc)
                 if visibleAndNotOccluded:
                     self._cache.setAllTilesDirty()
         else:
             # Slow path: Mark intersecting tiles as dirty.
             with self._cache:
                 for tile_no in self.tiling.intersected(sceneRect):
-                    self._cache.setLayerDirtyAllStacks(dirtyImgSrc, tile_no, True)
+                    self._cache.setLayerTileDirtyAllStacks(dirtyImgSrc, tile_no, True)
                     if visibleAndNotOccluded:
                         self._cache.setTileDirtyAllStacks(tile_no, True)
         if visibleAndNotOccluded:
