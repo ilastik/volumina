@@ -167,10 +167,13 @@ class TilesCache:
 
     def setTile(self, stack_id, tile_id, img, stack_visible, stack_occluded):
         assert self._lock.locked(), "You must claim the _TileCache via a context manager before calling this function."
+        progress = 1.0
+
         if len(stack_visible) > 0:
             visible = numpy.asarray(stack_visible)
             occluded = numpy.asarray(stack_occluded)
             visibleAndNotOccluded = numpy.logical_and(visible, numpy.logical_not(occluded))
+
             if visibleAndNotOccluded.any():
                 dirty = numpy.asarray(
                     [self._layerCacheDirty[stack_id][(ims, tile_id)] for ims in self._sims.viewImageSources()]
@@ -178,10 +181,7 @@ class TilesCache:
                 num = numpy.count_nonzero(numpy.logical_and(dirty, visibleAndNotOccluded) == True)
                 denom = float(numpy.count_nonzero(visibleAndNotOccluded))
                 progress = 1.0 - num / denom
-            else:
-                progress = 1.0
-        else:
-            progress = 1.0
+
         self._tileCache[stack_id][tile_id] = (img, progress)
 
     def tileDirty(self, stack_id, tile_id):
