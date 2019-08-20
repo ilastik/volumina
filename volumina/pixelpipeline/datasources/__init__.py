@@ -1,7 +1,7 @@
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2014, the ilastik developers
+#       Copyright (C) 2011-2019, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -19,21 +19,26 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-"""High-level API.
+from .arraysource import ArraySource, ArraySinkSource, RelabelingArraySource
+from .constantsource import ConstantSource
+from .minmaxsource import MinMaxSource
+from .halosource import HaloAdjustedDataSource
 
-"""
-from .pixelpipeline.imagepump import ImagePump
-from volumina.pixelpipeline.datasources import *
-from volumina.layer import *
-from volumina.layerstack import LayerStackModel
-from volumina.widgets.layerwidget import LayerWidget
-from volumina.viewer import Viewer, ClickableSegmentationLayer
+from .factories import createDataSource
 
-from PyQt5.QtWidgets import QApplication
-import sys
+__all__ = [
+    "ArraySource",
+    "ArraySinkSource",
+    "RelabelingArraySource",
+    "ConstantSource",
+    "MinMaxSource",
+    "HaloAdjustedDataSource",
+    "createDataSource",
+]
 
+try:
+    from .lazyflowsource import LazyflowSource, LazyflowSinkSource
 
-def viewerApp():
-    app = QApplication(sys.argv)
-    v = Viewer()
-    return (v, app)
+    __all__ += ["LazyflowSource", "LazyflowSinkSource"]
+except ImportError:
+    pass

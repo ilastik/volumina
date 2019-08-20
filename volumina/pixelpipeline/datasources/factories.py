@@ -23,12 +23,12 @@ from functools import singledispatch
 
 import numpy
 
-from .datasources import ArraySource
+from .arraysource import ArraySource
 
 hasLazyflow = True
 try:
     import lazyflow
-    from .datasources import LazyflowSource
+    from .lazyflowsource import LazyflowSource
 except ImportError:
     hasLazyflow = False
 

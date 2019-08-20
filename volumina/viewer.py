@@ -23,7 +23,6 @@
 
 """
 from volumina.pixelpipeline.datasources import *
-from volumina.pixelpipeline.datasourcefactories import *
 from volumina.layer import *
 from volumina.layerstack import LayerStackModel
 from volumina.colortables import default16
