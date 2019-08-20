@@ -28,7 +28,7 @@ import logging
 import weakref
 from functools import partial, wraps
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from .asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
+from volumina.pixelpipeline.asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
 import volumina
 from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, make_bounded, index2slice, sl
 from volumina.config import CONFIG
