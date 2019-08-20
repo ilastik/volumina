@@ -24,6 +24,8 @@ from .constant import ConstantSource
 from .minmax import MinMaxSource
 from .halo import HaloAdjustedDataSource
 
+from .factories import createDataSource
+
 __all__ = [
     "ArraySource",
     "ArraySinkSource",
@@ -31,6 +33,7 @@ __all__ = [
     "ConstantSource",
     "MinMaxSource",
     "HaloAdjustedDataSource",
+    "createDataSource",
 ]
 
 try:
