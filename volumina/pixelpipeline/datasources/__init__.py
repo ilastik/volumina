@@ -19,10 +19,10 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from .array import ArraySource, ArraySinkSource, RelabelingArraySource
-from .constant import ConstantSource
-from .minmax import MinMaxSource
-from .halo import HaloAdjustedDataSource
+from .arraysource import ArraySource, ArraySinkSource, RelabelingArraySource
+from .constantsource import ConstantSource
+from .minmaxsource import MinMaxSource
+from .halosource import HaloAdjustedDataSource
 
 from .factories import createDataSource
 
@@ -37,7 +37,7 @@ __all__ = [
 ]
 
 try:
-    from .lazyflow import LazyflowSource, LazyflowSinkSource
+    from .lazyflowsource import LazyflowSource, LazyflowSinkSource
 
     __all__ += ["LazyflowSource", "LazyflowSinkSource"]
 except ImportError:
