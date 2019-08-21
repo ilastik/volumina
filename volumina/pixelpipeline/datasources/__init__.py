@@ -23,7 +23,7 @@ from .arraysource import ArraySource, ArraySinkSource, RelabelingArraySource
 from .constantsource import ConstantSource
 from .minmaxsource import MinMaxSource
 from .halosource import HaloAdjustedDataSource
-from .interface import IRequest, IDataSource, IndeterminateRequestError
+from .interface import IDataRequest, IDataSource, IndeterminateRequestError
 
 from .factories import createDataSource
 
@@ -35,8 +35,8 @@ __all__ = [
     "MinMaxSource",
     "HaloAdjustedDataSource",
     "createDataSource",
-    "IRequest",
     "IDataSource",
+    "IDataRequest",
     "IndeterminateRequestError",
 ]
 

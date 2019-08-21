@@ -3,11 +3,11 @@ from functools import partial
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
-from volumina.pixelpipeline.datasources.interface import IDataSource, IRequest
+from volumina.pixelpipeline.datasources.interface import IDataSource, IDataRequest
 from volumina.slicingtools import sl
 
 
-class MinMaxUpdateRequest(IRequest):
+class MinMaxUpdateRequest(IDataRequest):
     def __init__(self, rawRequest, update_func):
         self._rawRequest = rawRequest
         self._update_func = update_func

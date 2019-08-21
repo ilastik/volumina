@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from volumina.pixelpipeline.asyncabcs import RequestABC as IRequest
-from volumina.utility.abc import QABC, abstractsignal, abstractproperty, abstractmethod
+import numpy as np
+
+from volumina.utility.abc import QABC, ABC, abstractsignal, abstractproperty, abstractmethod
 
 
-__all__ = ["IDataSource", "IRequest", "IndeterminateRequestError"]
+__all__ = ["IDataSource", "IDataRequest", "IndeterminateRequestError"]
 
 
 class IndeterminateRequestError(Exception):
@@ -19,6 +20,12 @@ class IndeterminateRequestError(Exception):
     pass
 
 
+class IDataRequest(ABC):
+    @abstractmethod
+    def wait(self) -> np.ndarray:
+        """waits until completion and returns result"""
+
+
 class IDataSource(QABC):
     isDirty = abstractsignal(object)
     numberOfChannelsChanged = abstractsignal(int)
@@ -28,7 +35,7 @@ class IDataSource(QABC):
         ...
 
     @abstractmethod
-    def request(self, slicing) -> IRequest:
+    def request(self, slicing) -> IDataRequest:
         ...
 
     @abstractmethod

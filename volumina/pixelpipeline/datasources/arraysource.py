@@ -1,11 +1,11 @@
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from volumina.pixelpipeline.datasources.interface import IDataSource, IRequest
+from volumina.pixelpipeline.datasources.interface import IDataSource, IDataRequest
 from volumina.slicingtools import is_pure_slicing, index2slice
 
 
-class ArrayRequest(IRequest):
+class ArrayRequest(IDataRequest):
     def __init__(self, array, slicing):
         self._array = array
         self._slicing = slicing
