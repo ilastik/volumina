@@ -1,7 +1,9 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from volumina.pixelpipeline.datasources.interface import IDataSource
 
-class HaloAdjustedDataSource(QObject):
+
+class HaloAdjustedDataSource(QObject, IDataSource):
     """
     A wrapper for other datasources.
     For any datasource request, expands the requested ROI by a halo

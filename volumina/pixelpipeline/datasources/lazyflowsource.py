@@ -10,7 +10,7 @@ from lazyflow.graph import Slot
 from lazyflow.operators import opReorderAxes
 from lazyflow.roi import sliceToRoi, roiToSlice
 
-from volumina.pixelpipeline.asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
+from volumina.pixelpipeline.datasources.interface import IDataSource, IRequest, IndeterminateRequestError
 from volumina.slicingtools import is_pure_slicing, slicing2shape, make_bounded
 from volumina.config import CONFIG
 
@@ -52,7 +52,7 @@ def translate_lf_exceptions(func):
     return wrapper
 
 
-class LazyflowRequest(object):
+class LazyflowRequest(IRequest):
     @translate_lf_exceptions
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest"):
         shape = op.Output.meta.shape
@@ -87,9 +87,6 @@ class LazyflowRequest(object):
         self._req.cancel()
 
 
-assert issubclass(LazyflowRequest, RequestABC)
-
-
 def weakref_setDirtyLF(wref, *args, **kwargs):
     """
     LazyflowSource uses this function to subscribe to dirty notifications without giving out a shared reference to itself.
@@ -98,7 +95,7 @@ def weakref_setDirtyLF(wref, *args, **kwargs):
     wref()._setDirtyLF(*args, **kwargs)
 
 
-class LazyflowSource(QObject):
+class LazyflowSource(QObject, IDataSource):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
@@ -189,9 +186,6 @@ class LazyflowSource(QObject):
 
     def __hash__(self):
         return hash((self._orig_meta, self._orig_outslot))
-
-
-assert issubclass(LazyflowSource, SourceABC)
 
 
 class LazyflowSinkSource(LazyflowSource):

@@ -45,7 +45,7 @@ from PyQt5.QtGui import QImage, QPainter, QTransform
 # volumina
 from .patchAccessor import PatchAccessor
 import volumina
-from volumina.pixelpipeline.asyncabcs import IndeterminateRequestError
+from volumina.pixelpipeline.datasources import IndeterminateRequestError
 from volumina.utility import log_exception, PrioritizedThreadPoolExecutor
 
 import logging

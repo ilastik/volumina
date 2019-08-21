@@ -19,10 +19,9 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from builtins import object
-from abc import ABCMeta, abstractmethod, abstractproperty
 from PyQt5.QtCore import pyqtSignal
 from future.utils import with_metaclass
+from volumina.utility.abc import ABCMeta, ABC, abstractmethod, abstractproperty
 
 
 def _has_attribute(cls, attr):
@@ -33,18 +32,6 @@ def _has_attributes(cls, attrs):
     return True if all(_has_attribute(cls, a) for a in attrs) else False
 
 
-class IndeterminateRequestError(Exception):
-    """
-    Raised if a request cannot be created or cannot be executed
-      because its underlying datasource is in an indeterminate state.
-    In such cases, the requester should simply ignore the error.
-    The datasource has the responsibility of sending a dirty notification
-      when the source is ready again.
-    """
-
-    pass
-
-
 # *******************************************************************************
 # R e q u e s t A B C                                                          *
 # *******************************************************************************
@@ -53,7 +40,7 @@ class IndeterminateRequestError(Exception):
 class RequestABC(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def wait(self):
-        """ doc """
+        """waits until completion and returns result"""
 
     @classmethod
     def __subclasshook__(cls, C):
