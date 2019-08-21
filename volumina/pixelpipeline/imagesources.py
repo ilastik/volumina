@@ -31,7 +31,7 @@ import warnings
 import functools
 
 
-from PyQt5.QtCore import QObject, QRect, pyqtSignal, QMutex
+from PyQt5.QtCore import QObject, QRect, pyqtSignal
 from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
 from .asyncabcs import SourceABC, RequestABC
@@ -171,7 +171,6 @@ class GrayscaleImageRequest(object):
     logger = logging.getLogger(loggingName)
 
     def __init__(self, arrayrequest, normalize=None, direct=False):
-        self._mutex = QMutex()
         self._arrayreq = arrayrequest
         self._normalize = normalize
         self.direct = direct
@@ -281,7 +280,6 @@ class AlphaModulatedImageRequest(object):
     logger = logging.getLogger(loggingName)
 
     def __init__(self, arrayrequest, tintColor, normalize=(0, 255)):
-        self._mutex = QMutex()
         self._arrayreq = arrayrequest
         self._normalize = normalize
         self._tintColor = tintColor
@@ -400,7 +398,6 @@ class ColortableImageRequest(object):
     logger = logging.getLogger(loggingName)
 
     def __init__(self, arrayrequest, colorTable, normalize, direct=False):
-        self._mutex = QMutex()
         self._arrayreq = arrayrequest
         self._colorTable = colorTable
         self.direct = direct
@@ -565,7 +562,6 @@ assert issubclass(RGBAImageSource, SourceABC)
 
 class RGBAImageRequest(object):
     def __init__(self, r, g, b, a, shape, normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None):
-        self._mutex = QMutex()
         self._requests = r, g, b, a
         self._normalize = [n or None for n in [normalizeR, normalizeG, normalizeB, normalizeA]]
         shape.append(4)
