@@ -44,6 +44,10 @@ class IDataSource(QABC):
         ...
 
     @abstractmethod
+    def dtype(self):
+        ...
+
+    @abstractmethod
     def __eq__(self, other: IDataSource):
         ...
 
