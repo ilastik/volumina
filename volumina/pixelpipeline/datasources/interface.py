@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 import numpy as np
 
@@ -24,6 +25,10 @@ class IDataRequest(ABC):
     @abstractmethod
     def wait(self) -> np.ndarray:
         """waits until completion and returns result"""
+
+    @abstractmethod
+    def getResult(self) -> Optional[np.ndarray]:
+        """get result if request has completed otherwise None"""
 
 
 class IDataSource(QABC):

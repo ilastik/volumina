@@ -25,7 +25,8 @@ from __future__ import absolute_import
 import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
-from .asyncabcs import SourceABC, RequestABC
+from .asyncabcs import ISlice2DSource, IRequest
+from .datasources import IDataSource
 import numpy as np
 import volumina
 from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
@@ -42,7 +43,7 @@ projectionAlongTZC = SliceProjection(abscissa=1, ordinate=2, along=[0, 3, 4])
 logger = logging.getLogger(__name__)
 
 
-class SliceRequest(object):
+class SliceRequest(IRequest):
     def __init__(self, domainArrayRequest, sliceProjection):
         self._ar = domainArrayRequest
         self._sp = sliceProjection
@@ -68,14 +69,12 @@ class SliceRequest(object):
         return self._sp.handednessSwitched()
 
 
-assert issubclass(SliceRequest, RequestABC)
-
 # *******************************************************************************
 # S l i c e S o u r c e                                                        *
 # *******************************************************************************
 
 
-class SliceSource(QObject):
+class SliceSource(QObject, ISlice2DSource):
     areaDirty = pyqtSignal(object)
     isDirty = pyqtSignal(object)
     throughChanged = pyqtSignal(tuple, tuple)  # old, new
@@ -105,7 +104,7 @@ class SliceSource(QObject):
             self.idChanged.emit(old_id, self.id)
 
     def __init__(self, datasource, sliceProjection=projectionAlongTZC):
-        assert isinstance(datasource, SourceABC), "wrong type: %s" % str(type(datasource))
+        assert isinstance(datasource, IDataSource), "wrong type: %s" % str(type(datasource))
         super(SliceSource, self).__init__()
 
         self.sliceProjection = sliceProjection
@@ -174,9 +173,6 @@ class SliceSource(QObject):
         dirty_area[0] = ds_slicing[self.sliceProjection.abscissa]
         dirty_area[1] = ds_slicing[self.sliceProjection.ordinate]
         self.isDirty.emit(tuple(dirty_area))
-
-
-assert issubclass(SliceSource, SourceABC)
 
 
 # *******************************************************************************

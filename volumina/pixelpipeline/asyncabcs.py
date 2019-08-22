@@ -21,15 +21,7 @@
 ###############################################################################
 from PyQt5.QtCore import pyqtSignal
 from future.utils import with_metaclass
-from volumina.utility.abc import ABCMeta, ABC, abstractmethod, abstractproperty
-
-
-def _has_attribute(cls, attr):
-    return True if any(attr in B.__dict__ for B in cls.__mro__) else False
-
-
-def _has_attributes(cls, attrs):
-    return True if all(_has_attribute(cls, a) for a in attrs) else False
+from volumina.utility.abc import ABCMeta, ABC, QABC, abstractmethod, abstractproperty, abstractsignal
 
 
 # *******************************************************************************
@@ -37,21 +29,34 @@ def _has_attributes(cls, attrs):
 # *******************************************************************************
 
 
-class RequestABC(with_metaclass(ABCMeta, object)):
+class IRequest(ABC):
     @abstractmethod
     def wait(self):
         """waits until completion and returns result"""
 
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is RequestABC:
-            return True if _has_attributes(C, ["wait"]) else False
-        return NotImplemented
+
+class IImageSource(QABC):
+    isDirty = abstractsignal(object)
+
+    @abstractmethod
+    def request(self, slicing, along_through=None):
+        pass
+
+    @abstractmethod
+    def setDirty(self, slicing):
+        pass
 
 
-# *******************************************************************************
-# S o u r c e A B C                                                            *
-# *******************************************************************************
+class ISlice2DSource(QABC):
+    isDirty = abstractsignal(object)
+
+    @abstractmethod
+    def request(self, slicing, along_through=None):
+        pass
+
+    @abstractmethod
+    def setDirty(self, slicing):
+        pass
 
 
 class SourceABC(with_metaclass(ABCMeta, object)):

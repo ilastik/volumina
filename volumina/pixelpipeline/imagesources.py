@@ -34,7 +34,8 @@ import functools
 from PyQt5.QtCore import QObject, QRect, pyqtSignal
 from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
-from .asyncabcs import SourceABC, RequestABC
+from .asyncabcs import IImageSource, ISlice2DSource, IRequest
+from volumina.pixelpipeline.datasources import IDataSource
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import CONFIG
 from volumina.utility import execute_in_main_thread
@@ -73,7 +74,7 @@ def log_request(func):
 # *******************************************************************************
 
 
-class ImageSource(QObject):
+class ImageSource(QObject, IImageSource):
     """Partial implemented base class for image sources
 
     Signals:
@@ -133,8 +134,6 @@ class ImageSource(QObject):
         return self._opaque
 
 
-assert issubclass(ImageSource, SourceABC)
-
 # *******************************************************************************
 # G r a y s c a l e I m a g e S o u r c e                                      *
 # *******************************************************************************
@@ -145,7 +144,7 @@ class GrayscaleImageSource(ImageSource):
     logger = logging.getLogger(loggingName)
 
     def __init__(self, arraySource2D, layer):
-        assert isinstance(arraySource2D, SourceABC), "wrong type: %s" % str(type(arraySource2D))
+        assert isinstance(arraySource2D, ISlice2DSource), "wrong type: %s" % str(type(arraySource2D))
         super(GrayscaleImageSource, self).__init__(layer.name, guarantees_opaqueness=True, direct=layer.direct)
         self._arraySource2D = arraySource2D
 
@@ -163,10 +162,7 @@ class GrayscaleImageSource(ImageSource):
         return GrayscaleImageRequest(req, self._layer.normalize[0], direct=self.direct)
 
 
-assert issubclass(GrayscaleImageSource, SourceABC)
-
-
-class GrayscaleImageRequest(object):
+class GrayscaleImageRequest(IRequest):
     loggingName = __name__ + ".GrayscaleImageRequest"
     logger = logging.getLogger(loggingName)
 
@@ -248,8 +244,6 @@ class GrayscaleImageRequest(object):
         return img
 
 
-assert issubclass(GrayscaleImageRequest, RequestABC)
-
 # *******************************************************************************
 # A l p h a M o d u l a t e d I m a g e S o u r c e                            *
 # *******************************************************************************
@@ -257,7 +251,7 @@ assert issubclass(GrayscaleImageRequest, RequestABC)
 
 class AlphaModulatedImageSource(ImageSource):
     def __init__(self, arraySource2D, layer):
-        assert isinstance(arraySource2D, SourceABC), "wrong type: %s" % str(type(arraySource2D))
+        assert isinstance(arraySource2D, ISlice2DSource), "wrong type: %s" % str(type(arraySource2D))
         super(AlphaModulatedImageSource, self).__init__(layer.name)
         self._arraySource2D = arraySource2D
         self._layer = layer
@@ -272,10 +266,7 @@ class AlphaModulatedImageSource(ImageSource):
         return AlphaModulatedImageRequest(req, self._layer.tintColor, self._layer.normalize[0])
 
 
-assert issubclass(AlphaModulatedImageSource, SourceABC)
-
-
-class AlphaModulatedImageRequest(object):
+class AlphaModulatedImageRequest(IRequest):
     loggingName = __name__ + ".AlphaModulatedImageRequest"
     logger = logging.getLogger(loggingName)
 
@@ -338,8 +329,6 @@ class AlphaModulatedImageRequest(object):
         return img
 
 
-assert issubclass(AlphaModulatedImageRequest, RequestABC)
-
 # *******************************************************************************
 # C o l o r t a b l e I m a g e S o u r c e                                    *
 # *******************************************************************************
@@ -352,7 +341,7 @@ class ColortableImageSource(ImageSource):
     def __init__(self, arraySource2D, layer):
         """ colorTable: a list of QRgba values """
 
-        assert isinstance(arraySource2D, SourceABC), "wrong type: %s" % str(type(arraySource2D))
+        assert isinstance(arraySource2D, ISlice2DSource), "wrong type: %s" % str(type(arraySource2D))
         super(ColortableImageSource, self).__init__(layer.name, direct=layer.direct)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
@@ -390,10 +379,7 @@ class ColortableImageSource(ImageSource):
         return ColortableImageRequest(req, self._colorTable, self._layer.normalize[0], self.direct)
 
 
-assert issubclass(ColortableImageSource, SourceABC)
-
-
-class ColortableImageRequest(object):
+class ColortableImageRequest(IRequest):
     loggingName = __name__ + ".ColortableImageRequest"
     logger = logging.getLogger(loggingName)
 
@@ -516,8 +502,6 @@ class ColortableImageRequest(object):
         return img
 
 
-assert issubclass(ColortableImageRequest, RequestABC)
-
 # *******************************************************************************
 # R G B A I m a g e S o u r c e                                                *
 # *******************************************************************************
@@ -536,7 +520,7 @@ class RGBAImageSource(ImageSource):
         self._layer = layer
         channels = [red, green, blue, alpha]
         for channel in channels:
-            assert isinstance(channel, SourceABC), "channel has wrong type: %s" % str(type(channel))
+            assert isinstance(channel, ISlice2DSource), "channel has wrong type: %s" % str(type(channel))
 
         super(RGBAImageSource, self).__init__(layer.name, guarantees_opaqueness=guarantees_opaqueness)
         self._channels = channels
@@ -557,10 +541,7 @@ class RGBAImageSource(ImageSource):
         return RGBAImageRequest(r, g, b, a, shape, *self._layer._normalize)
 
 
-assert issubclass(RGBAImageSource, SourceABC)
-
-
-class RGBAImageRequest(object):
+class RGBAImageRequest(IRequest):
     def __init__(self, r, g, b, a, shape, normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None):
         self._requests = r, g, b, a
         self._normalize = [n or None for n in [normalizeR, normalizeG, normalizeB, normalizeA]]
@@ -588,9 +569,6 @@ class RGBAImageRequest(object):
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
 
 
-assert issubclass(RGBAImageRequest, RequestABC)
-
-
 class RandomImageSource(ImageSource):
     """Random noise image for testing and debugging."""
 
@@ -601,10 +579,7 @@ class RandomImageSource(ImageSource):
         return RandomImageRequest(shape)
 
 
-assert issubclass(RandomImageSource, SourceABC)
-
-
-class RandomImageRequest(object):
+class RandomImageRequest(IRequest):
     def __init__(self, shape):
         self.shape = shape
 
@@ -613,9 +588,6 @@ class RandomImageRequest(object):
         assert d.ndim == 2
         img = gray2qimage(d)
         return img.convertToFormat(QImage.Format_ARGB32_Premultiplied)
-
-
-assert issubclass(RandomImageRequest, RequestABC)
 
 
 ##
@@ -668,7 +640,7 @@ class DummyItem(QGraphicsItem):
         pass
 
 
-class DummyItemRequest(object):
+class DummyItemRequest(IRequest):
     def __init__(self, arrayreq, rect):
         self.rect = rect
         self._arrayreq = arrayreq
@@ -692,7 +664,7 @@ class DummyItemSource(ImageSource):
         return DummyItemRequest(arrayreq, qrect)
 
 
-class DummyRasterRequest(object):
+class DummyRasterRequest(IRequest):
     """
     For stupid tests.
     Uses DummyItem, but rasterizes it to turn it into a QImage.
@@ -754,7 +726,7 @@ class SegmentationEdgesItemSource(ImageSource):
         return SegmentationEdgesItem
 
 
-class SegmentationEdgesItemRequest(object):
+class SegmentationEdgesItemRequest(IRequest):
     def __init__(self, arrayreq, layer, rect, is_clickable):
         self.rect = rect
         self._arrayreq = arrayreq
