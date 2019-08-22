@@ -57,38 +57,3 @@ class ISlice2DSource(QABC):
     @abstractmethod
     def setDirty(self, slicing):
         pass
-
-
-class SourceABC(with_metaclass(ABCMeta, object)):
-    isDirty = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)
-
-    @abstractproperty
-    def numberOfChannels(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def request(self, slicing):
-        pass
-
-    @abstractmethod
-    def setDirty(self, slicing):
-        pass
-
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is SourceABC:
-            return True if _has_attributes(C, ["request", "setDirty"]) else False
-        return NotImplemented
-
-    @abstractmethod
-    def __eq__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __ne__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def clean_up(self):
-        pass

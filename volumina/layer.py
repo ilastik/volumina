@@ -27,9 +27,8 @@ from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer
 from PyQt5.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
-from volumina.pixelpipeline.asyncabcs import SourceABC
 from volumina.pixelpipeline.slicesources import SliceSource
-from volumina.pixelpipeline.datasources import MinMaxSource, ConstantSource
+from volumina.pixelpipeline.datasources import MinMaxSource, ConstantSource, IDataSource
 from volumina.pixelpipeline import imagesources as imsrc
 
 from volumina.utility import SignalingDict
@@ -412,7 +411,7 @@ class GrayscaleLayer(NormalizableLayer):
         return self._window_leveling != other_layer._window_leveling
 
     def __init__(self, datasource, range=None, normalize=None, direct=False, window_leveling=False):
-        assert isinstance(datasource, SourceABC)
+        assert isinstance(datasource, IDataSource)
         super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
         self._window_leveling = window_leveling
 
@@ -445,7 +444,7 @@ class AlphaModulatedLayer(NormalizableLayer):
             self.tintColorChanged.emit()
 
     def __init__(self, datasource, tintColor=QColor(255, 0, 0), range=(0, 255), normalize=None):
-        assert isinstance(datasource, SourceABC)
+        assert isinstance(datasource, IDataSource)
         super(AlphaModulatedLayer, self).__init__([datasource], range, normalize)
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
@@ -520,7 +519,7 @@ class ColortableLayer(NormalizableLayer):
         return False
 
     def __init__(self, datasource, colorTable, normalize=False, direct=False):
-        assert isinstance(datasource, SourceABC)
+        assert isinstance(datasource, IDataSource)
 
         """
         By default, no normalization is performed on ColortableLayers.
@@ -555,7 +554,7 @@ class ClickableColortableLayer(ClickableLayer):
     colorTableChanged = pyqtSignal()
 
     def __init__(self, editor, clickFunctor, datasource, colorTable, direct=False, right=True):
-        assert isinstance(datasource, SourceABC)
+        assert isinstance(datasource, IDataSource)
         super(ClickableColortableLayer, self).__init__(datasource, editor, clickFunctor, direct=direct, right=right)
         self._colorTable = colorTable
         self.data = datasource
@@ -607,10 +606,10 @@ class RGBALayer(NormalizableLayer):
         normalizeB=None,
         normalizeA=None,
     ):
-        assert red is None or isinstance(red, SourceABC)
-        assert green is None or isinstance(green, SourceABC)
-        assert blue is None or isinstance(blue, SourceABC)
-        assert alpha is None or isinstance(alpha, SourceABC)
+        assert red is None or isinstance(red, IDataSource)
+        assert green is None or isinstance(green, IDataSource)
+        assert blue is None or isinstance(blue, IDataSource)
+        assert alpha is None or isinstance(alpha, IDataSource)
         super(RGBALayer, self).__init__([red, green, blue, alpha])
         self._color_missing_value = color_missing_value
         self._alpha_missing_value = alpha_missing_value

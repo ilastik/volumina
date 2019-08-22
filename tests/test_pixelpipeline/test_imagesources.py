@@ -7,7 +7,7 @@ import pytest
 
 from PyQt5.QtCore import QRect
 from volumina.pixelpipeline import imagesources as imsrc
-from volumina.pixelpipeline.asyncabcs import SourceABC
+from volumina.pixelpipeline.asyncabcs import IImageSource
 
 
 class PipelineCfg:
@@ -34,7 +34,7 @@ def nonverbose_pipeline():
 @pytest.fixture(scope="function")
 def img_source(request):
     cls = request.param
-    src = mock.MagicMock(spec=SourceABC)
+    src = mock.MagicMock(spec=IImageSource)
     layer = mock.MagicMock()
 
     if issubclass(cls, (imsrc.GrayscaleImageSource, imsrc.AlphaModulatedImageSource)):

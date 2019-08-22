@@ -27,9 +27,16 @@ from PyQt5.QtGui import QMouseEvent
 
 from abc import ABCMeta, abstractmethod
 
-from .pixelpipeline.asyncabcs import _has_attributes
 from .imageView2D import ImageView2D
 from future.utils import with_metaclass
+
+
+def _has_attribute(cls, attr):
+    return True if any(attr in B.__dict__ for B in cls.__mro__) else False
+
+
+def _has_attributes(cls, attrs):
+    return True if all(_has_attribute(cls, a) for a in attrs) else False
 
 
 class InterpreterABC(with_metaclass(ABCMeta, object)):
