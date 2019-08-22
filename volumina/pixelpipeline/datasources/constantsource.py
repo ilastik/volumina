@@ -46,6 +46,7 @@ class ConstantSource(QObject, IDataSource):
         super(ConstantSource, self).__init__(parent=parent)
         self._constant = constant
         self._dtype = dtype
+        self._cache = {}
 
     def clean_up(self):
         pass
@@ -57,8 +58,14 @@ class ConstantSource(QObject, IDataSource):
         assert is_pure_slicing(slicing)
         assert is_bounded(slicing)
         shape = slicing2shape(slicing)
-        result = np.full(shape, self._constant, dtype=self._dtype)
-        return ConstantRequest(result)
+        key = (shape, self._constant, self._dtype)
+
+        if key not in self._cache:
+            result = np.full(shape, self._constant, dtype=self._dtype)
+            result.setflags(write=False)
+            self._cache[key] = result
+
+        return ConstantRequest(self._cache[key])
 
     def setDirty(self, slicing):
         if not is_pure_slicing(slicing):
