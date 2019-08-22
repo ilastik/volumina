@@ -53,7 +53,7 @@ class ConstantSource(QObject, IDataSource):
     def id(self):
         return id(self)
 
-    def request(self, slicing, through=None):
+    def request(self, slicing):
         assert is_pure_slicing(slicing)
         assert is_bounded(slicing)
         shape = slicing2shape(slicing)
