@@ -658,7 +658,7 @@ class TileProvider(QObject):
                     # Settings changes can cause 'slot not ready' errors during graph setup.
                     # Those errors are not really a problem, but we don't want to hide them from developers
                     # So, we show the exception (in the log), but we don't kill the thread.
-                    sys.excepthook(*sys.exc_info())
+                    logger.exception("Failed to create layer tile request")
                     continue
 
                 timestamp = time.time()
@@ -801,7 +801,7 @@ class TileProvider(QObject):
                 if stack_id == self._current_stack_id and cache is self._cache:
                     self.sceneRectChanged.emit(tile_rect)
         except BaseException:
-            sys.excepthook(*sys.exc_info())
+            logger.exception("Failed to fetch layer tile")
 
     def _onLayerDirty(self, dirtyImgSrc, dataRect):
         """
