@@ -1,20 +1,11 @@
 """
 Wraps stdlib abc module to provide convenience classes for defining QObject interfaces
 """
-from abc import ABCMeta, ABC, abstractproperty, abstractclassmethod, abstractmethod
+from abc import ABCMeta, ABC, abstractmethod
 
 from PyQt5.QtCore import QObject
 
-__all__ = [
-    "ABCMeta",
-    "QABCMeta",
-    "ABC",
-    "ABCMeta",
-    "abstractproperty",
-    "abstractclassmethod",
-    "abstractmethod",
-    "abstractsignal",
-]
+__all__ = ["ABCMeta", "QABCMeta", "ABC", "ABCMeta", "abstractmethod", "abstractsignal"]
 
 
 class abstractsignal:
@@ -29,7 +20,7 @@ class abstractsignal:
         pass
 
 
-class QABCMeta(type(QObject), type(ABC)):
+class QABCMeta(type(QObject), ABCMeta):
     pass
 
 
