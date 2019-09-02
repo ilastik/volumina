@@ -30,16 +30,6 @@ class TestQAbc:
 
         MySignal()
 
-    def test_qobject_signal(self):
-        class MyObject(QObject, self.IObject, self.ISignal):
-            signal = pyqtSignal(int)
-
-            def foo(self):
-                self.signal.emit(42)
-
-        reciever = mock.Mock()
-        o = MyObject()
-        o.signal.connect(reciever)
-        o.foo()
-
-        reciever.assert_called_once_with(42)
+    def test_abstract_signal_accepts_args_and_kwargs(self):
+        class MyABC(abc.QABC):
+            signal = abc.abstractsignal(int, param1=str)

@@ -16,7 +16,7 @@ class abstractsignal:
 
     __isabstractmethod__ = True
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         pass
 
 
