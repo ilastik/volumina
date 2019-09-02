@@ -35,7 +35,7 @@ class RequestABC(ABC):
         """waits until completion and returns result"""
 
 
-class IImageSource(QABC):
+class ImageSourceABC(QABC):
     isDirty = abstractsignal(object)
 
     @abstractmethod

@@ -34,7 +34,7 @@ import functools
 from PyQt5.QtCore import QObject, QRect, pyqtSignal
 from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
-from .asyncabcs import IImageSource, ISlice2DSource, RequestABC
+from .asyncabcs import ImageSourceABC, ISlice2DSource, RequestABC
 from volumina.pixelpipeline.datasources import IDataSource
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import CONFIG
@@ -74,7 +74,7 @@ def log_request(func):
 # *******************************************************************************
 
 
-class ImageSource(QObject, IImageSource):
+class ImageSource(QObject, ImageSourceABC):
     """Partial implemented base class for image sources
 
     Signals:
