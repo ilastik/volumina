@@ -51,7 +51,7 @@ from volumina.pixelpipeline.imagesources import (
 )
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.pixelpipeline.slicesources import SliceSource
-from volumina.pixelpipeline.asyncabcs import ISlice2DSource
+from volumina.pixelpipeline.asyncabcs import Slice2DSourceABC
 from volumina.layer import GrayscaleLayer, AlphaModulatedLayer, RGBALayer, ColortableLayer
 
 import threading
@@ -89,7 +89,7 @@ def install_thread_excepthook():
 install_thread_excepthook()
 
 
-class _ArraySource2d(ArraySource, ISlice2DSource):
+class _ArraySource2d(ArraySource, Slice2DSourceABC):
     def request(self, slicing, through=None):
         return super(_ArraySource2d, self).request(slicing)
 

@@ -25,7 +25,7 @@ from __future__ import absolute_import
 import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
-from .asyncabcs import ISlice2DSource, RequestABC
+from .asyncabcs import Slice2DSourceABC, RequestABC
 from .datasources import IDataSource
 import numpy as np
 import volumina
@@ -74,7 +74,7 @@ class SliceRequest(RequestABC):
 # *******************************************************************************
 
 
-class SliceSource(QObject, ISlice2DSource):
+class SliceSource(QObject, Slice2DSourceABC):
     areaDirty = pyqtSignal(object)
     isDirty = pyqtSignal(object)
     throughChanged = pyqtSignal(tuple, tuple)  # old, new

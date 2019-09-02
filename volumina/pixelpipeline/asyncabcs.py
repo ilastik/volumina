@@ -47,7 +47,7 @@ class ImageSourceABC(QABC):
         pass
 
 
-class ISlice2DSource(QABC):
+class Slice2DSourceABC(QABC):
     isDirty = abstractsignal(object)
 
     @abstractmethod
