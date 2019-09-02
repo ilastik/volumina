@@ -10,7 +10,7 @@ from lazyflow.graph import Slot
 from lazyflow.operators import opReorderAxes
 from lazyflow.roi import sliceToRoi, roiToSlice
 
-from volumina.pixelpipeline.datasources.interface import IDataSource, IDataRequest, IndeterminateRequestError
+from volumina.pixelpipeline.datasources.interface import DataSourceABC, IDataRequest, IndeterminateRequestError
 from volumina.slicingtools import is_pure_slicing, slicing2shape, make_bounded
 from volumina.config import CONFIG
 
@@ -95,7 +95,7 @@ def weakref_setDirtyLF(wref, *args, **kwargs):
     wref()._setDirtyLF(*args, **kwargs)
 
 
-class LazyflowSource(QObject, IDataSource):
+class LazyflowSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 

@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
-from volumina.pixelpipeline.datasources.interface import IDataSource, IDataRequest
+from volumina.pixelpipeline.datasources.interface import DataSourceABC, IDataRequest
 from volumina.slicingtools import sl
 
 
@@ -22,7 +22,7 @@ class MinMaxUpdateRequest(IDataRequest):
         return self._result
 
 
-class MinMaxSource(QObject, IDataSource):
+class MinMaxSource(QObject, DataSourceABC):
     """
     A datasource that serves as a normalizing decorator for other datasources.
     """

@@ -1,7 +1,7 @@
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from volumina.pixelpipeline.datasources.interface import IDataSource, IDataRequest
+from volumina.pixelpipeline.datasources.interface import DataSourceABC, IDataRequest
 from volumina.slicingtools import is_pure_slicing, index2slice
 
 
@@ -26,7 +26,7 @@ class ArrayRequest(IDataRequest):
         pass
 
 
-class ArraySource(QObject, IDataSource):
+class ArraySource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)  # Never emitted
 

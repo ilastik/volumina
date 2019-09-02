@@ -26,7 +26,7 @@ import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
 from .asyncabcs import Slice2DSourceABC, RequestABC
-from .datasources import IDataSource
+from .datasources import DataSourceABC
 import numpy as np
 import volumina
 from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
@@ -104,7 +104,7 @@ class SliceSource(QObject, Slice2DSourceABC):
             self.idChanged.emit(old_id, self.id)
 
     def __init__(self, datasource, sliceProjection=projectionAlongTZC):
-        assert isinstance(datasource, IDataSource), "wrong type: %s" % str(type(datasource))
+        assert isinstance(datasource, DataSourceABC), "wrong type: %s" % str(type(datasource))
         super(SliceSource, self).__init__()
 
         self.sliceProjection = sliceProjection

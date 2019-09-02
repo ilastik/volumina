@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor, QPen
 from itertools import count
 
 from volumina import layer
-from volumina.pixelpipeline.datasources import IDataSource
+from volumina.pixelpipeline.datasources import DataSourceABC
 from volumina.pixelpipeline import imagesources as imsrc
 
 
@@ -15,7 +15,7 @@ _counter = count()
 
 @pytest.fixture(scope="function")
 def src():
-    src = mock.Mock(spec=IDataSource)
+    src = mock.Mock(spec=DataSourceABC)
     src.numberOfChannels = 1
     src.dtype = lambda: np.uint8
     return src

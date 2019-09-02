@@ -6,7 +6,7 @@ import numpy as np
 from volumina.utility.abc import QABC, ABC, abstractsignal, abstractproperty, abstractmethod
 
 
-__all__ = ["IDataSource", "IDataRequest", "IndeterminateRequestError"]
+__all__ = ["DataSourceABC", "IDataRequest", "IndeterminateRequestError"]
 
 
 class IndeterminateRequestError(Exception):
@@ -31,7 +31,7 @@ class IDataRequest(ABC):
         """get result if request has completed otherwise None"""
 
 
-class IDataSource(QABC):
+class DataSourceABC(QABC):
     isDirty = abstractsignal(object)
     numberOfChannelsChanged = abstractsignal(int)
 
@@ -48,11 +48,11 @@ class IDataSource(QABC):
         ...
 
     @abstractmethod
-    def __eq__(self, other: IDataSource):
+    def __eq__(self, other: DataSourceABC):
         ...
 
     @abstractmethod
-    def __ne__(self, other: IDataSource):
+    def __ne__(self, other: DataSourceABC):
         ...
 
     @abstractmethod
