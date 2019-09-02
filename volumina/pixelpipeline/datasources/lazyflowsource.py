@@ -10,7 +10,7 @@ from lazyflow.graph import Slot
 from lazyflow.operators import opReorderAxes
 from lazyflow.roi import sliceToRoi, roiToSlice
 
-from volumina.pixelpipeline.datasources.interface import DataSourceABC, IDataRequest, IndeterminateRequestError
+from volumina.pixelpipeline.datasources.interface import DataSourceABC, DataRequestABC, IndeterminateRequestError
 from volumina.slicingtools import is_pure_slicing, slicing2shape, make_bounded
 from volumina.config import CONFIG
 
@@ -52,7 +52,7 @@ def translate_lf_exceptions(func):
     return wrapper
 
 
-class LazyflowRequest(IDataRequest):
+class LazyflowRequest(DataRequestABC):
     @translate_lf_exceptions
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest"):
         shape = op.Output.meta.shape

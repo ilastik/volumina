@@ -6,7 +6,7 @@ import numpy as np
 from volumina.utility.abc import QABC, ABC, abstractsignal, abstractproperty, abstractmethod
 
 
-__all__ = ["DataSourceABC", "IDataRequest", "IndeterminateRequestError"]
+__all__ = ["DataSourceABC", "DataRequestABC", "IndeterminateRequestError"]
 
 
 class IndeterminateRequestError(Exception):
@@ -21,7 +21,7 @@ class IndeterminateRequestError(Exception):
     pass
 
 
-class IDataRequest(ABC):
+class DataRequestABC(ABC):
     @abstractmethod
     def wait(self) -> np.ndarray:
         """waits until completion and returns result"""
@@ -40,7 +40,7 @@ class DataSourceABC(QABC):
         ...
 
     @abstractmethod
-    def request(self, slicing) -> IDataRequest:
+    def request(self, slicing) -> DataRequestABC:
         ...
 
     @abstractmethod
