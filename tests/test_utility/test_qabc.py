@@ -3,17 +3,17 @@ from unittest import mock
 import pytest
 
 from PyQt5.QtCore import QObject, pyqtSignal
-from volumina.utility import abc
+from volumina.utility import qabc
 
 
 class TestQAbc:
-    class IObject(abc.QABC):
-        @abc.abstractmethod
+    class IObject(qabc.QABC):
+        @qabc.abstractmethod
         def foo(self):
             ...
 
-    class ISignal(abc.QABC):
-        signal = abc.abstractsignal()
+    class ISignal(qabc.QABC):
+        signal = qabc.abstractsignal()
 
     def test_type_error_on_undefined_abstract_method(self):
 
@@ -31,5 +31,5 @@ class TestQAbc:
         MySignal()
 
     def test_abstract_signal_accepts_args_and_kwargs(self):
-        class MyABC(abc.QABC):
-            signal = abc.abstractsignal(int, param1=str)
+        class MyABC(qabc.QABC):
+            signal = qabc.abstractsignal(int, param1=str)
