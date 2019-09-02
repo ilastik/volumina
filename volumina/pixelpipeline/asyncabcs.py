@@ -29,7 +29,7 @@ from volumina.utility.abc import ABCMeta, ABC, QABC, abstractmethod, abstractpro
 # *******************************************************************************
 
 
-class IRequest(ABC):
+class RequestABC(ABC):
     @abstractmethod
     def wait(self):
         """waits until completion and returns result"""

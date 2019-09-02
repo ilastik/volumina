@@ -34,7 +34,7 @@ import functools
 from PyQt5.QtCore import QObject, QRect, pyqtSignal
 from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
-from .asyncabcs import IImageSource, ISlice2DSource, IRequest
+from .asyncabcs import IImageSource, ISlice2DSource, RequestABC
 from volumina.pixelpipeline.datasources import IDataSource
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import CONFIG
@@ -162,7 +162,7 @@ class GrayscaleImageSource(ImageSource):
         return GrayscaleImageRequest(req, self._layer.normalize[0], direct=self.direct)
 
 
-class GrayscaleImageRequest(IRequest):
+class GrayscaleImageRequest(RequestABC):
     loggingName = __name__ + ".GrayscaleImageRequest"
     logger = logging.getLogger(loggingName)
 
@@ -266,7 +266,7 @@ class AlphaModulatedImageSource(ImageSource):
         return AlphaModulatedImageRequest(req, self._layer.tintColor, self._layer.normalize[0])
 
 
-class AlphaModulatedImageRequest(IRequest):
+class AlphaModulatedImageRequest(RequestABC):
     loggingName = __name__ + ".AlphaModulatedImageRequest"
     logger = logging.getLogger(loggingName)
 
@@ -379,7 +379,7 @@ class ColortableImageSource(ImageSource):
         return ColortableImageRequest(req, self._colorTable, self._layer.normalize[0], self.direct)
 
 
-class ColortableImageRequest(IRequest):
+class ColortableImageRequest(RequestABC):
     loggingName = __name__ + ".ColortableImageRequest"
     logger = logging.getLogger(loggingName)
 
@@ -541,7 +541,7 @@ class RGBAImageSource(ImageSource):
         return RGBAImageRequest(r, g, b, a, shape, *self._layer._normalize)
 
 
-class RGBAImageRequest(IRequest):
+class RGBAImageRequest(RequestABC):
     def __init__(self, r, g, b, a, shape, normalizeR=None, normalizeG=None, normalizeB=None, normalizeA=None):
         self._requests = r, g, b, a
         self._normalize = [n or None for n in [normalizeR, normalizeG, normalizeB, normalizeA]]
@@ -579,7 +579,7 @@ class RandomImageSource(ImageSource):
         return RandomImageRequest(shape)
 
 
-class RandomImageRequest(IRequest):
+class RandomImageRequest(RequestABC):
     def __init__(self, shape):
         self.shape = shape
 
@@ -640,7 +640,7 @@ class DummyItem(QGraphicsItem):
         pass
 
 
-class DummyItemRequest(IRequest):
+class DummyItemRequest(RequestABC):
     def __init__(self, arrayreq, rect):
         self.rect = rect
         self._arrayreq = arrayreq
@@ -664,7 +664,7 @@ class DummyItemSource(ImageSource):
         return DummyItemRequest(arrayreq, qrect)
 
 
-class DummyRasterRequest(IRequest):
+class DummyRasterRequest(RequestABC):
     """
     For stupid tests.
     Uses DummyItem, but rasterizes it to turn it into a QImage.
@@ -726,7 +726,7 @@ class SegmentationEdgesItemSource(ImageSource):
         return SegmentationEdgesItem
 
 
-class SegmentationEdgesItemRequest(IRequest):
+class SegmentationEdgesItemRequest(RequestABC):
     def __init__(self, arrayreq, layer, rect, is_clickable):
         self.rect = rect
         self._arrayreq = arrayreq

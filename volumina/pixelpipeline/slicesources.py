@@ -25,7 +25,7 @@ from __future__ import absolute_import
 import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
-from .asyncabcs import ISlice2DSource, IRequest
+from .asyncabcs import ISlice2DSource, RequestABC
 from .datasources import IDataSource
 import numpy as np
 import volumina
@@ -43,7 +43,7 @@ projectionAlongTZC = SliceProjection(abscissa=1, ordinate=2, along=[0, 3, 4])
 logger = logging.getLogger(__name__)
 
 
-class SliceRequest(IRequest):
+class SliceRequest(RequestABC):
     def __init__(self, domainArrayRequest, sliceProjection):
         self._ar = domainArrayRequest
         self._sp = sliceProjection
