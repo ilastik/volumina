@@ -38,6 +38,11 @@ class RequestABC(ABC):
 
 
 class ImageSourceABC(QABC):
+    """
+    Allows to retrieve renderable object (QImage or QGraphicsItem)
+    for given 2D slice
+    """
+
     isDirty = abstractsignal(object)
 
     @abstractmethod
@@ -50,6 +55,10 @@ class ImageSourceABC(QABC):
 
 
 class Slice2DSourceABC(QABC):
+    """
+    Provides a way to retrieve 2D slices of ND array
+    """
+
     isDirty = abstractsignal(object)
 
     @abstractmethod
