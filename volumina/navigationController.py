@@ -419,7 +419,7 @@ class NavigationController(QObject):
 
         """
         for pump in self._imagePumps:
-            for src in pump.layerToSliceSources(layer):
+            for src in pump.layerToPlanarSliceSources(layer):
                 src.setThrough(2, layer.channel)
         # Note: we update the slice sources of a layer
         # sequentially. This could cause flickering if there are

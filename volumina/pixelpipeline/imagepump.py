@@ -350,7 +350,7 @@ class ImagePump(object):
         self._layerStackModel.stackCleared.connect(self._onStackCleared)
 
     # mappings
-    def layerToSliceSources(self, layer):
+    def layerToPlanarSliceSources(self, layer):
         """Map from Layer instance to PlanarSliceSource instances.
 
         returns: list of one or more PlanarSliceSource instances
