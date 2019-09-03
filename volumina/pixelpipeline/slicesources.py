@@ -43,7 +43,7 @@ projectionAlongTZC = SliceProjection(abscissa=1, ordinate=2, along=[0, 3, 4])
 logger = logging.getLogger(__name__)
 
 
-class SliceRequest(RequestABC):
+class PlanarSliceRequest(RequestABC):
     def __init__(self, domainArrayRequest, sliceProjection):
         self._ar = domainArrayRequest
         self._sp = sliceProjection
