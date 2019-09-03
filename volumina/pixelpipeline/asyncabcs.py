@@ -19,9 +19,11 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
+from abc import ABCMeta, ABC, abstractmethod
+
 from PyQt5.QtCore import pyqtSignal
 from future.utils import with_metaclass
-from volumina.utility.abc import ABCMeta, ABC, QABC, abstractmethod, abstractproperty, abstractsignal
+from volumina.utility.qabc import QABC, abstractsignal
 
 
 # *******************************************************************************

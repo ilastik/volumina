@@ -1,9 +1,10 @@
 from __future__ import annotations
 from typing import Optional
+from abc import ABC, abstractproperty, abstractmethod
 
 import numpy as np
 
-from volumina.utility.abc import QABC, ABC, abstractsignal, abstractproperty, abstractmethod
+from volumina.utility.qabc import QABC, abstractsignal
 
 
 __all__ = ["DataSourceABC", "DataRequestABC", "IndeterminateRequestError"]
