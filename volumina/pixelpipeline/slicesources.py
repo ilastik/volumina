@@ -25,7 +25,7 @@ from __future__ import absolute_import
 import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
-from .asyncabcs import Slice2DSourceABC, RequestABC
+from .asyncabcs import PlanarSliceSourceABC, RequestABC
 from .datasources import DataSourceABC
 import numpy as np
 import volumina
@@ -74,7 +74,7 @@ class SliceRequest(RequestABC):
 # *******************************************************************************
 
 
-class SliceSource(QObject, Slice2DSourceABC):
+class PlanarSliceSource(QObject, PlanarSliceSourceABC):
     areaDirty = pyqtSignal(object)
     isDirty = pyqtSignal(object)
     throughChanged = pyqtSignal(tuple, tuple)  # old, new
@@ -93,7 +93,7 @@ class SliceSource(QObject, Slice2DSourceABC):
         value = list(value)
         if len(value) != len(self.sliceProjection.along):
             raise ValueError(
-                "SliceSource.through.setter: length of value differs from along length: %s != %s "
+                "PlanarSliceSource.through.setter: length of value differs from along length: %s != %s "
                 % (str(len(value)), str(len(self.sliceProjection.along)))
             )
         if value != self._through:
@@ -105,7 +105,7 @@ class SliceSource(QObject, Slice2DSourceABC):
 
     def __init__(self, datasource, sliceProjection=projectionAlongTZC):
         assert isinstance(datasource, DataSourceABC), "wrong type: %s" % str(type(datasource))
-        super(SliceSource, self).__init__()
+        super(PlanarSliceSource, self).__init__()
 
         self.sliceProjection = sliceProjection
         self._datasource = datasource
@@ -146,7 +146,9 @@ class SliceSource(QObject, Slice2DSourceABC):
         slicing = self.sliceProjection.domain(through, slicing2D[0], slicing2D[1])
 
         if CONFIG.verbose_pixelpipeline:
-            logger.info("SliceSource requests '%r' from data source '%s'", slicing, type(self._datasource).__qualname__)
+            logger.info(
+                "PlanarSliceSource requests '%r' from data source '%s'", slicing, type(self._datasource).__qualname__
+            )
 
         return SliceRequest(self._datasource.request(slicing), self.sliceProjection)
 
@@ -246,12 +248,12 @@ class SyncedSliceSources(QObject):
         self.through = through
 
     def add(self, sliceSrc):
-        assert isinstance(sliceSrc, SliceSource), "wrong type: %s" % str(type(sliceSrc))
+        assert isinstance(sliceSrc, PlanarSliceSource), "wrong type: %s" % str(type(sliceSrc))
         self._syncSliceSource(sliceSrc)
         self._srcs.add(sliceSrc)
 
     def remove(self, sliceSrc):
-        assert isinstance(sliceSrc, SliceSource)
+        assert isinstance(sliceSrc, PlanarSliceSource)
         self._srcs.remove(sliceSrc)
 
     def _syncSliceSource(self, sliceSrc):
@@ -268,14 +270,14 @@ import unittest as ut
 # *******************************************************************************
 
 
-class SliceSourceTest(ut.TestCase):
+class PlanarSliceSourceTest(ut.TestCase):
     def setUp(self):
         import numpy as np
         from .datasources import ArraySource
 
         self.raw = np.random.randint(0, 100, (10, 3, 3, 128, 3))
         self.a = ArraySource(self.raw)
-        self.ss = SliceSource(self.a, projectionAlongTZC)
+        self.ss = PlanarSliceSource(self.a, projectionAlongTZC)
 
     def testRequest(self):
         self.ss.setThrough(0, 1)

@@ -25,7 +25,7 @@ from PyQt5.QtCore import QRect, QObject, QItemSelectionModel
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 from volumina.slicingtools import SliceProjection
-from volumina.pixelpipeline.slicesources import SliceSource
+from volumina.pixelpipeline.slicesources import PlanarSliceSource
 from volumina.pixelpipeline.datasources import ConstantSource
 from volumina.pixelpipeline.imagesources import GrayscaleImageSource
 from volumina.pixelpipeline.imagepump import StackedImageSources, ImagePump
@@ -38,15 +38,15 @@ class StackedImageSourcesTest(ut.TestCase):
         self.layer1 = GrayscaleLayer(self.ds)
         self.layer1.visible = False
         self.layer1.opacity = 0.1
-        self.ims1 = GrayscaleImageSource(SliceSource(self.ds), self.layer1)
+        self.ims1 = GrayscaleImageSource(PlanarSliceSource(self.ds), self.layer1)
         self.layer2 = GrayscaleLayer(self.ds)
         self.layer2.visible = True
         self.layer2.opacity = 0.3
-        self.ims2 = GrayscaleImageSource(SliceSource(self.ds), self.layer2)
+        self.ims2 = GrayscaleImageSource(PlanarSliceSource(self.ds), self.layer2)
         self.layer3 = GrayscaleLayer(self.ds)
         self.layer3.visible = True
         self.layer3.opacity = 1.0
-        self.ims3 = GrayscaleImageSource(SliceSource(self.ds), self.layer3)
+        self.ims3 = GrayscaleImageSource(PlanarSliceSource(self.ds), self.layer3)
 
     def testRegisterAndDeregister(self):
         lsm = LayerStackModel()

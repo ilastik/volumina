@@ -50,8 +50,8 @@ from volumina.pixelpipeline.imagesources import (
     DummyItemSource,
 )
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
-from volumina.pixelpipeline.slicesources import SliceSource
-from volumina.pixelpipeline.asyncabcs import Slice2DSourceABC
+from volumina.pixelpipeline.slicesources import PlanarSliceSource
+from volumina.pixelpipeline.asyncabcs import PlanarSliceSourceABC
 from volumina.layer import GrayscaleLayer, AlphaModulatedLayer, RGBALayer, ColortableLayer
 
 import threading
@@ -89,7 +89,7 @@ def install_thread_excepthook():
 install_thread_excepthook()
 
 
-class _ArraySource2d(ArraySource, Slice2DSourceABC):
+class _ArraySource2d(ArraySource, PlanarSliceSourceABC):
     def request(self, slicing, through=None):
         return super(_ArraySource2d, self).request(slicing)
 
@@ -439,34 +439,38 @@ class RGBAImageSourceTest(ImageSourcesTestBase):
             self.red, self.green, self.blue, self.alpha, RGBALayer(self.red, self.green, self.blue, self.alpha)
         )
         self.ims_rgb = RGBAImageSource(
-            self.red, self.green, self.blue, SliceSource(ConstantSource()), RGBALayer(self.red, self.green, self.blue)
+            self.red,
+            self.green,
+            self.blue,
+            PlanarSliceSource(ConstantSource()),
+            RGBALayer(self.red, self.green, self.blue),
         )
         self.ims_rg = RGBAImageSource(
             self.red,
             self.green,
-            SliceSource(ConstantSource()),
-            SliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
             RGBALayer(self.red, self.green),
         )
         self.ims_ba = RGBAImageSource(
-            red=SliceSource(ConstantSource()),
-            green=SliceSource(ConstantSource()),
+            red=PlanarSliceSource(ConstantSource()),
+            green=PlanarSliceSource(ConstantSource()),
             blue=self.blue,
             alpha=self.alpha,
             layer=RGBALayer(blue=self.blue, alpha=self.alpha),
         )
         self.ims_a = RGBAImageSource(
-            red=SliceSource(ConstantSource()),
-            green=SliceSource(ConstantSource()),
-            blue=SliceSource(ConstantSource()),
+            red=PlanarSliceSource(ConstantSource()),
+            green=PlanarSliceSource(ConstantSource()),
+            blue=PlanarSliceSource(ConstantSource()),
             alpha=self.alpha,
             layer=RGBALayer(alpha=self.alpha),
         )
         self.ims_none = RGBAImageSource(
-            SliceSource(ConstantSource()),
-            SliceSource(ConstantSource()),
-            SliceSource(ConstantSource()),
-            SliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
             RGBALayer(),
         )
 
@@ -499,7 +503,7 @@ class RGBAImageSourceTest(ImageSourcesTestBase):
             self.red,
             self.green,
             self.blue,
-            SliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
             RGBALayer(self.red, self.green, self.blue, alpha_missing_value=255),
             guarantees_opaqueness=True,
         )
@@ -508,7 +512,7 @@ class RGBAImageSourceTest(ImageSourcesTestBase):
             self.red,
             self.green,
             self.blue,
-            SliceSource(ConstantSource()),
+            PlanarSliceSource(ConstantSource()),
             RGBALayer(self.red, self.green, self.blue, alpha_missing_value=100),
         )
         self.assertFalse(ims_notopaque.isOpaque())

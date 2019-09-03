@@ -34,7 +34,7 @@ from volumina.tiling import TileProvider, Tiling
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
-from volumina.pixelpipeline.slicesources import SliceSource
+from volumina.pixelpipeline.slicesources import PlanarSliceSource
 from volumina.pixelpipeline.imagesources import GrayscaleImageSource
 from volumina.pixelpipeline.imagepump import StackedImageSources, ImagePump
 from volumina.slicingtools import SliceProjection
@@ -85,15 +85,15 @@ class TileProviderTest(ut.TestCase):
         self.layer1 = GrayscaleLayer(self.ds1, normalize=False)
         self.layer1.visible = False
         self.layer1.opacity = 0.1
-        self.ims1 = GrayscaleImageSource(SliceSource(self.ds1), self.layer1)
+        self.ims1 = GrayscaleImageSource(PlanarSliceSource(self.ds1), self.layer1)
         self.layer2 = GrayscaleLayer(self.ds2, normalize=False)
         self.layer2.visible = True
         self.layer2.opacity = 0.3
-        self.ims2 = GrayscaleImageSource(SliceSource(self.ds2), self.layer2)
+        self.ims2 = GrayscaleImageSource(PlanarSliceSource(self.ds2), self.layer2)
         self.layer3 = GrayscaleLayer(self.ds3, normalize=False)
         self.layer3.visible = True
         self.layer3.opacity = 1.0
-        self.ims3 = GrayscaleImageSource(SliceSource(self.ds3), self.layer3)
+        self.ims3 = GrayscaleImageSource(PlanarSliceSource(self.ds3), self.layer3)
 
         lsm = LayerStackModel()
         lsm.append(self.layer1)

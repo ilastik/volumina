@@ -54,7 +54,7 @@ class ImageSourceABC(QABC):
         pass
 
 
-class Slice2DSourceABC(QABC):
+class PlanarSliceSourceABC(QABC):
     """
     Provides a way to retrieve 2D slices of ND array
     """

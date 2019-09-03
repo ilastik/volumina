@@ -31,7 +31,7 @@ import numpy as np
 from volumina.imageScene2D import ImageScene2D, DirtyIndicator
 from volumina.positionModel import PositionModel
 from volumina.pixelpipeline.datasources import ConstantSource
-from volumina.pixelpipeline.slicesources import SliceSource
+from volumina.pixelpipeline.slicesources import PlanarSliceSource
 from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.tiling import Tiling
 from volumina.layerstack import LayerStackModel
@@ -160,7 +160,7 @@ class ImageScene2D_RenderTest(ut.TestCase):
         self.layer = GrayscaleLayer(self.ds)
         self.layer.set_normalize(0, False)
         self.layerstack.append(self.layer)
-        self.ims = self.layer.createImageSource([SliceSource(self.ds)])
+        self.ims = self.layer.createImageSource([PlanarSliceSource(self.ds)])
         self.sims.register(self.layer, self.ims)
 
         self.scene = ImageScene2D(PositionModel(), (0, 3, 4), preemptive_fetch_number=0)

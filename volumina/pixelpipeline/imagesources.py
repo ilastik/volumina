@@ -34,7 +34,7 @@ import functools
 from PyQt5.QtCore import QObject, QRect, pyqtSignal
 from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
-from .asyncabcs import ImageSourceABC, Slice2DSourceABC, RequestABC
+from .asyncabcs import ImageSourceABC, PlanarSliceSourceABC, RequestABC
 from volumina.pixelpipeline.datasources import DataSourceABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import CONFIG
@@ -144,7 +144,7 @@ class GrayscaleImageSource(ImageSource):
     logger = logging.getLogger(loggingName)
 
     def __init__(self, arraySource2D, layer):
-        assert isinstance(arraySource2D, Slice2DSourceABC), "wrong type: %s" % str(type(arraySource2D))
+        assert isinstance(arraySource2D, PlanarSliceSourceABC), "wrong type: %s" % str(type(arraySource2D))
         super(GrayscaleImageSource, self).__init__(layer.name, guarantees_opaqueness=True, direct=layer.direct)
         self._arraySource2D = arraySource2D
 
@@ -251,7 +251,7 @@ class GrayscaleImageRequest(RequestABC):
 
 class AlphaModulatedImageSource(ImageSource):
     def __init__(self, arraySource2D, layer):
-        assert isinstance(arraySource2D, Slice2DSourceABC), "wrong type: %s" % str(type(arraySource2D))
+        assert isinstance(arraySource2D, PlanarSliceSourceABC), "wrong type: %s" % str(type(arraySource2D))
         super(AlphaModulatedImageSource, self).__init__(layer.name)
         self._arraySource2D = arraySource2D
         self._layer = layer
@@ -341,7 +341,7 @@ class ColortableImageSource(ImageSource):
     def __init__(self, arraySource2D, layer):
         """ colorTable: a list of QRgba values """
 
-        assert isinstance(arraySource2D, Slice2DSourceABC), "wrong type: %s" % str(type(arraySource2D))
+        assert isinstance(arraySource2D, PlanarSliceSourceABC), "wrong type: %s" % str(type(arraySource2D))
         super(ColortableImageSource, self).__init__(layer.name, direct=layer.direct)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
@@ -520,7 +520,7 @@ class RGBAImageSource(ImageSource):
         self._layer = layer
         channels = [red, green, blue, alpha]
         for channel in channels:
-            assert isinstance(channel, Slice2DSourceABC), "channel has wrong type: %s" % str(type(channel))
+            assert isinstance(channel, PlanarSliceSourceABC), "channel has wrong type: %s" % str(type(channel))
 
         super(RGBAImageSource, self).__init__(layer.name, guarantees_opaqueness=guarantees_opaqueness)
         self._channels = channels

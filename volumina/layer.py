@@ -27,7 +27,7 @@ from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer
 from PyQt5.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
-from volumina.pixelpipeline.slicesources import SliceSource
+from volumina.pixelpipeline.slicesources import PlanarSliceSource
 from volumina.pixelpipeline.datasources import MinMaxSource, ConstantSource, DataSourceABC
 from volumina.pixelpipeline import imagesources as imsrc
 
@@ -627,10 +627,10 @@ class RGBALayer(NormalizableLayer):
         ds = data_sources.copy()
         for i in range(3):
             if data_sources[i] == None:
-                ds[i] = SliceSource(ConstantSource(self.color_missing_value))
+                ds[i] = PlanarSliceSource(ConstantSource(self.color_missing_value))
         guarantees_opaqueness = False
         if data_sources[3] == None:
-            ds[3] = SliceSource(ConstantSource(self.alpha_missing_value))
+            ds[3] = PlanarSliceSource(ConstantSource(self.alpha_missing_value))
             guarantees_opaqueness = True if self.alpha_missing_value == 255 else False
         src = imsrc.RGBAImageSource(ds[0], ds[1], ds[2], ds[3], self, guarantees_opaqueness=guarantees_opaqueness)
         src.setObjectName(self.name)
