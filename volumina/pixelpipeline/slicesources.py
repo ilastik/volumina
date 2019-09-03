@@ -75,7 +75,6 @@ class SliceRequest(RequestABC):
 
 
 class PlanarSliceSource(QObject, PlanarSliceSourceABC):
-    areaDirty = pyqtSignal(object)
     isDirty = pyqtSignal(object)
     throughChanged = pyqtSignal(tuple, tuple)  # old, new
     idChanged = pyqtSignal(object, object)  # old, new
@@ -156,25 +155,13 @@ class PlanarSliceSource(QObject, PlanarSliceSourceABC):
         assert isinstance(slicing, tuple)
         if not is_pure_slicing(slicing):
             raise Exception("dirty region: slicing is not pure")
-        self.areaDirty.emit(slicing)
+        self.isDirty.emit(slicing)
 
     def _onDatasourceDirty(self, ds_slicing):
-        # embedding of slice in datasource space
-        embedding = self.sliceProjection.domain(self.through)
-        inter = intersection(embedding, ds_slicing)
-
-        if inter:  # there is an intersection
-            dirty_area = [None] * 2
-            dirty_area[0] = inter[self.sliceProjection.abscissa]
-            dirty_area[1] = inter[self.sliceProjection.ordinate]
-            self.setDirty(tuple(dirty_area))
-
         # Even if no intersection with the current slice projection, mark this area
-        #  dirty in all parallel slices that may not be visible at the moment.
-        dirty_area = [None] * 2
-        dirty_area[0] = ds_slicing[self.sliceProjection.abscissa]
-        dirty_area[1] = ds_slicing[self.sliceProjection.ordinate]
-        self.isDirty.emit(tuple(dirty_area))
+        # dirty in all parallel slices that may not be visible at the moment.
+        dirty_area = (ds_slicing[self.sliceProjection.abscissa], ds_slicing[self.sliceProjection.ordinate])
+        self.isDirty.emit(dirty_area)
 
 
 # *******************************************************************************
