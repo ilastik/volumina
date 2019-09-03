@@ -22,7 +22,7 @@ class PlanarSliceSourceTest(ut.TestCase):
         self.assertTrue(np.all(sl == self.raw[1, :, :, 127, 2]))
 
         sl_bounded = self.ss.request((slice(0, 3), slice(1, None))).wait()
-        self.assertTrue(np.all(sl_bounded == self.raw[1, 0:3, 1:, 127, 2]))
+        numpy.testing.assert_array_equal(sl_bounded, self.raw[1, 0:3, 1:, 127, 2])
 
     def testDirtynessPropagation(self):
         self.ss.setThrough(0, 1)
