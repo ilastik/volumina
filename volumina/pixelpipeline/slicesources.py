@@ -149,7 +149,7 @@ class PlanarSliceSource(QObject, PlanarSliceSourceABC):
                 "PlanarSliceSource requests '%r' from data source '%s'", slicing, type(self._datasource).__qualname__
             )
 
-        return SliceRequest(self._datasource.request(slicing), self.sliceProjection)
+        return PlanarSliceRequest(self._datasource.request(slicing), self.sliceProjection)
 
     def setDirty(self, slicing):
         assert isinstance(slicing, tuple)
