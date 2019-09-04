@@ -73,16 +73,6 @@ class LazyflowRequest(DataRequestABC):
         )
         return a
 
-    @translate_lf_exceptions
-    def getResult(self):
-        a = self._req.result
-        assert isinstance(a, np.ndarray)
-        assert a.shape == self._shape, (
-            "LazyflowRequest.getResult() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s"
-            % (self._objectName, self._shape, self._slicing, a.shape)
-        )
-        return a
-
     def cancel(self):
         self._req.cancel()
 

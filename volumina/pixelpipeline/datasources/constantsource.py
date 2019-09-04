@@ -12,9 +12,6 @@ class ConstantRequest(DataRequestABC):
     def wait(self):
         return self._result
 
-    def getResult(self):
-        return self._result
-
     def cancel(self):
         pass
 

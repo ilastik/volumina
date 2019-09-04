@@ -16,9 +16,6 @@ class ArrayRequest(DataRequestABC):
             self._result = self._array[self._slicing]
         return self._result
 
-    def getResult(self):
-        return self._result
-
     def cancel(self):
         pass
 

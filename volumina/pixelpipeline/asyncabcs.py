@@ -19,16 +19,17 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from abc import ABCMeta, ABC, abstractmethod
+from __future__ import annotations
+from abc import ABCMeta, ABC, abstractmethod, abstractproperty
+from typing import Optional
 
+import numpy as np
 from PyQt5.QtCore import pyqtSignal
-from future.utils import with_metaclass
+
 from volumina.utility.qabc import QABC, abstractsignal
 
 
-# *******************************************************************************
-# R e q u e s t A B C                                                          *
-# *******************************************************************************
+__all__ = ["DataSourceABC", "RequestABC", "ImageSourceABC", "PlanarSliceSourceABC", "IndeterminateRequestError"]
 
 
 class RequestABC(ABC):
@@ -68,3 +69,44 @@ class PlanarSliceSourceABC(QABC):
     @abstractmethod
     def setDirty(self, slicing):
         pass
+
+
+class IndeterminateRequestError(Exception):
+    """
+    Raised if a request cannot be created or cannot be executed
+    because its underlying datasource is in an indeterminate state.
+    In such cases, the requester should simply ignore the error.
+    The datasource has the responsibility of sending a dirty notification
+    when the source is ready again.
+    """
+
+    pass
+
+
+class DataSourceABC(QABC):
+    isDirty = abstractsignal(object)
+    numberOfChannelsChanged = abstractsignal(int)
+
+    @abstractproperty
+    def numberOfChannels(self) -> int:
+        ...
+
+    @abstractmethod
+    def request(self, slicing) -> RequestABC:
+        ...
+
+    @abstractmethod
+    def dtype(self):
+        ...
+
+    @abstractmethod
+    def __eq__(self, other: DataSourceABC):
+        ...
+
+    @abstractmethod
+    def __ne__(self, other: DataSourceABC):
+        ...
+
+    @abstractmethod
+    def clean_up(self) -> None:
+        ...

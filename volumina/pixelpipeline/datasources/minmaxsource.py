@@ -11,14 +11,15 @@ class MinMaxUpdateRequest(DataRequestABC):
     def __init__(self, rawRequest, update_func):
         self._rawRequest = rawRequest
         self._update_func = update_func
+        self._result = None
 
     def wait(self):
         rawData = self._rawRequest.wait()
-        self._result = rawData
-        self._update_func(rawData)
-        return self._result
 
-    def getResult(self):
+        if self._result is None:
+            self._result = rawData
+            self._update_func(rawData)
+
         return self._result
 
 

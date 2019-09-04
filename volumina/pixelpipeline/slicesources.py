@@ -51,9 +51,6 @@ class PlanarSliceRequest(RequestABC):
     def wait(self):
         return self._sp(self._ar.wait())
 
-    def getResult(self):
-        return self._sp(self._ar.getResult())
-
     def cancel(self):
         self._ar.cancel()
 
