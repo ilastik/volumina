@@ -19,6 +19,3 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from .interface import DataSourceABC, IndeterminateRequestError
-
-__all__ = ["DataSourceABC", "IndeterminateRequestError"]
