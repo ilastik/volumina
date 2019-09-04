@@ -178,12 +178,8 @@ class GrayscaleImageRequest(RequestABC):
         t = time.time()
 
         tWAIT = time.time()
-        self._arrayreq.wait()
+        a = self._arrayreq.wait()
         tWAIT = 1000.0 * (time.time() - tWAIT)
-
-        tAR = time.time()
-        a = self._arrayreq.getResult()
-        tAR = 1000.0 * (time.time() - tAR)
 
         assert a.ndim == 2, "GrayscaleImageRequest.toImage(): result has shape %r, which is not 2-D" % (a.shape,)
 
@@ -237,8 +233,8 @@ class GrayscaleImageRequest(RequestABC):
         if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0 * (time.time() - t)
             self.logger.debug(
-                "toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)"
-                % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg)
+                "toImage (%dx%d, normalize=%r) took %f msec. (array wait: %f, img: %f)"
+                % (img.width(), img.height(), normalize, tTOT, tWAIT, tImg)
             )
 
         return img
@@ -282,12 +278,8 @@ class AlphaModulatedImageRequest(RequestABC):
         t = time.time()
 
         tWAIT = time.time()
-        self._arrayreq.wait()
+        a = self._arrayreq.wait()
         tWAIT = 1000.0 * (time.time() - tWAIT)
-
-        tAR = time.time()
-        a = self._arrayreq.getResult()
-        tAR = 1000.0 * (time.time() - tAR)
 
         has_no_mask = not np.ma.is_masked(a)
 
@@ -322,8 +314,8 @@ class AlphaModulatedImageRequest(RequestABC):
         if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0 * (time.time() - t)
             self.logger.debug(
-                "toImage (%dx%d, normalize=%r) took %f msec. (array req: %f, wait: %f, img: %f)"
-                % (img.width(), img.height(), normalize, tTOT, tAR, tWAIT, tImg)
+                "toImage (%dx%d, normalize=%r) took %f msec. (array wait: %f, img: %f)"
+                % (img.width(), img.height(), normalize, tTOT, tWAIT, tImg)
             )
 
         return img
@@ -397,12 +389,8 @@ class ColortableImageRequest(RequestABC):
         t = time.time()
 
         tWAIT = time.time()
-        self._arrayreq.wait()
+        a = self._arrayreq.wait()
         tWAIT = 1000.0 * (time.time() - tWAIT)
-
-        tAR = time.time()
-        a = self._arrayreq.getResult()
-        tAR = 1000.0 * (time.time() - tAR)
 
         assert a.ndim == 2
 
@@ -495,8 +483,8 @@ class ColortableImageRequest(RequestABC):
         if self.logger.isEnabledFor(logging.DEBUG):
             tTOT = 1000.0 * (time.time() - t)
             self.logger.debug(
-                "toImage (%dx%d) took %f msec. (array req: %f, wait: %f, img: %f)"
-                % (img.width(), img.height(), tTOT, tAR, tWAIT, tImg)
+                "toImage (%dx%d) took %f msec. (array wait: %f, img: %f)"
+                % (img.width(), img.height(), tTOT, tWAIT, tImg)
             )
 
         return img
@@ -556,7 +544,7 @@ class RGBAImageRequest(RequestABC):
 
     def toImage(self):
         for i, req in enumerate(self._requests):
-            a = req.getResult()
+            a = req.wait()
             normalize = self._normalize[i]
             if normalize is not None and normalize[0] < normalize[1]:
                 a = a.astype(np.float32)
