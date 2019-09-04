@@ -34,8 +34,7 @@ import functools
 from PyQt5.QtCore import QObject, QRect, pyqtSignal
 from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
-from .asyncabcs import ImageSourceABC, PlanarSliceSourceABC, RequestABC
-from volumina.pixelpipeline.datasources import DataSourceABC
+from volumina.pixelpipeline.interface import DataSourceABC, ImageSourceABC, PlanarSliceSourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
 from volumina.config import CONFIG
 from volumina.utility import execute_in_main_thread

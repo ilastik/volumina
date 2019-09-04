@@ -51,7 +51,7 @@ from volumina.pixelpipeline.imagesources import (
 )
 from volumina.pixelpipeline.datasources import ConstantSource, ArraySource
 from volumina.pixelpipeline.slicesources import PlanarSliceSource
-from volumina.pixelpipeline.asyncabcs import PlanarSliceSourceABC
+from volumina.pixelpipeline.interface import PlanarSliceSourceABC
 from volumina.layer import GrayscaleLayer, AlphaModulatedLayer, RGBALayer, ColortableLayer
 
 import threading

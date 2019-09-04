@@ -2,10 +2,10 @@ import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, sl
-from volumina.pixelpipeline.datasources.interface import DataSourceABC, DataRequestABC
+from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
 
 
-class ConstantRequest(DataRequestABC):
+class ConstantRequest(RequestABC):
     def __init__(self, result):
         self._result = result
 

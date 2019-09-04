@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from volumina.pixelpipeline.datasources.interface import DataSourceABC
+from volumina.pixelpipeline.interface import DataSourceABC
 
 
 class HaloAdjustedDataSource(QObject, DataSourceABC):

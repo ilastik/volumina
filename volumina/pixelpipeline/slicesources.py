@@ -25,8 +25,7 @@ from __future__ import absolute_import
 import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
-from .asyncabcs import PlanarSliceSourceABC, RequestABC
-from .datasources import DataSourceABC
+from .interface import DataSourceABC, PlanarSliceSourceABC, RequestABC
 import numpy as np
 import volumina
 from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
