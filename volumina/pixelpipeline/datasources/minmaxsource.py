@@ -3,29 +3,27 @@ from functools import partial
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
-from volumina.pixelpipeline.asyncabcs import RequestABC, SourceABC
+from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
 from volumina.slicingtools import sl
 
 
-class MinMaxUpdateRequest(object):
+class MinMaxUpdateRequest(RequestABC):
     def __init__(self, rawRequest, update_func):
         self._rawRequest = rawRequest
         self._update_func = update_func
+        self._result = None
 
     def wait(self):
         rawData = self._rawRequest.wait()
-        self._result = rawData
-        self._update_func(rawData)
+
+        if self._result is None:
+            self._result = rawData
+            self._update_func(rawData)
+
         return self._result
 
-    def getResult(self):
-        return self._result
 
-
-assert issubclass(MinMaxUpdateRequest, RequestABC)
-
-
-class MinMaxSource(QObject):
+class MinMaxSource(QObject, DataSourceABC):
     """
     A datasource that serves as a normalizing decorator for other datasources.
     """
@@ -130,6 +128,3 @@ class MinMaxSource(QObject):
             # Now, that said, we can still give a slightly more snappy response to the OTHER tiles (not this one)
             # if we immediately tell the TileProvider we are dirty.  This duplicates some requests, but that shouldn't be a big deal.
             self.setDirty(sl[:, :, :, :, :])
-
-
-assert issubclass(MinMaxSource, SourceABC)

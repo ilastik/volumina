@@ -48,7 +48,7 @@ if has_dependencies:
     from volumina.imageScene2D import ImageScene2D
     from volumina.positionModel import PositionModel
     from volumina.pixelpipeline.datasources import LazyflowSource
-    from volumina.pixelpipeline.slicesources import projectionAlongTZC, SliceSource
+    from volumina.pixelpipeline.slicesources import projectionAlongTZC, PlanarSliceSource
     from volumina.pixelpipeline.imagepump import StackedImageSources
     from volumina.layerstack import LayerStackModel
     from volumina.layer import GrayscaleLayer
@@ -100,7 +100,7 @@ if has_dependencies:
             self.op = OpLazy(self.g)
             self.ds = LazyflowSource(self.op.Output)
 
-            self.ss = SliceSource(self.ds, projectionAlongTZC)
+            self.ss = PlanarSliceSource(self.ds, projectionAlongTZC)
 
             self.layer = GrayscaleLayer(self.ds, normalize=False)
             self.layerstack.append(self.layer)

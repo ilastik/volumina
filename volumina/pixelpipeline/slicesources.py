@@ -25,7 +25,7 @@ from __future__ import absolute_import
 import logging
 from builtins import range
 from PyQt5.QtCore import QObject, pyqtSignal
-from .asyncabcs import SourceABC, RequestABC
+from .interface import DataSourceABC, PlanarSliceSourceABC, RequestABC
 import numpy as np
 import volumina
 from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
@@ -42,16 +42,13 @@ projectionAlongTZC = SliceProjection(abscissa=1, ordinate=2, along=[0, 3, 4])
 logger = logging.getLogger(__name__)
 
 
-class SliceRequest(object):
+class PlanarSliceRequest(RequestABC):
     def __init__(self, domainArrayRequest, sliceProjection):
         self._ar = domainArrayRequest
         self._sp = sliceProjection
 
     def wait(self):
         return self._sp(self._ar.wait())
-
-    def getResult(self):
-        return self._sp(self._ar.getResult())
 
     def cancel(self):
         self._ar.cancel()
@@ -68,15 +65,12 @@ class SliceRequest(object):
         return self._sp.handednessSwitched()
 
 
-assert issubclass(SliceRequest, RequestABC)
-
 # *******************************************************************************
 # S l i c e S o u r c e                                                        *
 # *******************************************************************************
 
 
-class SliceSource(QObject):
-    areaDirty = pyqtSignal(object)
+class PlanarSliceSource(QObject, PlanarSliceSourceABC):
     isDirty = pyqtSignal(object)
     throughChanged = pyqtSignal(tuple, tuple)  # old, new
     idChanged = pyqtSignal(object, object)  # old, new
@@ -94,7 +88,7 @@ class SliceSource(QObject):
         value = list(value)
         if len(value) != len(self.sliceProjection.along):
             raise ValueError(
-                "SliceSource.through.setter: length of value differs from along length: %s != %s "
+                "PlanarSliceSource.through.setter: length of value differs from along length: %s != %s "
                 % (str(len(value)), str(len(self.sliceProjection.along)))
             )
         if value != self._through:
@@ -105,8 +99,8 @@ class SliceSource(QObject):
             self.idChanged.emit(old_id, self.id)
 
     def __init__(self, datasource, sliceProjection=projectionAlongTZC):
-        assert isinstance(datasource, SourceABC), "wrong type: %s" % str(type(datasource))
-        super(SliceSource, self).__init__()
+        assert isinstance(datasource, DataSourceABC), "wrong type: %s" % str(type(datasource))
+        super(PlanarSliceSource, self).__init__()
 
         self.sliceProjection = sliceProjection
         self._datasource = datasource
@@ -147,36 +141,23 @@ class SliceSource(QObject):
         slicing = self.sliceProjection.domain(through, slicing2D[0], slicing2D[1])
 
         if CONFIG.verbose_pixelpipeline:
-            logger.info("SliceSource requests '%r' from data source '%s'", slicing, type(self._datasource).__qualname__)
+            logger.info(
+                "PlanarSliceSource requests '%r' from data source '%s'", slicing, type(self._datasource).__qualname__
+            )
 
-        return SliceRequest(self._datasource.request(slicing), self.sliceProjection)
+        return PlanarSliceRequest(self._datasource.request(slicing), self.sliceProjection)
 
     def setDirty(self, slicing):
         assert isinstance(slicing, tuple)
         if not is_pure_slicing(slicing):
             raise Exception("dirty region: slicing is not pure")
-        self.areaDirty.emit(slicing)
+        self.isDirty.emit(slicing)
 
     def _onDatasourceDirty(self, ds_slicing):
-        # embedding of slice in datasource space
-        embedding = self.sliceProjection.domain(self.through)
-        inter = intersection(embedding, ds_slicing)
-
-        if inter:  # there is an intersection
-            dirty_area = [None] * 2
-            dirty_area[0] = inter[self.sliceProjection.abscissa]
-            dirty_area[1] = inter[self.sliceProjection.ordinate]
-            self.setDirty(tuple(dirty_area))
-
         # Even if no intersection with the current slice projection, mark this area
-        #  dirty in all parallel slices that may not be visible at the moment.
-        dirty_area = [None] * 2
-        dirty_area[0] = ds_slicing[self.sliceProjection.abscissa]
-        dirty_area[1] = ds_slicing[self.sliceProjection.ordinate]
-        self.isDirty.emit(tuple(dirty_area))
-
-
-assert issubclass(SliceSource, SourceABC)
+        # dirty in all parallel slices that may not be visible at the moment.
+        dirty_area = (ds_slicing[self.sliceProjection.abscissa], ds_slicing[self.sliceProjection.ordinate])
+        self.isDirty.emit(dirty_area)
 
 
 # *******************************************************************************
@@ -250,12 +231,12 @@ class SyncedSliceSources(QObject):
         self.through = through
 
     def add(self, sliceSrc):
-        assert isinstance(sliceSrc, SliceSource), "wrong type: %s" % str(type(sliceSrc))
+        assert isinstance(sliceSrc, PlanarSliceSource), "wrong type: %s" % str(type(sliceSrc))
         self._syncSliceSource(sliceSrc)
         self._srcs.add(sliceSrc)
 
     def remove(self, sliceSrc):
-        assert isinstance(sliceSrc, SliceSource)
+        assert isinstance(sliceSrc, PlanarSliceSource)
         self._srcs.remove(sliceSrc)
 
     def _syncSliceSource(self, sliceSrc):
@@ -263,63 +244,3 @@ class SyncedSliceSources(QObject):
         for i in range(len(self._through)):
             through[self._sync_along[i]] = self._through[i]
         sliceSrc.through = through
-
-
-import unittest as ut
-
-# *******************************************************************************
-# S l i c e S o u r c e T e s t                                                *
-# *******************************************************************************
-
-
-class SliceSourceTest(ut.TestCase):
-    def setUp(self):
-        import numpy as np
-        from .datasources import ArraySource
-
-        self.raw = np.random.randint(0, 100, (10, 3, 3, 128, 3))
-        self.a = ArraySource(self.raw)
-        self.ss = SliceSource(self.a, projectionAlongTZC)
-
-    def testRequest(self):
-        self.ss.setThrough(0, 1)
-        self.ss.setThrough(2, 2)
-        self.ss.setThrough(1, 127)
-
-        sl = self.ss.request((slice(None), slice(None))).wait()
-        self.assertTrue(np.all(sl == self.raw[1, :, :, 127, 2]))
-
-        sl_bounded = self.ss.request((slice(0, 3), slice(1, None))).wait()
-        self.assertTrue(np.all(sl_bounded == self.raw[1, 0:3, 1:, 127, 2]))
-
-    def testDirtynessPropagation(self):
-        self.ss.setThrough(0, 1)
-        self.ss.setThrough(2, 2)
-        self.ss.setThrough(1, 127)
-
-        self.triggered = False
-
-        def check1(dirty_area):
-            self.triggered = True
-            self.assertEqual(dirty_area, sl[:, 1:2])
-
-        self.ss.isDirty.connect(check1)
-        self.a.setDirty(sl[1:2, :, 1:2, 127:128, 2:3])
-        self.ss.isDirty.disconnect(check1)
-        self.assertTrue(self.triggered)
-        del self.triggered
-
-        def check2(dirty_area):
-            assert False
-
-        self.ss.isDirty.connect(check2)
-        self.a.setDirty(sl[1:2, :, 1:2, 127:128, 3:4])
-        self.ss.isDirty.disconnect(check2)
-
-
-# *******************************************************************************
-# i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
-# *******************************************************************************
-
-if __name__ == "__main__":
-    ut.main()

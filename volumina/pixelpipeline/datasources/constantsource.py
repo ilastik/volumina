@@ -1,18 +1,15 @@
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from volumina.pixelpipeline.asyncabcs import RequestABC, SourceABC
 from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, sl
+from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
 
 
-class ConstantRequest(object):
+class ConstantRequest(RequestABC):
     def __init__(self, result):
         self._result = result
 
     def wait(self):
-        return self._result
-
-    def getResult(self):
         return self._result
 
     def cancel(self):
@@ -25,12 +22,8 @@ class ConstantRequest(object):
         pass
 
 
-assert issubclass(ConstantRequest, RequestABC)
-
-
-class ConstantSource(QObject):
+class ConstantSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
-    idChanged = pyqtSignal(object, object)  # old, new
     numberOfChannelsChanged = pyqtSignal(int)  # Never emitted
 
     @property
@@ -50,6 +43,7 @@ class ConstantSource(QObject):
         super(ConstantSource, self).__init__(parent=parent)
         self._constant = constant
         self._dtype = dtype
+        self._cache = {}
 
     def clean_up(self):
         pass
@@ -57,12 +51,18 @@ class ConstantSource(QObject):
     def id(self):
         return id(self)
 
-    def request(self, slicing, through=None):
+    def request(self, slicing):
         assert is_pure_slicing(slicing)
         assert is_bounded(slicing)
         shape = slicing2shape(slicing)
-        result = np.full(shape, self._constant, dtype=self._dtype)
-        return ConstantRequest(result)
+        key = (shape, self._constant, self._dtype)
+
+        if key not in self._cache:
+            result = np.full(shape, self._constant, dtype=self._dtype)
+            result.setflags(write=False)
+            self._cache[key] = result
+
+        return ConstantRequest(self._cache[key])
 
     def setDirty(self, slicing):
         if not is_pure_slicing(slicing):
@@ -79,6 +79,3 @@ class ConstantSource(QObject):
 
     def dtype(self):
         return self._dtype
-
-
-assert issubclass(ConstantSource, SourceABC)

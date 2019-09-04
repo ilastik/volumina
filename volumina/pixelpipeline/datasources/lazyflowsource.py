@@ -10,7 +10,7 @@ from lazyflow.graph import Slot
 from lazyflow.operators import opReorderAxes
 from lazyflow.roi import sliceToRoi, roiToSlice
 
-from volumina.pixelpipeline.asyncabcs import RequestABC, SourceABC, IndeterminateRequestError
+from volumina.pixelpipeline.interface import DataSourceABC, RequestABC, IndeterminateRequestError
 from volumina.slicingtools import is_pure_slicing, slicing2shape, make_bounded
 from volumina.config import CONFIG
 
@@ -52,7 +52,7 @@ def translate_lf_exceptions(func):
     return wrapper
 
 
-class LazyflowRequest(object):
+class LazyflowRequest(RequestABC):
     @translate_lf_exceptions
     def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest"):
         shape = op.Output.meta.shape
@@ -73,21 +73,8 @@ class LazyflowRequest(object):
         )
         return a
 
-    @translate_lf_exceptions
-    def getResult(self):
-        a = self._req.result
-        assert isinstance(a, np.ndarray)
-        assert a.shape == self._shape, (
-            "LazyflowRequest.getResult() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s"
-            % (self._objectName, self._shape, self._slicing, a.shape)
-        )
-        return a
-
     def cancel(self):
         self._req.cancel()
-
-
-assert issubclass(LazyflowRequest, RequestABC)
 
 
 def weakref_setDirtyLF(wref, *args, **kwargs):
@@ -98,7 +85,7 @@ def weakref_setDirtyLF(wref, *args, **kwargs):
     wref()._setDirtyLF(*args, **kwargs)
 
 
-class LazyflowSource(QObject):
+class LazyflowSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
@@ -189,9 +176,6 @@ class LazyflowSource(QObject):
 
     def __hash__(self):
         return hash((self._orig_meta, self._orig_outslot))
-
-
-assert issubclass(LazyflowSource, SourceABC)
 
 
 class LazyflowSinkSource(LazyflowSource):

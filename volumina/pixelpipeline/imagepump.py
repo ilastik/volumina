@@ -27,7 +27,7 @@ from functools import partial
 from PyQt5.QtCore import QObject, pyqtSignal, QRect
 
 # volumina
-from volumina.pixelpipeline.slicesources import SliceSource, SyncedSliceSources
+from volumina.pixelpipeline.slicesources import PlanarSliceSource, SyncedSliceSources
 from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, ColortableImageSource
 
 
@@ -350,16 +350,16 @@ class ImagePump(object):
         self._layerStackModel.stackCleared.connect(self._onStackCleared)
 
     # mappings
-    def layerToSliceSources(self, layer):
-        """Map from Layer instance to SliceSource instances.
+    def layerToPlanarSliceSources(self, layer):
+        """Map from Layer instance to PlanarSliceSource instances.
 
-        returns: list of one or more SliceSource instances
+        returns: list of one or more PlanarSliceSource instances
 
         """
         return self._layerToSliceSrcs[layer]
 
     def sliceSourceToImageSource(self, slicesource):
-        """Map from SliceSource instance to ImageSource instance.
+        """Map from PlanarSliceSource instance to ImageSource instance.
 
         This is a non-injective mapping, that is, more than one
         slice source can map to the same image source.
@@ -403,7 +403,7 @@ class ImagePump(object):
     def _createSources(self, layer):
         def sliceSrcOrNone(datasrc):
             if datasrc:
-                return SliceSource(datasrc, self._projection)
+                return PlanarSliceSource(datasrc, self._projection)
             return None
 
         slicesrcs = list(map(sliceSrcOrNone, layer.datasources))

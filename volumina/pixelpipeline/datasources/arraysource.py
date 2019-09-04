@@ -1,11 +1,11 @@
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from volumina.pixelpipeline.asyncabcs import RequestABC, SourceABC
+from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
 from volumina.slicingtools import is_pure_slicing, index2slice
 
 
-class ArrayRequest(object):
+class ArrayRequest(RequestABC):
     def __init__(self, array, slicing):
         self._array = array
         self._slicing = slicing
@@ -16,9 +16,6 @@ class ArrayRequest(object):
             self._result = self._array[self._slicing]
         return self._result
 
-    def getResult(self):
-        return self._result
-
     def cancel(self):
         pass
 
@@ -26,10 +23,7 @@ class ArrayRequest(object):
         pass
 
 
-assert issubclass(ArrayRequest, RequestABC)
-
-
-class ArraySource(QObject):
+class ArraySource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)  # Never emitted
 
@@ -70,9 +64,6 @@ class ArraySource(QObject):
 
     def __ne__(self, other):
         return not (self == other)
-
-
-assert issubclass(ArraySource, SourceABC)
 
 
 class ArraySinkSource(ArraySource):
