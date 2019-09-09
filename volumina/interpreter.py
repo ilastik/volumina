@@ -19,10 +19,13 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
+
 from PyQt5.QtCore import QObject, pyqtSignal, QEvent, Qt, QPoint
 
+from volumina.eventswitch import InterpreterABC
 
-class ClickReportingInterpreter(QObject):
+
+class ClickReportingInterpreter(QObject, InterpreterABC):
     rightClickReceived = pyqtSignal(object, QPoint)  # list of indexes, global window coordinate of click
     leftClickReceived = pyqtSignal(object, QPoint)  # ditto
     toolTipReceived = pyqtSignal(object, QPoint)
@@ -67,7 +70,7 @@ class ClickReportingInterpreter(QObject):
         self.baseInterpret.updateCursorPosition(*args, **kwargs)
 
 
-class ClickInterpreter(QObject):
+class ClickInterpreter(QObject, InterpreterABC):
     """Intercepts mouse clicks (right clicks by default) and double
        click events on a layer and calls a given functor with the
        clicked position.

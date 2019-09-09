@@ -3,6 +3,8 @@ from __future__ import division
 from past.utils import old_div
 from PyQt5.QtCore import Qt, QEvent, QObject, QPoint
 import numpy as np
+
+from volumina.eventswitch import InterpreterABC
 from .navigationController import NavigationInterpreter, posView2D
 from volumina.layer import GrayscaleLayer
 
@@ -12,7 +14,7 @@ from volumina.layer import GrayscaleLayer
 # *******************************************************************************
 
 
-class ThresholdingInterpreter(QObject):
+class ThresholdingInterpreter(QObject, InterpreterABC):
     # states
     FINAL = 0
     DEFAULT_MODE = 1  # normal navigation functionality

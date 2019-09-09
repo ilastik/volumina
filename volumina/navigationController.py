@@ -44,7 +44,7 @@ def posView2D(pos3d, axis):
 # *******************************************************************************
 
 
-class NavigationInterpreter(QObject):
+class NavigationInterpreter(QObject, InterpreterABC):
     # states
     FINAL = 0
     DEFAULT_MODE = 1
@@ -256,8 +256,6 @@ class NavigationInterpreter(QObject):
         imageview._panning()
         imageview._lastPanPoint = event.pos()
 
-
-assert issubclass(NavigationInterpreter, InterpreterABC)
 
 # *******************************************************************************
 # N a v i g a t i o n C o n t r o l e r                                        *

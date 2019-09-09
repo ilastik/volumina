@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,44 +19,26 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from builtins import object
-from PyQt5.QtCore import QObject, Qt, QEvent
+
+from PyQt5.QtCore import QObject, QEvent
 from PyQt5.QtGui import QMouseEvent
 
-from abc import ABCMeta, abstractmethod
-
-from .imageView2D import ImageView2D
-from future.utils import with_metaclass
+from volumina.imageView2D import ImageView2D
+from volumina.utility.qabc import QABC, abstractmethod
 
 
-def _has_attribute(cls, attr):
-    return True if any(attr in B.__dict__ for B in cls.__mro__) else False
-
-
-def _has_attributes(cls, attrs):
-    return True if all(_has_attribute(cls, a) for a in attrs) else False
-
-
-class InterpreterABC(with_metaclass(ABCMeta, object)):
+class InterpreterABC(QABC):
     @abstractmethod
-    def start(self):
+    def start(self) -> None:
         """Start the interpretation of an event stream."""
 
     @abstractmethod
-    def stop(self):
+    def stop(self) -> None:
         """Stop the interpretation of the event stream."""
 
     @abstractmethod
-    def eventFilter(self, watched, event):
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Necessary to act as a Qt event filter. """
-
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is InterpreterABC:
-            if _has_attributes(C, ["start", "stop", "eventFilter"]):
-                return True
-            return False
-        return NotImplemented
 
 
 class EventSwitch(QObject):
