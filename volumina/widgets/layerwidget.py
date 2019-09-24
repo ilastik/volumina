@@ -376,12 +376,12 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             QStyledItemDelegate.setModelData(self, editor, model, index)
 
-    def handleRemovedRows(self, parent, start, end):
-        for row in range(start, end):
-            itemData = self._listModel.itemData(self._listModel.index(row))
-            layer = itemData[Qt.EditRole]
-            del self._editors[layer]
-            assert isinstance(layer, Layer)
+    def handleRemovedRows(self, _parent, first, last):
+        for row in range(first, last + 1):
+            layer = self._listModel.data(self._listModel.index(row), Qt.EditRole)
+            if layer is not None:
+                assert isinstance(layer, Layer)
+                del self._editors[layer]
 
 
 class LayerWidget(QListView):
