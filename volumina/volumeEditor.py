@@ -195,13 +195,13 @@ class VolumeEditor(QObject):
         ##
         ## interaction
         ##
-        # event switch
-        self.eventSwitch = EventSwitch(self.imageViews)
 
         # navigation control
-        v3d = self.view3d
-        self.navCtrl = NavigationController(self.imageViews, self.imagepumps, self.posModel, view3d=v3d)
+        self.navCtrl = NavigationController(self.imageViews, self.imagepumps, self.posModel, view3d=self.view3d)
         self.navInterpret = NavigationInterpreter(self.navCtrl)
+
+        # event switch
+        self.eventSwitch = EventSwitch(self.imageViews, self.navInterpret)
 
         # brushing control
         if crosshair:
@@ -214,8 +214,6 @@ class VolumeEditor(QObject):
 
         # thresholding control
         self.thresInterpreter = ThresholdingInterpreter(self.navCtrl, self.layerStack, self.posModel)
-        # initial interaction mode
-        self.eventSwitch.interpreter = self.navInterpret
 
         # By default, don't show cropping controls
         self.showCropLines(False)

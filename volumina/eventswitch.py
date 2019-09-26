@@ -20,8 +20,10 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 
-from PyQt5.QtCore import QObject, QEvent
+from typing import Iterable
 
+from PyQt5.QtCore import QEvent, QObject
+from PyQt5.QtWidgets import QGraphicsView
 from volumina.utility.qabc import QABC, abstractmethod
 
 
@@ -41,40 +43,28 @@ class InterpreterABC(QABC):
 
 class EventSwitch(QObject):
     @property
-    def interpreter(self):
+    def interpreter(self) -> InterpreterABC:
         return self._interpreter
 
     @interpreter.setter
-    def interpreter(self, interpreter):
-        assert isinstance(interpreter, InterpreterABC)
-        # stop old interpreter before switching to it to
-        # avoid inconsistencies when eventloop and eventswitch
-        # are running in different threads
-        if self._interpreter:
-            self._interpreter.stop()
-
+    def interpreter(self, interpreter: InterpreterABC) -> None:
+        self._interpreter.stop()
         self._interpreter = interpreter
-
-        # start the new interpreter after switching to it
-        # to avoid inconcistencies
         self._interpreter.start()
 
-    def __init__(self, imageviews, interpreter=None):
-        super(EventSwitch, self).__init__()
-        self._imageViews = imageviews
-        self._interpreter = None
-        if interpreter:
-            self.interpreter = interpreter
+    def __init__(self, views: Iterable[QGraphicsView], interpreter: InterpreterABC):
+        super().__init__()
+        self._interpreter = interpreter
 
         # We can't directly install the interpreter as an event filter on each of the views,
         # because repeatedly installing/uninstalling the interpreter changes its priority
         # in the view's list of event filters.
         # Instead, we install ourselves as an event filter, and forward events to the currently selected interpreter.
-        for imageview in imageviews:
+        for view in views:
             # QAbstractScrollArea (QGraphicsView superclass) installs itself as a focus proxy into a viewport.
             # Since we want to receive key events in the event filter, uninstall the focus proxy from the viewport.
             # See https://stackoverflow.com/a/2501489.
-            viewport = imageview.viewport()
+            viewport = view.viewport()
             viewport.setFocusProxy(None)
             viewport.installEventFilter(self)
 
