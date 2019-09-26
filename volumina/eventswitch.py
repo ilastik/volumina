@@ -21,9 +21,7 @@
 ###############################################################################
 
 from PyQt5.QtCore import QObject, QEvent
-from PyQt5.QtGui import QMouseEvent
 
-from volumina.imageView2D import ImageView2D
 from volumina.utility.qabc import QABC, abstractmethod
 
 
@@ -72,26 +70,13 @@ class EventSwitch(QObject):
         # because repeatedly installing/uninstalling the interpreter changes its priority
         # in the view's list of event filters.
         # Instead, we install ourselves as an event filter, and forward events to the currently selected interpreter.
-        self._viewports = []
-        for view in self._imageViews:
-            # http://stackoverflow.com/questions/2445997/qgraphicsview-and-eventfilter
-            view.installEventFilter(self)
-            view.viewport().installEventFilter(self)
-            self._viewports.append(view.viewport())
+        for imageview in imageviews:
+            # QAbstractScrollArea (QGraphicsView superclass) installs itself as a focus proxy into a viewport.
+            # Since we want to receive key events in the event filter, uninstall the focus proxy from the viewport.
+            # See https://stackoverflow.com/a/2501489.
+            viewport = imageview.viewport()
+            viewport.setFocusProxy(None)
+            viewport.installEventFilter(self)
 
-    def eventFilter(self, watched, event):
-        # Forward filtered events to the interpreter.
-        if watched in self._viewports:
-            # watched is a viewport. Forward the event to its parent,
-            # which will be the QGraphicsView itself
-            return self._interpreter.eventFilter(watched.parent(), event)
-        else:
-            # prevent double delivery of unhandled mouse events that
-            # bubble up from the underlying viewport
-            if isinstance(event, QMouseEvent):
-                if isinstance(watched, ImageView2D):
-                    return self._interpreter.eventFilter(watched, event)
-                else:
-                    return False
-            else:
-                return self._interpreter.eventFilter(watched, event)
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        return self._interpreter.eventFilter(watched.parent(), event)

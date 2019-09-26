@@ -1,5 +1,3 @@
-from __future__ import division
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,32 +19,29 @@ from __future__ import division
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from past.utils import old_div
+
 import os
 from functools import partial
 
-# PyQt
-from PyQt5.QtCore import pyqtSignal, Qt, QPointF, QSize
-from PyQt5.QtGui import QPen, QPainter, QPixmap, QColor, QFont, QPainterPath, QBrush, QTransform, QIcon
-
+import volumina
+from past.utils import old_div
+from PyQt5.QtCore import QCoreApplication, QEvent, QPointF, QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QBrush, QColor, QFont, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QTransform
 from PyQt5.QtWidgets import (
-    QLabel,
-    QHBoxLayout,
-    QVBoxLayout,
     QAbstractSpinBox,
     QCheckBox,
-    QWidget,
     QFrame,
+    QHBoxLayout,
+    QLabel,
     QProgressBar,
     QSizePolicy,
     QSlider,
     QToolButton,
+    QVBoxLayout,
+    QWidget,
 )
-
-
-import volumina
-from volumina.widgets.delayedSpinBox import DelayedSpinBox
 from volumina.utility import ShortcutManager
+from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
 TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
 
@@ -273,6 +268,15 @@ class ImageView2DHud(QWidget):
         self.layout.setSpacing(0)
 
         self.buttons = {}
+
+    def event(self, event: QEvent) -> bool:
+        # Pass a mouse event to QGraphicsView viewport first because HUD is overlayed on top of the QGraphicsView.
+        consumed = False
+        if isinstance(event, QMouseEvent):
+            consumed = QCoreApplication.sendEvent(self.parent().viewport(), event)
+        if not consumed:
+            consumed = super().event(event)
+        return consumed
 
     def _add_button(self, name, handler):
         button = LabelButtons(

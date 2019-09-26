@@ -182,7 +182,7 @@ class NavigationInterpreter(QObject, InterpreterABC):
             return False
 
         self.updateCursorPosition(imageview, event)
-        return True
+        return False
 
     def updateCursorPosition(self, imageview, event):
         """Update the position model's cursor position according to the given event position."""
