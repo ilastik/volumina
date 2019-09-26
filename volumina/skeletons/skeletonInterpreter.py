@@ -25,10 +25,11 @@ from builtins import range
 from PyQt5.QtCore import QObject, QEvent, Qt
 import copy
 
+from volumina.eventswitch import InterpreterABC
 from volumina.skeletons.skeletonsLayer3D import SkeletonsLayer3D
 
 
-class SkeletonInterpreter(QObject):
+class SkeletonInterpreter(QObject, InterpreterABC):
     def __init__(self, editor, skeletons, parent=None):
         QObject.__init__(self, parent=parent)
         self.baseInterpret = editor.navInterpret

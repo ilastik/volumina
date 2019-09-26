@@ -26,6 +26,7 @@ from PyQt5.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
 from PyQt5.QtGui import QPen, QBrush, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QGraphicsLineItem
 
+from volumina.eventswitch import InterpreterABC
 from .navigationController import NavigationInterpreter
 
 # *******************************************************************************
@@ -55,7 +56,7 @@ class CrosshairController(QObject):
 # *******************************************************************************
 
 
-class BrushingInterpreter(QObject):
+class BrushingInterpreter(QObject, InterpreterABC):
     # states
     FINAL = 0
     DEFAULT_MODE = 1
