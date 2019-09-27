@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, 
 from PyQt5.QtGui import QColor
 
 # volumina
-from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer
+from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer, SegmentationEdgesLayer
 from .layerDialog import GrayscaleLayerDialog, RGBALayerDialog
 
 # ===----------------------------------------------------------------------------------------------------------------===
@@ -124,7 +124,7 @@ def layercontextmenu(layer, pos, parent=None):
 
     # Export
     global _has_lazyflow
-    if _has_lazyflow:
+    if _has_lazyflow and not isinstance(layer, SegmentationEdgesLayer):  # Edges are stored as sets of paths
         export = QAction("Export...", menu)
         export.setStatusTip("Export Layer...")
         export.triggered.connect(partial(prompt_export_settings_and_export_layer, layer, menu))
