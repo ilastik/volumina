@@ -40,7 +40,7 @@ from PyQt5.QtGui import QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, Q
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.imagepump import StackedImageSources
-from volumina.utility import PreferencesManager
+from volumina.utility import preferences
 
 import datetime
 import threading
@@ -296,7 +296,7 @@ class ImageScene2D(QGraphicsScene):
 
     def setTileWidth(self, tileWidth):
         self._tileWidth = tileWidth
-        PreferencesManager().set("ImageScene2D", "tileWidth", tileWidth)
+        preferences.set("ImageScene2D", "tileWidth", tileWidth)
 
     def tileWidth(self):
         return self._tileWidth
@@ -400,7 +400,7 @@ class ImageScene2D(QGraphicsScene):
         self._offsetX = 0
         self._offsetY = 0
         self.name = name
-        self._tileWidth = PreferencesManager().get("ImageScene2D", "tileWidth", default=512)
+        self._tileWidth = preferences.get("ImageScene2D", "tileWidth", default=512)
 
         self._stackedImageSources = StackedImageSources(LayerStackModel())
         self._showTileOutlines = False

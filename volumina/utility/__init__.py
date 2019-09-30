@@ -24,7 +24,6 @@ from __future__ import absolute_import
 from .log_exception import log_exception
 from .getMainWindow import getMainWindow
 from .singleton import Singleton
-from .preferencesManager import PreferencesManager
 from .shortcutManager import ShortcutManager
 from .shortcutManagerDlg import ShortcutManagerDlg
 from volumina.utility.thunkEvent import execute_in_main_thread

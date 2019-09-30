@@ -34,7 +34,7 @@ from .multiStepProgressDialog import MultiStepProgressDialog
 
 import logging
 
-from volumina.utility import log_exception, PreferencesManager
+from volumina.utility import log_exception, preferences
 from volumina.layer import Layer
 
 import lazyflow
@@ -123,7 +123,7 @@ def prompt_export_settings_and_export_layer(layer: Layer, parent_widget=None) ->
     """
     opExport = get_export_operator(layer)
 
-    export_dir = PreferencesManager().get("layer", "export-dir", default=os.path.expanduser("~"))
+    export_dir = preferences.get("layer", "export-dir", default=os.path.expanduser("~"))
     opExport.OutputFilenameFormat.setValue(os.path.join(export_dir, layer.name))
 
     # Use this dialog to populate the operator's slot settings
@@ -132,7 +132,7 @@ def prompt_export_settings_and_export_layer(layer: Layer, parent_widget=None) ->
     # If user didn't cancel, run the export now.
     if settingsDlg.exec_() == DataExportOptionsDlg.Accepted:
         export_dir = PathComponents(opExport.ExportPath.value).externalDirectory
-        PreferencesManager().set("layer", "export-dir", export_dir)
+        preferences.set("layer", "export-dir", export_dir)
 
         helper = ExportHelper(parent_widget)
         helper.run(opExport)
