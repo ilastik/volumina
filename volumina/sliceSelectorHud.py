@@ -25,8 +25,8 @@ from functools import partial
 
 import volumina
 from past.utils import old_div
-from PyQt5.QtCore import QCoreApplication, QEvent, QPointF, QSize, Qt, pyqtSignal, QSize, QTimer
-from PyQt5.QtGui import QBrush, QColor, QFont, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QTransform
+from PyQt5.QtCore import QCoreApplication, QEvent, QPoint, QPointF, QRect, QSize, Qt, pyqtSignal, QSize, QTimer
+from PyQt5.QtGui import QBrush, QColor, QFont, QFontMetrics, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QTransform
 
 from PyQt5.QtWidgets import (
     QAbstractSpinBox,
@@ -44,18 +44,10 @@ from PyQt5.QtWidgets import (
 )
 from volumina.utility import ShortcutManager
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
-
-lineEdit_Stylesheet = "QLineEdit {{ " \
-                      "color: black; " \
-                      "background-color: white; " \
-                      "max-height: 20;" \
-                      "max-width: 50;" \
-                      "font-size: 14;" \
-                      "font-style: bold;" \
-                      "text-align: center;}}"
+from volumina.slicingtools import index2slice
 
 SB_TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
-LE_TEMPLATE = "QLineEdit {{ color: {0}; background-color: {1}; }}"
+LE_TEMPLATE = "QLineEdit {{ color: {0}; background-color: {1}; border:0; }}"
 
 
 def _load_icon(filename, backgroundColor, width, height):
@@ -476,22 +468,25 @@ class PosLayerInfoWidget(QLineEdit):
     def __init__(self):
         super().__init__()
         self.setAlignment(Qt.AlignCenter)
-        self.setMaximumHeight(20)
-        self.setMaximumWidth(100)
-
         font = self.font()
         font.setPixelSize(14)
         font.setBold(True)
         self.setFont(font)
         self.setReadOnly(True)
-        self.setStyleSheet(lineEdit_Stylesheet)
+        self.setMaximumHeight(20)
+        self.setInfo(None, QColor(0,0,0), QColor(255,255,255))
 
     def setInfo(self, text, foregroundColor, backgroundColor):
         sheet = LE_TEMPLATE.format(foregroundColor.name(), backgroundColor.name())
         self.setStyleSheet(sheet)
+        fm = QFontMetrics(self.font())
         if text is None:
+            pixelsWide = fm.width("-")
+            self.setMaximumWidth(pixelsWide + 6)
             self.setText("-")
         else:
+            pixelsWide = fm.width(text)
+            self.setMaximumWidth(pixelsWide+6)
             self.setText(text)
 
 
@@ -816,43 +811,13 @@ class QuadStatusBar(QHBoxLayout):
         self.zSpinBox.setValueWithoutSignal(z)
 
         coords = [int(val) for val in [x,y,z]]
-        imgView = self.editor.posModel.activeView
-        blockSize = self.editor.imageViews[imgView].scene()._tileProvider.tiling.blockSize
-        sliceShape = self.editor.imageViews[imgView].scene()._tileProvider.tiling.sliceShape
+        coords.append(self.editor.posModel.channel)
+        coords.insert(0, self.editor.posModel.time)
+
         labelSetDone = False
 
-        del coords[imgView]
-        x,y = (val for val in coords)
-        if imgView == 0:  # the y-z view is inverted in tileProvider
-            x,y = (y,x)
-
         for layer, widget in self.layerValueWidgets.items():
-            value = None
-            layer_id = self.editor.imagepumps[imgView].stackedImageSources._layerToIms[layer]
-            stack_id = self.editor.imageViews[imgView].scene()._tileProvider._current_stack_id
-            tile_ids = self.editor.imageViews[imgView].scene()._tileProvider.tiling.intersected(
-                QRect(QPoint(x, y), QPoint(x+1, y+1)))
-            if tile_ids:
-                tile_id = tile_ids[0]  # There will be just one tile, since we have just a single point
-            else:
-                return
-
-            with self.editor.imageViews[imgView].scene()._tileProvider._cache:
-                image = self.editor.imageViews[imgView].scene()._tileProvider._cache.layer(stack_id, layer_id,
-                                                                                           tile_id)
-            if image is not None:
-                x_r = x % blockSize
-                y_r = y % blockSize
-
-                if x >= blockSize and x >= (sliceShape[0]//blockSize)*blockSize and sliceShape[0]%blockSize<blockSize//3:
-                    x_r = x_r + blockSize
-                if y >= blockSize and y >= int(sliceShape[1]/blockSize) * blockSize and sliceShape[0]%blockSize<blockSize//3:
-                    y_r = y_r + blockSize
-
-                value = image.pixelColor(x_r, y_r)
-
-            lbl, foreground, background = layer.getPosInfo(value)
-
+            lbl, foreground, background = layer.getPosInfo(index2slice(coords))
             if "Segmentation (Label " in layer.name:
                 if not labelSetDone:
                     if lbl is None:

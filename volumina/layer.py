@@ -24,7 +24,7 @@ import colorsys
 import numpy
 
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer
-from PyQt5.QtGui import QColor, QPen
+from PyQt5.QtGui import QColor, QPen, qGray
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.slicesources import PlanarSliceSource
@@ -179,18 +179,6 @@ class Layer(QObject):
 
     def createImageSource(self, data_sources):
         raise NotImplementedError
-
-    def getPosInfo(self, value):
-        """
-        This function needs to be overwritten by every layer.
-        It is called by QuadStatusBar.setLayerPosIfos and is expected to return a tuple of information for
-        the position widgets, showing current pixelvalues at cursor position of respective layer.
-        :param val: layer value at current cursor position
-        :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
-        """
-        if value is not None:
-            return self.name + str(value), QColor(0, 0, 0), QColor(255, 255, 255)
-        return None, QColor(0, 0, 0), QColor(255, 255, 255)
 
     def isDifferentEnough(self, other_layer):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
@@ -434,15 +422,19 @@ class GrayscaleLayer(NormalizableLayer):
             return True
         return self._window_leveling != other_layer._window_leveling
 
-    def getPosInfo(self, value):
-        """overwrites Layer.getPosInfo"""
-        if value is not None:
-            gray_val = 255
-            if value.value() in range(int(gray_val/2-10), int(gray_val/2+10)):
-                gray_val = value.black() + 20 * numpy.sign(value.black() - value.value())
-            else:
-                gray_val = value.black()
-            return 'Gray:' + str(value.black()), QColor(gray_val, gray_val, gray_val), value
+    def getPosInfo(self, slc):
+        """
+        This function is called by QuadStatusBar.setLayerPosIfos and is expected to return a tuple of information for
+        the position widgets, showing current pixelvalues at cursor position of respective layer.
+        :param slc: slices of current cursor position
+        :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
+        """
+        if slc is not None:
+            value = self.datasources[0].request(slc).wait().squeeze()
+            fg = 0
+            if fg < 128:
+                fg = 255
+            return 'Gray:' + str(value), QColor(fg, fg, fg), QColor(value, value, value)
         return None, QColor(0, 0, 0), QColor(255, 255, 255)
 
     def __init__(self, datasource, range=None, normalize=None, direct=False, window_leveling=False):
@@ -478,16 +470,26 @@ class AlphaModulatedLayer(NormalizableLayer):
             self._tintColor = c
             self.tintColorChanged.emit()
 
-    def getPosInfo(self, value):
-        """overwrites Layer.getPosInfo"""
-        if value is None:
+    def getPosInfo(self, slc):
+        """
+        This function is called by QuadStatusBar.setLayerPosIfos and is expected to return a tuple of information for
+        the position widgets, showing current pixelvalues at cursor position of respective layer.
+        :param slc: slices of current cursor position
+        :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
+        """
+        if slc is None:
             return None, QColor(0, 0, 0), QColor(255, 255, 255)
-        elif "Segmentation (Label " in self.name:
-            if value.getRgb() == (0,0,0,0):
+        try:
+            value = self.datasources[0].request(slc).wait().squeeze()
+        except ValueError:
+            return None, QColor(0, 0, 0), QColor(255, 255, 255)
+        if "Segmentation (Label " in self.name:
+            if value == 1:
+                return self.name[self.name.find("(") + 1:self.name.find(")")], QColor(255, 255, 255), self.tintColor
+            else:
                 return None, QColor(0, 0, 0), QColor(255, 255, 255)
-            return self.name[self.name.find("(") + 1:self.name.find(")")], QColor(255, 255, 255), self.tintColor
         else:
-            return self.name + str(value.getRgb()), QColor(0, 0, 0), QColor(255, 255, 255)
+            return self.name + str(value), QColor(0, 0, 0), QColor(255, 255, 255)
 
     def __init__(self, datasource, tintColor=QColor(255, 0, 0), range=(0, 255), normalize=None):
         assert isinstance(datasource, DataSourceABC)
@@ -637,6 +639,34 @@ class RGBALayer(NormalizableLayer):
     @property
     def alpha_missing_value(self):
         return self._alpha_missing_value
+
+    def getPosInfo(self, slc):
+        """
+        This function is called by QuadStatusBar.setLayerPosIfos and is expected to return a tuple of information for
+        the position widgets, showing current pixelvalues at cursor position of respective layer.
+        :param slc: slices of current cursor position
+        :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
+        """
+        value = []
+        name = 'RGBA:'
+        for i, ds in enumerate(self.datasources):
+            if isinstance(ds, DataSourceABC):
+                value.append(ds.request(slc).wait().squeeze())
+                name += str(value[-1]) + ";"
+            else:
+                if i == 3:
+                    value.append(255)
+                else:
+                    value.append(0)
+                name += str("-;")
+        bg = QColor(value[0], value[1], value[2], value[3])
+        if qGray(value[0], value[1], value[2]) < 128:
+            fg = QColor(255, 255, 255)
+        else:
+            fg = QColor(0, 0, 0)
+        if value:
+            return name[:-1], fg, bg
+        return None, QColor(0, 0, 0), QColor(255, 255, 255)
 
     def __init__(
         self,
