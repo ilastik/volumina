@@ -39,7 +39,7 @@ else:
     from wand.image import Image
 
 from volumina.widgets.multiStepProgressDialog import MultiStepProgressDialog
-from volumina.utility import PreferencesManager
+from volumina.utility import preferences
 
 
 class WysiwygExportOptionsDlg(QDialog):
@@ -83,7 +83,7 @@ class WysiwygExportOptionsDlg(QDialog):
         # See self.eventFilter()
         self.installEventFilter(self)
 
-        default_location = PreferencesManager().get("WYSIWYG", "export directory", default=os.path.expanduser("~"))
+        default_location = preferences.get("WYSIWYG", "export directory", default=os.path.expanduser("~"))
         self.directoryEdit.setText(default_location)
 
         # hide stack tiffs if Wand is not installed
@@ -91,7 +91,7 @@ class WysiwygExportOptionsDlg(QDialog):
             self.stack_tiffs_checkbox.setVisible(False)
 
     def accept(self):
-        PreferencesManager().set("WYSIWYG", "export directory", str(self.directoryEdit.text()))
+        preferences.set("WYSIWYG", "export directory", str(self.directoryEdit.text()))
         super(WysiwygExportOptionsDlg, self).accept()
 
     def stack_tiffs(self):

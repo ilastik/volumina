@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QLabel
 
 from volumina.view3d.slicingplanes import SlicingPlanes
 from volumina.view3d.axessymbols import AxesSymbols
-from volumina.utility import PreferencesManager
+from volumina.utility import preferences
 import volumina.config
 
 import logging
@@ -32,7 +32,7 @@ class GLViewReal(GLViewWidget):
 
     def __init__(self, parent=None):
         GLViewWidget.__init__(self, parent)
-        self.setBackgroundColor(PreferencesManager().get("GLView", "backgroundColor", default=[255, 255, 255]))
+        self.setBackgroundColor(preferences.get("GLView", "backgroundColor", default=[255, 255, 255]))
         self._shape = (1, 1, 1)
         self._slice_planes = SlicingPlanes(self)
         self._arrows = AxesSymbols(self)

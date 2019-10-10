@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QShortcut
 from PyQt5.QtGui import QKeySequence
-from volumina.utility import Singleton, PreferencesManager, getMainWindow
+from volumina.utility import Singleton, preferences, getMainWindow
 
 
 class ShortcutManager(with_metaclass(Singleton, object)):
@@ -163,17 +163,16 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         Immediately serialize the current set of shortcuts to the preferences file.
         """
         # Auto-save after we're done setting prefs
-        with PreferencesManager() as prefsMgr:
-            # Just save the entire shortcut dict as a single pickle value
-            reversemap = self.get_keyseq_reversemap(self._keyseq_target_actions)
-            prefsMgr.set(self.PreferencesGroup, "all_shortcuts", reversemap)
+        # Just save the entire shortcut dict as a single pickle value
+        reversemap = self.get_keyseq_reversemap(self._keyseq_target_actions)
+        preferences.set(self.PreferencesGroup, "all_shortcuts", reversemap)
 
     def _load_from_preferences(self):
         """
         Read previously-saved preferences file and return the dict of shortcut keys -> targets (a 'reversemap').
         Called during initialization only.
         """
-        return PreferencesManager().get(self.PreferencesGroup, "all_shortcuts", default={})
+        return preferences.get(self.PreferencesGroup, "all_shortcuts", default={})
 
     def _add_global_shortcut_listener(self, keyseq):
         # Create a shortcut for this new key sequence
