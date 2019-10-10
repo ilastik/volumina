@@ -21,6 +21,12 @@ def test_setmany_getmany(preferences):
     assert preferences.getmany(("spam", "eggs1", None), ("ham", "eggs3", None)) == (42, "antigravity")
 
 
+def test_get_location(tmp_path, preferences):
+    path = tmp_path / "preferences2"
+    preferences.set_location(path)
+    assert preferences.get_location() == path
+
+
 def test_set_location(tmp_path, preferences):
     preferences.set("spam", "eggs", 42)
     preferences.set_location(tmp_path / "preferences2")

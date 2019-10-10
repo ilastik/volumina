@@ -70,10 +70,14 @@ class _Preferences:
                 if not isinstance(e, IOError):
                     self._path.unlink()
 
-    def set_location(self, path: pathlib.Path) -> None:
+    def get_location(self) -> pathlib.Path:
         with self._lock:
-            self._path = path
-            self._data = _load_preferences(path)
+            return self._path
+
+    def set_location(self, path: os.PathLike) -> None:
+        with self._lock:
+            self._path = pathlib.Path(path)
+            self._data = _load_preferences(self._path)
 
 
 def _load_preferences(path: pathlib.Path) -> MutableMapping[str, MutableMapping[str, Any]]:
@@ -134,10 +138,22 @@ def setmany(*args: Tuple[str, str, Any]) -> None:
     return _preferences.setmany(*args)
 
 
+def get_location() -> pathlib.Path:
+    """Return the current preferences file location.
+
+    See Also:
+          :func:`set_location`.
+    """
+    return _preferences.get_location()
+
+
 def set_location(path: os.PathLike) -> None:
     """Change the preferences file location.
 
     Discard all existing preferences and read preferences from the new
     file. This file will be used for all subsequent preferences writes.
+
+    See Also:
+          :func:`get_location`.
     """
-    _preferences.set_location(pathlib.Path(path))
+    _preferences.set_location(path)
