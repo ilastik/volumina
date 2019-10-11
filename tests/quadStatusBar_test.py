@@ -21,20 +21,38 @@
 ###############################################################################
 import pytest
 from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtCore import QPointF, Qt
+from PyQt5.QtCore import QPointF, Qt, QCoreApplication
 from PyQt5.QtGui import QColor
 
 import numpy as np
 import vigra
 from ilastik.applets.layerViewer.layerViewerGui import LayerViewerGui
-from lazyflow.operators.opReorderAxes import OpReorderAxes
 from volumina.volumeEditor import VolumeEditor
 from volumina.volumeEditorWidget import VolumeEditorWidget
 from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.datasources import LazyflowSource
-from volumina.layer import AlphaModulatedLayer
+from volumina.layer import AlphaModulatedLayer, ColortableLayer, NormalizableLayer, RGBALayer
 from lazyflow.graph import Operator, InputSlot, OutputSlot, Graph
 
+# taken from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+default16_new = [
+    QColor(0, 0, 0, 0).rgba(),  # transparent
+    QColor(255, 225, 25).rgba(),  # yellow
+    QColor(0, 130, 200).rgba(),  # blue
+    QColor(230, 25, 75).rgba(),  # red
+    QColor(70, 240, 240).rgba(),  # cyan
+    QColor(60, 180, 75).rgba(),  # green
+    QColor(250, 190, 190).rgba(),  # pink
+    QColor(170, 110, 40).rgba(),  # brown
+    QColor(145, 30, 180).rgba(),  # purple
+    QColor(0, 128, 128).rgba(),  # teal
+    QColor(245, 130, 48).rgba(),  # orange
+    QColor(240, 50, 230).rgba(),  # magenta
+    QColor(210, 245, 60).rgba(),  # lime
+    QColor(255, 215, 180).rgba(),  # coral
+    QColor(230, 190, 255).rgba(),  # lavender
+    QColor(128, 128, 128).rgba(),  # gray
+]
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -42,46 +60,81 @@ class MainWindow(QMainWindow):
         self.volumeEditorWidget = VolumeEditorWidget(parent=self)
 
 
-class OpTestImgaeSlots(Operator):
+class OpTestImageSlots(Operator):
     """test operator, containing 3-dim test data"""
+    GrayscaleIn = InputSlot()
+    RgbaIn = InputSlot(level=1)
+    ColorTblIn1 = InputSlot()
+    ColorTblIn2 = InputSlot()
+    AlphaModulatedIn = InputSlot()
+    Segmentation1In = InputSlot()
+    Segmentation2In = InputSlot()
 
-    GrayscaleImageIn = InputSlot()
-    Label1ImageIn = InputSlot()
-    Label2ImageIn = InputSlot()
-
-    GrayscaleImageOut = OutputSlot()
-    Label1ImageOut = OutputSlot()
-    Label2ImageOut = OutputSlot()
+    GrayscaleOut = OutputSlot()
+    RgbaOut = OutputSlot(level=1)
+    ColorTblOut1 = OutputSlot()
+    ColorTblOut2 = OutputSlot()
+    AlphaModulatedOut = OutputSlot()
+    Segmentation1Out = OutputSlot()
+    Segmentation2Out = OutputSlot()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        width, height, depth = 300, 200, 40
+        time, width, height, depth = 4, 300, 200, 10
+        self.dataShape = (time, width, height, depth, 1)
+        shape4d = (time, width, height, depth, 1)
+        shape5d1 = (4, time, width, height, depth, 1)
+        shape5d2 = (time, width, height, depth, 3)
 
-        # create 2-dimensional images
-        grayscaleImageSource = np.random.randint(0, 255, (depth, height, width, 1))
-        label1ImageSource = np.zeros((depth, height, width, 3), dtype=np.int32)
-        label2ImageSource = np.zeros((depth, height, width, 3), dtype=np.int32)
+        # create images
+        grayscaleImage = np.random.randint(0, 255, shape4d)
+        rgbaImage = np.random.randint(0, 255, shape5d1)
+        colorTblImage1 = np.random.randint(0, 10, shape4d)
+        colorTblImage2 = np.random.randint(0, 10, shape4d)
+        AlphaModImage = np.zeros(shape5d2, dtype=np.int32)
+        Segment1Image = np.zeros(shape5d2, dtype=np.int32)
+        Segment2Image = np.zeros(shape5d2, dtype=np.int32)
 
-        for z, set1 in enumerate(grayscaleImageSource[:, :, :, 0]):
-            for y, set2 in enumerate(set1):
-                for x, set3 in enumerate(set2):
-                    if z in range(5, 20) and y in range(20, 30) and x in range(80, 140):
-                        label1ImageSource[z, y, x, :] = [255, 255, 255]
-                    if z in range(25, 37) and y in range(100, 150) and x in range(10, 60):
-                        label2ImageSource[z, y, x, :] = [255, 255, 255]
+        # define some dummy segmentations
+        for t in range(time):
+            for x in range(width):
+                for y in range(height):
+                    for z in range(depth):
+                        if t==3 and z in range(5, 9) and y in range(20, 30) and x in range(80, 140):
+                            Segment1Image[t, x, y, z, :] = [255, 255, 255]
+                            AlphaModImage[t, x, y, z, :] = [255, 255, 255]
+                            colorTblImage1[t, x, y, z, :] = 0
+                        if t==1 and z in range(0, 6) and y in range(100, 150) and x in range(10, 60):
+                            Segment2Image[t, x, y, z, :] = [255, 255, 255]
+                            colorTblImage2[t, x, y, z, :] = 0
 
-        self.GrayscaleImageIn.setValue(grayscaleImageSource, notify=False, check_changed=False)
-        self.Label1ImageIn.setValue(label1ImageSource, notify=False, check_changed=False)
-        self.Label2ImageIn.setValue(label2ImageSource, notify=False, check_changed=False)
+        self.GrayscaleIn.setValue(grayscaleImage, notify=False, check_changed=False)
+        self.RgbaIn.setValues(rgbaImage)
+        self.ColorTblIn1.setValue(colorTblImage1, notify=False, check_changed=False)
+        self.ColorTblIn2.setValue(colorTblImage2, notify=False, check_changed=False)
+        self.AlphaModulatedIn.setValue(AlphaModImage, notify=False, check_changed=False)
+        self.Segmentation1In.setValue(Segment1Image, notify=False, check_changed=False)
+        self.Segmentation2In.setValue(Segment2Image, notify=False, check_changed=False)
 
-        self.GrayscaleImageIn.meta.axistags = vigra.defaultAxistags("tzyxc"[5 - len(self.GrayscaleImageIn.meta.shape):])
-        self.Label1ImageIn.meta.axistags = vigra.defaultAxistags("tzyxc"[5 - len(self.Label1ImageIn.meta.shape):])
-        self.Label2ImageIn.meta.axistags = vigra.defaultAxistags("tzyxc"[5 - len(self.Label2ImageIn.meta.shape):])
+        atags3d = "txyzc"[5 - len(shape4d):]
+        atags4d2 = "txyzc"[5 - len(shape5d2):]
+        self.GrayscaleIn.meta.axistags = vigra.defaultAxistags(atags3d)
+        for i in range(4):
+            self.RgbaIn[i].meta.axistags = vigra.defaultAxistags(atags3d)
+        self.ColorTblIn1.meta.axistags = vigra.defaultAxistags(atags3d)
+        self.ColorTblIn2.meta.axistags = vigra.defaultAxistags(atags3d)
+        self.AlphaModulatedIn.meta.axistags = vigra.defaultAxistags(atags4d2)
+        self.Segmentation1In.meta.axistags = vigra.defaultAxistags(atags4d2)
+        self.Segmentation2In.meta.axistags = vigra.defaultAxistags(atags4d2)
 
-        self.GrayscaleImageOut.connect(self.GrayscaleImageIn)
-        self.Label1ImageOut.connect(self.Label1ImageIn)
-        self.Label2ImageOut.connect(self.Label2ImageIn)
+        self.GrayscaleOut.connect(self.GrayscaleIn)
+        self.RgbaOut.connect(self.RgbaIn)
+        self.ColorTblOut1.connect(self.ColorTblIn1)
+        self.ColorTblOut2.connect(self.ColorTblIn2)
+        self.AlphaModulatedOut.connect(self.AlphaModulatedIn)
+        self.Segmentation1Out.connect(self.Segmentation1In)
+        self.Segmentation2Out.connect(self.Segmentation2In)
 
 
 class TestSpinBoxImageView(object):
@@ -98,42 +151,47 @@ class TestSpinBoxImageView(object):
         self.layerStack = LayerStackModel()
 
         g = Graph()
-        self.op = OpTestImgaeSlots(graph=g)
+        self.op = OpTestImageSlots(graph=g)
 
-        self.grayscaleLayer = LayerViewerGui._create_grayscale_layer_from_slot(self.op.GrayscaleImageOut, 1)
-        self.labelLayer1 = AlphaModulatedLayer(LazyflowSource(self.op.Label1ImageOut), tintColor=QColor(Qt.cyan),
-                                               range=(0, 255), normalize=(0, 255))
-        self.labelLayer2 = AlphaModulatedLayer(LazyflowSource(self.op.Label2ImageOut), tintColor=QColor(Qt.yellow),
-                                               range=(0, 255), normalize=(0, 255))
+        self.grayscaleLayer = LayerViewerGui._create_grayscale_layer_from_slot(self.op.GrayscaleOut, 1)
+        self.segLayer1 = AlphaModulatedLayer(LazyflowSource(self.op.Segmentation1Out), tintColor=QColor(Qt.cyan),
+                                             range=(0, 255), normalize=(0, 255))
+        self.segLayer2 = AlphaModulatedLayer(LazyflowSource(self.op.Segmentation2Out), tintColor=QColor(Qt.yellow),
+                                             range=(0, 255), normalize=(0, 255))
+        self.alphaModLayer = AlphaModulatedLayer(LazyflowSource(self.op.AlphaModulatedOut),
+                                                 tintColor=QColor(Qt.magenta), range=(0, 255), normalize=(0, 255))
+        self.colorTblLayer1 = ColortableLayer(LazyflowSource(self.op.ColorTblOut1), default16_new)
+        self.colorTblLayer2  = ColortableLayer(LazyflowSource(self.op.ColorTblOut2), default16_new)
+        self.rgbaLayer = RGBALayer(red=LazyflowSource(self.op.RgbaOut[0]), green=LazyflowSource(self.op.RgbaOut[1]),
+                                   blue=LazyflowSource(self.op.RgbaOut[2]), alpha=LazyflowSource(self.op.RgbaOut[3]))
+        self.emptyRgbaLayer = RGBALayer()
 
-        self.labelLayer1.name = "Segmentation (Label 1)"
-        self.labelLayer2.name = "Segmentation (Label 2)"
+        self.segLayer1.name = "Segmentation (Label 1)"
+        self.segLayer2.name = "Segmentation (Label 2)"
+        self.grayscaleLayer.name = "Raw Input"
+        self.colorTblLayer1.name = "Labels"
+        self.colorTblLayer2.name = "pos info in Normalizable"
+        self.rgbaLayer.name = "rgba layer"
+        self.emptyRgbaLayer.name = "empty rgba layer"
+        self.alphaModLayer.name = "alpha modulated layer"
 
         self.layerStack.append(self.grayscaleLayer)
-        self.layerStack.append(self.labelLayer1)
-        self.layerStack.append(self.labelLayer2)
-
-        activeOutSlot = self.op.GrayscaleImageOut  # take any out slot here
-        if activeOutSlot.ready() and activeOutSlot.meta.axistags is not None:
-            # Use an OpReorderAxes adapter to transpose the shape for us.
-            op5 = OpReorderAxes(graph=g)
-            op5.Input.connect(activeOutSlot)
-            op5.AxisOrder.setValue('txyzc')
-            shape = op5.Output.meta.shape
-
-            # We just needed the op to determine the transposed shape.
-            # Disconnect it so it can be garbage collected.
-            op5.Input.disconnect()
-            op5.cleanUp()
+        self.layerStack.append(self.segLayer1)
+        self.layerStack.append(self.segLayer2)
+        self.layerStack.append(self.colorTblLayer1)
+        self.layerStack.append(self.colorTblLayer2)
+        self.layerStack.append(self.rgbaLayer)
+        self.layerStack.append(self.emptyRgbaLayer)
+        self.layerStack.append(self.alphaModLayer)
 
         self.editor = VolumeEditor(self.layerStack, self.main)
         self.editorWidget = self.main.volumeEditorWidget
         self.editorWidget.init(self.editor)
 
-        self.editor.dataShape = shape
+        self.editor.dataShape = self.op.dataShape
 
-        # Find the xyz midpoint
-        midpos5d = [x // 2 for x in shape]
+        # Find the xyz origin
+        midpos5d = [x // 2 for x in self.op.dataShape]
         # center viewer there
         # set xyz position
         midpos3d = midpos5d[1:4]
@@ -143,6 +201,7 @@ class TestSpinBoxImageView(object):
             self.editor.navCtrl.changeSliceAbsolute(midpos3d[i], i)
 
         self.main.setCentralWidget(self.editorWidget)
+        self.main.setFixedSize(1000, 800)
         self.main.show()
         self.qtbot.addWidget(self.main)
 
@@ -150,10 +209,14 @@ class TestSpinBoxImageView(object):
         assert 0 == len(self.editorWidget.quadViewStatusBar.layerValueWidgets)
 
         for layer in self.layerStack:
+            layer.visible = True
             if not layer.showPosValue:
                 layer.showPosValue = True
             if not layer.visible:
                 layer.visible = True
+
+        for i in range(30):
+            QCoreApplication.processEvents()
 
         for layer in self.layerStack:
             assert layer in self.editorWidget.quadViewStatusBar.layerValueWidgets
@@ -174,47 +237,85 @@ class TestSpinBoxImageView(object):
             if not layer.visible:
                 layer.visible = True
 
-        x, y, z = 90, 25, 10
+        t, x, y, z = 3, 90, 25, 6
 
-        posVal = 255-int(self.op.GrayscaleImageIn.value[z, y, x, 0])
-        grayValidationStrings = ["Gray:" + str(posVal), "Gray:" + str(posVal+1), "Gray:" + str(posVal-1)]
-        label1ValidationString = "Label 1"
-        label2ValidationString = "Label 2"
+        grayValidationString = "Raw I.:" + str(self.op.GrayscaleIn.value[t, x, y, z, 0])
+        labelValidationString = "Label 1"
+        colorTbl1ValidationString = "-"
+        colorTbl2ValidationString = "pos i. i. N.:" + str(self.op.ColorTblOut2.value[t, x, y, z, 0])
+        rgbaValidationString = "rgba l.:{};{};{};{}".format(*[str(slot.value[t, x, y, z, 0]) for slot in self.op.RgbaIn])
+        emptyRgbaValidationString = "empty r. l.:0;0;0;255"
+        alphaModValidationString = "alpha m. l.:" + str(self.op.AlphaModulatedOut.value[t, x, y, z, 0])
+
 
         signal = self.editor.posModel.cursorPositionChanged
         with self.qtbot.waitSignal(signal, timeout=1000):
             self.editor.navCtrl.changeSliceAbsolute(z, 2)
+            self.editor.navCtrl.changeTime(t)
 
-        # After change of crosshair positions tiles are marked dirty.
-        self.updateAllTiles(self.editor.imageScenes)  # Wait for all tiles being refreshed
+        QCoreApplication.processEvents()
+        QCoreApplication.processEvents()
+        QCoreApplication.processEvents()
+        QCoreApplication.processEvents()
 
-        signals = [self.editorWidget.quadViewStatusBar.layerValueWidgets[self.grayscaleLayer].textChanged,
-                   self.editorWidget.quadViewStatusBar.layerValueWidgets[self.labelLayer1].textChanged]
-        with self.qtbot.waitSignals(signals, timeout=1000):
-            self.editor.navCtrl.positionDataCursor(QPointF(x, y), 2)
 
-        self.updateAllTiles(self.editor.imageScenes)  # Wait for all tiles being refreshed
+        self.editor.navCtrl.positionDataCursor(QPointF(0, 0), 2)
 
+        self.editor.navCtrl.positionDataCursor(QPointF(x, y), 2)
+
+        assert self.editorWidget.quadViewStatusBar.xSpinBox.value() == x
+        assert self.editorWidget.quadViewStatusBar.ySpinBox.value() == y
+        assert self.editorWidget.quadViewStatusBar.zSpinBox.value() == z
         assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
-                   self.grayscaleLayer].text() in grayValidationStrings
-        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[self.labelLayer1].text() == label1ValidationString
+                   self.grayscaleLayer].text() == grayValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.segLayer1].text() == labelValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.segLayer2].text() == labelValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.colorTblLayer1].text() == colorTbl1ValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.colorTblLayer2].text() == colorTbl2ValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.rgbaLayer].text() == rgbaValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.emptyRgbaLayer].text() == emptyRgbaValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.alphaModLayer].text() == alphaModValidationString
 
-        x, y, z = 39, 130, 30
+        t, x, y, z = 1, 39, 130, 3
 
-        posVal = 255-int(self.op.GrayscaleImageIn.value[z, y, x, 0])
-        grayValidationStrings = ["Gray:" + str(posVal), "Gray:" + str(posVal+1), "Gray:" + str(posVal-1)]
+        grayValidationString = "Raw I.:" + str(self.op.GrayscaleIn.value[t, x, y, z, 0])
+        labelValidationString = "Label 2"
+        colorTbl1ValidationString = "Labels:" + str(self.op.ColorTblIn1.value[t, x, y, z, 0])
+        colorTbl2ValidationString = "pos i. i. N.:" + str(self.op.ColorTblIn2.value[t, x, y, z, 0])
+        rgbaValidationString = "rgba l.:{};{};{};{}".format(*[str(slot.value[t, x, y, z, 0]) for slot in self.op.RgbaIn])
+        emptyRgbaValidationString = "empty r. l.:0;0;0;255"
+        alphaModValidationString = "alpha m. l.:" + str(self.op.AlphaModulatedIn.value[t, x, y, z, 0])
 
         with self.qtbot.waitSignal(signal, timeout=1000):
             self.editor.navCtrl.changeSliceAbsolute(y, 1)
+            self.editor.navCtrl.changeTime(t)
 
-        self.updateAllTiles(self.editor.imageScenes)  # Wait for all tiles being refreshed
+        self.editor.navCtrl.positionDataCursor(QPointF(x, z), 1)
 
-        with self.qtbot.waitSignals(signals, timeout=1000):
-            self.editor.navCtrl.positionDataCursor(QPointF(x, z), 1)
-
-        self.updateAllTiles(self.editor.imageScenes)  # Wait for all tiles being refreshed
-
+        assert self.editorWidget.quadViewStatusBar.xSpinBox.value() == x
+        assert self.editorWidget.quadViewStatusBar.ySpinBox.value() == y
+        assert self.editorWidget.quadViewStatusBar.zSpinBox.value() == z
         assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
-                   self.grayscaleLayer].text() in grayValidationStrings
-        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[self.labelLayer2].text() == label2ValidationString
+                   self.grayscaleLayer].text() == grayValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.segLayer1].text() == labelValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.segLayer2].text() == labelValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.colorTblLayer1].text() == colorTbl1ValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.colorTblLayer2].text() == colorTbl2ValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.rgbaLayer].text() == rgbaValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.emptyRgbaLayer].text() == emptyRgbaValidationString
+        assert self.editorWidget.quadViewStatusBar.layerValueWidgets[
+                   self.alphaModLayer].text() == alphaModValidationString
 

@@ -22,6 +22,7 @@
 from builtins import range
 import colorsys
 import numpy
+import numbers
 
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer
 from PyQt5.QtGui import QColor, QPen, qGray
@@ -110,6 +111,15 @@ class Layer(QObject):
     @property
     def name(self):
         return self._name
+
+    def getNameAbbreviation(self):
+        """Returns an abbreviation of self.name by keeping the first word
+           and only the initials of all following words separated by spaces"""
+        words = self.name.split(" ")
+        name = words[0]
+        for w in words[1:]:
+            name += " " + w[0] + "."
+        return name
 
     @name.setter
     def name(self, n):
@@ -348,32 +358,6 @@ class NormalizableLayer(Layer):
         self._normalize[datasourceIdx] = value
         self.normalizeChanged.emit()
 
-    def getPosInfo(self, slc):
-        """
-        This function is called by QuadStatusBar.setLayerPosIfos and is expected to return a tuple of information for
-        the position widgets, showing current pixelvalues at cursor position of respective layer.
-        :param slc: slices of current cursor position
-        :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
-        """
-        words = self.name.split(" ")
-        name = words[0]
-        for w in words[1:]:
-            name += " " + w[0] + "."
-        name += ":"
-        valString = ""
-
-        for i, ds in enumerate(self.datasources):
-            try:
-                assert isinstance(ds, DataSourceABC)
-                value = ds.request(slc).wait().squeeze()
-                value = round(float(value), 4)
-                valString += str(value) + ";"
-            except (ValueError, AssertionError):
-                valString += "-;"
-        if valString != "":
-            return name + valString[:-1], QColor("black"), QColor("white")
-        return None, QColor("black"), QColor("white")
-
     def __init__(self, datasources, range=None, normalize=None, direct=False):
         """
         datasources - a list of raw data sources
@@ -455,12 +439,6 @@ class GrayscaleLayer(NormalizableLayer):
         :param slc: slices of current cursor position
         :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
         """
-        words = self.name.split(" ")
-        name = words[0]
-        for w in words[1:]:
-            name += " " + w[0] + "."
-        name += ":"
-
         try:
             value = self.datasources[0].request(slc).wait().squeeze()
         except ValueError:
@@ -468,7 +446,7 @@ class GrayscaleLayer(NormalizableLayer):
         fg = 0
         if value < 128:  # be sure to have high contrast
             fg = 255
-        return name + str(value), QColor(fg, fg, fg), QColor(value, value, value)
+        return self.getNameAbbreviation() + ":" + str(value), QColor(fg, fg, fg), QColor(value, value, value)
 
     def __init__(self, datasource, range=None, normalize=None, direct=False, window_leveling=False):
         assert isinstance(datasource, DataSourceABC)
@@ -510,32 +488,30 @@ class AlphaModulatedLayer(NormalizableLayer):
         :param slc: slices of current cursor position
         :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
         """
-        if "Segmentation (Label " in self.name and len(self.datasources) == 1:
+        try:
+            # This layer has only one datasource
             value = self.datasources[0].request(slc).wait().squeeze()
-            if value == 1:
-                if qGray(self.tintColor.rgb()) < 128:  # high contrast with fore- and background
-                    fg = QColor("white")
-                else:
-                    fg = QColor("black")
-                return self.name[self.name.find("(") + 1:self.name.find(")")], fg, self.tintColor
-            else:
-                return None, QColor("black"), QColor("white")
-
-        words = self.name.split(" ")
-        name = words[0]
-        for w in words[1:]:
-            name += " " + w[0] + "."
-        name += ":"
-
-        for i, ds in enumerate(self.datasources):
-            try:
-                assert isinstance(ds, DataSourceABC)
-                value = ds.request(slc).wait().squeeze()
+            if not isinstance(value.reshape(1)[0], numbers.Integral):  # reshape here, squeeze returns empty shape
                 value = round(float(value), 4)
-                name += str(value) + ";"
-            except (ValueError, AssertionError):
-                name += "-;"
-            return name[:-1], QColor("black"), QColor("white")
+        except ValueError:
+            return None, QColor("black"), QColor("white")
+
+        if qGray(self.tintColor.rgb()) < 128:  # high contrast with fore- and background
+            fg = QColor("white")
+        else:
+            fg = QColor("black")
+
+        if value != 0:
+            if "Segmentation (Label " in self.name:
+                name = self.name[self.name.find("(") + 1:self.name.find(")")]
+            else:
+                name = self.getNameAbbreviation() + ":" + str(value)
+            return name, fg, self.tintColor
+        else:
+            if "Segmentation (Label " in self.name:
+                return None, QColor("black"), QColor("white")
+            else:
+                return self.getNameAbbreviation() + ":" + str(value), fg, self.tintColor
 
     def __init__(self, datasource, tintColor=QColor(255, 0, 0), range=(0, 255), normalize=None):
         assert isinstance(datasource, DataSourceABC)
@@ -619,18 +595,21 @@ class ColortableLayer(NormalizableLayer):
         :param slc: slices of current cursor position
         :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
         """
-        if self.name == "Labels" and len(self.datasources) == 1:
+        try:
             value = self.datasources[0].request(slc).wait().squeeze()
-            if value != 0:
-                bg = QColor(self.colorTable[value])
-                if qGray(bg.rgb()) < 128:  # high contrast with fore- and background
-                    fg = QColor("white")
-                else:
-                    fg = QColor("black")
-                return self.name + ":" + str(value), fg, bg
+        except ValueError:
+            return None, QColor("black"), QColor("white")
+        bg = QColor(self.colorTable[int(value)])
+        if self.colorTable[int(value)] != 0:
+            if qGray(bg.rgb()) < 128:  # high contrast with fore- and background
+                fg = QColor("white")
             else:
+                fg = QColor("black")
+            return self.getNameAbbreviation() + ":" + str(value), fg, bg
+        else:  # transparent
+            if "Labels" in self.name:
                 return None, QColor("black"), QColor("white")
-        return super(ColortableLayer, self).getPosInfo(slc)
+            return self.getNameAbbreviation() + ":" + str(value), QColor("black"), QColor("white")
 
     def __init__(self, datasource, colorTable, normalize=False, direct=False):
         assert isinstance(datasource, DataSourceABC)
@@ -713,22 +692,18 @@ class RGBALayer(NormalizableLayer):
         :param slc: slices of current cursor position
         :return: ((String)text, (QColor)foregroundcolor, (QColor)backgroundcolor) for respective widget
         """
-        words = self.name.split(" ")
-        name = words[0]
-        for w in words[1:]:
-            name += " " + w[0] + "."
-        name += ":"
 
         value = []
+        name = self.getNameAbbreviation() + ":"
         for i, ds in enumerate(self.datasources):
             try:
                 assert isinstance(ds, DataSourceABC)
                 value.append(ds.request(slc).wait().squeeze())
             except (ValueError, AssertionError):
                 if i == 3:  # alpha channel by default
-                    value.append(255)
+                    value.append(self._alpha_missing_value)
                 else:  # RGB channels by default
-                    value.append(0)
+                    value.append(self._color_missing_value)
             name += str(value[-1]) + ";"
         bg = QColor(value[0], value[1], value[2], value[3])
         if qGray(bg.rgb()) < 128:  # high contrast with fore- and background
