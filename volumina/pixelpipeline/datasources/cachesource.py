@@ -1,3 +1,4 @@
+import itertools
 import threading
 import sys
 
@@ -6,6 +7,10 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from volumina.pixelpipeline.interface import DataSourceABC
 from volumina.slicingtools import is_pure_slicing
 from volumina.utility.cache import KVCache
+from volumina.config import CONFIG
+
+
+ARRAY_CACHE = KVCache(CONFIG.cache_size, getsizeof=sys.getsizeof)
 
 
 class _Request:
@@ -43,13 +48,15 @@ class CacheSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
+    __counter = itertools.count()
+
     def __init__(self, source):
         super().__init__()
         self._lock = threading.Lock()
+        self._id = next(self.__counter)
 
         self._source = source
-        _256MB = 256 * 1024 * 1024
-        self._cache = KVCache(_256MB, getsizeof=sys.getsizeof)
+        self._cache = ARRAY_CACHE
         self._req = {}
         self._source.isDirty.connect(self.isDirty)
         self._source.numberOfChannelsChanged.connect(self.numberOfChannelsChanged)
@@ -61,7 +68,7 @@ class CacheSource(QObject, DataSourceABC):
         self._req.clear()
 
     def __cache_key(self, slicing):
-        parts = []
+        parts = [self._id]
 
         for el in slicing:
             _, key_part = el.__reduce__()
@@ -95,12 +102,12 @@ class CacheSource(QObject, DataSourceABC):
         return self._source.numberOfChannels
 
     def __repr__(self):
-        return f"<CachedSource({self._source})>"
+        return f"<CachedSource(id:{self._id}, source:{self._source})>"
 
     def __eq__(self, other):
         if other is None:
             return False
-        return self._source is other._source
+        return self._source is getattr(other, "_source", None)
 
     def __ne__(self, other):
         return not (self == other)
