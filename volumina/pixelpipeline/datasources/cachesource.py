@@ -1,4 +1,3 @@
-import itertools
 import threading
 import sys
 
@@ -48,12 +47,9 @@ class CacheSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
-    __counter = itertools.count()
-
     def __init__(self, source):
         super().__init__()
         self._lock = threading.Lock()
-        self._id = next(self.__counter)
 
         self._source = source
         self._cache = ARRAY_CACHE
@@ -68,7 +64,7 @@ class CacheSource(QObject, DataSourceABC):
         self._req.clear()
 
     def __cache_key(self, slicing):
-        parts = [self._id]
+        parts = [id(self)]
 
         for el in slicing:
             _, key_part = el.__reduce__()
@@ -80,8 +76,9 @@ class CacheSource(QObject, DataSourceABC):
         key = self.__cache_key(slicing)
 
         with self._lock:
-            if key in self._cache:
-                return _CachedRequest(self._cache.get(key))
+            result = self._cache.get(key)
+            if result is not None:
+                return _CachedRequest(result)
 
             else:
                 if key not in self._req:
@@ -102,7 +99,7 @@ class CacheSource(QObject, DataSourceABC):
         return self._source.numberOfChannels
 
     def __repr__(self):
-        return f"<CachedSource(id:{self._id}, source:{self._source})>"
+        return f"<CachedSource(id:{id(self)}, source:{self._source})>"
 
     def __eq__(self, other):
         if other is None:
