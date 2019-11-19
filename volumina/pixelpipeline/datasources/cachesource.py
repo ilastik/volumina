@@ -99,7 +99,7 @@ class CacheSource(QObject, DataSourceABC):
         return self._source.numberOfChannels
 
     def __repr__(self):
-        return f"<CachedSource(id:{id(self)}, source:{self._source})>"
+        return f"<CachedSource(id:{id(self)}, source:{self._source!r})>"
 
     def __eq__(self, other):
         if other is None:
