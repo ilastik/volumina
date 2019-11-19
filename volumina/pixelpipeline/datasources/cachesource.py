@@ -1,4 +1,5 @@
 import threading
+import sys
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -18,7 +19,7 @@ class _Request:
     def wait(self):
         if self._result is None:
             self._result = res = self._rq.wait()
-            self._cached_source._cache.set(self._key, res)
+            self._cached_source._cache[self._key] = res
             self._cached_source._req.pop(self._key, None)
 
         return self._result
@@ -47,7 +48,8 @@ class CacheSource(QObject, DataSourceABC):
         self._lock = threading.Lock()
 
         self._source = source
-        self._cache = KVCache()
+        _256MB = 256 * 1024 * 1024
+        self._cache = KVCache(_256MB, getsizeof=sys.getsizeof)
         self._req = {}
         self._source.isDirty.connect(self.isDirty)
         self._source.numberOfChannelsChanged.connect(self.numberOfChannelsChanged)
@@ -58,7 +60,7 @@ class CacheSource(QObject, DataSourceABC):
         self._cache.clear()
         self._req.clear()
 
-    def cache_key(self, slicing):
+    def __cache_key(self, slicing):
         parts = []
 
         for el in slicing:
@@ -68,7 +70,7 @@ class CacheSource(QObject, DataSourceABC):
         return "::".join(str(p) for p in parts)
 
     def request(self, slicing):
-        key = self.cache_key(slicing)
+        key = self.__cache_key(slicing)
 
         with self._lock:
             if key in self._cache:
