@@ -34,7 +34,7 @@ class DummySource(QObject):
 class TestCacheSource:
     @pytest.fixture
     def orig_source(self):
-        arr = np.arange(27).reshape(3, 3, 3)
+        arr = np.arange(60).reshape(3, 4, 5)
         source = DummySource(arr)
         return mock.Mock(wraps=source)
 
@@ -43,24 +43,31 @@ class TestCacheSource:
         return CacheSource(orig_source)
 
     def test_consecutive_requests_are_cached(self, cached_source, orig_source):
-        slicing = np.s_[1:2, 1:2, 1:2]
+        slicing = np.s_[1:2, 2:3, 3:4]
         res0 = cached_source.request(slicing).wait()
         res1 = cached_source.request(slicing).wait()
 
-        assert_array_equal(np.array([[[13]]]), res0)
-        assert_array_equal(np.array([[[13]]]), res1)
+        assert_array_equal(np.array([[[33]]]), res0)
+        assert_array_equal(np.array([[[33]]]), res1)
 
         orig_source.request.assert_called_once_with(slicing)
 
     def test_cache_invalidation(self, cached_source, orig_source):
-        slicing = np.s_[1:2, 1:2, 1:2]
+        slicing = np.s_[2:3, 0:1, 2:3]
         res0 = cached_source.request(slicing).wait()
         res1 = cached_source.request(slicing).wait()
 
-        assert_array_equal(np.array([[[13]]]), res0)
-        assert_array_equal(np.array([[[13]]]), res1)
+        assert_array_equal(np.array([[[42]]]), res0)
+        assert_array_equal(np.array([[[42]]]), res1)
 
-        orig_source.set_data(np.arange(27, 54).reshape(3, 3, 3))
+        orig_source.set_data(np.arange(27, 87).reshape(3, 4, 5))
         res2 = cached_source.request(slicing).wait()
-        assert_array_equal(np.array([[[40]]]), res2)
+        assert_array_equal(np.array([[[69]]]), res2)
         assert orig_source.request.call_count == 2
+
+    def test_cache_results_are_readonly(self, cached_source, orig_source):
+        slicing = np.s_[2:3, 0:1, 2:3]
+        res = cached_source.request(slicing).wait()
+
+        with pytest.raises(ValueError):
+            res[0] = 100

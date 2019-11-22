@@ -22,8 +22,12 @@ class _Request:
 
     def wait(self):
         if self._result is None:
-            self._result = res = self._rq.wait()
-            self._cached_source._cache[self._key] = res
+            res = self._rq.wait()
+
+            self._result = cached_copy = res.copy()
+            cached_copy.setflags(write=False)
+
+            self._cached_source._cache[self._key] = cached_copy
             self._cached_source._req.pop(self._key, None)
 
         return self._result
