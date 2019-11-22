@@ -1,3 +1,4 @@
+import logging
 import threading
 import sys
 
@@ -7,6 +8,8 @@ from volumina.pixelpipeline.interface import DataSourceABC
 from volumina.slicingtools import is_pure_slicing
 from volumina.utility.cache import KVCache
 from volumina.config import CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 ARRAY_CACHE = KVCache(CONFIG.cache_size, getsizeof=sys.getsizeof)
@@ -27,8 +30,17 @@ class _Request:
             self._result = cached_copy = res.copy()
             cached_copy.setflags(write=False)
 
-            self._cached_source._cache[self._key] = cached_copy
-            self._cached_source._req.pop(self._key, None)
+            with self._cached_source._lock:
+                try:
+                    self._cached_source._cache[self._key] = cached_copy
+                except Exception:
+                    logger.warning(
+                        "Value too large, skipping cache; cache_size: %s, value size: %s",
+                        CONFIG.cache_size,
+                        sys.getsizeof(cached_copy),
+                    )
+                finally:
+                    self._cached_source._req.pop(self._key, None)
 
         return self._result
 
@@ -51,12 +63,12 @@ class CacheSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
-    def __init__(self, source):
+    def __init__(self, source, cache=ARRAY_CACHE):
         super().__init__()
         self._lock = threading.Lock()
 
         self._source = source
-        self._cache = ARRAY_CACHE
+        self._cache = cache
         self._req = {}
         self._source.isDirty.connect(self.isDirty)
         self._source.numberOfChannelsChanged.connect(self.numberOfChannelsChanged)

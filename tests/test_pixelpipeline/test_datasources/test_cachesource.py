@@ -1,11 +1,13 @@
-import pytest
+import sys
 from unittest import mock
 
 import numpy as np
+import pytest
 from numpy.testing import assert_array_equal
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from volumina.pixelpipeline.datasources.cachesource import CacheSource
+from volumina.utility.cache import KVCache
 
 
 class DummySource(QObject):
@@ -71,3 +73,14 @@ class TestCacheSource:
 
         with pytest.raises(ValueError):
             res[0] = 100
+
+    def test_cache_if_value_is_too_large(self, orig_source):
+        cached_source = CacheSource(orig_source, cache=KVCache(1, getsizeof=sys.getsizeof))
+        slicing = np.s_[2:3, 0:1, 2:3]
+        res0 = cached_source.request(slicing).wait()
+        res1 = cached_source.request(slicing).wait()
+
+        assert_array_equal(np.array([[[42]]]), res0)
+        assert_array_equal(np.array([[[42]]]), res1)
+
+        assert orig_source.request.call_count == 2
