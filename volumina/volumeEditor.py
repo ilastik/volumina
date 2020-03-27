@@ -140,7 +140,7 @@ class VolumeEditor(QObject):
 
         for i, v in enumerate(self.imageViews):
             v.sliceShape = self.posModel.sliceShape(axis=i)
-        self.view3d.shape = s[1:4]
+        self.view3d.set_shape(s[1:4])
 
     def lastImageViewFocus(self, axis):
         self._lastImageViewFocus = axis
@@ -285,7 +285,7 @@ class VolumeEditor(QObject):
         view3d = Overview3D(is_3d_widget_visible=is_3d_widget_visible)
 
         def onSliceDragged():
-            self.posModel.slicingPos = view3d.slice
+            self.posModel.slicingPos = view3d.get_slice()
 
         view3d.slice_changed.connect(onSliceDragged)
         return view3d

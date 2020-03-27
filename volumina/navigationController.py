@@ -372,7 +372,7 @@ class NavigationController(QObject):
 
         def maybeUpdateSlice(oldSlicing):
             if oldSlicing == self._model.slicingPos:
-                self._view3d.slice = self._model.slicingPos
+                self._view3d.set_slice(self._model.slicingPos)
 
         QTimer.singleShot(50, partial(maybeUpdateSlice, self._model.slicingPos))
 
