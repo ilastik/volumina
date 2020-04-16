@@ -49,7 +49,7 @@ try:
     f = h5py.File(fname, "r")
 except:
     raise RuntimeError("Could not load '%s'" % fname)
-raw = f[gname].value.squeeze()
+raw = f[gname][()].squeeze()
 assert raw.ndim == 3
 assert raw.dtype == numpy.uint8
 f.close()
