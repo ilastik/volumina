@@ -27,146 +27,96 @@ import os
 # PyQt
 from PyQt5 import uic
 from PyQt5.QtWidgets import QDialog
+from PyQt5.QtCore import Qt
 from functools import partial
+from typing import Callable
+from pathlib import Path
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-# ===----------------------------------------------------------------------------------------------------------------===
 
-
-class GrayscaleLayerDialog(QDialog):
-    def __init__(self, layer, parent=None):
-        QDialog.__init__(self, parent)
-        p = os.path.split(os.path.abspath(__file__))[0]
-        uic.loadUi(p + "/ui/grayLayerDialog.ui", self)
+class LayerDialog(QDialog):
+    def __init__(self, ui_file_name: str, layer, parent=None):
+        super().__init__(parent)
+        base_path = Path(__file__).resolve().parent
+        ui_path = base_path.joinpath("ui").joinpath(ui_file_name)
+        uic.loadUi(ui_path.as_posix(), self)
         self.setLayername(layer.name)
+        self.layer = layer
+
+    def update_widget_limits(self, datasourceIdx: int, thresholding_widget, autorange_widget):
+        thresholding_widget.setRange(self.layer.range[datasourceIdx][0], self.layer.range[datasourceIdx][1])
+        normalize_range = self.layer.get_datasource_range(datasourceIdx)
+        thresholding_widget.setValue(normalize_range[0], normalize_range[1])
+
+        autorange_widget.stateChanged.connect(
+            self.make_range_checkbox_handler(datasourceIdx=0, thresholding_widget=thresholding_widget)
+        )
+        autorange_widget.setCheckState(layer._autoMinMax[datasourceIdx] * 2)
+
+    def make_range_checkbox_handler(self, datasourceIdx: int, thresholding_widget) -> Callable[[int], None]:
+        def autoRangeHandler(state):
+            if state == Qt.Checked:
+                self.update_widget_limits(datasourceIdx=datasourceIdx, thresholding_widget=thresholding_widget)
+                self.layer.set_normalize(datasourceIdx, None)  # set to auto
+                thresholding_widget.setEnabled(False)
+            if state == Qt.Unchecked:
+                thresholding_widget.setEnabled(True)
+                self.layer.set_normalize(datasourceIdx, self.layer.normalize[datasourceIdx])
+
+        return autoRangeHandler
+
+    def setLayername(self, name: str):
+        self._layerLabel.setText(f"<b>{name}</b>")
+
+
+class GrayscaleLayerDialog(LayerDialog):
+    def __init__(self, layer, parent=None):
+        super().__init__(ui_file_name="grayLayerDialog.ui", layer=layer, parent=parent)
 
         def dbgPrint(a, b):
             layer.set_normalize(0, (a, b))
             logger.debug("normalization changed to [%d, %d]" % (a, b))
 
-        def autoRange(state):
-            if state == 2:
-                self.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])  # update gui
-                layer.set_normalize(0, None)
-                self.grayChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                self.grayChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(0, layer.normalize[0])
-
-        self.grayChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
-        self.grayChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])
+        # import pydevd; pydevd.settrace()
+        self.update_widget_limits(
+            datasourceIdx=0, thresholding_widget=self.grayChannelThresholdingWidget, autorange_widget=self.grayAutoRange
+        )
         self.grayChannelThresholdingWidget.valueChanged.connect(dbgPrint)
-        self.grayAutoRange.stateChanged.connect(autoRange)
-        self.grayAutoRange.setCheckState(layer._autoMinMax[0] * 2)
-
-    def setLayername(self, n):
-        self._layerLabel.setText("<b>%s</b>" % n)
 
 
-class RGBALayerDialog(QDialog):
+class RGBALayerDialog(LayerDialog):
     def __init__(self, layer, parent=None):
-        QDialog.__init__(self, parent)
-        p = os.path.split(os.path.abspath(__file__))[0]
-        uic.loadUi(p + "/ui/rgbaLayerDialog.ui", self)
-        self.setLayername(layer.name)
-
-        if layer.datasources[0] == None:
-            self.showRedThresholds(False)
-        if layer.datasources[1] == None:
-            self.showGreenThresholds(False)
-        if layer.datasources[2] == None:
-            self.showBlueThresholds(False)
-        if layer.datasources[3] == None:
-            self.showAlphaThresholds(False)
+        super().__init__(ui_file_name="rgbaLayerDialog.ui", layer=layer, parent=parent)
 
         def dbgPrint(layerIdx, a, b):
             layer.set_normalize(layerIdx, (a, b))
             logger.debug("normalization changed for channel=%d to [%d, %d]" % (layerIdx, a, b))
 
-        self.redChannelThresholdingWidget.setRange(layer.range[0][0], layer.range[0][1])
-        self.greenChannelThresholdingWidget.setRange(layer.range[1][0], layer.range[1][1])
-        self.blueChannelThresholdingWidget.setRange(layer.range[2][0], layer.range[2][1])
-        self.alphaChannelThresholdingWidget.setRange(layer.range[3][0], layer.range[3][1])
+        thresholding_widgets = [
+            self.redChannelThresholdingWidget,
+            self.greenChannelThresholdingWidget,
+            self.blueChannelThresholdingWidget,
+            self.alphaChannelThresholdingWidget,
+        ]
+        auto_range_widgets = [self.redAutoRange, self.greenAutoRange, self.blueAutoRange, self.alphaAutoRange]
+        channels = [self.redChannel, self.greenChannel, self.blueChannel, self.alphaChannel]
 
-        self.redChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])
-        self.greenChannelThresholdingWidget.setValue(layer.normalize[1][0], layer.normalize[1][1])
-        self.blueChannelThresholdingWidget.setValue(layer.normalize[2][0], layer.normalize[2][1])
-        self.alphaChannelThresholdingWidget.setValue(layer.normalize[3][0], layer.normalize[3][1])
+        for idx, t_widget in enumerate(thresholding_widgets):
+            channel = channels[idx]
+            range_widget = auto_range_widgets[idx]
 
-        self.redChannelThresholdingWidget.valueChanged.connect(partial(dbgPrint, 0))
-        self.greenChannelThresholdingWidget.valueChanged.connect(partial(dbgPrint, 1))
-        self.blueChannelThresholdingWidget.valueChanged.connect(partial(dbgPrint, 2))
-        self.alphaChannelThresholdingWidget.valueChanged.connect(partial(dbgPrint, 3))
+            if layer.datasources[idx] == None:
+                channel.setVisible(False)
+                continue
 
-        def redAutoRange(state):
-            if state == 2:
-                self.redChannelThresholdingWidget.setValue(layer.normalize[0][0], layer.normalize[0][1])  # update gui
-                layer.set_normalize(0, None)  # set to auto
-                self.redChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                self.redChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(0, layer.normalize[0])
-
-        def greenAutoRange(state):
-            if state == 2:
-                self.greenChannelThresholdingWidget.setValue(layer.normalize[1][0], layer.normalize[1][1])  # update gui
-                layer.set_normalize(1, None)  # set to auto
-                self.greenChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                self.greenChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(1, layer.normalize[1])
-
-        def blueAutoRange(state):
-            if state == 2:
-                self.blueChannelThresholdingWidget.setValue(layer.normalize[2][0], layer.normalize[2][1])  # update gui
-                layer.set_normalize(2, None)  # set to auto
-                self.blueChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                self.blueChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(2, layer.normalize[2])
-
-        def alphaAutoRange(state):
-            if state == 2:
-                self.alphaChannelThresholdingWidget.setValue(layer.normalize[3][0], layer.normalize[3][1])  # update gui
-                layer.set_normalize(3, None)  # set to auto
-                self.alphaChannelThresholdingWidget.setEnabled(False)
-            if state == 0:
-                self.alphaChannelThresholdingWidget.setEnabled(True)
-                layer.set_normalize(3, layer.normalize[3])
-
-        self.redAutoRange.stateChanged.connect(redAutoRange)
-        self.redAutoRange.setCheckState(layer._autoMinMax[0] * 2)
-        self.greenAutoRange.stateChanged.connect(greenAutoRange)
-        self.greenAutoRange.setCheckState(layer._autoMinMax[1] * 2)
-        self.blueAutoRange.stateChanged.connect(blueAutoRange)
-        self.blueAutoRange.setCheckState(layer._autoMinMax[2] * 2)
-        self.alphaAutoRange.stateChanged.connect(alphaAutoRange)
-        self.alphaAutoRange.setCheckState(layer._autoMinMax[3] * 2)
+            self.update_widget_limits(idx, thresholding_widget=t_widget, autorange_widget=range_Widget)
+            t_widget.valueChanged.connect(partial(dbgPrint, idx))
 
         self.resize(self.minimumSize())
 
-    def showRedThresholds(self, show):
-        self.redChannel.setVisible(show)
-
-    def showGreenThresholds(self, show):
-        self.greenChannel.setVisible(show)
-
-    def showBlueThresholds(self, show):
-        self.blueChannel.setVisible(show)
-
-    def showAlphaThresholds(self, show):
-        self.alphaChannel.setVisible(show)
-
-    def setLayername(self, n):
-        self._layerLabel.setText("<b>%s</b>" % n)
-
-
-# ===----------------------------------------------------------------------------------------------------------------===
-# === __name__ == "__main__"                                                                                         ===
-# ===----------------------------------------------------------------------------------------------------------------===
 
 if __name__ == "__main__":
     import optparse
