@@ -294,20 +294,20 @@ class NormalizableLayer(Layer):
             return
 
         if value is None:
-            value = self._get_datasource_default_range(datasourceIdx)
+            value = self.get_datasource_default_range(datasourceIdx)
             self._autoMinMax[datasourceIdx] = True
         else:
             self._autoMinMax[datasourceIdx] = False
         self._normalize[datasourceIdx] = value
         self.normalizeChanged.emit()
 
-    def _get_datasource_default_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
+    def get_datasource_default_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
         return self._datasources[datasourceIdx]._bounds
 
     def get_datasource_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
         if isinstance(self._normalize[datasourceIdx], tuple):
             return self._normalize[datasourceIdx]
-        return self._get_datasource_default_range(datasourceIdx)
+        return self.get_datasource_default_range(datasourceIdx)
 
     def __init__(self, datasources, normalize=None, direct=False):
         """

@@ -53,8 +53,12 @@ class LayerDialog(QDialog):
             self.layer.set_normalize(datasourceIdx, (a, b))
             print(f"normalization changed for channel={datasourceIdx} to [{a}, {b}]")
 
-        normalize_range = self.layer.get_datasource_range(datasourceIdx)
-        thresholding_widget.setRange(normalize_range[0], normalize_range[1])
+        normalization_range = self.layer.get_datasource_default_range(datasourceIdx)
+        thresholding_widget.setRange(normalization_range[0], normalization_range[1])
+
+        normalization_value = self.layer.get_datasource_range(datasourceIdx)
+        thresholding_widget.setValue(normalization_value[0], normalization_value[1])
+
         thresholding_widget.valueChanged.connect(handleRangeChanged)
 
         def handleAutoRangeChanged(state):
