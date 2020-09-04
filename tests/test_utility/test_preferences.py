@@ -1,10 +1,10 @@
 import pytest
-from volumina.utility.preferences import _Preferences
+from volumina.utility.preferences import Preferences
 
 
 @pytest.fixture
 def preferences(tmp_path):
-    return _Preferences(tmp_path / "preferences")
+    return Preferences(tmp_path / "preferences.json")
 
 
 def test_get_default(preferences):
@@ -21,13 +21,11 @@ def test_setmany_getmany(preferences):
     assert preferences.getmany(("spam", "eggs1", None), ("ham", "eggs3", None)) == (42, "antigravity")
 
 
-def test_get_location(tmp_path, preferences):
-    path = tmp_path / "preferences2"
-    preferences.set_location(path)
-    assert preferences.get_location() == path
-
-
-def test_set_location(tmp_path, preferences):
+def test_set_path(tmp_path, preferences):
     preferences.set("spam", "eggs", 42)
-    preferences.set_location(tmp_path / "preferences2")
-    assert preferences.get("spam", "eggs", 42) == 42
+
+    preferences.path = tmp_path / "preferences2.json"
+    assert preferences.get("spam", "eggs", 0) == 0
+
+    preferences.path = tmp_path / "preferences.json"
+    assert preferences.get("spam", "eggs", 0) == 42
