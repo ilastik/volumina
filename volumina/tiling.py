@@ -200,7 +200,7 @@ class Tiling(object):
     def intersected(self, sceneRect):
         if not sceneRect.isValid():
             return list(range(len(self.tileRects)))
-
+        sceneRect = sceneRect.normalized()
         # Patch accessor uses data coordinates
         rect = self.data2scene.inverted()[0].mapRect(sceneRect)
         patchNumbers = self._patchAccessor.getPatchesForRect(

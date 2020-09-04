@@ -38,10 +38,9 @@ class PositionModel(QObject):
     in the same way as would be possible by manipulating the
     viewer with a mouse.
     """
-
-    timeChanged = pyqtSignal(int)
-    channelChanged = pyqtSignal(int)
-    cursorPositionChanged = pyqtSignal(object, object)
+    timeChanged            = pyqtSignal(int)
+    channelChanged         = pyqtSignal(int)
+    cursorPositionChanged  = pyqtSignal(object, object)
     slicingPositionChanged = pyqtSignal(object, object)
     slicingPositionSettled = pyqtSignal(bool)
 

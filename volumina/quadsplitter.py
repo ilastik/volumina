@@ -270,8 +270,8 @@ class QuadView(QWidget):
     def setGrayScaleToQuadStatusBar(self, gray):
         self.quadViewStatusBar.setGrayScale(gray)
 
-    def setMouseCoordsToQuadStatusBar(self, x, y, z):
-        self.quadViewStatusBar.setMouseCoords(x, y, z)
+    def setLayerPosIfosToQuadStatusBar(self, x, y, z):
+        self.quadViewStatusBar.setMousePosInfos(x, y, z)
 
     def ensureMaximized(self, axis):
         """

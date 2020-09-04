@@ -379,6 +379,7 @@ class NavigationController(QObject):
     def changeTime(self, newTime):
         for i in range(3):
             self._imagePumps[i].syncedSliceSources.setThrough(0, newTime)
+        self._model.time = newTime
 
     def changeTimeRelative(self, delta):
         if self._model.shape5D is None or delta == 0:

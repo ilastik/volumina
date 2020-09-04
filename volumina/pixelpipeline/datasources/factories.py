@@ -24,6 +24,7 @@ from functools import singledispatch
 import numpy
 
 from .arraysource import ArraySource
+from .cachesource import CacheSource
 
 hasLazyflow = True
 try:
@@ -114,8 +115,16 @@ if hasLazyflow:
             return src
 
     @createDataSource.register(lazyflow.graph.OutputSlot)
+    def _lazyflow_out(slot, withShape=False):
+        if withShape:
+            src, shape = _createDataSourceLazyflow(slot, withShape)
+            return CacheSource(src), shape
+        else:
+            src = _createDataSourceLazyflow(slot, withShape)
+            return CacheSource(src)
+
     @createDataSource.register(lazyflow.graph.InputSlot)
-    def _lazyflow_ds(source, withShape=False):
+    def _lazyflow_in(source, withShape=False):
         return _createDataSourceLazyflow(source, withShape)
 
 
