@@ -82,6 +82,9 @@ class ColortableImageRequest(RequestABC):
     def wait(self):
         return self.toImage()
 
+    def cancel(self):
+        self._arrayreq.cancel()
+
     def toImage(self):
         t = time.time()
 

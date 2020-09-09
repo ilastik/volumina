@@ -37,6 +37,10 @@ class RequestABC(ABC):
     def wait(self):
         """waits until completion and returns result"""
 
+    @abstractmethod
+    def cancel(self):
+        ...
+
 
 class ImageSourceABC(QABC):
     """

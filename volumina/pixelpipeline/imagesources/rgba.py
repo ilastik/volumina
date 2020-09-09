@@ -67,6 +67,10 @@ class RGBAImageRequest(RequestABC):
             req.wait()
         return self.toImage()
 
+    def cancel(self):
+        for req in self._requests:
+            req.cancel()
+
     def toImage(self):
         for i, req in enumerate(self._requests):
             a = req.wait()

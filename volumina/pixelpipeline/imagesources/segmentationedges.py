@@ -64,6 +64,9 @@ class SegmentationEdgesItemRequest(RequestABC):
         self._layer = layer
         self._is_clickable = is_clickable
 
+    def cancel(self):
+        self._arrayreq.cancel()
+
     def wait(self):
         array_data = self._arrayreq.wait()
 

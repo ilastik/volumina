@@ -22,6 +22,9 @@ class MinMaxUpdateRequest(RequestABC):
 
         return self._result
 
+    def cancel(self):
+        self._rawRequest.cancel()
+
 
 class MinMaxSource(QObject, DataSourceABC):
     """
