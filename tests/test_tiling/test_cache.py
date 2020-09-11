@@ -46,16 +46,6 @@ class TestMultiCache:
         assert "mytestid2" in cache
         assert "mytestid3" in cache
 
-    def test_displace_eviction(self, cache, policy):
-        policy.set_size(2)
-        cache.add("mytestid1")
-        cache.add("mytestid2")
-        cache.add("mytestid3")
-
-        assert "mytestid1" not in cache
-        assert "mytestid2" in cache
-        assert "mytestid3" in cache
-
     def test_displace_eviction_touch(self, cache, policy):
         policy.set_size(2)
         cache.add("mytestid1")
