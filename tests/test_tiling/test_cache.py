@@ -61,9 +61,7 @@ class TestMultiCache:
         cache.add("mytestid1")
         cache.add("mytestid2")
 
-        keys = []
-        for key in cache:
-            keys.append(key)
+        keys = list(cache)
 
         assert ["testid", "mytestid1", "mytestid2"] == keys
 
