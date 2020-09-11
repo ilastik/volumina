@@ -48,7 +48,7 @@ class CachePolicy:
 
 class MultiCache:
     """
-    A utility class for caching items in a of a dict-of-dicts
+    A utility class for caching items in a dict-of-dicts
     """
 
     def __init__(self, first_uid, default_factory=lambda: None, policy=None):
