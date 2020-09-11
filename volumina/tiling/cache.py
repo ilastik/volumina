@@ -46,6 +46,10 @@ class CachePolicy:
             pass
 
 
+class MultiCacheException(Exception):
+    pass
+
+
 class MultiCache:
     """
     A utility class for caching items in a dict-of-dicts
@@ -63,7 +67,7 @@ class MultiCache:
             cache = defaultdict(self._default_factory)
             self._caches[uid] = cache
         else:
-            raise Exception("MultiCache.add: uid %s is already in use" % str(uid))
+            raise MultiCacheException("MultiCache.add: uid %s is already in use" % str(uid))
 
         # remove oldest cache, if necessary
         self._clean()
