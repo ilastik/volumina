@@ -1,7 +1,8 @@
+import collections
+import contextlib
 import threading
 import warnings
 import logging
-from collections import OrderedDict, defaultdict
 
 import numpy
 from PyQt5.QtWidgets import QGraphicsItem
@@ -39,15 +40,14 @@ class CachePolicy:
     def subscribe(self, fn):
         self._subsribers.append(fn)
 
-    def unsubsribe(self, fn):
-        try:
+    def unsubscribe(self, fn):
+        with contextlib.suppress(ValueError):
             self._subsribers.remove(fn)
-        except ValueError:
-            pass
 
 
-class MultiCacheException(Exception):
-    pass
+class DuplicateKeyError(RuntimeError):
+    def __init__(self, key):
+        super().__init__(f"Duplicate key {key}")
 
 
 class MultiCache:
@@ -55,19 +55,21 @@ class MultiCache:
     A utility class for caching items in a dict-of-dicts
     """
 
-    def __init__(self, first_uid, default_factory=lambda: None, policy=None):
+    def __init__(self, default_factory=lambda: None, policy=None):
+        if not policy:
+            raise ValueError("Cache policy should not be None")
+
         self._policy = policy
         self._policy.subscribe(self._clean)
-        self._caches = OrderedDict()
+        self._caches = collections.OrderedDict()
         self._default_factory = default_factory
-        self.add(first_uid)
 
     def add(self, uid) -> None:
         if uid not in self._caches:
-            cache = defaultdict(self._default_factory)
+            cache = collections.defaultdict(self._default_factory)
             self._caches[uid] = cache
         else:
-            raise MultiCacheException("MultiCache.add: uid %s is already in use" % str(uid))
+            raise DuplicateKeyError(str(uid))
 
         # remove oldest cache, if necessary
         self._clean()
@@ -85,6 +87,10 @@ class MultiCache:
         return len(self._caches)
 
     def touch(self, uid):
+        """
+        Move uid to the end of the eviction queue
+        A uid is ignored if it does not exist.
+        """
         self._caches.move_to_end(uid)
 
     @property
@@ -125,22 +131,27 @@ class TilesCache:
         self._maxstacks = maxstacks
         self._policy = CachePolicy(maxstacks)
 
-        kwargs = {"first_uid": first_stack_id, "policy": self._policy}
+        kwargs = {"policy": self._policy}
 
         # [stack_id][tile_id] -> QImage or QGraphicsItem
         self._tileCache = MultiCache(default_factory=lambda: (None, 0.0), **kwargs)
+        self._tileCache.add(first_stack_id)
 
         # [stack_id][tile_id] -> bool
         self._tileCacheDirty = MultiCache(default_factory=lambda: True, **kwargs)
+        self._tileCacheDirty.add(first_stack_id)
 
         # [stack_id][(ims, tile_id)] -> QImage or QGraphicsItem
         self._layerCache = MultiCache(**kwargs)
+        self._layerCache.add(first_stack_id)
 
         # [stack_id][(ims, tile_id)] -> bool
         self._layerCacheDirty = MultiCache(default_factory=lambda: True, **kwargs)
+        self._layerCacheDirty.add(first_stack_id)
 
         # [stack_id][(ims, tile_id)] -> float
         self._layerCacheTimestamp = MultiCache(default_factory=float, **kwargs)
+        self._layerCacheTimestamp.add(first_stack_id)
 
     @property
     def maxstacks(self):

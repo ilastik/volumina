@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from volumina.tiling.cache import MultiCache, TilesCache, CachePolicy
+from volumina.tiling.cache import MultiCache, TilesCache, CachePolicy, DuplicateKeyError
 
 
 class TestMultiCache:
@@ -12,14 +12,14 @@ class TestMultiCache:
 
     @pytest.fixture
     def cache(self, policy):
-        return MultiCache("testid", policy=policy)
+        return MultiCache(policy=policy)
 
     def test_creation(self, policy):
-        cache = MultiCache("testid", policy=policy)
+        cache = MultiCache(policy=policy)
 
     def test_uid_collision_raises(self, cache):
         cache.add("mytestid")
-        with pytest.raises(Exception):
+        with pytest.raises(DuplicateKeyError):
             cache.add("mytestid")
 
     def test_add_creates_entry_in_caches(self, cache):
@@ -63,7 +63,7 @@ class TestMultiCache:
 
         keys = list(cache)
 
-        assert ["testid", "mytestid1", "mytestid2"] == keys
+        assert ["mytestid1", "mytestid2"] == keys
 
 
 class TestCachePolicy:
