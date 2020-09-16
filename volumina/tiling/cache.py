@@ -3,6 +3,7 @@ import contextlib
 import threading
 import warnings
 import logging
+from typing import Any, Callable
 
 import numpy
 from PyQt5.QtWidgets import QGraphicsItem
@@ -55,10 +56,7 @@ class MultiCache:
     A utility class for caching items in a dict-of-dicts
     """
 
-    def __init__(self, default_factory=lambda: None, policy=None):
-        if not policy:
-            raise ValueError("Cache policy should not be None")
-
+    def __init__(self, policy: CachePolicy, default_factory: Callable[[], Any]=lambda: None) -> None:
         self._policy = policy
         self._policy.subscribe(self._clean)
         self._caches = collections.OrderedDict()
