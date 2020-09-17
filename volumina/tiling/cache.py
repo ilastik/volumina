@@ -56,7 +56,7 @@ class MultiCache:
     A utility class for caching items in a dict-of-dicts
     """
 
-    def __init__(self, policy: CachePolicy, default_factory: Callable[[], Any]=lambda: None) -> None:
+    def __init__(self, policy: CachePolicy, default_factory: Callable[[], Any] = lambda: None) -> None:
         self._policy = policy
         self._policy.subscribe(self._clean)
         self._caches = collections.OrderedDict()
