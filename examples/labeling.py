@@ -37,6 +37,6 @@ v.layerstack.append(label_layer)
 v.editor.setLabelSink(label_src)
 v.editor.setInteractionMode("brushing")
 
-v.setWindowTitle("streaming viewer")
+v.setWindowTitle("labeling")
 v.showMaximized()
 app.exec_()
