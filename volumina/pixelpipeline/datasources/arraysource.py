@@ -67,7 +67,9 @@ class ArraySource(QObject, DataSourceABC):
 
 
 class ArraySinkSource(ArraySource):
-    def put(self, slicing, subarray, neutral=0):
+    eraser_value = None
+
+    def put(self, slicing, subarray):
         """Make an update of the wrapped arrays content.
 
         Elements with neutral value in the subarray are not written into the
@@ -77,7 +79,7 @@ class ArraySinkSource(ArraySource):
         assert len(slicing) == len(
             self._array.shape
         ), "slicing into an array of shape=%r requested, but the slicing object is %r" % (slicing, self._array.shape)
-        self._array[slicing] = np.where(subarray != neutral, subarray, self._array[slicing])
+        self._array[slicing] = subarray
         pure = index2slice(slicing)
         self.setDirty(pure)
 
