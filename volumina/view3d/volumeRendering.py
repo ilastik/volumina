@@ -93,7 +93,7 @@ class RenderingManager(object):
 
         new_labels = set(numpy.unique(self._volume))
         new_names = set(filter(None, (self._mapping.get(label) for label in new_labels)))
-        old_names = self._overview_scene.visible_objects
+        old_names = self._overview_scene.get_visible_objects()
         for name in old_names - new_names:
             self._overview_scene.remove_object(name)
 

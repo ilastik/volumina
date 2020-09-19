@@ -70,10 +70,7 @@ class Overview3D(QWidget):
         """
         self._view.shape = self._adjust_axes(*shape)
 
-    shape = property(fset=set_shape)
-
-    @property
-    def slice(self):
+    def get_slice(self):
         """
         Get the current slice from the 3d view.
 
@@ -81,8 +78,7 @@ class Overview3D(QWidget):
         """
         return self._adjust_axes(*self._view.slice)
 
-    @slice.setter
-    def slice(self, slice_):
+    def set_slice(self, slice_):
         """
         Set the current slice for the 3d view.
 
@@ -125,8 +121,7 @@ class Overview3D(QWidget):
         """
         return self._view.is_cached(name)
 
-    @property
-    def visible_objects(self):
+    def get_visible_objects(self):
         """
         Get the label of all currently visible objects in the 3d view.
 
