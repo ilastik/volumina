@@ -17,7 +17,7 @@ class PipelineCfg:
 
 @pytest.fixture
 def verbose_pipeline():
-    patcher = mock.patch.object(imsrc, "CONFIG", new_callable=lambda: PipelineCfg(verbose=True))
+    patcher = mock.patch("volumina.config.CONFIG", new_callable=lambda: PipelineCfg(verbose=True))
     patcher.start()
     yield
     patcher.stop()
@@ -25,7 +25,7 @@ def verbose_pipeline():
 
 @pytest.fixture
 def nonverbose_pipeline():
-    patcher = mock.patch.object(imsrc, "CONFIG", new_callable=lambda: PipelineCfg(verbose=False))
+    patcher = mock.patch("volumina.config.CONFIG", new_callable=lambda: PipelineCfg(verbose=False))
     patcher.start()
     yield
     patcher.stop()

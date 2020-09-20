@@ -31,10 +31,9 @@ from PyQt5.QtGui import QImage, QColor
 from qimage2ndarray import gray2qimage, array2qimage, alpha_view, rgb_view, byte_view
 from volumina.pixelpipeline.interface import DataSourceABC, ImageSourceABC, PlanarSliceSourceABC, RequestABC
 from volumina.slicingtools import is_bounded, slicing2rect, rect2slicing, slicing2shape, is_pure_slicing
-from volumina.config import CONFIG
 from volumina.utility import execute_in_main_thread
 import numpy as np
-from ._base import ImageSource
+from ._base import ImageSource, log_request
 
 _has_vigra = True
 try:
@@ -44,24 +43,6 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
-
-
-def log_request(func):
-    @functools.wraps(func)
-    def _log_request(source: "ImageSource", qrect, *args, **kwargs):
-        if CONFIG.verbose_pixelpipeline:
-            logger.error(
-                "%s '%s' requests (x=%d, y=%d, w=%d, h=%d)",
-                type(source).__qualname__,
-                source.objectName(),
-                qrect.x(),
-                qrect.y(),
-                qrect.width(),
-                qrect.height(),
-            )
-        return func(source, qrect, *args, **kwargs)
-
-    return _log_request
 
 
 # *******************************************************************************
@@ -89,7 +70,7 @@ class GrayscaleImageSource(ImageSource):
         if hasattr(self._layer, "normalizeChanged"):
             self._layer.normalizeChanged.connect(lambda: self.setDirty((slice(None, None), slice(None, None))))
 
-    @log_request
+    @log_request(logger)
     def request(self, qrect, along_through=None):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
@@ -189,7 +170,7 @@ class AlphaModulatedImageSource(ImageSource):
 
         self._arraySource2D.isDirty.connect(self.setDirty)
 
-    @log_request
+    @log_request(logger)
     def request(self, qrect, along_through=None):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
@@ -298,7 +279,7 @@ class ColortableImageSource(ImageSource):
 
         self.isDirty.emit(QRect())  # empty rect == everything is dirty
 
-    @log_request
+    @log_request(logger)
     def request(self, qrect, along_through=None):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)
@@ -450,7 +431,7 @@ class RGBAImageSource(ImageSource):
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)
 
-    @log_request
+    @log_request(logger)
     def request(self, qrect, along_through=None):
         assert isinstance(qrect, QRect)
         s = rect2slicing(qrect)

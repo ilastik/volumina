@@ -1,8 +1,11 @@
+import functools
+
 from PyQt5.QtCore import QObject, QRect, pyqtSignal
 from PyQt5.QtGui import QImage
 
+from volumina import config
 from volumina.pixelpipeline.interface import ImageSourceABC
-from volumina.slicingtools import is_bounded, slicing2rect, is_pure_slicing
+from volumina.slicingtools import is_bounded, is_pure_slicing, slicing2rect
 
 
 class ImageSource(QObject, ImageSourceABC):
@@ -17,10 +20,10 @@ class ImageSource(QObject, ImageSourceABC):
     isDirty = pyqtSignal(QRect)
 
     def __init__(self, name, guarantees_opaqueness=False, parent=None, direct=False):
-        """ direct: whether this request will be computed synchronously in the GUI thread (direct=True)
-                    or whether the request will be put on a worker queue to be computed in a worker thread
-                    (direct=False).
-                    Only use direct=True if the layer's data will be immediately available"""
+        """direct: whether this request will be computed synchronously in the GUI thread (direct=True)
+        or whether the request will be put on a worker queue to be computed in a worker thread
+        (direct=False).
+        Only use direct=True if the layer's data will be immediately available"""
         super(ImageSource, self).__init__(parent=parent)
         self._opaque = guarantees_opaqueness
         self.direct = direct
@@ -63,3 +66,24 @@ class ImageSource(QObject, ImageSourceABC):
 
         """
         return self._opaque
+
+
+def log_request(logger):
+    def _log_request(func):
+        @functools.wraps(func)
+        def _wrapper(source: "ImageSource", qrect, *args, **kwargs):
+            if config.CONFIG.verbose_pixelpipeline:
+                logger.error(
+                    "%s '%s' requests (x=%d, y=%d, w=%d, h=%d)",
+                    type(source).__qualname__,
+                    source.objectName(),
+                    qrect.x(),
+                    qrect.y(),
+                    qrect.width(),
+                    qrect.height(),
+                )
+            return func(source, qrect, *args, **kwargs)
+
+        return _wrapper
+
+    return _log_request
