@@ -67,9 +67,13 @@ class LazyflowRequest(RequestABC):
     def wait(self):
         a = self._req.wait()
         assert isinstance(a, np.ndarray)
-        assert a.shape == self._shape, (
-            "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s"
-            % (self._objectName, self._shape, self._slicing, a.shape)
+        assert (
+            a.shape == self._shape
+        ), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (
+            self._objectName,
+            self._shape,
+            self._slicing,
+            a.shape,
         )
         return a
 
