@@ -285,8 +285,8 @@ class VolumeEditor(QObject):
             idx = self._undoStack.index()
             self._undoStack.setIndex(min(cap, idx + 1))
 
-        mgr.register("Ctrl+Z", ActionInfo("Actions", "Undo", "Undo last action", _undo, self.parent, None))
-        mgr.register("Ctrl+Y", ActionInfo("Actions", "Redo", "Redo last action", _redo, self.parent, None))
+        mgr.register("Ctrl+Z", ActionInfo("Labeling", "Undo", "Undo last action", _undo, self.parent, None))
+        mgr.register("Ctrl+Y", ActionInfo("Labeling", "Redo", "Redo last action", _redo, self.parent, None))
 
     def _initImagePumps(self):
         alongTXC = SliceProjection(abscissa=2, ordinate=3, along=[0, 1, 4])
