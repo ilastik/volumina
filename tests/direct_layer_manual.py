@@ -46,7 +46,7 @@ gname = args[0][x + 4 :]
 
 # load data
 f = h5py.File(fname, "r")
-raw = f[gname].value.squeeze()
+raw = f[gname][()].squeeze()
 assert raw.ndim == 3
 assert raw.dtype == numpy.uint8
 f.close()
