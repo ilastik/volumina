@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor, QPen
 from itertools import count
 
 from volumina import layer
-from volumina.pixelpipeline.datasources import DataSourceABC
+from volumina.pixelpipeline.interface import DataSourceABC, PlanarSliceSourceABC
 from volumina.pixelpipeline import imagesources as imsrc
 
 
@@ -22,7 +22,12 @@ def src():
 
 
 @pytest.fixture(scope="function")
-def layer_obj(request, src):
+def planar_src():
+    return mock.Mock(spec=PlanarSliceSourceABC)
+
+
+@pytest.fixture(scope="function")
+def layer_obj(request, src, planar_src):
     layer_cls = request.param
     if issubclass(layer_cls, layer.ColortableLayer):
         l = layer_cls(src, colorTable=[QColor(0, 0, 0, 0).rgba(), QColor(255, 0, 0).rgba()])
@@ -48,8 +53,8 @@ def layer_obj(request, src):
     ],
     indirect=["layer_obj"],
 )
-def test_create_image_source_returns_correct_type(src, layer_obj, expected_source_cls):
-    new_src = layer_obj.createImageSource([src])
+def test_create_image_source_returns_correct_type(src, planar_src, layer_obj, expected_source_cls):
+    new_src = layer_obj.createImageSource([planar_src])
 
     assert isinstance(new_src, expected_source_cls)
 
@@ -57,17 +62,17 @@ def test_create_image_source_returns_correct_type(src, layer_obj, expected_sourc
 @pytest.mark.parametrize(
     "layer_obj", [layer.AlphaModulatedLayer, layer.GrayscaleLayer, layer.ColortableLayer], indirect=["layer_obj"]
 )
-def test_reacts_on_name_change(src, layer_obj):
-    new_src = layer_obj.createImageSource([src])
+def test_reacts_on_name_change(planar_src, layer_obj):
+    new_src = layer_obj.createImageSource([planar_src])
     assert new_src.objectName() == layer_obj.name
 
     layer_obj.name = "newName"
     assert new_src.objectName() == "newName"
 
 
-def test_create_rgba_sourse(src):
+def test_create_rgba_sourse(src, planar_src):
     layer_obj = layer.RGBALayer(src, src, src, src)
-    new_src = layer_obj.createImageSource([src, src, src, src])
+    new_src = layer_obj.createImageSource([planar_src, planar_src, planar_src, planar_src])
     assert isinstance(new_src, imsrc.RGBAImageSource)
 
     assert new_src.objectName() == layer_obj.name
