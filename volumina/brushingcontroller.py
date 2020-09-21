@@ -37,6 +37,7 @@ class DrawLabelCommand(QUndoCommand):
     def __init__(self, parent=None, *, sink, slicing, old_data, labels):
         super().__init__(parent)
         self.__old_data = old_data
+        # 0 value is special in labels array. It means there is no data
         self.__labels = labels
         self.__slicing = slicing
         self.__sink = sink
