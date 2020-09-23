@@ -21,10 +21,11 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
+import numpy
 from functools import partial
 from PyQt5.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
 from PyQt5.QtGui import QPen, QBrush, QMouseEvent
-from PyQt5.QtWidgets import QApplication, QGraphicsLineItem
+from PyQt5.QtWidgets import QApplication, QGraphicsLineItem, QUndoStack, QUndoCommand
 
 from volumina.eventswitch import InterpreterABC
 from .navigationController import NavigationInterpreter
@@ -32,6 +33,29 @@ from .navigationController import NavigationInterpreter
 # *******************************************************************************
 # C r o s s h a i r C o n t r o l e r                                          *
 # *******************************************************************************
+class DrawLabelCommand(QUndoCommand):
+    def __init__(self, parent=None, *, sink, slicing, old_data, labels):
+        super().__init__(parent)
+        self.__old_data = old_data
+        # 0 value is special in labels array. It means there is no data
+        self.__labels = labels
+        self.__slicing = slicing
+        self.__sink = sink
+
+    def redo(self):
+        redo_data = numpy.where(self.__labels != 0, self.__labels, self.__old_data)
+        redo_data = redo_data.astype(self.__labels.dtype)
+        self.__sink.put(self.__slicing, redo_data)
+
+    def undo(self):
+        undo_data = self.__old_data
+
+        if self.__sink.eraser_value is not None:
+            erase = numpy.where(self.__labels != 0, self.__sink.eraser_value, 0)  # What to do to erase new label fully
+            undo_data = numpy.where(self.__old_data, self.__old_data, erase)
+
+        undo_data = undo_data.astype(self.__labels.dtype)
+        self.__sink.put(self.__slicing, undo_data)
 
 
 class CrosshairController(QObject):
@@ -267,9 +291,10 @@ class BrushingInterpreter(QObject, InterpreterABC):
 class BrushingController(QObject):
     wroteToSink = pyqtSignal()
 
-    def __init__(self, brushingModel, positionModel, dataSink):
+    def __init__(self, brushingModel, positionModel, dataSink, *, undoStack):
         QObject.__init__(self, parent=None)
         self._dataSink = dataSink
+        self._undoStack = undoStack
 
         self._brushingModel = brushingModel
         self._brushingModel.brushStrokeAvailable.connect(self._writeIntoSink)
@@ -312,5 +337,11 @@ class BrushingController(QObject):
 
         # newlabels = numpy.zeros
         if self._dataSink != None:
-            self._dataSink.put(slicing, labels.reshape(tuple(newshape)))
+            new_labels = labels.reshape(tuple(newshape))
+            # Assuming ownership of the data, in case of array sink will be overwritten
+            old_data = self._dataSink.request(slicing).wait().copy()
+
+            cmd = DrawLabelCommand(sink=self._dataSink, slicing=slicing, old_data=old_data, labels=new_labels)
+
+            self._undoStack.push(cmd)
             self.wroteToSink.emit()
