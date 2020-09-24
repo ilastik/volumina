@@ -82,6 +82,7 @@ class Preferences:
             return {}
 
     def write(self, data):
+        os.makedirs(self.path.parent, exist_ok=True)
         with open(self.path, "w") as f:
             json.dump(data, f, indent=2, sort_keys=True)
 
