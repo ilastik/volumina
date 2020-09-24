@@ -58,7 +58,7 @@ class Preferences:
 
     def getmany(self, *args: Tuple[str, str, Any]) -> Tuple:
         with self._lock:
-            data = self._read()
+            data = self.read()
             result = []
             for group, setting, default in args:
                 try:
@@ -69,21 +69,36 @@ class Preferences:
 
     def setmany(self, *args: Tuple[str, str, Any]) -> None:
         with self._lock:
-            data = self._read()
+            data = self.read()
             for group, setting, value in args:
                 data.setdefault(group, {})[setting] = value
-            self._write(data)
+            self.write(data)
 
-    def _read(self):
+    def read(self):
         try:
             with open(self.path) as f:
                 return json.load(f)
         except FileNotFoundError:
             return {}
 
-    def _write(self, data):
+    def write(self, data):
         with open(self.path, "w") as f:
             json.dump(data, f, indent=2, sort_keys=True)
+
+    def migrate(self, old_path):
+        if not old_path.exists():
+            return
+
+        import pickle
+
+        try:
+            with open(old_path, "rb") as f:
+                old_preferences = pickle.load(f)
+        except Exception:
+            return
+
+        old_path.unlink()
+        self.write(old_preferences)
 
 
 _preferences = Preferences(
@@ -142,3 +157,7 @@ def get_path() -> pathlib.Path:
 
 def set_path(path: Union[str, bytes, os.PathLike]) -> None:
     _preferences.path = path
+
+
+def migrate(old_path=pathlib.Path.home() / ".ilastik_preferences"):
+    _preferences.migrate(old_path)

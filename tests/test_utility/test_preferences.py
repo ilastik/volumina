@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 from volumina.utility.preferences import Preferences
 
@@ -29,3 +31,29 @@ def test_set_path(tmp_path, preferences):
 
     preferences.path = tmp_path / "preferences.json"
     assert preferences.get("spam", "eggs", 0) == 42
+
+
+def test_migrate(tmp_path, preferences):
+    data = {"s1": {"k1": "spam"}, "s2": {"k2": 42, "k3": True, "k4": 0.42, "k5": None}}
+
+    old_path = tmp_path / "old_preferences.pickle"
+    with open(old_path, "wb") as f:
+        pickle.dump(data, f)
+
+    preferences.migrate(old_path)
+
+    assert not old_path.exists()
+
+    m = type("Missing", (), {"__repr__": lambda _self: "<missing>"})()
+    keys = ("s1", "k1", m), ("s2", "k2", m), ("s2", "k3", m), ("s2", "k4", m), ("s2", "k5", m)
+    assert preferences.getmany(*keys) == ("spam", 42, True, 0.42, None)
+
+
+def test_migrate_noop(tmp_path, preferences):
+    old_path = tmp_path / "old_preferences.pickle"
+    old_path.touch()
+
+    preferences.migrate(old_path)
+
+    assert old_path.exists()
+    assert not preferences.read()
