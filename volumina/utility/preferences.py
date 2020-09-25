@@ -153,12 +153,29 @@ def setmany(*args: Tuple[str, str, Any]) -> None:
 
 
 def get_path() -> pathlib.Path:
+    """Return path to the preferences file.
+
+    See Also:
+        :func:`set_path`.
+    """
     return _preferences.path
 
 
 def set_path(path: Union[str, bytes, os.PathLike]) -> None:
+    """Assign a new path to the preferences file.
+
+    The old file will be kept intact.
+
+    See Also:
+        :func:`get_path`.
+    """
     _preferences.path = path
 
 
 def migrate(old_path=pathlib.Path.home() / ".ilastik_preferences"):
+    """Migrate from the old pickle-based preferences file format."
+
+    Load data from the old preferences file, remove the old file
+    from disk, and write the loaded data to the new JSON format.
+    """
     _preferences.migrate(old_path)
