@@ -59,7 +59,7 @@ ShaderProgram(
 def labeling_to_mesh(labeling, labels):
 
     for label in labels:
-        vertices, normals, faces = march(where(labeling == label, 2, 0).astype(int).T, 4)
+        vertices, normals, faces = march(where(labeling == label, 2, 0).astype(int).T, 3)
         data = MeshData(vertices, faces)
         if normals is not None:
             data._vertexNormals = normals
