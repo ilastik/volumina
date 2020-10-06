@@ -19,10 +19,10 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-# Python
 from os import path
+from typing import Tuple
+from numbers import Number
 
-# PyQt
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QButtonGroup
@@ -82,6 +82,9 @@ class ThresholdingWidget(QWidget):
         self._maxSlider.setValue(maximum)
         self._minSpin.setValue(minimum)
         self._maxSpin.setValue(maximum)
+
+    def getRange(self) -> Tuple[Number, Number]:
+        return (self._minSpin.value(), self._maxSpin.value())
 
 
 # ===----------------------------------------------------------------------------------------------------------------===

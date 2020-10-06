@@ -38,13 +38,8 @@ from functools import partial
 from collections import defaultdict
 
 import sys
-
-if sys.version_info.major > 2:
-    unicode = str
-
-# *******************************************************************************
-# L a y e r                                                                    *
-# *******************************************************************************
+from numbers import Number
+from typing import Tuple
 
 
 class Layer(QObject):
@@ -53,7 +48,7 @@ class Layer(QObject):
     datasources -- list of ArraySourceABC; read-only
     visible -- boolean
     opacity -- float; range 0.0 - 1.0
-    name -- unicode
+    name -- str
     numberOfChannels -- int
     layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
     """
@@ -64,7 +59,7 @@ class Layer(QObject):
 
     visibleChanged = pyqtSignal(bool)
     opacityChanged = pyqtSignal(float)
-    nameChanged = pyqtSignal(object)  # sends a python str object, not unicode!
+    nameChanged = pyqtSignal(object)
     channelChanged = pyqtSignal(int)
     numberOfChannelsChanged = pyqtSignal(int)
 
@@ -103,7 +98,7 @@ class Layer(QObject):
 
     @name.setter
     def name(self, n):
-        assert isinstance(n, unicode)
+        assert isinstance(n, str)
         if self._name != n:
             self._name = n
             self.nameChanged.emit(n)
@@ -239,11 +234,6 @@ class Layer(QObject):
         self._cleaned_up = True
 
 
-# *******************************************************************************
-# C l i c k a b l e L a y e r                                                  *
-# *******************************************************************************
-
-
 class ClickableLayer(Layer):
     """A layer that, when being activated/selected, switches to an interpreter than can intercept
        right click events"""
@@ -259,11 +249,6 @@ class ClickableLayer(Layer):
             self._editor.eventSwitch.interpreter = self._clickInterpreter
         else:
             self._editor.eventSwitch.interpreter = self._inactiveInterpreter
-
-
-# *******************************************************************************
-# N o r m a l i z a b l e L a y e r                                            *
-# *******************************************************************************
 
 
 def dtype_to_range(dsource):
@@ -296,27 +281,6 @@ class NormalizableLayer(Layer):
 
     normalizeChanged = pyqtSignal()
 
-    """
-    int -- datasource index
-    int -- minimum
-    int -- maximum
-    """
-    rangeChanged = pyqtSignal(int, int, int)
-
-    @property
-    def range(self):
-        return self._range
-
-    def set_range(self, datasourceIdx, value):
-        """
-        value -- (rmin, rmax)
-        """
-        if value is not None:
-            self._range[datasourceIdx] = value
-        else:
-            value = self._range[datasourceIdx] = dtype_to_range(self._datasources[datasourceIdx])
-        self.rangeChanged.emit(datasourceIdx, value[0], value[1])
-
     @property
     def normalize(self):
         return self._normalize
@@ -330,24 +294,30 @@ class NormalizableLayer(Layer):
             return
 
         if value is None:
-            value = self._datasources[datasourceIdx]._bounds
+            value = self.get_datasource_default_range(datasourceIdx)
             self._autoMinMax[datasourceIdx] = True
         else:
             self._autoMinMax[datasourceIdx] = False
         self._normalize[datasourceIdx] = value
         self.normalizeChanged.emit()
 
-    def __init__(self, datasources, range=None, normalize=None, direct=False):
+    def get_datasource_default_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
+        return self._datasources[datasourceIdx]._bounds
+
+    def get_datasource_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
+        if isinstance(self._normalize[datasourceIdx], tuple):
+            return self._normalize[datasourceIdx]
+        return self.get_datasource_default_range(datasourceIdx)
+
+    def __init__(self, datasources, normalize=None, direct=False):
         """
         datasources - a list of raw data sources
-        range - Not sure.  I think this parameter should be removed.
         normalize - If normalize is a tuple (dmin, dmax), the data is normalized from (dmin, dmax) to (0,255) before it is displayed.
                     If normalize=None, then (dmin, dmax) is automatically determined before normalization.
                     If normalize=False, then no normalization is applied before displaying the data.
 
         """
         self._normalize = []
-        self._range = []
         self._autoMinMax = []
         self._mmSources = []
 
@@ -366,15 +336,11 @@ class NormalizableLayer(Layer):
         for i, datasource in enumerate(self.datasources):
             if datasource is not None:
                 self._normalize.append(normalize)
-                self._range.append(range)
-                self.set_range(i, range)
                 self.set_normalize(i, normalize)
             else:
                 self._normalize.append((0, 1))
-                self._range.append((0, 1))
                 self._autoMinMax.append(True)
 
-        self.rangeChanged.connect(self.changed)
         self.normalizeChanged.connect(self.changed)
         self.channelChanged.connect(self._channel_changed)
 
@@ -392,11 +358,6 @@ class NormalizableLayer(Layer):
             mm.resetBounds()
 
 
-# *******************************************************************************
-# G r a y s c a l e L a y e r                                                  *
-# *******************************************************************************
-
-
 class GrayscaleLayer(NormalizableLayer):
     @property
     def window_leveling(self):
@@ -411,9 +372,9 @@ class GrayscaleLayer(NormalizableLayer):
             return True
         return self._window_leveling != other_layer._window_leveling
 
-    def __init__(self, datasource, range=None, normalize=None, direct=False, window_leveling=False):
+    def __init__(self, datasource, normalize=None, direct=False, window_leveling=False):
         assert isinstance(datasource, DataSourceABC)
-        super(GrayscaleLayer, self).__init__([datasource], range, normalize, direct=direct)
+        super().__init__([datasource], normalize, direct=direct)
         self._window_leveling = window_leveling
 
     def createImageSource(self, data_sources):
@@ -424,11 +385,6 @@ class GrayscaleLayer(NormalizableLayer):
         src.setObjectName(self.name)
         self.nameChanged.connect(lambda x: src.setObjectName(str(x)))
         return src
-
-
-# *******************************************************************************
-# A l p h a M o d u l a t e d L a y e r                                        *
-# *******************************************************************************
 
 
 class AlphaModulatedLayer(NormalizableLayer):
@@ -444,9 +400,9 @@ class AlphaModulatedLayer(NormalizableLayer):
             self._tintColor = c
             self.tintColorChanged.emit()
 
-    def __init__(self, datasource, tintColor=QColor(255, 0, 0), range=(0, 255), normalize=None):
+    def __init__(self, datasource, tintColor=QColor(255, 0, 0), normalize=None):
         assert isinstance(datasource, DataSourceABC)
-        super(AlphaModulatedLayer, self).__init__([datasource], range, normalize)
+        super().__init__([datasource], normalize=normalize)
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
 
@@ -460,11 +416,6 @@ class AlphaModulatedLayer(NormalizableLayer):
         self.nameChanged.connect(lambda x: src.setObjectName(str(x)))
         self.tintColorChanged.connect(lambda: src.setDirty((slice(None, None), slice(None, None))))
         return src
-
-
-# *******************************************************************************
-# C o l o r t a b l e L a y e r                                                *
-# *******************************************************************************
 
 
 def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=False):
@@ -532,8 +483,7 @@ class ColortableLayer(NormalizableLayer):
 
         if normalize is "auto":
             normalize = None
-        range = (0, len(colorTable) - 1)
-        super(ColortableLayer, self).__init__([datasource], range=range, normalize=normalize, direct=direct)
+        super().__init__([datasource], normalize=normalize, direct=direct)
         self.data = datasource
         self._colorTable = colorTable
 
@@ -576,11 +526,6 @@ class ClickableColortableLayer(ClickableLayer):
         self.colorTable = generateRandomColors(len(self._colorTable), "hsv", {"v": 1.0}, True)
 
 
-# *******************************************************************************
-# R G B A L a y e r                                                            *
-# *******************************************************************************
-
-
 class RGBALayer(NormalizableLayer):
     channelIdx = {"red": 0, "green": 1, "blue": 2, "alpha": 3}
     channelName = {0: "red", 1: "green", 2: "blue", 3: "alpha"}
@@ -601,7 +546,6 @@ class RGBALayer(NormalizableLayer):
         alpha=None,
         color_missing_value=0,
         alpha_missing_value=255,
-        range=(None,) * 4,
         normalizeR=None,
         normalizeG=None,
         normalizeB=None,
