@@ -1,3 +1,4 @@
+image: Visual Studio 2017
 clone_folder: c:\projects\volumina
 
 environment:
@@ -7,7 +8,7 @@ environment:
 
 install:
   - set "PATH=%MINICONDA%;%MINICONDA%\Scripts;%MINICONDA%\Library\bin;%PATH%
-  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set always_yes yes --set changeps1 no --set channel_priority strict
   - conda update -q conda
   - conda install -c conda-forge conda-build
   - cd \
@@ -21,7 +22,7 @@ install:
   # replace with whatever version of volumina triggered the appveyor
   - ps: cp -recurse C:\projects\volumina c:\ilastik\ilastik-meta\volumina
   - timeout 10
-  - python ilastik/scripts/devenv.py create -n %ENV_NAME% -c ilastik-forge conda-forge -p ilastik-dependencies-no-solvers
+  - python ilastik/scripts/devenv.py create -n %ENV_NAME% -c ilastik-forge conda-forge defaults -p ilastik-dependencies-no-solvers
 
 build: off
 
