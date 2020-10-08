@@ -73,7 +73,7 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
     assert src._op5.Output.meta.shape == expected_shape
 
     outsrc = ds.createDataSource(lazyflow_op.Output)
-    assert isinstance(outsrc, ds.LazyflowSource)
+    assert isinstance(outsrc, ds.CacheSource)
     assert outsrc._op5.Output.meta.shape == expected_shape
 
     src_array = outsrc.request(np.s_[:, :, :, :, :]).wait()
