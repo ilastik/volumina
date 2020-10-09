@@ -47,12 +47,14 @@ class TestKVCache:
         t = weakref.WeakValueDictionary()
 
         for idx in range(10):
-            val = np.arange(200)
+            val = np.arange(200, dtype=np.int64)
             t[f"key{idx}"] = val
             cache[f"key{idx}"] = val
 
-        assert "key1" not in cache
-        assert "key2" not in cache
+        ev_msg = f"Expected eviction. Size of entry {sys.getsizeof(np.arange(200))}"
+
+        assert "key1" not in cache, ev_msg
+        assert "key2" not in cache, ev_msg
         assert "key9" in cache
 
         assert "key1" not in t

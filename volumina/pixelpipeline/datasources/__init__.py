@@ -39,6 +39,9 @@ __all__ = [
 try:
     from .lazyflowsource import LazyflowSource, LazyflowSinkSource
 
-    __all__ += ["LazyflowSource", "LazyflowSinkSource"]
+    __all__ += ["LazyflowSource", "LazyflowSinkSource", "CacheSource"]
+    from .cachesource import CacheSource
+
+    __all__ += ["CacheSource"]
 except ImportError:
     pass
