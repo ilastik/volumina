@@ -33,12 +33,11 @@ class _Request:
             with self._cached_source._lock:
                 try:
                     self._cached_source._cache[self._key] = cached_copy
-                except Exception:
+                except ValueError:
                     logger.warning(
                         "Value too large, skipping cache; cache_size: %s, value size: %s",
                         self._cached_source._cache.maxsize,
                         self._cached_source._cache.getsizeof(cached_copy),
-                        exc_info=1,
                     )
                 finally:
                     self._cached_source._req.pop(self._key, None)
