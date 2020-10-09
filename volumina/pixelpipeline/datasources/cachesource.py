@@ -38,6 +38,7 @@ class _Request:
                         "Value too large, skipping cache; cache_size: %s, value size: %s",
                         CONFIG.cache_size,
                         sys.getsizeof(cached_copy),
+                        exc_info=1,
                     )
                 finally:
                     self._cached_source._req.pop(self._key, None)
