@@ -67,7 +67,9 @@ class ArraySource(QObject, DataSourceABC):
 
 
 class ArraySinkSource(ArraySource):
-    def put(self, slicing, subarray, neutral=0):
+    eraser_value = None
+
+    def put(self, slicing, subarray):
         """Make an update of the wrapped arrays content.
 
         Elements with neutral value in the subarray are not written into the
@@ -77,14 +79,14 @@ class ArraySinkSource(ArraySource):
         assert len(slicing) == len(
             self._array.shape
         ), "slicing into an array of shape=%r requested, but the slicing object is %r" % (slicing, self._array.shape)
-        self._array[slicing] = np.where(subarray != neutral, subarray, self._array[slicing])
+        self._array[slicing] = subarray
         pure = index2slice(slicing)
         self.setDirty(pure)
 
 
 class RelabelingArraySource(ArraySource):
     """Applies a relabeling to each request before passing it on
-       Currently, it casts everything to uint8, so be careful."""
+    Currently, it casts everything to uint8, so be careful."""
 
     isDirty = pyqtSignal(object)
 
@@ -95,7 +97,7 @@ class RelabelingArraySource(ArraySource):
 
     def setRelabeling(self, relabeling):
         """Sets new relabeling vector. It should have a len(relabling) == max(your data)+1
-           and give, for each possible data value x, the relabling as relabeling[x]."""
+        and give, for each possible data value x, the relabling as relabeling[x]."""
         assert relabeling.dtype == self._array.dtype, "relabeling.dtype=%r != self._array.dtype=%r" % (
             relabeling.dtype,
             self._array.dtype,
@@ -109,10 +111,10 @@ class RelabelingArraySource(ArraySource):
 
     def setRelabelingEntry(self, index, value, setDirty=True):
         """Sets the entry for data value index to value, such that afterwards
-           relabeling[index] =  value.
+        relabeling[index] =  value.
 
-           If setDirty is true, the source will signal dirtyness. If you plan to issue many calls to this function
-           in a loop, setDirty to true only on the last call."""
+        If setDirty is true, the source will signal dirtyness. If you plan to issue many calls to this function
+        in a loop, setDirty to true only on the last call."""
         self._relabeling[index] = value
         if setDirty:
             self.setDirty(5 * (slice(None),))

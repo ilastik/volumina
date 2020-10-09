@@ -30,7 +30,7 @@ import numpy
 
 # PyQt
 from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QUndoStack
 
 # volumina
 import volumina.pixelpipeline.imagepump
@@ -44,6 +44,7 @@ from .brushingcontroller import BrushingInterpreter, BrushingController, Crossha
 from .thresholdingcontroller import ThresholdingInterpreter
 from .brushingmodel import BrushingModel
 from .slicingtools import SliceProjection
+from .utility import ShortcutManager
 
 import logging
 
@@ -161,6 +162,7 @@ class VolumeEditor(QObject):
         ##
         ## base components
         ##
+        self._undoStack = QUndoStack()
         self.layerStack = layerStackModel
         self.posModel = PositionModel(self)
         self.brushingModel = BrushingModel()
@@ -206,7 +208,9 @@ class VolumeEditor(QObject):
         # brushing control
         if crosshair:
             self.crosshairController = CrosshairController(self.brushingModel, self.imageViews)
-        self.brushingController = BrushingController(self.brushingModel, self.posModel, labelsink)
+        self.brushingController = BrushingController(
+            self.brushingModel, self.posModel, labelsink, undoStack=self._undoStack
+        )
         self.brushingInterpreter = BrushingInterpreter(self.navCtrl, self.brushingController)
 
         for v in self.imageViews:
@@ -229,6 +233,7 @@ class VolumeEditor(QObject):
 
         self.layerStack.layerAdded.connect(self._onLayerAdded)
         self.parent = parent
+        self._setUpShortcuts()
 
     def _reset(self):
         for s in self.imageScenes:
@@ -267,6 +272,22 @@ class VolumeEditor(QObject):
     ##
     ## private
     ##
+    def _setUpShortcuts(self):
+        mgr = ShortcutManager()
+        ActionInfo = ShortcutManager.ActionInfo
+
+        def _undo():
+            idx = self._undoStack.index()
+            self._undoStack.setIndex(idx - 1)
+
+        def _redo():
+            cap = self._undoStack.count()
+            idx = self._undoStack.index()
+            self._undoStack.setIndex(min(cap, idx + 1))
+
+        mgr.register("Ctrl+Z", ActionInfo("Labeling", "Undo", "Undo last action", _undo, self.parent, None))
+        mgr.register("Ctrl+Y", ActionInfo("Labeling", "Redo", "Redo last action", _redo, self.parent, None))
+
     def _initImagePumps(self):
         alongTXC = SliceProjection(abscissa=2, ordinate=3, along=[0, 1, 4])
         alongTYC = SliceProjection(abscissa=1, ordinate=3, along=[0, 2, 4])

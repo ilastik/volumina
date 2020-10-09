@@ -6,7 +6,6 @@ import numpy as np
 from numpy.random import rand
 from numpy.testing import assert_array_equal
 
-from volumina.pixelpipeline import datasourcefactories as factories
 from volumina.pixelpipeline import datasources as ds
 
 
@@ -69,12 +68,12 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
     array.axistags = vigra.defaultAxistags(dims)
     lazyflow_op.Input.setValue(array)
 
-    src = factories.createDataSource(lazyflow_op.Input)
+    src = ds.createDataSource(lazyflow_op.Input)
     assert isinstance(src, ds.LazyflowSource)
     assert src._op5.Output.meta.shape == expected_shape
 
-    outsrc = factories.createDataSource(lazyflow_op.Output)
-    assert isinstance(outsrc, ds.LazyflowSource)
+    outsrc = ds.createDataSource(lazyflow_op.Output)
+    assert isinstance(outsrc, ds.CacheSource)
     assert outsrc._op5.Output.meta.shape == expected_shape
 
     src_array = outsrc.request(np.s_[:, :, :, :, :]).wait()
@@ -100,7 +99,7 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
 def test_array_untagged_shape_embedding(make_source, shape, expected_shape):
     array = make_source(shape)
 
-    source, src_shape = factories.createDataSource(array, True)
+    source, src_shape = ds.createDataSource(array, True)
 
     assert isinstance(source, ds.ArraySource)
     assert np.squeeze(np.ndarray(source._array.shape)).shape == array.shape

@@ -7,7 +7,7 @@ import pytest
 
 from PyQt5.QtCore import QRect
 from volumina.pixelpipeline import imagesources as imsrc
-from volumina.pixelpipeline.interface import ImageSourceABC
+from volumina.pixelpipeline.interface import ImageSourceABC, PlanarSliceSourceABC
 
 
 class PipelineCfg:
@@ -17,7 +17,7 @@ class PipelineCfg:
 
 @pytest.fixture
 def verbose_pipeline():
-    patcher = mock.patch.object(imsrc, "CONFIG", new_callable=lambda: PipelineCfg(verbose=True))
+    patcher = mock.patch("volumina.config.CONFIG", new_callable=lambda: PipelineCfg(verbose=True))
     patcher.start()
     yield
     patcher.stop()
@@ -25,7 +25,7 @@ def verbose_pipeline():
 
 @pytest.fixture
 def nonverbose_pipeline():
-    patcher = mock.patch.object(imsrc, "CONFIG", new_callable=lambda: PipelineCfg(verbose=False))
+    patcher = mock.patch("volumina.config.CONFIG", new_callable=lambda: PipelineCfg(verbose=False))
     patcher.start()
     yield
     patcher.stop()
@@ -34,7 +34,7 @@ def nonverbose_pipeline():
 @pytest.fixture(scope="function")
 def img_source(request):
     cls = request.param
-    src = mock.MagicMock(spec=ImageSourceABC)
+    src = mock.MagicMock(spec=PlanarSliceSourceABC)
     layer = mock.MagicMock()
 
     if issubclass(cls, (imsrc.GrayscaleImageSource, imsrc.AlphaModulatedImageSource)):

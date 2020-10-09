@@ -34,6 +34,8 @@ userConfig = os.path.expanduser("~/.voluminarc")
 if os.path.exists(userConfig):
     _cfg.read(userConfig)
 
+_256MB = 256 * 1024 * 1024
+
 
 class _Config:
     def __init__(self, cfg):
@@ -47,6 +49,10 @@ class _Config:
     @property
     def show_3d_widget(self):
         return self._get_boolean("volumina", "show_3d_widget")
+
+    @property
+    def cache_size(self):
+        return self._cfg.getint("volumina", "cache_size", fallback=_256MB)
 
     def _get_boolean(self, section: str, option: str) -> bool:
         val = self._env.get(f"{section.upper()}_{option.upper()}")

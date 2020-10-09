@@ -67,9 +67,13 @@ class LazyflowRequest(RequestABC):
     def wait(self):
         a = self._req.wait()
         assert isinstance(a, np.ndarray)
-        assert a.shape == self._shape, (
-            "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s"
-            % (self._objectName, self._shape, self._slicing, a.shape)
+        assert (
+            a.shape == self._shape
+        ), "LazyflowRequest.wait() [name=%s]: we requested shape %s (slicing: %s), but lazyflow delivered shape %s" % (
+            self._objectName,
+            self._shape,
+            self._slicing,
+            a.shape,
         )
         return a
 
@@ -179,14 +183,18 @@ class LazyflowSource(QObject, DataSourceABC):
 
 
 class LazyflowSinkSource(LazyflowSource):
-    def __init__(self, outslot, inslot, priority=0):
+    def __init__(self, outslot, inslot, priority=0, *, eraser_value=100):
         self._inputSlot = inslot
         self._priority = priority
-        LazyflowSource.__init__(self, outslot)
+        self._eraser_value = eraser_value
+        super().__init__(outslot)
+
+    @property
+    def eraser_value(self):
+        return self._eraser_value
 
     def put(self, slicing, array):
         assert _has_vigra, "Lazyflow SinkSource requires lazyflow and vigra."
-
         taggedArray = array.view(vigra.VigraArray)
         taggedArray.axistags = vigra.defaultAxistags("txyzc")
 
@@ -198,6 +206,7 @@ class LazyflowSinkSource(LazyflowSource):
         for k in inputKeys:
             if k in "txyzc":
                 transposedSlicing += (taggedSlicing[k],)
+
         self._inputSlot[transposedSlicing] = transposedArray.view(np.ndarray)
 
     def __eq__(self, other):
