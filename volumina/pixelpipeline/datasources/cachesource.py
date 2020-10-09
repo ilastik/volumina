@@ -37,7 +37,7 @@ class _Request:
                     logger.warning(
                         "Value too large, skipping cache; cache_size: %s, value size: %s",
                         CONFIG.cache_size,
-                        sys.getsizeof(cached_copy),
+                        self._cached_source._cache.getsizeof(cached_copy),
                         exc_info=1,
                     )
                 finally:
