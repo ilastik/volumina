@@ -51,8 +51,7 @@ class SlotMetaInfoDisplayWidget(QWidget):
             slot.notifyMetaChanged(self.update_labels)
         self.update_labels()
 
-    @property
-    def _labels(self) -> SlotMetaDisplayData:
+    def _get_labels(self) -> SlotMetaDisplayData:
         return SlotMetaDisplayData(
             shape=self._slot.meta.getOriginalShape(),
             axes=self._slot.meta.getOriginalAxisKeys(),
@@ -60,7 +59,7 @@ class SlotMetaInfoDisplayWidget(QWidget):
         )
 
     def update_labels(self, *args):
-        labels = self._labels if self._slot.ready() else SlotMetaDisplayData()
+        labels = self._get_labels() if self._slot.ready() else SlotMetaDisplayData()
         if not sip.isdeleted(self.shapeDisplay):
             self.shapeDisplay.setText(labels.shape)
             self.axisOrderDisplay.setText(labels.axes)
@@ -68,8 +67,7 @@ class SlotMetaInfoDisplayWidget(QWidget):
 
 
 class OutputSlotMetaInfoDisplayWidget(SlotMetaInfoDisplayWidget):
-    @property
-    def _labels(self):
+    def _get_labels(self):
         return SlotMetaDisplayData(
             shape=self._slot.meta.shape, axes=self._slot.meta.getAxisKeys(), dtype=self._slot.meta.dtype
         )
