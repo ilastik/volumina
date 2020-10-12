@@ -100,6 +100,12 @@ class Preferences:
         except Exception:
             return
 
+        try:
+            _ = json.dumps(old_preferences)
+        except Exception:
+            logger.warning("Encountered an exception on preferences import - skipping import.")
+            return
+
         self.write(old_preferences)
         old_path.unlink()
 
