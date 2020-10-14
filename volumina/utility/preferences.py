@@ -77,8 +77,8 @@ class Preferences:
 
     def read(self):
         try:
-            with self._lock, open(self.path) as f:
-                return json.load(f)
+            with self._lock:
+                return json.loads(self.path.read_text())
         except FileNotFoundError:
             return {}
         except Exception:
@@ -89,11 +89,13 @@ class Preferences:
         try:
             with self._lock:
                 os.makedirs(self.path.parent, exist_ok=True)
-                with open(self.path, "w") as f:
-                    json.dump(data, f, indent=2, sort_keys=True)
+                # Touch the file only after successful serialization
+                # in order to prevent existing file corruption.
+                self.path.write_text(json.dumps(data, indent=2, sort_keys=True))
             return True
         except Exception:
             logger.exception("Failed to write preferences to %s", self.path)
+            self.path.unlink()
             return False
 
     def migrate(self, old_path: Path) -> None:
