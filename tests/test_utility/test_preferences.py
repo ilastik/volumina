@@ -59,10 +59,7 @@ def test_migrate_noop(tmp_path, preferences):
     assert not preferences.read()
 
 
-def test_migrate_failure(tmp_path, preferences):
-    # TODO: these shortcuts should actually be imported!
-    # see https://github.com/ilastik/ilastik/issues/2323
-    # see https://github.com/ilastik/ilastik/issues/2322
+def test_migrate_shortcuts(tmp_path, preferences):
     data = {"Shortcut Preferences v2": {"all_shortcuts": {("Ilastik Shell", "shell next image"): "PgDown"}}}
 
     old_path = tmp_path / "old_preferences.pickle"
@@ -71,5 +68,5 @@ def test_migrate_failure(tmp_path, preferences):
 
     preferences.migrate(old_path)
 
-    key = ("Shortcut Preferences v2", "all_shortcuts")
-    assert preferences.get(*key) is None
+    shortcuts = [{"group": "Ilastik Shell", "name": "shell next image", "keyseq": "PgDown"}]
+    assert preferences.get("Shortcut Preferences v2", "all_shortcuts") == shortcuts
