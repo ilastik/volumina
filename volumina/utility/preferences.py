@@ -106,16 +106,15 @@ class Preferences:
         from volumina.utility import ShortcutManager as SM
 
         try:
-            with open(old_path, "rb") as f:
-                old_preferences = pickle.load(f)
-                # Old pickled preferences saved shortcuts as a dict
-                # with tuple keys, but JSON can only have string keys,
-                # so transform the old dict into the new format.
-                reversemap = old_preferences.get(SM.PreferencesGroup, {}).get(SM.PreferencesSetting, {})
-                if reversemap:
-                    old_preferences.setdefault(SM.PreferencesGroup, {})[SM.PreferencesSetting] = [
-                        {"group": group, "name": name, "keyseq": keyseq} for (group, name), keyseq in reversemap.items()
-                    ]
+            old_preferences = pickle.loads(old_path.read_bytes())
+            # Old pickled preferences saved shortcuts as a dict
+            # with tuple keys, but JSON can only have string keys,
+            # so transform the old dict into the new format.
+            reversemap = old_preferences.get(SM.PreferencesGroup, {}).get(SM.PreferencesSetting, {})
+            if reversemap:
+                old_preferences.setdefault(SM.PreferencesGroup, {})[SM.PreferencesSetting] = [
+                    {"group": group, "name": name, "keyseq": keyseq} for (group, name), keyseq in reversemap.items()
+                ]
         except Exception:
             logger.exception("Failed to read old preferences")
             return
