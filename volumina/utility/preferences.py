@@ -113,7 +113,7 @@ class Preferences:
                 # so transform the old dict into the new format.
                 reversemap = old_preferences.get(SM.PreferencesGroup, {}).get(SM.PreferencesSetting, {})
                 if reversemap:
-                    old_preferences[SM.PreferencesGroup][SM.PreferencesSetting] = [
+                    old_preferences.setdefault(SM.PreferencesGroup, {})[SM.PreferencesSetting] = [
                         {"group": group, "name": name, "keyseq": keyseq} for (group, name), keyseq in reversemap.items()
                     ]
         except Exception:
