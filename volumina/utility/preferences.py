@@ -78,7 +78,8 @@ class Preferences:
     def read(self):
         try:
             with self._lock:
-                return json.loads(self.path.read_text())
+                text = self.path.read_text()
+            return json.loads(text)
         except FileNotFoundError:
             return {}
         except Exception:
@@ -87,19 +88,17 @@ class Preferences:
 
     def write(self, data) -> bool:
         try:
+            text = json.dumps(data, indent=2, sort_keys=True)
             with self._lock:
                 os.makedirs(self.path.parent, exist_ok=True)
-                # Touch the file only after successful serialization
-                # in order to prevent existing file corruption.
-                self.path.write_text(json.dumps(data, indent=2, sort_keys=True))
+                self.path.write_text(text)
             return True
         except Exception:
             logger.exception("Failed to write preferences to %s", self.path)
-            self.path.unlink()
             return False
 
     def migrate(self, old_path: Path) -> None:
-        if not old_path.exists():
+        if self.path.exists() or not old_path.exists():
             return
 
         import pickle
@@ -119,8 +118,7 @@ class Preferences:
             logger.exception("Failed to read old preferences")
             return
 
-        if self.write(old_preferences):
-            old_path.unlink()
+        self.write(old_preferences)
 
 
 _preferences = Preferences(Path(appdirs.user_config_dir(appname="ilastik", appauthor=False)) / "preferences.json")
