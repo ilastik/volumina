@@ -43,7 +43,7 @@ class Preferences:
         self._lock = threading.RLock()
 
     @property
-    def path(self):
+    def path(self) -> Path:
         with self._lock:
             return self._path
 
@@ -77,37 +77,48 @@ class Preferences:
 
     def read(self):
         try:
-            with self._lock, open(self.path) as f:
-                return json.load(f)
+            with self._lock:
+                text = self.path.read_text()
+            return json.loads(text)
         except FileNotFoundError:
             return {}
+        except Exception:
+            logger.exception("Failed to read preferences from %s", self.path)
+            return {}
 
-    def write(self, data):
-        with self._lock:
-            os.makedirs(self.path.parent, exist_ok=True)
-            with open(self.path, "w") as f:
-                json.dump(data, f, indent=2, sort_keys=True)
+    def write(self, data) -> bool:
+        try:
+            text = json.dumps(data, indent=2, sort_keys=True)
+            with self._lock:
+                os.makedirs(self.path.parent, exist_ok=True)
+                self.path.write_text(text)
+            return True
+        except Exception:
+            logger.exception("Failed to write preferences to %s", self.path)
+            return False
 
-    def migrate(self, old_path):
-        if not old_path.exists():
+    def migrate(self, old_path: Path) -> None:
+        if self.path.exists() or not old_path.exists():
             return
 
         import pickle
+        from volumina.utility import ShortcutManager as SM
 
         try:
-            with open(old_path, "rb") as f:
-                old_preferences = pickle.load(f)
+            old_preferences = pickle.loads(old_path.read_bytes())
+            # Old pickled preferences saved shortcuts as a dict
+            # with tuple keys, but JSON can only have string keys,
+            # so transform the old dict into the new format.
+            reversemap = old_preferences.get(SM.PreferencesGroup, {}).get(SM.PreferencesSetting, {})
+            if reversemap:
+                old_preferences.setdefault(SM.PreferencesGroup, {})[SM.PreferencesSetting] = [
+                    {"group": group, "name": name, "keyseq": keyseq} for (group, name), keyseq in reversemap.items()
+                ]
         except Exception:
-            return
-
-        try:
-            _ = json.dumps(old_preferences)
-        except Exception:
-            logger.warning("Encountered an exception on preferences import - skipping import.")
+            logger.exception("Failed to read old preferences")
             return
 
         self.write(old_preferences)
-        old_path.unlink()
 
 
 _preferences = Preferences(Path(appdirs.user_config_dir(appname="ilastik", appauthor=False)) / "preferences.json")

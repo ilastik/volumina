@@ -1,18 +1,18 @@
-from __future__ import print_function
+import abc
 import collections
-from functools import partial
 import logging
-from future.utils import with_metaclass
-
-logger = logging.getLogger(__name__)
+from functools import partial
+from typing import Dict, Tuple
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QShortcut
 from PyQt5.QtGui import QKeySequence
 from volumina.utility import Singleton, preferences, getMainWindow
 
+logger = logging.getLogger(__name__)
 
-class ShortcutManager(with_metaclass(Singleton, object)):
+
+class ShortcutManager(metaclass=Singleton):
     """
     A singleton class that serves as a registry for all keyboard shortcuts in the app.
     All shortcuts should be configured using this class, not using the plain Qt shortcut API.
@@ -157,22 +157,19 @@ class ShortcutManager(with_metaclass(Singleton, object)):
         return new_action_info
 
     PreferencesGroup = "Shortcut Preferences v2"
+    PreferencesSetting = "all_shortcuts"
 
-    def store_to_preferences(self):
-        """
-        Immediately serialize the current set of shortcuts to the preferences file.
-        """
-        # Auto-save after we're done setting prefs
-        # Just save the entire shortcut dict as a single pickle value
-        reversemap = self.get_keyseq_reversemap(self._keyseq_target_actions)
-        preferences.set(self.PreferencesGroup, "all_shortcuts", reversemap)
+    def store_to_preferences(self) -> None:
+        shortcuts = [
+            {"group": group, "name": name, "keyseq": keyseq}
+            for keyseq, targets in self._keyseq_target_actions.items()
+            for group, name in targets
+        ]
+        preferences.set(self.PreferencesGroup, self.PreferencesSetting, shortcuts)
 
-    def _load_from_preferences(self):
-        """
-        Read previously-saved preferences file and return the dict of shortcut keys -> targets (a 'reversemap').
-        Called during initialization only.
-        """
-        return preferences.get(self.PreferencesGroup, "all_shortcuts", default={})
+    def _load_from_preferences(self) -> Dict[Tuple[str, str], str]:
+        shortcuts = preferences.get(self.PreferencesGroup, self.PreferencesSetting, default=[])
+        return {(s["group"], s["name"]): s["keyseq"] for s in shortcuts}
 
     def _add_global_shortcut_listener(self, keyseq):
         # Create a shortcut for this new key sequence
@@ -324,10 +321,7 @@ def _has_attributes(cls, attrs):
     return all(_has_attribute(cls, a) for a in attrs)
 
 
-import abc
-
-
-class ObjectWithToolTipABC(with_metaclass(abc.ABCMeta, object)):
+class ObjectWithToolTipABC(metaclass=abc.ABCMeta):
     """
     Defines an ABC for objects that have toolTip() and setToolTip() members.
     Note: All QWidgets already implement this ABC.
