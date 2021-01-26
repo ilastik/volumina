@@ -59,6 +59,9 @@ class DummyItemRequest(RequestABC):
         self.rect = rect
         self._arrayreq = arrayreq
 
+    def cancel(self):
+        self._arrayreq.cancel()
+
     def wait(self):
         array_data = self._arrayreq.wait()
         # Here's where we would do something with the data...
@@ -87,6 +90,9 @@ class DummyRasterRequest(RequestABC):
     def __init__(self, arrayreq, rect):
         self.rectf = QRectF(rect)
         self._arrayreq = arrayreq
+
+    def cancel(self):
+        self._arrayreq.cancel()
 
     def wait(self):
         array_data = self._arrayreq.wait()
