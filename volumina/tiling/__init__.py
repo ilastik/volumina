@@ -303,6 +303,8 @@ class TileProvider(QObject):
         while not finished:
             finished = True
             tiles = self.getTiles(rectF)
+            while self._current_requests:
+                time.sleep(0.01)
             for tile in tiles:
                 finished &= tile.progress >= 1.0
 
@@ -559,6 +561,8 @@ class TileProvider(QObject):
 
                 if stack_id == self._current_stack_id and cache is self._cache:
                     self.sceneRectChanged.emit(tile_rect)
+
+            self._current_requests.pop((stack_id[1], tile_nr), None)
         except BaseException:
             logger.debug("Failed to fetch layer tile", exc_info=True)
 
