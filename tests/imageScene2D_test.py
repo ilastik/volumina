@@ -60,7 +60,7 @@ class DirtyIndicatorTest(ut.TestCase):
         # during the while loops below;
         # if your computer is verrry slow and the fudge too small
         # the test will fail...
-        fudge = datetime.timedelta(milliseconds=50)
+        fudge = datetime.timedelta(milliseconds=100)
         d = DirtyIndicator(t, delay=delay)
 
         # make the image a little bit larger to accomodate the tile overlap
