@@ -39,7 +39,7 @@ import numpy
 # PyQt
 from PyQt5.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsItem
-from PyQt5.QtGui import QImage, QPainter, QTransform
+from PyQt5.QtGui import QImage, QPainter, QTransform, QColor
 
 # volumina
 from volumina.patchAccessor import PatchAccessor
@@ -413,7 +413,7 @@ class TileProvider(QObject):
                 try:
                     # Create the request object right now, from the main thread.
                     ims_req = ims.request(dataRect, stack_id[1])
-                    self._current_requests[(stack_id[1], tile_no)] = ims_req
+                    self._current_requests[(stack_id[1], ims, tile_no)] = ims_req
                 except IndeterminateRequestError:
                     # In ilastik, the viewer is still churning even as the user might be changing settings in the UI.
                     # Settings changes can cause 'slot not ready' errors during graph setup.
@@ -422,7 +422,7 @@ class TileProvider(QObject):
                     logger.debug("Failed to create layer tile request", exc_info=True)
                     continue
 
-                timestamp = time.time()
+                timestamp = time.monotonic()
                 fetch_fn = partial(
                     self._fetch_layer_tile, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache
                 )
@@ -458,6 +458,7 @@ class TileProvider(QObject):
         """
         qimg = None
         p = None
+
         for i, (visible, layerOpacity, layerImageSource) in enumerate(reversed(self._sims)):
             image_type = layerImageSource.image_type()
             if issubclass(image_type, QGraphicsItem):
@@ -561,8 +562,11 @@ class TileProvider(QObject):
 
                 if stack_id == self._current_stack_id and cache is self._cache:
                     self.sceneRectChanged.emit(tile_rect)
+            else:
+                ims_req.cancel()
 
-            self._current_requests.pop((stack_id[1], tile_nr), None)
+            self._current_requests.pop((stack_id[1], ims, tile_nr), None)
+
         except BaseException:
             logger.debug("Failed to fetch layer tile", exc_info=True)
 
