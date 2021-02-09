@@ -2,7 +2,11 @@ import pytest
 
 import numpy
 import re
-import vigra
+
+
+vigra = pytest.importorskip("vigra")
+_ = pytest.importorskip("lazyflow")
+
 
 from lazyflow.graph import Graph
 from lazyflow.operators.operators import OpArrayPiper

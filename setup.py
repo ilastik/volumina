@@ -23,12 +23,15 @@ from setuptools import setup
 
 packages = [
     "volumina",
+    "volumina._testing",
     "volumina.pixelpipeline",
+    "volumina.pixelpipeline.datasources",
+    "volumina.pixelpipeline.imagesources",
     "volumina.skeletons",
-    "volumina.widgets",
+    "volumina.tiling",
     "volumina.utility",
     "volumina.view3d",
-    "volumina._testing",
+    "volumina.widgets",
 ]
 
 package_data = {
@@ -39,10 +42,23 @@ package_data = {
 
 setup(
     name="volumina",
-    version="0.6a",
+    version="1.2",
     description="Volume Slicing and Editing",
     url="https://github.com/Ilastik/volumina",
     packages=packages,
     package_data=package_data,
-    setup_requires=["nose>=1.0"],
+    python_requires=">=3.7",
+    install_requires=[
+        "appdirs",
+        "cachetools",
+        "future",
+        "h5py",
+        "pyopengl",
+        "pyqt>=5.6",
+        "pyqtgraph",
+        "qimage2ndarray",
+        "typing_extensions",
+        "vigra",
+    ],
+    extras_require={"dev": ["pytest"]},
 )
