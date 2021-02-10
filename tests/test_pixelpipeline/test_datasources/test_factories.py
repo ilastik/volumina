@@ -35,7 +35,7 @@ def make_source(request):
         h5py = pytest.importorskip("h5py")
 
         def _make_source(shape):
-            f = h5py.File("file", driver="core", backing_store=False)
+            f = h5py.File("file", "w", driver="core", backing_store=False)
             data = f.create_dataset("ds", shape)
             data[:] = rand(*shape)
             return data
