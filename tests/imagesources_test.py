@@ -365,13 +365,6 @@ class ColortableImageSourceTest(ImageSourcesTestBase):
 
 class ColortableImageSourceTest2(ImageSourcesTestBase):
     def setUp(self):
-        if "TRAVIS" in os.environ:
-            # Colortable requests require vigra, which is not installed on our Travis-CI build.
-            # Skip this test on Travis-CI.
-            import nose
-
-            raise nose.SkipTest
-
         super(ColortableImageSourceTest2, self).setUp()
         self.seg = numpy.zeros((6, 7), dtype=numpy.uint32)
         self.seg = numpy.ma.masked_array(self.seg, mask=numpy.zeros(self.seg.shape, dtype=bool), shrink=False)
