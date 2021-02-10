@@ -59,6 +59,8 @@ setup(
         "qimage2ndarray",
         "typing_extensions",
         "vigra",
+        "xarray",
     ],
     extras_require={"dev": ["pytest"]},
+    entry_points={"console_scripts": ["volumina = volumina.__main__:main"]},
 )

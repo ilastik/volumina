@@ -21,6 +21,11 @@ build:
   number: 0
   noarch: python
   script: python -m pip install --no-deps --ignore-installed .
+  entry_points:
+    {% for ep in setup_py_data['entry_points']['console_scripts'] %}
+    - {{ ep }}
+    {% endfor %}
+
 
 test:
   imports:
@@ -42,11 +47,12 @@ test:
     {% endfor %}
   commands:
     - pytest .
+    - volumina --help
 
 
 about:
   home: https://github.com/ilastik/volumina
-  license: LGPL-2.0-or-later
+  license: LGPL-2.1-or-later
   summary: 'Python image viewer with support up to 5D (spacial + channel + time).'
 
   doc_url: https://ilastik.github.io/volumina/
