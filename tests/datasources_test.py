@@ -77,9 +77,10 @@ class GenericArraySourceTest(with_metaclass(ABCMeta, object)):
 class ArraySourceTest(ut.TestCase, GenericArraySourceTest):
     def setUp(self):
         GenericArraySourceTest.setUp(self)
-        self.lena = np.load(os.path.join(volumina._testing.__path__[0], "lena.npy"))
-        self.raw = np.zeros((1, 512, 512, 1, 1))
-        self.raw[0, :, :, 0, 0] = self.lena
+        self.cells2d = np.load(os.path.join(volumina._testing.__path__[0], "2d_cells_apoptotic_1channel.npy"))
+        y, x = self.cells2d.shape
+        self.raw = np.zeros((1, y, x, 1, 1))
+        self.raw[0, :, :, 0, 0] = self.cells2d
         self.source = ArraySource(self.raw)
 
         self.samesource = ArraySource(self.raw)

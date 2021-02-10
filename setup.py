@@ -37,7 +37,7 @@ packages = [
 package_data = {
     "volumina.widgets": ["*.ui", "ui/*.ui"],
     "volumina": ["*.ui"],
-    "volumina._testing": ["*.tif", "*.png", "lena.npy", "rgba129x104.npy"],
+    "volumina._testing": ["*.tif", "*.png", "2d_cells_apoptotic_1channel.npy", "rgba129x104.npy"],
 }
 
 setup(
