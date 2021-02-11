@@ -1,0 +1,75 @@
+name: test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test-w-ilastik-env:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          environment-file: .github/workflows/etc/ilastik-env.yaml
+          activate-environment: ilastik-env
+          auto-update-conda: true
+          auto-activate-base: false
+      - name: linux test
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash -l {0}
+        run: |
+          conda develop .
+          xvfb-run pytest
+      - name: osx test
+        if: matrix.os == 'macos-latest'
+        shell: bash -l {0}
+        run: |
+          conda develop .
+          pytest
+      - name: windows test
+        if: matrix.os == 'windows-latest'
+        shell: cmd /C CALL {0}
+        # auto activation of env does not seem to work on win
+        run: |
+          conda activate ilastik-env & python --version & conda list & conda develop . & pytest
+
+  test-w-conda-recipe:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          auto-activate-base: true
+          activate-environment: ""
+      - name: linux conda build test
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash -l {0}
+        run: |
+          conda install -n base -c conda-forge conda-build setuptools_scm -y
+          xvfb-run conda build -c conda-forge conda-recipe
+      - name: osx test
+        if: matrix.os == 'macos-latest'
+        shell: bash -l {0}
+        run: |
+          conda install -n base -c conda-forge conda-build setuptools_scm -y
+          conda build -c conda-forge conda-recipe
+      - name: windows conda-build
+        if: matrix.os == 'windows-latest'
+        shell: cmd /C CALL {0}
+        # auto activation of env does not seem to work on win
+        run: |
+          conda install -n base -c conda-forge conda-build  setuptools_scm -y & conda build -c conda-forge conda-recipe
