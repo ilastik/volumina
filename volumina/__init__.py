@@ -27,6 +27,12 @@ import logging
 volumina_logger = logging.getLogger("volumina")
 
 
+try:
+    from volumina._version import version as __version__
+except ImportError:
+    __version__ = "0.0.0dev"
+
+
 def has_handler(logger):
     if len(logger.handlers) > 0:
         return True

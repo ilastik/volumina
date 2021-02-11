@@ -15,3 +15,5 @@
 .idea/
 # kdiff3 backups
 *.orig
+
+volumina/_version.py

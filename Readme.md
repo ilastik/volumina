@@ -30,4 +30,7 @@ axisorder should correspond to the data. Only `t` (time), `c` (channel), and the
 Volumina Development
 ====================
 
-For development instructions please see the [dev readme](dev/Readme.md)
+Create a development environment
+--------------------------------
+
+To set up a development environment, we currently recommend to follow Contributing Guidelines of our main repository [ilastik](https://github.com/ilastik/ilastik): [CONTRIBUTING](https://github.com/ilastik/ilastik/blob/master/CONTRIBUTING.md)

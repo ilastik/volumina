@@ -20,10 +20,12 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 from setuptools import setup
+import setuptools_scm
 
 packages = [
     "volumina",
     "volumina._testing",
+    "volumina.icons",
     "volumina.pixelpipeline",
     "volumina.pixelpipeline.datasources",
     "volumina.pixelpipeline.imagesources",
@@ -35,14 +37,18 @@ packages = [
 ]
 
 package_data = {
-    "volumina.widgets": ["*.ui", "ui/*.ui"],
     "volumina": ["*.ui"],
-    "volumina._testing": ["*.tif", "*.png", "2d_cells_apoptotic_1channel.npy", "rgba129x104.npy"],
+    "volumina._testing": ["*.npy", "*.txt"],
+    "volumina.icons": ["*"],
+    "volumina.view3d": ["ui/*.ui"],
+    "volumina.widgets": ["*.ui", "ui/*.ui"],
 }
+
+_version = setuptools_scm.get_version(write_to="volumina/_version.py")
 
 setup(
     name="volumina",
-    version="1.2",
+    version=_version,
     description="Volume Slicing and Editing",
     url="https://github.com/Ilastik/volumina",
     packages=packages,
