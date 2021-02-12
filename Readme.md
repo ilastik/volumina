@@ -1,9 +1,10 @@
 **Volumina** - Volume Slicing and Editing Library
 =============================================
 
-[![Build Status](https://travis-ci.org/ilastik/volumina.svg?branch=master)](https://travis-ci.org/ilastik/volumina)
-[![Build status](https://ci.appveyor.com/api/projects/status/t371b1yf0eo7u5mp/branch/master?svg=true)](https://ci.appveyor.com/project/k-dominik/volumina-r7dc9/branch/master)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![build](https://github.com/ilastik/volumina/workflows/test/badge.svg)](https://github.com/ilastik/volumina/actions)
+[![deployment](https://github.com/ilastik/volumina/workflows/deploy/badge.svg)](https://github.com/ilastik/volumina/actions)
+[![black](https://github.com/ilastik/volumina/workflows/lint/badge.svg)](https://github.com/ilastik/volumina/actions)
+
 
 Installing
 ==========
