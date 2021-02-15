@@ -628,6 +628,7 @@ class VolumeEditorWidget(QWidget):
             dlg_layout.addWidget(button_box)
 
             dlg.setLayout(dlg_layout)
+            spinBox.setFocus()
 
             if dlg.exec_() == QDialog.Accepted:
                 if spinBox.value() != saved:
