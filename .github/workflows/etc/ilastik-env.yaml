@@ -6,3 +6,4 @@ dependencies:
   - ilastik-dependencies-no-solvers
   - conda-build
   - pytest
+  - pytest-cov

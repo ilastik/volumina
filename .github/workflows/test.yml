@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+        with:
+          # for codecov
+          fetch-depth: 5
       - name: setup conda
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -27,7 +30,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda develop .
-          xvfb-run pytest
+          xvfb-run pytest --cov-report=xml --cov=volumina
       - name: osx test
         if: matrix.os == 'macos-latest'
         shell: bash -l {0}
@@ -40,6 +43,12 @@ jobs:
         # auto activation of env does not seem to work on win
         run: |
           conda activate ilastik-env & python --version & conda list & conda develop . & pytest
+      - uses: codecov/codecov-action@v1
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          files: ./coverage.xml,
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
 
   test-w-conda-recipe:
     strategy:
