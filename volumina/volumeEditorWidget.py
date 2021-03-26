@@ -332,9 +332,9 @@ class VolumeEditorWidget(QWidget):
         self.editor.setTileWidth(tile_width)
 
     def _getTileWidthConfigKeyDefault(self):
-        singletons_spacial = [True for dim in self.editor.posModel.shape if dim == 1]
-        assert len(singletons_spacial) in range(2)
-        if len(singletons_spacial) == 0:
+        singletons_spacial = sum(1 for dim in self.editor.posModel.shape if dim == 1)
+        assert singletons_spacial in range(2)
+        if singletons_spacial == 0:
             # 3D data
             key = "tileWidth3D"
             default = 256
