@@ -59,6 +59,7 @@ from .sliceSelectorHud import ImageView2DHud, QuadStatusBar
 from .pixelpipeline.datasources import ArraySource
 from .volumeEditor import VolumeEditor
 from volumina.utility import ShortcutManager
+from volumina.utility import preferences
 
 
 class __TimerEventEater(QObject):
@@ -269,6 +270,8 @@ class VolumeEditorWidget(QWidget):
                     self.editor.imageViews[i].setHudVisible(self.hudsShown[i])
                 self.quadview.statusBar.crosshairsCheckbox.setChecked(False)
 
+            self._updateTileWidth()
+
             self.quadview.statusBar.crosshairsCheckbox.setVisible(True)
 
             if self.editor.cropModel.cropZero() or None in self.editor.cropModel.get_roi_3d()[0]:
@@ -323,6 +326,33 @@ class VolumeEditorWidget(QWidget):
                 self.editor.imageViews[self.editor._lastImageViewFocus].setCursor(
                     self.editor.imageViews[self.editor._lastImageViewFocus]._cursorBackup
                 )
+
+    def _updateTileWidth(self):
+        tile_width = self._getTileWidth()
+        self.editor.setTileWidth(tile_width)
+
+    def _getTileWidthConfigKeyDefault(self):
+        singletons_spacial = sum(1 for dim in self.editor.posModel.shape if dim == 1)
+        assert singletons_spacial in range(2)
+        if singletons_spacial == 0:
+            # 3D data
+            key = "tileWidth3D"
+            default = 256
+        else:
+            # 2D data
+            key = "tileWidth"
+            default = 512
+        return key, default
+
+    def _getTileWidth(self):
+        key, default = self._getTileWidthConfigKeyDefault()
+        tile_width = preferences.get("ImageScene2D", key, default=default)
+        return tile_width
+
+    def _setTileWidth(self, value):
+        key, _ = self._getTileWidthConfigKeyDefault()
+        preferences.set("ImageScene2D", key, value)
+        self._updateTileWidth()
 
     def _toggleHUDs(self, checked):
         for v in self.editor.imageViews:
@@ -576,9 +606,10 @@ class VolumeEditorWidget(QWidget):
             dlg.setWindowTitle("Viewer Tile Width")
             dlg.setModal(True)
 
+            saved = self._getTileWidth()
             spinBox = QSpinBox(parent=dlg)
             spinBox.setRange(128, 10 * 1024)
-            spinBox.setValue(self.editor.imageScenes[0].tileWidth())
+            spinBox.setValue(saved)
 
             ctrl_layout = QHBoxLayout()
             ctrl_layout.addSpacerItem(QSpacerItem(10, 0, QSizePolicy.Expanding))
@@ -597,12 +628,11 @@ class VolumeEditorWidget(QWidget):
             dlg_layout.addWidget(button_box)
 
             dlg.setLayout(dlg_layout)
+            spinBox.setFocus()
 
             if dlg.exec_() == QDialog.Accepted:
-                for s in self.editor.imageScenes:
-                    if s.tileWidth != spinBox.value():
-                        s.setTileWidth(spinBox.value())
-                        s.reset()
+                if spinBox.value() != saved:
+                    self._setTileWidth(spinBox.value())
 
         self._viewMenu.addAction("Set Tile Width...").triggered.connect(changeTileWidth)
 
