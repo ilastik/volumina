@@ -405,8 +405,9 @@ class DataExportOptionsDlg(QDialog):
 
     class _AxisOrderValidator(QValidator):
         def __init__(self, parent, inputSlot):
-            super(DataExportOptionsDlg._AxisOrderValidator, self).__init__(parent)
+            super().__init__(parent)
             self._inputSlot = inputSlot
+            self._valid_axes = set("tzyxc")
 
         def validate(self, userAxes, pos):
             taggedShape = self._inputSlot.meta.getTaggedShape()
@@ -415,17 +416,16 @@ class DataExportOptionsDlg(QDialog):
             userSet = set(str(userAxes))
 
             # Ensure all user axes appear in the input
-            if not (userSet <= inputSet):
+            if not userSet.issubset(self._valid_axes):
                 return (QValidator.Invalid, userAxes, pos)
 
             # Ensure no repeats
             if len(userSet) != len(userAxes):
                 return (QValidator.Invalid, userAxes, pos)
 
-            # If missing non-singleton axes, maybe intermediate entry
-            # (It's okay to omit singleton axes)
-            for key in inputSet - userSet:
-                if taggedShape[key] != 1:
+            # Ensure no non-singleton axis was omitted:
+            for key in self._valid_axes - userSet:
+                if taggedShape.get(key, 1) != 1:
                     return (QValidator.Intermediate, userAxes, pos)
 
             return (QValidator.Acceptable, userAxes, pos)
