@@ -451,8 +451,8 @@ class VolumeEditorWidget(QWidget):
                 "Ctrl+Down",
                 ActionInfo(
                     "Navigation",
-                    "Slice up",
-                    "Slice up",
+                    "Slice down",
+                    "Slice down",
                     partial(sliceDelta, i, -1),
                     v,
                     v.hud.buttons["slice"].downLabel,
