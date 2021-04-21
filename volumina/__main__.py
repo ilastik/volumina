@@ -30,7 +30,7 @@ def volumina_viewer():
 def axiorder_type(value):
     reasons = []
     if len(set(value)) != len(value):
-        reasons.append("Each axis may only appear ones")
+        reasons.append("Each axis may only appear once")
 
     if any(dim not in "txyzc" for dim in value):
         reasons.append("Unrecognized axis value encountered. Only allowed axes: 'txyzc'.")
@@ -49,7 +49,9 @@ def parse_args():
         epilog="",
     )
     p.add_argument("image", help="Path to .npy image")
-    p.add_argument("axistags", help="Strings describing axes in image. Valid values: 'tzyxc'", type=axiorder_type)
+    p.add_argument(
+        "--axistags", help="Strings describing axes in image. Valid values: 'tzyxc'", type=axiorder_type, required=True
+    )
     p.add_argument("--version", action="version", version=__version__)
 
     args = p.parse_args()
