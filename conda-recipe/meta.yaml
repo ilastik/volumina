@@ -15,9 +15,18 @@ requirements:
     - setuptools_scm
   run:
     - python >=3.7,<3.9
-    {% for dep in setup_py_data['install_requires'] %}
-    - {{ dep.lower() }}
-    {% endfor %}
+    - appdirs
+    - cachetools
+    - future
+    - h5py
+    - pyopengl
+    - pyqt >=5.6
+    - pyqtgraph
+    - qimage2ndarray
+    - typing_extensions
+    - vigra
+    - xarray
+
 
 build:
   number: 0
@@ -46,9 +55,7 @@ test:
     - tests
 
   requires:
-    {% for dep in setup_py_data['extras_require']['dev'] %}
-    - {{ dep.lower() }}
-    {% endfor %}
+    - pytest
   commands:
     - pytest .
     - volumina --help
