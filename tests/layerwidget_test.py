@@ -43,20 +43,6 @@ class TestLayerWidget(ut.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if "TRAVIS" in os.environ:
-            # This test fails on Travis-CI for unknown reasons,
-            #  probably due to the variability of time.sleep().
-            # Skip it on Travis-CI.
-            import nose
-
-            raise nose.SkipTest
-
-        #         if threading.currentThread().name == "MainThread":
-        #             # Under Qt5, this test fails if we're not running in the main thread.
-        #             # This test file needs to be run on it's own, not as part of a test suite with nosetests.
-        #             import nose
-        #             raise nose.SkipTest
-
         cls.app = QApplication([])
         cls.errors = False
 

@@ -1,0 +1,70 @@
+{% set setup_py_data = load_setup_py_data(setup_file='../setup.py', from_recipe_dir=True) %}
+
+package:
+  name: volumina
+  version: {{ setup_py_data.version }}
+
+source:
+  path: ..
+
+requirements:
+  host:
+    - python >=3.7,<3.9
+    - pip
+    - setuptools >=40.0
+    - setuptools_scm
+  run:
+    - python >=3.7,<3.9
+    - appdirs
+    - cachetools
+    - future
+    - h5py
+    - pyopengl
+    - pyqt >=5.6
+    - pyqtgraph
+    - qimage2ndarray
+    - typing_extensions
+    - vigra
+    - xarray
+
+
+build:
+  number: 0
+  noarch: python
+  script:
+    - export SETUPTOOLS_SCM_PRETEND_VERSION={{ setup_py_data.version }}
+    - {{ PYTHON }} -m pip install . --no-deps --ignore-installed --no-cache-dir -vvv
+  entry_points:
+    {% for ep in setup_py_data['entry_points']['console_scripts'] %}
+    - {{ ep }}
+    {% endfor %}
+
+
+test:
+  imports:
+    - volumina
+    - volumina._testing
+    - volumina.pixelpipeline
+    - volumina.skeletons
+    - volumina.tiling
+    - volumina.utility
+    - volumina.view3d
+    - volumina.widgets
+
+  source_files:
+    - tests
+
+  requires:
+    - pytest
+  commands:
+    - pytest .
+    - volumina --help
+
+
+about:
+  home: https://github.com/ilastik/volumina
+  license: LGPL-2.1-or-later
+  summary: 'Python image viewer with support up to 5D (spacial + channel + time).'
+
+  doc_url: https://ilastik.github.io/volumina/
+  dev_url: https://github.com/ilastik/volumina

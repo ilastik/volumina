@@ -1,63 +1,37 @@
 **Volumina** - Volume Slicing and Editing Library
 =============================================
 
-[![Build Status](https://travis-ci.org/ilastik/volumina.svg?branch=master)](https://travis-ci.org/ilastik/volumina)
-[![Build status](https://ci.appveyor.com/api/projects/status/t371b1yf0eo7u5mp/branch/master?svg=true)](https://ci.appveyor.com/project/k-dominik/volumina-r7dc9/branch/master)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![build](https://github.com/ilastik/volumina/workflows/test/badge.svg)](https://github.com/ilastik/volumina/actions)
+[![deployment](https://github.com/ilastik/volumina/workflows/deploy/badge.svg)](https://github.com/ilastik/volumina/actions)
+[![black](https://github.com/ilastik/volumina/workflows/lint/badge.svg)](https://github.com/ilastik/volumina/actions)
+
 
 Installing
 ==========
-First, test volumina
 
-    $ python setup.py nosetests
+```bash
+conda install -c ilastik-forge -c conda-forge volumina
+```
 
-and then install:
+Using Volumina as an Image Viewer
+=================================
 
-    $ python setup.py install
+Currently, only format supported is `.npy`.
 
-Developing with Volumina
-========================
+Open an `.npy` image and display it:
 
-*In the following we assume an Ubuntu system.*
+```bash
+# Usage: volumina image axisorder
+volumina <myimage.npy> yx
+```
 
-After you entered a virtual environment you can automatically execute all the steps documented below by calling
-
-    $ ./install-development-reqs-virtualenv-ubuntu.sh
-
-from the "requirements" directory in the volumina repository. Note, that we use distribute instead of setuptools.
-So, create your virtualenvs using `mkvirtualenv --distribute`.
-
-1. Virtual Python Environment
------------------------------
-
-Make a new virtualenv for volumina
-
-    $ virtualenv --distribute voluminave/
-
-and activate it
-
-    $ source voluminave/bin/activate
+axisorder should correspond to the data. Only `t` (time), `c` (channel), and the spacial axes `x`, `y`, `z` are valid.
 
 
-2. Linking to PyQt and Sip 
---------------------------
+Volumina Development
+====================
 
-Installing PyQt/Sip via pip is currently (May 2012) broken. Therefore
-install the development versions of Qt4, Sip, and PyQt4 globally and
-link them into the virtual environment: 
+Create a development environment
+--------------------------------
 
-     $ cd voluminave/lib/python2.7/site-packages/ 
-     $ ln -s /usr/lib/python2.7/dist-packages/PyQt4/
-     $ ln -s /usr/lib/python2.7/dist-packages/sip.so
-     $ ln -s /usr/lib/python2.7/dist-packages/sipdistutils.py
-     $ ln -s /usr/lib/python2.7/dist-packages/sipconfig.py
-     $ ln -s /usr/lib/python2.7/dist-packages/sipconfig_nd.py
-
-
-3. Building the development requirements
-----------------------------------------
-Make sure that g++ is installed on your system besides the usual gcc C++/C development toolchain. qimage2ndarray depends on numpy without requiring the dependency (as of June 2012). Therefore we need to install our requirements in a two stage procedure:
-
-    $ pip install -r requirements/development-stage1.txt
-    $ pip install -r requirements/development-stage2.txt
-
+To set up a development environment, we currently recommend to follow Contributing Guidelines of our main repository [ilastik](https://github.com/ilastik/ilastik): [CONTRIBUTING](https://github.com/ilastik/ilastik/blob/master/CONTRIBUTING.md)

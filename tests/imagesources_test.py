@@ -28,8 +28,6 @@ import unittest as ut
 import os
 import sys
 
-sys.path.append("../.")
-
 # SciPy
 import numpy
 
@@ -127,7 +125,9 @@ class ImageSourcesTestBase(ut.TestCase):
 class GrayscaleImageSourceTest(ImageSourcesTestBase):
     def setUp(self):
         super(GrayscaleImageSourceTest, self).setUp()
-        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "lena.npy")).astype(numpy.uint32)
+        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "2d_cells_apoptotic_1channel.npy")).astype(
+            numpy.uint32
+        )
         self.ars = _ArraySource2d(self.raw)
         self.ims = GrayscaleImageSource(self.ars, GrayscaleLayer(self.ars))
 
@@ -160,7 +160,9 @@ class GrayscaleImageSourceTest(ImageSourcesTestBase):
 class GrayscaleImageSourceTest2(ImageSourcesTestBase):
     def setUp(self):
         super(GrayscaleImageSourceTest2, self).setUp()
-        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "lena.npy")).astype(numpy.uint32)
+        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "2d_cells_apoptotic_1channel.npy"))[
+            0:512, 0:512
+        ].astype(numpy.uint32)
         self.raw = numpy.ma.masked_array(self.raw, numpy.zeros(self.raw.shape, dtype=bool), shrink=False)
 
         self.raw[:10, :] = numpy.ma.masked
@@ -212,7 +214,9 @@ class GrayscaleImageSourceTest2(ImageSourcesTestBase):
 class AlphaModulatedImageSourceTest(ImageSourcesTestBase):
     def setUp(self):
         super(AlphaModulatedImageSourceTest, self).setUp()
-        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "lena.npy")).astype(numpy.uint32)
+        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "2d_cells_apoptotic_1channel.npy")).astype(
+            numpy.uint32
+        )
         self.ars = _ArraySource2d(self.raw)
         self.ims = AlphaModulatedImageSource(self.ars, AlphaModulatedLayer(self.ars, QColor(1, 2, 3)))
 
@@ -245,7 +249,9 @@ class AlphaModulatedImageSourceTest(ImageSourcesTestBase):
 class AlphaModulatedImageSourceTest2(ImageSourcesTestBase):
     def setUp(self):
         super(AlphaModulatedImageSourceTest2, self).setUp()
-        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "lena.npy")).astype(numpy.uint32)
+        self.raw = numpy.load(os.path.join(volumina._testing.__path__[0], "2d_cells_apoptotic_1channel.npy"))[
+            0:512, 0:512
+        ].astype(numpy.uint32)
 
         self.raw = numpy.ma.masked_array(self.raw, mask=numpy.zeros(self.raw.shape, dtype=bool), shrink=False)
         self.raw[:1, :] = numpy.ma.masked
@@ -359,13 +365,6 @@ class ColortableImageSourceTest(ImageSourcesTestBase):
 
 class ColortableImageSourceTest2(ImageSourcesTestBase):
     def setUp(self):
-        if "TRAVIS" in os.environ:
-            # Colortable requests require vigra, which is not installed on our Travis-CI build.
-            # Skip this test on Travis-CI.
-            import nose
-
-            raise nose.SkipTest
-
         super(ColortableImageSourceTest2, self).setUp()
         self.seg = numpy.zeros((6, 7), dtype=numpy.uint32)
         self.seg = numpy.ma.masked_array(self.seg, mask=numpy.zeros(self.seg.shape, dtype=bool), shrink=False)
@@ -520,7 +519,9 @@ class RGBAImageSourceTest(ImageSourcesTestBase):
 
 class TestGraphicsItems(ut.TestCase):
     def test(self):
-        raw = numpy.load(os.path.join(volumina._testing.__path__[0], "lena.npy")).astype(numpy.uint32)
+        raw = numpy.load(os.path.join(volumina._testing.__path__[0], "2d_cells_apoptotic_1channel.npy")).astype(
+            numpy.uint32
+        )
         ars = _ArraySource2d(raw)
         ims = DummyItemSource(ars)
         req = ims.request(QRect(0, 0, 256, 256))
