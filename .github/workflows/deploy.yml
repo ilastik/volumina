@@ -2,10 +2,9 @@ name: deploy
 
 on:
   push:
-    branches:
-      - master
-    tags:
-      - '!refs/tags/*'
+    - tags
+  except:
+    - branches
 
 jobs:
   package:
