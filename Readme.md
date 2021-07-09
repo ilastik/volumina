@@ -34,4 +34,4 @@ Volumina Development
 Create a development environment
 --------------------------------
 
-To set up a development environment, we currently recommend to follow Contributing Guidelines of our main repository [ilastik](https://github.com/ilastik/ilastik): [CONTRIBUTING](https://github.com/ilastik/ilastik/blob/master/CONTRIBUTING.md)
+To set up a development environment, we currently recommend to follow Contributing Guidelines of our main repository [ilastik](https://github.com/ilastik/ilastik): [CONTRIBUTING](https://github.com/ilastik/ilastik/blob/main/CONTRIBUTING.md)
