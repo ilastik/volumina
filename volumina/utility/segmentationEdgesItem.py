@@ -81,29 +81,32 @@ class SegmentationEdgesItem(QGraphicsObject):
             pen = self.edge_pen_table.get(id_pair, self.default_pen)
             item.setPen(pen)
 
-            if not self.is_clickable:
-                continue
+            # FIXME: this update is too slow (in the order of seconds) for larger
+            # edges. Commented out - see https://github.com/ilastik/ilastik/issues/2476
 
-            # Find colliding items and filter to keep siblings only
-            colliding = [c for c in item.collidingItems() if c.parentItem() is item.parentItem()]
-            if not colliding:
-                continue
+            # if not self.is_clickable:
+            #     continue
 
-            # If the item was made transparent, send it to the bottom so that
-            # nearby overlapping items that are still visible can be clicked.
-            # Otherwise, send it to the top.
-            # (It doesn't really matter what each item's exact Z-values is,
-            # as long as they are in the right order relative to each other.)
-            if pen.color().alpha() == 0.0:
-                min_z = 0.0
-                for c in colliding:
-                    min_z = min(min_z, c.zValue())
-                item.setZValue(min_z - 1.0)
-            else:
-                max_z = 1.0
-                for c in colliding:
-                    max_z = max(max_z, c.zValue())
-                item.setZValue(max_z + 1.0)
+            # # Find colliding items and filter to keep siblings only
+            # colliding = [c for c in item.collidingItems() if c.parentItem() is item.parentItem()]
+            # if not colliding:
+            #     continue
+
+            # # If the item was made transparent, send it to the bottom so that
+            # # nearby overlapping items that are still visible can be clicked.
+            # # Otherwise, send it to the top.
+            # # (It doesn't really matter what each item's exact Z-values is,
+            # # as long as they are in the right order relative to each other.)
+            # if pen.color().alpha() == 0.0:
+            #     min_z = 0.0
+            #     for c in colliding:
+            #         min_z = min(min_z, c.zValue())
+            #     item.setZValue(min_z - 1.0)
+            # else:
+            #     max_z = 1.0
+            #     for c in colliding:
+            #         max_z = max(max_z, c.zValue())
+            #     item.setZValue(max_z + 1.0)
 
 
 def painter_paths_for_labels_PURE_PYTHON(label_img, simplify_with_tolerance=None):
