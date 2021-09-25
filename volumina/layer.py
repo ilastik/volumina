@@ -150,10 +150,10 @@ class Layer(QObject):
 
     def setActive(self, active):
         """This function is called whenever the layer is selected (active = True) or deselected (active = False)
-           by the user.
-           As an example, this can be used to enable a specific event interpreter when the layer is active
-           and to disable it when it is not active.
-           See ClickableColortableLayer for an example."""
+        by the user.
+        As an example, this can be used to enable a specific event interpreter when the layer is active
+        and to disable it when it is not active.
+        See ClickableColortableLayer for an example."""
         pass
 
     def toolTip(self):
@@ -236,7 +236,7 @@ class Layer(QObject):
 
 class ClickableLayer(Layer):
     """A layer that, when being activated/selected, switches to an interpreter than can intercept
-       right click events"""
+    right click events"""
 
     def __init__(self, datasource, editor, clickFunctor, direct=False, right=True):
         super(ClickableLayer, self).__init__([datasource], direct=direct)
@@ -420,11 +420,11 @@ class AlphaModulatedLayer(NormalizableLayer):
 
 def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=False):
     """Generate a colortable with M entries.
-       colormodel: currently only 'hsv' is supported
-       clamp:      A dictionary stating which parameters of the color in the colormodel are clamped to a certain
-                   value. For example: clamp = {'v': 1.0} will ensure that the value of any generated
-                   HSV color is 1.0. All other parameters (h,s in the example) are selected randomly
-                   to lie uniformly in the allowed range. """
+    colormodel: currently only 'hsv' is supported
+    clamp:      A dictionary stating which parameters of the color in the colormodel are clamped to a certain
+                value. For example: clamp = {'v': 1.0} will ensure that the value of any generated
+                HSV color is 1.0. All other parameters (h,s in the example) are selected randomly
+                to lie uniformly in the allowed range."""
     r = numpy.random.random((M, 3))
     if clamp is not None:
         for k, v in clamp.items():
@@ -609,6 +609,8 @@ class SegmentationEdgesLayer(Layer):
     (See imagesources.SegmentationEdgesItem.)
     """
 
+    hoverIdChanged = pyqtSignal(object)
+
     DEFAULT_PEN = QPen()
     DEFAULT_PEN.setCosmetic(True)
     DEFAULT_PEN.setCapStyle(Qt.RoundCap)
@@ -625,7 +627,7 @@ class SegmentationEdgesLayer(Layer):
         """
         return self._pen_table
 
-    def __init__(self, datasource, default_pen=DEFAULT_PEN, direct=False):
+    def __init__(self, datasource, default_pen=DEFAULT_PEN, direct=False, *, isClickable=False, isHoverable=False):
         """
         datasource: A single-channel label image.
         default_pen: The initial pen style for each edge.
@@ -635,6 +637,8 @@ class SegmentationEdgesLayer(Layer):
         # Changes to this colortable will be detected automatically in the QGraphicsItem
         self._pen_table = SignalingDict(self)
         self.default_pen = default_pen
+        self.isClickable = isClickable
+        self.isHoverable = isHoverable
 
     def handle_edge_clicked(self, id_pair, event):
         """
@@ -658,7 +662,7 @@ class SegmentationEdgesLayer(Layer):
         pass
 
     def createImageSource(self, data_sources):
-        return imsrc.SegmentationEdgesItemSource(self, data_sources[0], False)
+        return imsrc.SegmentationEdgesItemSource(self, data_sources[0], self.isHoverable and self.hoverIdChanged)
 
 
 class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
@@ -668,9 +672,13 @@ class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
 
     labelsChanged = pyqtSignal(dict)  # { id_pair, label_class }
 
-    def __init__(self, datasource, label_class_pens, initial_labels={}, delay_ms=1000):
+    def __init__(
+        self, datasource, label_class_pens, initial_labels={}, delay_ms=100, *, isClickable=True, isHoverable=True
+    ):
         # Class 0 (no label) is the default pen
-        super(LabelableSegmentationEdgesLayer, self).__init__(datasource, default_pen=label_class_pens[0])
+        super(LabelableSegmentationEdgesLayer, self).__init__(
+            datasource, default_pen=label_class_pens[0], isClickable=isClickable, isHoverable=isHoverable
+        )
         self._delay_ms = delay_ms
         self._label_class_pens = label_class_pens
 
@@ -756,4 +764,4 @@ class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
             self.labelsChanged.emit(updates)
 
     def createImageSource(self, data_sources):
-        return imsrc.SegmentationEdgesItemSource(self, data_sources[0], True)
+        return imsrc.SegmentationEdgesItemSource(self, data_sources[0], self.isHoverable and self.hoverIdChanged)
