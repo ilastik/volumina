@@ -637,7 +637,7 @@ class SegmentationEdgesLayer(Layer):
         # Changes to this colortable will be detected automatically in the QGraphicsItem
         self._pen_table = SignalingDict(self)
         self.default_pen = default_pen
-        self.isClickable = isClickable
+        self._isClickable = isClickable
         self.isHoverable = isHoverable
 
     def handle_edge_clicked(self, id_pair, event):

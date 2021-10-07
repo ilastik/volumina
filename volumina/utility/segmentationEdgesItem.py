@@ -127,13 +127,18 @@ except ImportError:
     pass
 
 
-def generate_path_items_for_labels(edge_pen_table, default_pen, label_img, simplify_with_tolerance=None):
+def generate_path_items_for_labels(
+    edge_pen_table, default_pen, label_img, simplify_with_tolerance=None, isClickable=False
+):
     painter_paths = painter_paths_for_labels(label_img, simplify_with_tolerance)
 
     path_items = {}
     for id_pair in list(painter_paths.keys()):
         path_items[id_pair] = SingleEdgeItem(
-            id_pair, painter_paths[id_pair], initial_pen=edge_pen_table.get(id_pair, default_pen)
+            id_pair,
+            painter_paths[id_pair],
+            initial_pen=edge_pen_table.get(id_pair, default_pen),
+            isClickable=isClickable,
         )
     return path_items
 
@@ -198,7 +203,7 @@ class SingleEdgeItem(QGraphicsPathItem):
     Must be owned by a SegmentationEdgesItem object
     """
 
-    def __init__(self, id_pair, painter_path, initial_pen=None):
+    def __init__(self, id_pair, painter_path, initial_pen=None, isClickable=False):
         super(SingleEdgeItem, self).__init__()
         self.parent = None  # Should be initialized with set_parent()
         self.id_pair = id_pair
@@ -212,7 +217,8 @@ class SingleEdgeItem(QGraphicsPathItem):
 
         self.setPen(initial_pen)
         self.setPath(painter_path)
-        self.setCursor(Qt.PointingHandCursor)
+        if isClickable:
+            self.setCursor(Qt.PointingHandCursor)
 
         self._scale = 1
 
