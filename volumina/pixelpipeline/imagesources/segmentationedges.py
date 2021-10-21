@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class SegmentationEdgesItemSource(ImageSource):
-    def __init__(self, layer, arraySource2D, is_clickable):
+    def __init__(self, layer, arraySource2D, hoverIdChanged=None, isClickable=False):
         from volumina.layer import SegmentationEdgesLayer
 
         assert isinstance(layer, SegmentationEdgesLayer)
@@ -43,7 +43,7 @@ class SegmentationEdgesItemSource(ImageSource):
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._layer = layer
-        self._is_clickable = is_clickable
+        self._hoverIdChanged = hoverIdChanged
 
     def request(self, qrect, along_through=None):
         assert isinstance(qrect, QRect)
@@ -51,18 +51,18 @@ class SegmentationEdgesItemSource(ImageSource):
         qrect = QRect(qrect.x(), qrect.y(), qrect.width() + 1, qrect.height() + 1)
         s = rect2slicing(qrect)
         arrayreq = self._arraySource2D.request(s, along_through)
-        return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect, self._is_clickable)
+        return SegmentationEdgesItemRequest(arrayreq, self._layer, qrect, self._hoverIdChanged)
 
     def image_type(self):
         return SegmentationEdgesItem
 
 
 class SegmentationEdgesItemRequest(RequestABC):
-    def __init__(self, arrayreq, layer, rect, is_clickable):
+    def __init__(self, arrayreq, layer, rect, hoverIdChanged):
         self.rect = rect
         self._arrayreq = arrayreq
         self._layer = layer
-        self._is_clickable = is_clickable
+        self._hoverIdChanged = hoverIdChanged
 
     def wait(self):
         array_data = self._arrayreq.wait()
@@ -77,13 +77,17 @@ class SegmentationEdgesItemRequest(RequestABC):
             # but (1) that seems to cause crashes on shutdown,
             # and (2) performance gets worse, not better.
             path_items = generate_path_items_for_labels(
-                self._layer.pen_table, self._layer.default_pen, array_data, None
+                self._layer.pen_table, self._layer.default_pen, array_data, None, isClickable=self._layer._isClickable
             )
 
             # All SegmentationEdgesItem(s) associated with this layer will share a common pen table.
             # They react immediately when the pen table is updated.
             graphics_item = SegmentationEdgesItem(
-                path_items, self._layer.pen_table, self._layer.default_pen, self._is_clickable
+                path_items,
+                self._layer.pen_table,
+                self._layer.default_pen,
+                hoverIdChanged=self._hoverIdChanged,
+                isClickable=self._layer._isClickable,
             )
 
             # When the item is clicked, the layer is notified.

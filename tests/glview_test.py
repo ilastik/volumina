@@ -1,7 +1,6 @@
 from unittest.mock import patch, PropertyMock
 import importlib
 
-
 import volumina.view3d.glview as glview
 
 

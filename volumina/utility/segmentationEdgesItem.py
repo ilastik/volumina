@@ -7,8 +7,8 @@ import numpy as np
 
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtCore import Qt, QObject, QRectF, QPointF, QPoint
-from PyQt5.QtWidgets import QApplication, QGraphicsObject, QGraphicsPathItem
-from PyQt5.QtGui import QPainterPath, QPen, QColor, QPainterPathStroker
+from PyQt5.QtWidgets import QApplication, QGraphicsObject, QGraphicsPathItem, QGraphicsSceneHoverEvent
+from PyQt5.QtGui import QPainterPath, QPen, QColor, QPainterPathStroker, QPainter
 
 from volumina.utility import SignalingDict, edge_coords_nd, simplify_line_segments
 
@@ -23,7 +23,7 @@ class SegmentationEdgesItem(QGraphicsObject):
     edgeClicked = pyqtSignal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
     edgeSwiped = pyqtSignal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
 
-    def __init__(self, path_items, edge_pen_table, default_pen, is_clickable=False, parent=None):
+    def __init__(self, path_items, edge_pen_table, default_pen, *, hoverIdChanged=None, parent=None, isClickable=False):
         """
         path_items: A dict of { edge_id : SingleEdgeItem }
                     Use generate_path_items_for_labels() to produce this dict.
@@ -34,16 +34,13 @@ class SegmentationEdgesItem(QGraphicsObject):
                         (It is assumed that edge_pen_table may be shared among several SegmentationEdgeItems)
 
         default_pen: What pen to use for id_pairs that are not found in the edge_pen_table
-
-        is_clickable: If this item will be used for interactive labeling, change the Z-order when an
-                      edge becomes visible/invisible, to make it easier for small edges to be accessible
-                      despite overlapping neighbors, as explained in
-                      https://github.com/ilastik/volumina/pull/222
         """
         assert (
             threading.current_thread().name == "MainThread"
         ), "SegmentationEdgesItem objects may only be created in the main thread."
 
+        self.hoverIdChanged = hoverIdChanged
+        self.isClickable = isClickable
         super(SegmentationEdgesItem, self).__init__(parent=parent)
         self.setFlag(QGraphicsObject.ItemHasNoContents)
 
@@ -52,7 +49,6 @@ class SegmentationEdgesItem(QGraphicsObject):
         self.edge_pen_table.updated.connect(self.handle_updated_pen_table)
         self.set_path_items(path_items)
         self.default_pen = default_pen
-        self.is_clickable = is_clickable
 
     def set_path_items(self, path_items):
         self.path_items = path_items
@@ -131,13 +127,18 @@ except ImportError:
     pass
 
 
-def generate_path_items_for_labels(edge_pen_table, default_pen, label_img, simplify_with_tolerance=None):
+def generate_path_items_for_labels(
+    edge_pen_table, default_pen, label_img, simplify_with_tolerance=None, isClickable=False
+):
     painter_paths = painter_paths_for_labels(label_img, simplify_with_tolerance)
 
     path_items = {}
     for id_pair in list(painter_paths.keys()):
         path_items[id_pair] = SingleEdgeItem(
-            id_pair, painter_paths[id_pair], initial_pen=edge_pen_table.get(id_pair, default_pen)
+            id_pair,
+            painter_paths[id_pair],
+            initial_pen=edge_pen_table.get(id_pair, default_pen),
+            isClickable=isClickable,
         )
     return path_items
 
@@ -202,11 +203,11 @@ class SingleEdgeItem(QGraphicsPathItem):
     Must be owned by a SegmentationEdgesItem object
     """
 
-    def __init__(self, id_pair, painter_path, initial_pen=None):
+    def __init__(self, id_pair, painter_path, initial_pen=None, isClickable=False):
         super(SingleEdgeItem, self).__init__()
         self.parent = None  # Should be initialized with set_parent()
         self.id_pair = id_pair
-
+        self._hover = False
         if not initial_pen:
             initial_pen = QPen()
             initial_pen.setCosmetic(True)
@@ -216,7 +217,8 @@ class SingleEdgeItem(QGraphicsPathItem):
 
         self.setPen(initial_pen)
         self.setPath(painter_path)
-        self.setCursor(Qt.PointingHandCursor)
+        if isClickable:
+            self.setCursor(Qt.PointingHandCursor)
 
         self._scale = 1
 
@@ -225,6 +227,12 @@ class SingleEdgeItem(QGraphicsPathItem):
         stroker = QPainterPathStroker()
         stroker.setWidth(self.pen().width() * self._scale)
         return stroker.createStroke(self.path())
+
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent):
+        self.parent.hoverIdChanged.emit(self.id_pair)
+
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent):
+        self.parent.hoverIdChanged.emit(None)
 
     def mousePressEvent(self, event):
         self.parent.handle_edge_clicked(self.id_pair, event)
@@ -237,16 +245,35 @@ class SingleEdgeItem(QGraphicsPathItem):
         if event.buttons() != Qt.NoButton:
             self.parent.handle_mouse_drag(self.id_pair, event)
 
+    def handle_id_hover(self, id_pair):
+        if self.id_pair == id_pair and not self._hover:
+            self._hover = True
+            self.update(self.boundingRect())
+        elif self.id_pair != id_pair and self._hover:
+            self._hover = False
+            self.update(self.boundingRect())
+
     def set_parent(self, parent):
         assert isinstance(parent, SegmentationEdgesItem)
         self.setParentItem(parent)
         self.parent = parent
+        if self.parent.hoverIdChanged:
+            self.setAcceptHoverEvents(True)
+            self.parent.hoverIdChanged.connect(self.handle_id_hover)
+        if not self.parent.isClickable:
+            self.setAcceptedMouseButtons(Qt.NoButton)
 
-    def paint(self, painter, option, widget):
+    def paint(self, painter: QPainter, option, widget):
         transform, invertable = painter.worldTransform().inverted()
         if invertable:
             self._scale = transform.m11()
-        super().paint(painter, option, widget)
+
+        if self._hover:
+            hover_pen = QPen(self.pen())
+            hover_pen.setWidth(hover_pen.width() + 2)
+            painter.strokePath(self.path(), hover_pen)
+        else:
+            super().paint(painter, option, widget)
 
     ## Default implementation automatically already calls mousePressEvent()...
     # def mouseDoubleClickEvent(self, event):
