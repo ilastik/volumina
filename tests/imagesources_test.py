@@ -104,12 +104,6 @@ class ImageSourcesTestBase(ut.TestCase):
         self._my_thread = threading.current_thread()
 
     def tearDown(self):
-        # Block for all other (non-daemon) threads to complete so we
-        #  catch any exceptions they caught before we exit.
-        for thread in threading.enumerate():
-            if thread != threading.current_thread() and not thread.daemon:
-                thread.join()
-
         # Check to see if this test caused any exceptions in other threads.
         global imagesources_thread_failures
         if imagesources_thread_failures != 0:
