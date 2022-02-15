@@ -63,7 +63,7 @@ class ValueRangeWidget(QWidget):
 
     def setDType(self, dtype):
         self.dtype = dtype
-        if numpy.issubdtype(dtype, numpy.float):
+        if numpy.issubdtype(dtype, numpy.floating):
             dtypeInfo = numpy.finfo(dtype)
             for box in self.boxes:
                 box.setDecimals(2)

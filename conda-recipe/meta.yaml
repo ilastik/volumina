@@ -57,6 +57,7 @@ test:
 
   requires:
     - pytest
+    - pytest-qt
   commands:
     - pytest .
     - volumina --help
