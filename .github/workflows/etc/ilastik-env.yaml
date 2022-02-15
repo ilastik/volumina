@@ -3,7 +3,10 @@ channels:
   - conda-forge
   - ilastik-forge
 dependencies:
-  - ilastik-dependencies-no-solvers
+  - ilastik-core
+  - qimage2ndarray
+  - pyqtgraph
   - conda-build
-  - pytest
+  - pytest >=3,<4
+  - pytest-qt
   - pytest-cov
