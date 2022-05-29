@@ -231,8 +231,19 @@ class DataExportOptionsDlg(QDialog):
                 ("floating-point 64-bit", "float64"),
             ]
         )
+        tooltips = [
+            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time.",
+            "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time.",
+        ]
+
         for name, dtype in list(dtypes.items()):
             self.dtypeCombo.addItem(name, dtype)
+        for i in range(0, len(tooltips)):
+            self.dtypeCombo.setItemData(i, tooltips[i], Qt.ToolTipRole)
 
         def _handleDtypeSelected():
             # The dtype combo selection changed.  Update the operator to match.
