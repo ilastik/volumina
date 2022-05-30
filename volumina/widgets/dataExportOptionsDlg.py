@@ -230,8 +230,7 @@ class DataExportOptionsDlg(QDialog):
             ("floating-point 64-bit", "float64", "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time."),
         ]
 
-        for i in range(0, len(dtypes)):
-            name, dtype, tooltip = dtypes[i]
+        for i, (name, dtype, tooltip) in enumerate(dtypes):
             self.dtypeCombo.addItem(name, dtype)
             self.dtypeCombo.setItemData(i, tooltip, Qt.ToolTipRole)
 
