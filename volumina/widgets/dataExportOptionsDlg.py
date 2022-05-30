@@ -221,29 +221,19 @@ class DataExportOptionsDlg(QDialog):
                 _selectDefaultDtype()
 
         self.convertDtypeCheckbox.toggled.connect(_handleConvertDtypeChecked)
-        dtypes = collections.OrderedDict(
-            [
-                ("integer 8-bit", "uint8"),
-                ("integer 16-bit", "uint16"),
-                ("integer 32-bit", "uint32"),
-                ("integer 64-bit", "uint64"),
-                ("floating-point 32-bit", "float32"),
-                ("floating-point 64-bit", "float64"),
-            ]
-        )
-        tooltips = [
-            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
-            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
-            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
-            "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
-            "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time.",
-            "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time.",
+        dtypes = [
+            ("integer 8-bit", "uint8", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
+            ("integer 16-bit", "uint16", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
+            ("integer 32-bit", "uint32", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
+            ("integer 64-bit", "uint64", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
+            ("floating-point 32-bit", "float32", "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time."),
+            ("floating-point 64-bit", "float64", "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time."),
         ]
 
-        for name, dtype in list(dtypes.items()):
+        for i in range(0, len(dtypes)):
+            name, dtype, tooltip = dtypes[i]
             self.dtypeCombo.addItem(name, dtype)
-        for i in range(0, len(tooltips)):
-            self.dtypeCombo.setItemData(i, tooltips[i], Qt.ToolTipRole)
+            self.dtypeCombo.setItemData(i, tooltip, Qt.ToolTipRole)
 
         def _handleDtypeSelected():
             # The dtype combo selection changed.  Update the operator to match.
