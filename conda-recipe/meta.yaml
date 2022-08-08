@@ -20,7 +20,7 @@ requirements:
     - future
     - h5py
     - pyopengl
-    - pyqt >=5.6
+    - pyqt >=5.6,<5.13
     - pyqtgraph
     - qimage2ndarray
     - typing_extensions
@@ -57,6 +57,7 @@ test:
   requires:
     - pytest
     - pytest-qt
+    - pyqt >=5.11
   commands:
     - pytest .
     - volumina --help
