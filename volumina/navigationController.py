@@ -21,6 +21,7 @@
 ###############################################################################
 
 import copy
+import sys
 from functools import partial
 
 import volumina
@@ -33,7 +34,7 @@ from volumina.sliceIntersectionMarker import SliceIntersectionMarker
 
 def posView2D(pos3d, axis):
     """convert from a 3D position to a 2D position on the slicing plane
-       perpendicular to axis"""
+    perpendicular to axis"""
     pos2d = list(copy.deepcopy(pos3d))
     del pos2d[axis]
     return pos2d
@@ -148,7 +149,10 @@ class NavigationInterpreter(QObject, InterpreterABC):
         grviewCenter = imageview.mapToScene(imageview.viewport().rect().center())
 
         sign = 1
-        if event.angleDelta().y() < 0:
+        # Qt.AltModifier maps vertical (y) to horizontal (x) scrolling direction
+        if sys.platform != "darwin" and (k_alt or k_shift_alt) and event.angleDelta().x() < 0:
+            sign = -1
+        elif event.angleDelta().y() < 0:
             sign = -1
 
         if k_shift_alt:
