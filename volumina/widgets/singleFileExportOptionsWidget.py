@@ -57,9 +57,9 @@ class SingleFileExportOptionsWidget(QWidget):
 
     def showEvent(self, event):
         super(SingleFileExportOptionsWidget, self).showEvent(event)
-        self.updateFromSlot()
+        self.updateFromSlots()
 
-    def updateFromSlot(self):
+    def updateFromSlots(self):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             file_path = os.path.splitext(file_path)[0] + "." + self._extension
