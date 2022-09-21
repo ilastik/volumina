@@ -141,7 +141,7 @@ class DataExportOptionsDlg(QDialog):
             opDataExport.OutputFilenameFormat.setValue(defaultExportPath)
             self.exportFileOptionsWidget.stackedWidget.currentWidget().updateFromSlots()
 
-        self.resetButton.pressed.connect(pressedResetButton)
+        self.resetButton.clicked.connect(resetButtonClicked)
 
     def eventFilter(self, watched, event):
         # Ignore 'enter' keypress events, since the user may just be entering settings.
