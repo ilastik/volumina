@@ -77,8 +77,10 @@ if _has_lazyflow:
         OutputFormat = InputSlot(value="hdf5")
 
         ConvertedImage = OutputSlot()  # Preprocessed image, BEFORE axis reordering
-        ImageToExport = OutputSlot()  # Preview of the pre-processed image that will be exported
-        ExportPath = OutputSlot()  # Location of the saved file after export is complete.
+        # Preview of the pre-processed image that will be exported
+        ImageToExport = OutputSlot()
+        # Location of the saved file after export is complete.
+        ExportPath = OutputSlot()
         FormatSelectionErrorMsg = OutputSlot()
 
         @classmethod
@@ -99,7 +101,7 @@ if _has_lazyflow:
 # DataExportOptionsDlg
 # **************************************************************************
 class DataExportOptionsDlg(QDialog):
-    def __init__(self, parent, opDataExport):
+    def __init__(self, parent, opDataExport, defaultExportPath=None):
         """
         Constructor.
 
@@ -135,6 +137,12 @@ class DataExportOptionsDlg(QDialog):
         # See self.eventFilter()
         self.installEventFilter(self)
 
+        def resetButtonClicked():
+            opDataExport.OutputFilenameFormat.setValue(defaultExportPath)
+            self.exportFileOptionsWidget.stackedWidget.currentWidget().updateFromSlots()
+
+        self.resetButton.clicked.connect(resetButtonClicked)
+
     def eventFilter(self, watched, event):
         # Ignore 'enter' keypress events, since the user may just be entering settings.
         # The user must manually click the 'OK' button to close the dialog.
@@ -155,7 +163,7 @@ class DataExportOptionsDlg(QDialog):
     # Input/Output Meta-info (display only)
     # **************************************************************************
     def _initMetaInfoWidgets(self):
-        ## Input/output meta-info display widgets
+        # Input/output meta-info display widgets
         opDataExport = self._opDataExport
         self.inputMetaInfoWidget.initSlot(opDataExport.Input)
         self.outputMetaInfoWidget.initSlot(opDataExport.ImageToExport)
@@ -163,6 +171,7 @@ class DataExportOptionsDlg(QDialog):
     # **************************************************************************
     # Subregion roi
     # **************************************************************************
+
     def _initSubregionWidget(self):
         opDataExport = self._opDataExport
         inputAxes = opDataExport.Input.meta.getAxisKeys()

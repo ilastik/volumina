@@ -71,9 +71,9 @@ class StackExportFileOptionsWidget(QWidget):
 
     def showEvent(self, event):
         super(StackExportFileOptionsWidget, self).showEvent(event)
-        self._updatePathsFromSlot()
+        self.updateFromSlots()
 
-    def _updatePathsFromSlot(self):
+    def updateFromSlots(self):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             directory, filename_pattern = os.path.split(file_path)

@@ -29,20 +29,20 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
         run: |
-          conda develop .
-          xvfb-run pytest --cov-report=xml --cov=volumina
+          pip install -e .
+          xvfb-run --server-args="-screen 0 1024x768x24" pytest --cov-report=xml --cov=volumina
       - name: osx test
         if: matrix.os == 'macos-10.15'
         shell: bash -l {0}
         run: |
-          conda develop .
+          pip install -e .
           pytest
       - name: windows test
         if: matrix.os == 'windows-latest'
         shell: cmd /C CALL {0}
         # auto activation of env does not seem to work on win
         run: |
-          conda activate ilastik-env & python --version & conda list & conda develop . & pytest
+          pip install -e . & pytest
       - uses: codecov/codecov-action@v1
         if: matrix.os == 'ubuntu-latest'
         with:
@@ -69,7 +69,7 @@ jobs:
       - name: linux conda build test
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
-        run: xvfb-run conda mambabuild -c conda-forge conda-recipe
+        run: xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild -c conda-forge conda-recipe
       - name: osx test
         if: matrix.os == 'macos-10.15'
         shell: bash -l {0}

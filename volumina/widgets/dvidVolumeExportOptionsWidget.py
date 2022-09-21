@@ -54,9 +54,9 @@ class DvidVolumeExportOptionsWidget(QWidget):
 
     def showEvent(self, event):
         super(DvidVolumeExportOptionsWidget, self).showEvent(event)
-        self.updateFromSlot()
+        self.updateFromSlots()
 
-    def updateFromSlot(self):
+    def updateFromSlots(self):
         if self._urlSlot.ready():
             # FIXME: Choose a default dvid url...
             file_path = self._urlSlot.value
