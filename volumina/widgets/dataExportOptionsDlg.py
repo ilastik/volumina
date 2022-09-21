@@ -137,7 +137,7 @@ class DataExportOptionsDlg(QDialog):
         # See self.eventFilter()
         self.installEventFilter(self)
 
-        def pressedResetButton():
+        def resetButtonClicked():
             opDataExport.OutputFilenameFormat.setValue(defaultExportPath)
             self.exportFileOptionsWidget.stackedWidget.currentWidget().updateFromSlots()
 
