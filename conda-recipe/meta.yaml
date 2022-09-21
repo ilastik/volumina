@@ -9,12 +9,12 @@ source:
 
 requirements:
   host:
-    - python >=3.7,<3.9
+    - python 3.7.*
     - pip
     - setuptools >=40.0
     - setuptools_scm
   run:
-    - python >=3.7,<3.9
+    - python 3.7.*
     - appdirs
     - cachetools
     - future
