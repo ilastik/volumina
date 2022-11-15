@@ -82,12 +82,12 @@ def _get_stacked_data_sources(layer: Layer) -> OpMultiArrayStacker:
     """
     dataSlots = _get_export_slots(layer)
 
-    opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].getRealOperator().parent)
+    opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].operator.parent)
     for slot in dataSlots:
         assert isinstance(slot, lazyflow.graph.Slot), f"slot is of type {type(slot)!r}"
         assert isinstance(
-            slot.getRealOperator(), lazyflow.graph.Operator
-        ), f"slot's operator is of type {type(slot.getRealOperator())!r}"
+            slot.operator, lazyflow.graph.Operator
+        ), f"slot's operator is of type {type(slot.operator)!r}"
     opStackChannels.AxisFlag.setValue("c")
     opStackChannels.Images.resize(len(dataSlots))
     for i, islot in enumerate(opStackChannels.Images):

@@ -106,7 +106,7 @@ class LazyflowSource(QObject, DataSourceABC):
         # Attach an OpReorderAxes to ensure the data will display correctly
         # (We include the graph parameter, too, since tests sometimes provide an operator with no parent.)
         self._op5 = opReorderAxes.OpReorderAxes(
-            parent=outslot.getRealOperator().parent, graph=outslot.getRealOperator().graph
+            parent=outslot.operator.parent, graph=outslot.operator.graph
         )
         self._op5.Input.connect(outslot)
         self._op5.AxisOrder.setValue("txyzc")
