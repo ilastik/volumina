@@ -312,3 +312,16 @@ class LayerStackModel(QAbstractListModel):
             self[idx.row()].setActive(False)
         for idx in selected.indexes():
             self[idx.row()].setActive(True)
+
+    def toggleTopToBottom(self, layer: Layer) -> None:
+        """Select layer and move it to the top or bottom of the stack.
+
+        Layer goes to the top unless it's already there.
+        Top layer goes to the bottom.        
+        """
+        index = self.layerIndex(layer)
+        self.selectRow(index)
+        if index == 0:
+            self.moveSelectedToBottom()
+        else:
+            self.moveSelectedToTop()
