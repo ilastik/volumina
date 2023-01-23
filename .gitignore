@@ -10,6 +10,7 @@
 *.kate-swp
 .ropeproject
 *.DS_Store
+*.egg-info/
 
 # pycharm project settings
 .idea/
