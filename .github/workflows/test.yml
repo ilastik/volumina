@@ -53,7 +53,12 @@ jobs:
   test-w-conda-recipe:
     strategy:
       matrix:
-        os: [macos-10.15, windows-latest, ubuntu-latest]
+        os: [macos-10.15, macos-latest, windows-latest, ubuntu-latest]
+        python_version: ["3.7", "3.8", "3.9"]
+        exclude:
+          - os: macos-latest
+            python_version: "3.7"
+
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -69,12 +74,12 @@ jobs:
       - name: linux conda build test
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
-        run: xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild -c conda-forge conda-recipe
+        run: xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild --python=${{ matrix.python_version }} -c conda-forge conda-recipe
       - name: osx test
-        if: matrix.os == 'macos-10.15'
+        if: startsWith(matrix.os, 'macos')
         shell: bash -l {0}
-        run: conda mambabuild -c conda-forge conda-recipe
+        run: conda mambabuild -c conda-forge --python=${{ matrix.python_version }} conda-recipe
       - name: windows conda-build
         if: matrix.os == 'windows-latest'
         shell: cmd /C CALL {0}
-        run: conda mambabuild -c conda-forge conda-recipe
+        run: conda mambabuild -c conda-forge --python=${{ matrix.python_version }} conda-recipe
