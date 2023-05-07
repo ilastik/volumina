@@ -70,7 +70,7 @@ class TilingTest(ut.TestCase):
             t.data2scene = trans
 
 
-@pytest.mark.usefixtures("qtapp")
+@pytest.mark.usefixtures("qapp")
 class TileProviderTest(ut.TestCase):
     def setUp(self):
         self.GRAY1 = 60
@@ -141,7 +141,7 @@ class TileProviderTest(ut.TestCase):
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
 
-@pytest.mark.usefixtures("qtapp")
+@pytest.mark.usefixtures("qapp")
 class DirtyPropagationTest(ut.TestCase):
     def setUp(self):
         dataShape = (1, 900, 400, 10, 1)  # t,x,y,z,c

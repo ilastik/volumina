@@ -24,7 +24,7 @@ from __future__ import print_function
 from builtins import range
 import unittest as ut
 import numpy as np
-from PyQt5.QtWidgets import QApplication, qApp
+import pytest
 from PyQt5.QtCore import QPointF
 from volumina.brushingmodel import BrushingModel
 
@@ -34,14 +34,8 @@ def _onBrushStroke(point, labels):
     print(labels.shape)
 
 
+@pytest.mark.usefixtures("qapp")
 class BrushingModelTest(ut.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.app = QApplication([])
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
 
     def _checkBrushSize(self, size, should_diameter):
         m = BrushingModel()
