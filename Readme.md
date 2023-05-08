@@ -4,7 +4,7 @@
 [![build](https://github.com/ilastik/volumina/workflows/test/badge.svg)](https://github.com/ilastik/volumina/actions)
 [![deployment](https://github.com/ilastik/volumina/workflows/deploy/badge.svg)](https://github.com/ilastik/volumina/actions)
 [![black](https://github.com/ilastik/volumina/workflows/lint/badge.svg)](https://github.com/ilastik/volumina/actions)
-
+[![ilastik-forge-version](https://anaconda.org/ilastik-forge/volumina/badges/version.svg)](https://anaconda.org/ilastik-forge/volumina)
 
 Installing
 ==========
