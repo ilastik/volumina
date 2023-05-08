@@ -10,7 +10,7 @@ jobs:
   test-w-ilastik-env:
     strategy:
       matrix:
-        os: [macos-10.15, windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -53,7 +53,7 @@ jobs:
   test-w-conda-recipe:
     strategy:
       matrix:
-        os: [macos-10.15, macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
         python_version: ["3.7", "3.8", "3.9"]
         exclude:
           - os: macos-latest
