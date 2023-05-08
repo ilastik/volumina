@@ -24,6 +24,7 @@ import time
 import threading
 import unittest as ut
 
+import pytest
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import qApp, QApplication, QWidget, QHBoxLayout
 from PyQt5.QtGui import QScreen, QGuiApplication
@@ -33,6 +34,7 @@ from volumina.layerstack import LayerStackModel
 from volumina.widgets.layerwidget import LayerWidget
 
 
+@pytest.mark.usefixtures("qapp")
 class TestLayerWidget(ut.TestCase):
     """
     Create two layers and add them to a LayerWidget.
@@ -43,12 +45,7 @@ class TestLayerWidget(ut.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.app = QApplication([])
         cls.errors = False
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
 
     def impl(self):
         try:
@@ -124,8 +121,6 @@ class TestLayerWidget(ut.TestCase):
 
         # Run the test within the GUI event loop
         QTimer.singleShot(500, self.impl)
-        self.app.exec_()
-
         # Were there errors?
         assert not TestLayerWidget.errors, "There were GUI errors/failures.  See above."
 

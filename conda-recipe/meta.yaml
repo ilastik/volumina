@@ -9,18 +9,18 @@ source:
 
 requirements:
   host:
-    - python 3.7.*
+    - python >=3.7
     - pip
     - setuptools >=40.0
     - setuptools_scm
   run:
-    - python 3.7.*
+    - python >=3.7
     - appdirs
     - cachetools
     - future
     - h5py
     - pyopengl
-    - pyqt >=5.6,<5.13
+    - pyqt >=5.6
     - pyqtgraph
     - qimage2ndarray
     - typing_extensions
@@ -58,6 +58,7 @@ test:
     - pytest
     - pytest-qt
     - pyqt >=5.11
+    - python 3.8.*
   commands:
     - pytest .
     - volumina --help

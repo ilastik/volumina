@@ -266,7 +266,7 @@ class SliceProjection(object):
         slicing = self.domainDim * [0]
         slicing[self._abscissa], slicing[self._ordinate] = slice(None, None), slice(None, None)
 
-        projectedArray = domainArray[slicing]
+        projectedArray = domainArray[tuple(slicing)]
         assert projectedArray.ndim == 2, "dim %d != 2" % projectedArray.ndim
         if self.handednessSwitched():
             projectedArray = np.swapaxes(projectedArray, 0, 1)

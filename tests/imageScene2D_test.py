@@ -20,10 +20,13 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import unittest as ut
-import time, datetime
+import datetime
+import time
+
+import pytest
 
 from PyQt5.QtGui import QImage, QPainter
-from PyQt5.QtWidgets import QApplication, QStyleOptionGraphicsItem
+from PyQt5.QtWidgets import QStyleOptionGraphicsItem
 
 from qimage2ndarray import byte_view
 import numpy as np
@@ -38,19 +41,8 @@ from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 
 
+@pytest.mark.usefixtures("qapp")
 class DirtyIndicatorTest(ut.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.app = None
-        if QApplication.instance():
-            cls.app = QApplication.instance()
-        else:
-            cls.app = QApplication([])
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
-
     def testPaintDelay(self):
         t = Tiling((100, 100))
         assert len(t.tileRectFs) == 1
@@ -116,18 +108,8 @@ class DirtyIndicatorTest(ut.TestCase):
         painter.end()
 
 
+@pytest.mark.usefixtures("qapp")
 class ImageScene2DTest(ut.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.app = None
-        if QApplication.instance():
-            cls.app = QApplication.instance()
-        else:
-            cls.app = QApplication([])
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
 
     def testStackedImageSourcesProperty(self):
         s = ImageScene2D(PositionModel(), (0, 3, 4), preemptive_fetch_number=0)
@@ -138,18 +120,8 @@ class ImageScene2DTest(ut.TestCase):
         self.assertEqual(id(s.stackedImageSources), id(sims))
 
 
+@pytest.mark.usefixtures("qapp")
 class ImageScene2D_RenderTest(ut.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.app = None
-        if QApplication.instance():
-            cls.app = QApplication.instance()
-        else:
-            cls.app = QApplication([])
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.app
 
     def setUp(self):
         self.layerstack = LayerStackModel()

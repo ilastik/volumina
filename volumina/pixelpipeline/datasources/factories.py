@@ -142,7 +142,7 @@ if hasH5py:
             expanded_slicing = [None] * 5
             for axis in self.real_axes:
                 expanded_slicing[axis] = slice(None)
-            return data[expanded_slicing]
+            return data[tuple(expanded_slicing)]
 
     @createDataSource.register(h5py.Dataset)
     def _h5py_ds(dset, withShape=False):
