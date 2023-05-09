@@ -50,11 +50,13 @@ class EventSwitch(QObject):
     def interpreter(self, interpreter: InterpreterABC) -> None:
         self._interpreter.stop()
         self._interpreter = interpreter
+        interpreter.setParent(self)
         self._interpreter.start()
 
-    def __init__(self, views: Iterable[QGraphicsView], interpreter: InterpreterABC):
-        super().__init__()
+    def __init__(self, views: Iterable[QGraphicsView], interpreter: InterpreterABC, parent=None):
+        super().__init__(parent=parent)
         self._interpreter = interpreter
+        interpreter.setParent(self)
 
         # We can't directly install the interpreter as an event filter on each of the views,
         # because repeatedly installing/uninstalling the interpreter changes its priority
