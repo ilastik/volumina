@@ -23,12 +23,15 @@ from __future__ import absolute_import
 ###############################################################################
 import numpy
 from functools import partial
+
+import sip
 from PyQt5.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
 from PyQt5.QtGui import QPen, QBrush, QMouseEvent
 from PyQt5.QtWidgets import QApplication, QGraphicsLineItem, QUndoStack, QUndoCommand
 
 from volumina.eventswitch import InterpreterABC
 from .navigationController import NavigationInterpreter
+
 
 # *******************************************************************************
 # C r o s s h a i r C o n t r o l e r                                          *
@@ -136,9 +139,13 @@ class BrushingInterpreter(QObject, InterpreterABC):
         # Before we steal this event from the scene, check that it is allowing brush strokes
         allow_brushing = True
         for view in self._navCtrl._views:
-            allow_brushing &= view.scene().allow_brushing
-        if not allow_brushing:
-            return self._navIntr.eventFilter(watched, event)
+            # after updating python to 3.9 we encountered exceptions when shutting
+            #  ilastik down. Since we don't own the view or the scene, those could
+            # get deleted then accessing those would raise.
+            if sip.isdeleted(view):
+                continue
+            if not (view.scene() and view.scene().allow_brushing):
+                return self._navIntr.eventFilter(watched, event)
 
         if etype == QEvent.MouseButtonDblClick and self._doubleClickTimer is not None:
             # On doubleclick, cancel release handler that normally draws the stroke.
@@ -154,7 +161,6 @@ class BrushingInterpreter(QObject, InterpreterABC):
                 and event.modifiers() == Qt.NoModifier
                 and self._navIntr.mousePositionValid(watched, event)
             ):
-
                 ### default mode -> maybe draw mode
                 self._current_state = self.MAYBE_DRAW_MODE
 
