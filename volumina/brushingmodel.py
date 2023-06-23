@@ -51,7 +51,7 @@ class BrushingModel(QObject):
         QObject.__init__(self, parent=parent)
         self.sliceRect = None
         self.bb = QRect()  # bounding box enclosing the drawing
-        self.brushSize = self.defaultBrushSize
+        self.brushSize: int = self.defaultBrushSize
         self.drawColor = self.defaultColor
         self._temp_color = None
         self._temp_number = None
@@ -90,7 +90,7 @@ class BrushingModel(QObject):
         self.setDrawnNumber(self._temp_number)
 
     def setBrushSize(self, size):
-        self.brushSize = size
+        self.brushSize = int(size)
         self.brushSizeChanged.emit(self.brushSize)
 
     def setDrawnNumber(self, num):
@@ -197,12 +197,12 @@ class BrushingModel(QObject):
 
         # update bounding Box
         if not self.bb.isValid():
-            self.bb = QRect(QPoint(oldX, oldY), QSize(1, 1))
+            self.bb = QRect(QPoint(int(oldX), int(oldY)), QSize(1, 1))
         # grow bounding box
-        self.bb.setLeft(min(self.bb.left(), max(0, x - self.brushSize // 2 - 1)))
-        self.bb.setRight(max(self.bb.right(), min(self.sliceRect[0] - 1, x + self.brushSize // 2 + 1)))
-        self.bb.setTop(min(self.bb.top(), max(0, y - self.brushSize // 2 - 1)))
-        self.bb.setBottom(max(self.bb.bottom(), min(self.sliceRect[1] - 1, y + self.brushSize // 2 + 1)))
+        self.bb.setLeft(min(self.bb.left(), int(max(0, x - self.brushSize // 2 - 1))))
+        self.bb.setRight(max(self.bb.right(), int(min(self.sliceRect[0] - 1, x + self.brushSize // 2 + 1))))
+        self.bb.setTop(min(self.bb.top(), int(max(0, y - self.brushSize // 2 - 1))))
+        self.bb.setBottom(int(max(self.bb.bottom(), min(self.sliceRect[1] - 1, y + self.brushSize // 2 + 1))))
 
         # update/move position
         self.pos = pos
