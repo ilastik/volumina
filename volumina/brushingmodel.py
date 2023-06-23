@@ -199,10 +199,9 @@ class BrushingModel(QObject):
         if not self.bb.isValid():
             self.bb = QRect(QPoint(int(oldX), int(oldY)), QSize(1, 1))
         # grow bounding box
-        self.bb.setLeft(min(self.bb.left(), int(max(0, x - self.brushSize // 2 - 1))))
-        self.bb.setRight(max(self.bb.right(), int(min(self.sliceRect[0] - 1, x + self.brushSize // 2 + 1))))
-        self.bb.setTop(min(self.bb.top(), int(max(0, y - self.brushSize // 2 - 1))))
-        self.bb.setBottom(int(max(self.bb.bottom(), min(self.sliceRect[1] - 1, y + self.brushSize // 2 + 1))))
+        r = self.brushSize // 2 + 1
+        bb = QRect(QPoint(int(x - r), int(y - r)), QPoint(int(x + r), int(y + r)))
+        self.bb |= bb & QRect(0, 0, int(self.sliceRect[0]), int(self.sliceRect[1]))
 
         # update/move position
         self.pos = pos
