@@ -40,23 +40,22 @@ def test_SlotMetaInfoDisplayWidget_shows_correct_info(qtbot):
     w = init_widget(SlotMetaInfoDisplayWidget(None), op.Output)
     out_widget = init_widget(OutputSlotMetaInfoDisplayWidget(None), op_reorder.Output)
 
-    qtbot.waitForWindowShown(w)
-
     def verify_widget(w, shape):
         displayed_shape = tuple(int(s) for s in re.findall(r"[0-9]+", w.shapeDisplay.text()))
         assert displayed_shape == tuple(shape.values())
         assert w.axisOrderDisplay.text() == "".join(shape.keys())
         assert w.dtypeDisplay.text() == dtype.__name__
 
-    verify_widget(w, shape)
-    verify_widget(out_widget, swapped_shape)
+    with qtbot.waitExposed(w):
+        verify_widget(w, shape)
+        verify_widget(out_widget, swapped_shape)
 
-    new_shape = {"y": 1, "c": 40, "z": 10, "x": 30}
-    new_swapped_shape = {"c": 40, "x": 30, "y": 1, "z": 10}
-    new_data = create_array(new_shape)
+        new_shape = {"y": 1, "c": 40, "z": 10, "x": 30}
+        new_swapped_shape = {"c": 40, "x": 30, "y": 1, "z": 10}
+        new_data = create_array(new_shape)
 
-    op.Input.setValue(new_data)
-    op_reorder.AxisOrder.setValue("".join(new_swapped_shape.keys()))
+        op.Input.setValue(new_data)
+        op_reorder.AxisOrder.setValue("".join(new_swapped_shape.keys()))
 
-    verify_widget(w, new_shape)
-    verify_widget(out_widget, new_swapped_shape)
+        verify_widget(w, new_shape)
+        verify_widget(out_widget, new_swapped_shape)

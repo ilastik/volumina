@@ -1,6 +1,9 @@
 from pyqtgraph.opengl import GLBoxItem
 
 
+def qcolor2rgbacomponents(qcolor):
+    return qcolor.red(), qcolor.green(), qcolor.blue(), qcolor.alpha()
+
 class SlicingPlanes(object):
     """
     A container class for the 3 opengl box items to indicate the current slice.
@@ -115,7 +118,7 @@ class SlicingPlanes(object):
         """
         for axis, plane in enumerate((self._x, self._y, self._z)):
             if item is plane:
-                r, g, b, a = item.color()
+                r, g, b, a = qcolor2rgbacomponents(item.color())
                 item.setColor([r / 2, g / 2, b / 2, a])
                 item.update()
                 self._selection = item
@@ -127,7 +130,7 @@ class SlicingPlanes(object):
         Clear the currently selected slicing plane
         """
         if self._selection is not None:
-            r, g, b, a = self._selection.color()
+            r, g, b, a = qcolor2rgbacomponents(self._selection.color())
             self._selection.setColor([r * 2, g * 2, b * 2, a])
             self._selection.update()
         self._selection = None

@@ -62,7 +62,7 @@ class TilingTest(ut.TestCase):
         t = Tiling((0, 0))
         trans = QTransform()
         t.data2scene = trans
-        self.assertEquals(trans, t.data2scene)
+        self.assertEqual(trans, t.data2scene)
 
         # try using transformation that is not invertible
         trans = QTransform(1, 1, 1, 1, 1, 1)

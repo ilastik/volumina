@@ -9,8 +9,10 @@ def test_floating_range(qtbot, dtype):
     vrwidget = ValueRangeWidget()
     qtbot.addWidget(vrwidget)
     vrwidget.show()
-    qtbot.waitForWindowShown(vrwidget)
-    vrwidget.setDType(dtype)
+
+    with qtbot.waitExposed(vrwidget):
+        vrwidget.setDType(dtype)
+
     minmax = vrwidget.getValues()
     minmax_expected = numpy.finfo(dtype).min, numpy.finfo(dtype).max
     numpy.testing.assert_array_almost_equal(minmax, minmax_expected)
@@ -21,8 +23,10 @@ def test_integer_range(qtbot, dtype):
     vrwidget = ValueRangeWidget()
     qtbot.addWidget(vrwidget)
     vrwidget.show()
-    qtbot.waitForWindowShown(vrwidget)
-    vrwidget.setDType(dtype)
+
+    with qtbot.waitExposed(vrwidget):
+        vrwidget.setDType(dtype)
+
     minmax = vrwidget.getValues()
     minmax_expected = numpy.iinfo(dtype).min, numpy.iinfo(dtype).max
     numpy.testing.assert_array_equal(minmax, minmax_expected)
