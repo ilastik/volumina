@@ -103,7 +103,7 @@ class FractionSelectionBar(QWidget):
         painter.restore()
 
         # fraction indicator
-        painter.drawRect(QRect(QPoint(0, y_offset), QSize(self._barWidth() * self._fraction, self._barHeight())))
+        painter.drawRect(QRect(QPoint(0, y_offset), QSize(int(self._barWidth() * self._fraction), self._barHeight())))
 
     def sizeHint(self):
         return QSize(100, 10)
@@ -191,7 +191,7 @@ class LayerItemWidget(QWidget):
         self.opacityLabel = QLabel(parent=self)
         self.opacityLabel.setAlignment(Qt.AlignRight)
         self.opacityLabel.setFont(self._font)
-        self.opacityLabel.setText(u"\u03B1=%0.1f%%" % (100.0 * (self.bar.fraction())))
+        self.opacityLabel.setText("\u03B1=%0.1f%%" % (100.0 * (self.bar.fraction())))
         self.toggleEye = ToggleEye(parent=self)
         self.toggleEye.setActive(False)
         self.toggleEye.setFixedWidth(35)
@@ -245,7 +245,6 @@ class LayerItemWidget(QWidget):
 
     def _onEyeToggle(self, active):
         if self._layer and (active != self._layer.visible):
-
             if self._layer._allowToggleVisible:
                 self._layer.visible = active
             else:
@@ -259,7 +258,7 @@ class LayerItemWidget(QWidget):
         if self._layer:
             self.toggleEye.setActive(self._layer.visible)
             self.bar.setFraction(self._layer.opacity)
-            self.opacityLabel.setText(u"\u03B1=%0.1f%%" % (100.0 * (self.bar.fraction())))
+            self.opacityLabel.setText(f"\u03B1={(100.0 * (self.bar.fraction())):0.1f}")
             self.nameLabel.setText(self._layer.name)
 
             if self._layer.numberOfChannels > 1:

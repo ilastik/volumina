@@ -195,7 +195,6 @@ class SpinBoxImageView(QHBoxLayout):
         self.spinBox.setSuffix("/" + str(value))
 
     def on_upLabel(self):
-
         imgView = self.parent().parent().parent().parent()
         try:
             roi_3d = imgView._croppingMarkers.crop_extents_model.get_roi_3d()
@@ -207,7 +206,6 @@ class SpinBoxImageView(QHBoxLayout):
             self.spinBox.setValue(self.spinBox.value() + 1)
 
     def on_downLabel(self):
-
         imgView = self.parent().parent().parent().parent()
         try:
             roi_3d = imgView._croppingMarkers.crop_extents_model.get_roi_3d()
@@ -587,7 +585,7 @@ class QuadStatusBar(QHBoxLayout):
         self._registerTimeframeShortcuts()
 
     def _registerTimeframeShortcuts(self, enabled=True, remove=True):
-        """ Register or deregister "," and "." as keyboard shortcuts for scrolling in time """
+        """Register or deregister "," and "." as keyboard shortcuts for scrolling in time"""
         mgr = ShortcutManager()
         ActionInfo = ShortcutManager.ActionInfo
 
@@ -700,9 +698,9 @@ class QuadStatusBar(QHBoxLayout):
         self.timeSlider.setValue(shape5DcropMin[0])
 
     def setMouseCoords(self, x, y, z):
-        self.xSpinBox.setValueWithoutSignal(x)
-        self.ySpinBox.setValueWithoutSignal(y)
-        self.zSpinBox.setValueWithoutSignal(z)
+        self.xSpinBox.setValueWithoutSignal(int(x))
+        self.ySpinBox.setValueWithoutSignal(int(y))
+        self.zSpinBox.setValueWithoutSignal(int(z))
 
 
 if __name__ == "__main__":

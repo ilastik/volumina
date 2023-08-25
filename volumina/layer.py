@@ -177,7 +177,7 @@ class Layer(QObject):
 
     def __init__(self, datasources, direct=False):
         super(Layer, self).__init__()
-        self._name = u"Unnamed Layer"
+        self._name = "Unnamed Layer"
         self._visible = True
         self._opacity = 1.0
         self._datasources = datasources
@@ -438,7 +438,7 @@ def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=
                 colors.append(QColor(0, 0, 0, 0).rgba())
             else:
                 h, s, v = r[i, :]
-                color = numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255
+                color = (numpy.asarray(colorsys.hsv_to_rgb(h, s, v)) * 255).astype(int)
                 qColor = QColor(*color)
                 colors.append(qColor.rgba())
         return colors
