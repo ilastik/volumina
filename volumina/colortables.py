@@ -48,12 +48,12 @@ def matplotlib_to_qt4_colortable(cmap_name, N, asLong=True):
     cmap_name can be any matplotlib colortable
     """
     try:
-        import matplotlib.cm as cm
+        import matplotlib
     except:
         raise RuntimeError("this function requires matplotlib")
 
-    cmap = cm.get_cmap(cmap_name, N)
-    cmap = cmap(np.arange(N))[:, :-1]
+    cmap = matplotlib.colormaps.get_cmap(cmap_name).resampled(N)
+    cmap = cmap(np.arange(N))[:, :-1].astype(int)
     colortable = []
     for el in cmap:
         r, g, b = el * 255
@@ -400,7 +400,7 @@ def create_default_8bit():
     Repeatedly applies the default16 colortable to the whole 8bit range.
 
     """
-    return [color for color in itertools.islice(itertools.cycle(default16), 0, 2 ** 8)]
+    return [color for color in itertools.islice(itertools.cycle(default16), 0, 2**8)]
 
 
 def create_default_16bit():
@@ -409,7 +409,7 @@ def create_default_16bit():
     Repeatedly applies the default16 colortable to the whole 16bit range.
 
     """
-    return [color for color in itertools.islice(itertools.cycle(default16), 0, 2 ** 16)]
+    return [color for color in itertools.islice(itertools.cycle(default16), 0, 2**16)]
 
 
 def create_random_8bit():
@@ -423,7 +423,7 @@ def create_random_16bit():
     """Create a colortable suitable for 16bit data.
 
     Repeatedly applies a pseudo-random colortable to the whole 16bit range"""
-    return [color for color in itertools.islice(itertools.cycle(random256), 0, 2 ** 16)]
+    return [color for color in itertools.islice(itertools.cycle(random256), 0, 2**16)]
 
 
 if __name__ == "__main__":
