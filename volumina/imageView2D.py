@@ -19,24 +19,18 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from __future__ import division
-from __future__ import absolute_import
-from builtins import range
-from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt, QRectF
-from PyQt5.QtGui import QCursor, QPainter, QImage
-from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox
+from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt
+from PyQt5.QtGui import QCursor, QPainter
+from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox, QOpenGLWidget
 
 import numpy
-import os
-import time
-import platform
 
 from .crossHairCursor import CrossHairCursor
 from .sliceIntersectionMarker import SliceIntersectionMarker
 from .croppingMarkers import CroppingMarkers
 from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
+import volumina.config
 
-from PyQt5.QtOpenGL import QGLWidget
 
 # *******************************************************************************
 # I m a g e V i e w 2 D                                                        *
@@ -105,10 +99,10 @@ class ImageView2D(QGraphicsView):
 
         QGraphicsView.__init__(self, parent)
 
-        # We can't use OpenGL because the HUD doesn't render properly on top.
-        # Maybe this will be fixed in Qt5?
-        if False:
-            self.setViewport(QGLWidget())
+        # can be overriden in either `.voluminarc`, or via env variable
+        # `VOLUMINA_ENABLE_FALLBACK_VIEWPORTS=1`
+        if not volumina.config.CONFIG.enable_fallback_viewports:
+            self.setViewport(QOpenGLWidget())
 
         self.setScene(imagescene2d)
         self.mousePos = QPointF(0, 0)
@@ -245,7 +239,7 @@ class ImageView2D(QGraphicsView):
 
     def _qBound(self, minVal, current, maxVal):
         """PyQt5 does not wrap the qBound function from Qt's global namespace
-           This is equivalent."""
+        This is equivalent."""
         return max(min(current, maxVal), minVal)
 
     def _setdeaccelerateAxAy(self, x, y, a):

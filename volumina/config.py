@@ -26,6 +26,7 @@ default_config = """
 [volumina]
 pixelpipeline_verbose: false
 show_3d_widget: true
+enable_fallback_viewports: false
 """
 
 _cfg = configparser.ConfigParser()
@@ -49,6 +50,10 @@ class _Config:
     @property
     def show_3d_widget(self):
         return self._get_boolean("volumina", "show_3d_widget")
+
+    @property
+    def enable_fallback_viewports(self):
+        return self._get_boolean("volumina", "enable_fallback_viewports")
 
     @property
     def cache_size(self):
