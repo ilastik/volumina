@@ -43,7 +43,7 @@ jobs:
         # auto activation of env does not seem to work on win
         run: |
           pip install -e . & pytest
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v3
         if: matrix.os == 'ubuntu-latest'
         with:
           files: ./coverage.xml,
