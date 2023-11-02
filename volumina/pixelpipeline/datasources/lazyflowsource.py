@@ -46,7 +46,7 @@ def translate_lf_exceptions(func):
             return func(*args, **kwargs)
         except Slot.SlotNotReadyError as ex:
             # Translate lazyflow not-ready errors into the volumina equivalent.
-            raise_with_traceback(IndeterminateRequestError(ex)).with_traceback(sys.exc_info()[2])
+            raise IndeterminateRequestError() from ex
 
     wrapper.__wrapped__ = func  # Emulate python 3 behavior of @functools.wraps
     return wrapper
@@ -105,11 +105,10 @@ class LazyflowSource(QObject, DataSourceABC):
 
         # Attach an OpReorderAxes to ensure the data will display correctly
         # (We include the graph parameter, too, since tests sometimes provide an operator with no parent.)
-        self._op5 = opReorderAxes.OpReorderAxes(
-            parent=outslot.operator.parent, graph=outslot.operator.graph
-        )
+        self._op5 = opReorderAxes.OpReorderAxes(parent=outslot.operator.parent, graph=outslot.operator.graph)
         self._op5.Input.connect(outslot)
         self._op5.AxisOrder.setValue("txyzc")
+        self._op5.name = "reorder_lazyflow_source_to_volumina"
 
         self._priority = priority
         self._dirtyCallback = partial(weakref_setDirtyLF, weakref.ref(self))

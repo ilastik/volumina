@@ -553,7 +553,7 @@ class TileProvider(QObject):
                 if stack_id == self._current_stack_id and cache is self._cache:
                     self.sceneRectChanged.emit(tile_rect)
         except BaseException:
-            logger.debug("Failed to fetch layer tile", exc_info=True)
+            raise
 
     def _onLayerDirty(self, dirtyImgSrc, dataRect):
         """
