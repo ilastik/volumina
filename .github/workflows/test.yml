@@ -17,13 +17,12 @@ jobs:
         with:
           # for codecov
           fetch-depth: 5
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: ilastik-env
-          auto-activate-base: false
           auto-update-conda: true
           environment-file: .github/workflows/etc/ilastik-env.yaml
-          miniforge-variant: Mambaforge
+          miniforge-version: latest
           use-mamba: true
       - name: linux test
         if: matrix.os == 'ubuntu-latest'
@@ -41,8 +40,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: cmd /C CALL {0}
         # auto activation of env does not seem to work on win
-        run: |
-          pip install -e . & pytest
+        run: >-
+          pip install -e . && pytest
       - uses: codecov/codecov-action@v3
         if: matrix.os == 'ubuntu-latest'
         with:
@@ -62,15 +61,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: ""
-          auto-activate-base: true
+          activate-environment: build-env
+          environment-file: .github/workflows/etc/build-env.yaml
           auto-update-conda: true
-          miniforge-variant: Mambaforge
+          miniforge-version: latest
           use-mamba: true
-      - name: install build deps
-        run: mamba install -n base -c conda-forge boa setuptools_scm -y
       - name: linux conda build test
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
