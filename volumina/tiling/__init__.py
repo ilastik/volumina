@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -23,30 +20,21 @@ from __future__ import division
 # 		   http://ilastik.org/license/
 ###############################################################################
 # Python
-from builtins import range
-import sys
 import time
 import collections
-import threading
-from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from functools import partial
-import warnings
-
-# SciPy
-import numpy
 
 # PyQt
-from PyQt5.QtCore import QRect, QRectF, QMutex, QObject, pyqtSignal
+from PyQt5.QtCore import QRect, QRectF, QObject, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5.QtGui import QImage, QPainter, QTransform
 
 # volumina
 from volumina.patchAccessor import PatchAccessor
 
-import volumina
 from volumina.pixelpipeline.interface import IndeterminateRequestError
-from volumina.utility import log_exception, PrioritizedThreadPoolExecutor
+from volumina.utility import PrioritizedThreadPoolExecutor
 
 import logging
 
