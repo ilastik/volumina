@@ -1,7 +1,7 @@
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2014, the ilastik developers
+#       Copyright (C) 2011-2024, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -58,7 +58,7 @@ class TilingTest(ut.TestCase):
             t = Tiling((100 * i, 100), blockSize=50)
             self.assertEqual(len(t), (100 * i * 2) // 50)
 
-    def testData2Scene(self):
+    def testData2SceneSetterErrors(self):
         t = Tiling((0, 0))
         trans = QTransform()
         t.data2scene = trans
@@ -68,6 +68,28 @@ class TilingTest(ut.TestCase):
         trans = QTransform(1, 1, 1, 1, 1, 1)
         with self.assertRaises(AssertionError):
             t.data2scene = trans
+
+
+@pytest.mark.parametrize(
+    "shape, trafo_scale, imageRect_shape, expected_tiles",
+    [
+        ((1024, 2048), (1.0, 1.0), (512, 512), 8),
+        ((512, 1024), (2.0, 2.0), (1024, 1024), 2),
+        ((256, 512), (4.0, 4.0), (1024, 2048), 1),
+        ((128, 256), (8.0, 8.0), (1024, 2048), 1),
+    ],
+)
+def test_Data2Scene(shape, trafo_scale, imageRect_shape, expected_tiles):
+    t = Tiling(shape, data2scene=QTransform().scale(*trafo_scale), blockSize=512)
+
+    assert len(t.imageRectFs) == expected_tiles
+    assert len(t.dataRectFs) == expected_tiles
+    assert len(t.tileRectFs) == expected_tiles
+    assert len(t.imageRects) == expected_tiles
+    assert len(t.dataRects) == expected_tiles
+    assert len(t.tileRects) == expected_tiles
+    for ir in t.imageRects:
+        assert (ir.size().width(), ir.size().height()) == imageRect_shape
 
 
 @pytest.mark.usefixtures("qapp")
