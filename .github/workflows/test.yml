@@ -48,6 +48,8 @@ jobs:
           files: ./coverage.xml,
           fail_ci_if_error: true # optional (default = false)
           verbose: true # optional (default = false)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test-w-conda-recipe:
     strategy:
