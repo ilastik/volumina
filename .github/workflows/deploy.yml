@@ -24,6 +24,6 @@ jobs:
         env:
           ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
         run: |
-          mamba install -n base -c conda-forge boa setuptools_scm anaconda-client -y
-          mamba config --set anaconda_upload yes
+          conda install -n base -c conda-forge boa setuptools_scm anaconda-client -y
+          conda config --set anaconda_upload yes
           xvfb-run conda mambabuild -c conda-forge --user ilastik-forge conda-recipe
