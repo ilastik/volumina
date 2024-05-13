@@ -42,12 +42,14 @@ jobs:
         # auto activation of env does not seem to work on win
         run: >-
           pip install -e . && pytest
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         if: matrix.os == 'ubuntu-latest'
         with:
-          files: ./coverage.xml,
+          files: ./coverage.xml
           fail_ci_if_error: true # optional (default = false)
           verbose: true # optional (default = false)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test-w-conda-recipe:
     strategy:
