@@ -1,7 +1,7 @@
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2018, the ilastik developers
+#       Copyright (C) 2011-2024, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -26,11 +26,11 @@ from PyQt5.QtCore import pyqtSignal, Qt, QEvent
 from PyQt5.QtWidgets import QWidget, QFileDialog
 
 
-class Hdf5ExportFileOptionsWidget(QWidget):
+class HierarchicalFileExportOptionsWidget(QWidget):
     pathValidityChange = pyqtSignal(bool)
 
     def __init__(self, parent):
-        super(Hdf5ExportFileOptionsWidget, self).__init__(parent)
+        super().__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
 
         self.settings_are_valid = True
@@ -51,7 +51,7 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         self.datasetEdit.installEventFilter(self)
 
     def showEvent(self, event):
-        super(Hdf5ExportFileOptionsWidget, self).showEvent(event)
+        super().showEvent(event)
         self.updateFromSlots()
 
     def eventFilter(self, watched, event):
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     op = OpMock(graph=Graph())
 
     app = QApplication([])
-    w = Hdf5ExportFileOptionsWidget(None)
+    w = HierarchicalFileExportOptionsWidget(None)
     w.initSlots(op.Filepath, op.DatasetName, op.FullPath)
     w.show()
     app.exec_()

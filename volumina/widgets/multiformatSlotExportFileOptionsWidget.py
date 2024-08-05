@@ -31,7 +31,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
 from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
-from .hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
+from .hierarchicalFileExportOptionsWidget import HierarchicalFileExportOptionsWidget
 from .n5ExportFileOptionsWidget import N5ExportFileOptionsWidget
 from .stackExportFileOptionsWidget import StackExportFileOptionsWidget
 
@@ -73,7 +73,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # HDF5
         for fmt in ("compressed hdf5", "hdf5"):
-            hdf5OptionsWidget = Hdf5ExportFileOptionsWidget(self)
+            hdf5OptionsWidget = HierarchicalFileExportOptionsWidget(self)
             hdf5OptionsWidget.initSlots(
                 opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
             )
