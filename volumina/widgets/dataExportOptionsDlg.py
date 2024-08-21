@@ -231,12 +231,36 @@ class DataExportOptionsDlg(QDialog):
 
         self.convertDtypeCheckbox.toggled.connect(_handleConvertDtypeChecked)
         dtypes = [
-            ("integer 8-bit", "uint8", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
-            ("integer 16-bit", "uint16", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
-            ("integer 32-bit", "uint32", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
-            ("integer 64-bit", "uint64", "Stores data as integers. More bits per value increase precision but require more storage and processing time."),
-            ("floating-point 32-bit", "float32", "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time."),
-            ("floating-point 64-bit", "float64", "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time."),
+            (
+                "integer 8-bit",
+                "uint8",
+                "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            ),
+            (
+                "integer 16-bit",
+                "uint16",
+                "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            ),
+            (
+                "integer 32-bit",
+                "uint32",
+                "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            ),
+            (
+                "integer 64-bit",
+                "uint64",
+                "Stores data as integers. More bits per value increase precision but require more storage and processing time.",
+            ),
+            (
+                "floating-point 32-bit",
+                "float32",
+                "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time.",
+            ),
+            (
+                "floating-point 64-bit",
+                "float64",
+                "Stores data as numbers with a decimal point. More bits per value increase precision but require more storage and processing time.",
+            ),
         ]
 
         for i, (name, dtype, tooltip) in enumerate(dtypes):
@@ -394,7 +418,7 @@ class DataExportOptionsDlg(QDialog):
         if invalidAxes:
             self.outputAxisOrderEdit.setStyleSheet("QLineEdit {background-color: red}")
         else:
-            self.outputAxisOrderEdit.setStyleSheet("QLineEdit {background-color: white}")
+            self.outputAxisOrderEdit.setStyleSheet("QLineEdit {background-color: palette(base)}")
 
     class _AxisOrderEventFilter(QObject):
         def __init__(self, parent):
