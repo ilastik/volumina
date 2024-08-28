@@ -1,9 +1,7 @@
-from __future__ import print_function
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2014, the ilastik developers
+#       Copyright (C) 2011-2024, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -34,20 +32,18 @@ from PyQt5.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
 )
-from PyQt5.QtCore import QRegExp, Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import uic
 import numpy
 
 
 class ValueRangeWidget(QWidget):
-
     changedSignal = pyqtSignal()
 
     def __init__(self, parent=None, dtype=numpy.float32):
         super(ValueRangeWidget, self).__init__(parent)
         self._blank = False
         self._initUic()
-        self.allValid = True
         self.minBox.setButtonSymbols(QDoubleSpinBox.NoButtons)
         self.maxBox.setButtonSymbols(QDoubleSpinBox.NoButtons)
         self.minBox.setKeyboardTracking(False)
@@ -76,8 +72,6 @@ class ValueRangeWidget(QWidget):
                 box.setSingleStep(1)
                 box.setRange(dtypeInfo.min, dtypeInfo.max)
 
-            # box.setRange(typeLimits[0],typeLimits[1])
-
         self.setLimits(dtypeInfo.min, dtypeInfo.max)
 
     def setBlank(self):
@@ -92,7 +86,6 @@ class ValueRangeWidget(QWidget):
             self.maxBox.setValue(val + self.maxBox.singleStep())
         if val < self.softLimits[0]:
             self.minBox.setValue(self.softLimits[0])
-        self.validateRange()
         self.changedSignal.emit()
 
     def onChangedMaxBox(self, val):
@@ -100,41 +93,7 @@ class ValueRangeWidget(QWidget):
             self.maxBox.setValue(self.softLimits[1])
         if self.maxBox.value() <= self.minBox.value():
             self.minBox.setValue(self.maxBox.value() - self.minBox.singleStep())
-        self.validateRange()
-        # self.printLimits()
         self.changedSignal.emit()
-
-    def printLimits(self):
-        print(self.softLimits)
-
-    def validateRange(self):
-        validCheck = [True, True]
-        if self.minBox.value() < self.softLimits[0]:
-            validCheck[0] = False
-        if self.maxBox.value() <= self.softLimits[0]:
-            validCheck[1] = False
-        if self.minBox.value() >= self.softLimits[1]:
-            validCheck[0] = False
-        if self.maxBox.value() > self.softLimits[1]:
-            validCheck[1] = False
-        # if not self.maxBox.value() > self.minBox.value():
-        #    validCheck[1] = False
-
-        for i, box in enumerate(self.boxes):
-            if self._blank or validCheck[i]:
-                box.setStyleSheet("QDoubleSpinBox {background-color: white;}")
-                # self.setBackgroundColor("white", [i])
-                # box.setButtonSymbols(QDoubleSpinBox.NoButtons)
-            else:
-                self.setBackgroundColor("red", [i])
-                # box.setStyleSheet("QDoubleSpinBox {background-color: red;}")
-                # box.setButtonSymbols(QDoubleSpinBox.UpDownArrows)
-
-        self.allValid = all(validCheck)
-
-    def setBackgroundColor(self, color, boxnumber=[0, 1]):
-        for i in boxnumber:
-            self.boxes[i].setStyleSheet("QDoubleSpinBox {background-color: %s}" % color)
 
     def setLimits(self, _min, _max):
         if _min + self.minBox.singleStep() > _max:
@@ -142,7 +101,6 @@ class ValueRangeWidget(QWidget):
         self.softLimits = [_min, _max]
         if not self._blank:
             self.setValues(_min, _max)
-        self.validateRange()
 
     def setValues(self, val1, val2):
         self._blank = False
@@ -162,10 +120,6 @@ class ValueRangeWidget(QWidget):
 
     def getLimits(self):
         return self.softLimits
-
-    def makeValid(self):
-        if not self.maxBox.value() > self.minBox.value():
-            self.maxBox.setValue(self.minBox.value() + self.maxBox.singleStep())
 
     def _initUic(self):
         p = os.path.split(__file__)[0] + "/"
@@ -244,13 +198,12 @@ class CombinedValueRangeWidget(QWidget):
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
-    import vigra, numpy
+    import numpy
 
     app = QApplication(list())
 
     d = ValueRangeWidget()
     d.setDType(numpy.uint8)
-    d.makeValid()
     d.setLimits(20, 40)
     d.show()
     app.exec_()
