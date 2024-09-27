@@ -74,7 +74,7 @@ class HierarchicalFileExportOptionsWidget(QWidget):
         was_valid = self.settings_are_valid
         datasetName = self.datasetEdit.text()
         self._datasetNameSlot.setValue(str(datasetName))
-        self.settings_are_valid = str(datasetName) != ""
+        self.settings_are_valid = str(datasetName) != "" or self.default_extension == "zarr"
         if self.settings_are_valid != was_valid:
             self.pathValidityChange.emit(self.settings_are_valid)
 
