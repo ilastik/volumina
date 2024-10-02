@@ -42,8 +42,13 @@ class HierarchicalFileExportOptionsWidget(QWidget):
         # We need to watch the textEdited signal because Qt has a bug that causes the OK button
         #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.
         # (That is, we can't just watch for FocusOut events and disable the button before the click.)
-        self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
+        if self.default_extension == ".zarr":
+            self.datasetLabel.setVisible(False)
+            self.datasetEdit.setVisible(False)
+            self.datasetEdit.setEnabled(False)
+        else:
+            self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
 
     def initSlots(self, filepathSlot, datasetNameSlot, fullPathOutputSlot):
         self._filepathSlot = filepathSlot
@@ -74,7 +79,7 @@ class HierarchicalFileExportOptionsWidget(QWidget):
         was_valid = self.settings_are_valid
         datasetName = self.datasetEdit.text()
         self._datasetNameSlot.setValue(str(datasetName))
-        self.settings_are_valid = str(datasetName) != "" or self.default_extension == ".zarr"
+        self.settings_are_valid = str(datasetName) != ""
         if self.settings_are_valid != was_valid:
             self.pathValidityChange.emit(self.settings_are_valid)
 

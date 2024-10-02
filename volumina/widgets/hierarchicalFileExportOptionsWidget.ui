@@ -31,7 +31,7 @@
     <widget class="QLineEdit" name="filepathEdit"/>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="datasetLabel">
      <property name="text">
       <string>Dataset:</string>
      </property>
