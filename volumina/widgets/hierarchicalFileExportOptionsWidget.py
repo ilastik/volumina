@@ -30,11 +30,11 @@ from PyQt5.QtWidgets import QWidget, QFileDialog
 class HierarchicalFileExportOptionsWidget(QWidget):
     pathValidityChange = pyqtSignal(bool)
 
-    def __init__(self, parent, file_extensions: Tuple[str, ...], default_extension: str, extension_description: str):
+    def __init__(self, parent, file_extensions: Tuple[str, ...], extension_description: str):
         super().__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
         self.file_extensions = file_extensions
-        self.default_extension = default_extension
+        self.default_extension = file_extensions[0]
         self.extension_description = extension_description
 
         self.settings_are_valid = True
@@ -74,7 +74,7 @@ class HierarchicalFileExportOptionsWidget(QWidget):
         was_valid = self.settings_are_valid
         datasetName = self.datasetEdit.text()
         self._datasetNameSlot.setValue(str(datasetName))
-        self.settings_are_valid = str(datasetName) != "" or self.default_extension == "zarr"
+        self.settings_are_valid = str(datasetName) != "" or self.default_extension == ".zarr"
         if self.settings_are_valid != was_valid:
             self.pathValidityChange.emit(self.settings_are_valid)
 
@@ -100,7 +100,7 @@ class HierarchicalFileExportOptionsWidget(QWidget):
             file_path = self._filepathSlot.value
             file_path, ext = os.path.splitext(file_path)
             if ext not in self.file_extensions:
-                file_path += f".{self.default_extension}"
+                file_path += self.default_extension
             else:
                 file_path += ext
             self.filepathEdit.setText(file_path)
@@ -121,7 +121,7 @@ class HierarchicalFileExportOptionsWidget(QWidget):
 
         dlg = QFileDialog(self, "Export Location", starting_dir, self.extension_description)
 
-        dlg.setDefaultSuffix(self.default_extension)
+        dlg.setDefaultSuffix(self.default_extension.lstrip("."))
         dlg.setAcceptMode(QFileDialog.AcceptSave)
         if not dlg.exec_():
             return
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     op = OpMock(graph=Graph())
 
     app = QApplication([])
-    w = HierarchicalFileExportOptionsWidget(None, (".h5"), "h5", "H5 Files (*.h5)")
+    w = HierarchicalFileExportOptionsWidget(None, (".h5",), "H5 Files (*.h5)")
     w.initSlots(op.Filepath, op.DatasetName, op.FullPath)
     w.show()
     app.exec_()

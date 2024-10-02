@@ -72,9 +72,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # HDF5
         for fmt in ("compressed hdf5", "hdf5"):
-            hdf5OptionsWidget = HierarchicalFileExportOptionsWidget(
-                self, (".h5", ".hdf5"), "h5", "HDF5 files (*.h5 *.hdf5)"
-            )
+            hdf5OptionsWidget = HierarchicalFileExportOptionsWidget(self, (".h5", ".hdf5"), "HDF5 files (*.h5 *.hdf5)")
             hdf5OptionsWidget.initSlots(
                 opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
             )
@@ -83,7 +81,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # N5
         for fmt in ("compressed n5", "n5"):
-            n5OptionsWidget = HierarchicalFileExportOptionsWidget(self, (".n5",), "n5", "N5 files (*.n5)")
+            n5OptionsWidget = HierarchicalFileExportOptionsWidget(self, (".n5",), "N5 files (*.n5)")
             n5OptionsWidget.initSlots(
                 opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
             )
@@ -91,7 +89,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
             self._format_option_editors[fmt] = n5OptionsWidget
 
         # Zarr
-        zarrOptionsWidget = HierarchicalFileExportOptionsWidget(self, (".zarr",), "zarr", "Zarr files (*.zarr)")
+        zarrOptionsWidget = HierarchicalFileExportOptionsWidget(self, (".zarr",), "Zarr files (*.zarr)")
         zarrOptionsWidget.initSlots(
             opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
         )
