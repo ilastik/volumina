@@ -1,7 +1,7 @@
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2018, the ilastik developers
+#       Copyright (C) 2011-2024, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -20,26 +20,35 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import os
+from typing import Tuple
 
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent
 from PyQt5.QtWidgets import QWidget, QFileDialog
 
 
-class Hdf5ExportFileOptionsWidget(QWidget):
+class HierarchicalFileExportOptionsWidget(QWidget):
     pathValidityChange = pyqtSignal(bool)
 
-    def __init__(self, parent):
-        super(Hdf5ExportFileOptionsWidget, self).__init__(parent)
+    def __init__(self, parent, file_extensions: Tuple[str, ...], extension_description: str):
+        super().__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
+        self.file_extensions = file_extensions
+        self.default_extension = file_extensions[0]
+        self.extension_description = extension_description
 
         self.settings_are_valid = True
 
         # We need to watch the textEdited signal because Qt has a bug that causes the OK button
         #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.
         # (That is, we can't just watch for FocusOut events and disable the button before the click.)
-        self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
+        if self.default_extension == ".zarr":
+            self.datasetLabel.setVisible(False)
+            self.datasetEdit.setVisible(False)
+            self.datasetEdit.setEnabled(False)
+        else:
+            self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
 
     def initSlots(self, filepathSlot, datasetNameSlot, fullPathOutputSlot):
         self._filepathSlot = filepathSlot
@@ -51,7 +60,7 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         self.datasetEdit.installEventFilter(self)
 
     def showEvent(self, event):
-        super(Hdf5ExportFileOptionsWidget, self).showEvent(event)
+        super().showEvent(event)
         self.updateFromSlots()
 
     def eventFilter(self, watched, event):
@@ -95,8 +104,8 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             file_path, ext = os.path.splitext(file_path)
-            if ext != ".h5" and ext != ".hdf5":
-                file_path += ".h5"
+            if ext not in self.file_extensions:
+                file_path += self.default_extension
             else:
                 file_path += ext
             self.filepathEdit.setText(file_path)
@@ -115,9 +124,9 @@ class Hdf5ExportFileOptionsWidget(QWidget):
         else:
             starting_dir = os.path.expanduser("~")
 
-        dlg = QFileDialog(self, "Export Location", starting_dir, "HDF5 Files (*.h5 *.hdf5)")
+        dlg = QFileDialog(self, "Export Location", starting_dir, self.extension_description)
 
-        dlg.setDefaultSuffix("h5")
+        dlg.setDefaultSuffix(self.default_extension.lstrip("."))
         dlg.setAcceptMode(QFileDialog.AcceptSave)
         if not dlg.exec_():
             return
@@ -148,7 +157,7 @@ if __name__ == "__main__":
     op = OpMock(graph=Graph())
 
     app = QApplication([])
-    w = Hdf5ExportFileOptionsWidget(None)
+    w = HierarchicalFileExportOptionsWidget(None, (".h5",), "H5 Files (*.h5)")
     w.initSlots(op.Filepath, op.DatasetName, op.FullPath)
     w.show()
     app.exec_()

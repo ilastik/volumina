@@ -31,8 +31,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
 from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
-from .hdf5ExportFileOptionsWidget import Hdf5ExportFileOptionsWidget
-from .n5ExportFileOptionsWidget import N5ExportFileOptionsWidget
+from .hierarchicalFileExportOptionsWidget import HierarchicalFileExportOptionsWidget
 from .stackExportFileOptionsWidget import StackExportFileOptionsWidget
 
 try:
@@ -73,7 +72,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # HDF5
         for fmt in ("compressed hdf5", "hdf5"):
-            hdf5OptionsWidget = Hdf5ExportFileOptionsWidget(self)
+            hdf5OptionsWidget = HierarchicalFileExportOptionsWidget(self, (".h5", ".hdf5"), "HDF5 files (*.h5 *.hdf5)")
             hdf5OptionsWidget.initSlots(
                 opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
             )
@@ -82,12 +81,20 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # N5
         for fmt in ("compressed n5", "n5"):
-            n5OptionsWidget = N5ExportFileOptionsWidget(self)
+            n5OptionsWidget = HierarchicalFileExportOptionsWidget(self, (".n5",), "N5 files (*.n5)")
             n5OptionsWidget.initSlots(
                 opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
             )
             n5OptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
             self._format_option_editors[fmt] = n5OptionsWidget
+
+        # Zarr
+        zarrOptionsWidget = HierarchicalFileExportOptionsWidget(self, (".zarr",), "Zarr files (*.zarr)")
+        zarrOptionsWidget.initSlots(
+            opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
+        )
+        zarrOptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
+        self._format_option_editors["single-scale OME-Zarr"] = zarrOptionsWidget
 
         # Numpy
         npyOptionsWidget = SingleFileExportOptionsWidget(self, "npy", "numpy files (*.npy)")
