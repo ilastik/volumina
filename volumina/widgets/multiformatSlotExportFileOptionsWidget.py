@@ -89,12 +89,13 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
             self._format_option_editors[fmt] = n5OptionsWidget
 
         # Zarr
-        zarrOptionsWidget = HierarchicalFileExportOptionsWidget(self, (".zarr",), "Zarr files (*.zarr)")
-        zarrOptionsWidget.initSlots(
-            opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
-        )
-        zarrOptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
-        self._format_option_editors["single-scale OME-Zarr"] = zarrOptionsWidget
+        for fmt in ("multi-scale OME-Zarr", "single-scale OME-Zarr"):
+            zarrOptionsWidget = HierarchicalFileExportOptionsWidget(self, (".zarr",), "Zarr files (*.zarr)")
+            zarrOptionsWidget.initSlots(
+                opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
+            )
+            zarrOptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
+            self._format_option_editors[fmt] = zarrOptionsWidget
 
         # Numpy
         npyOptionsWidget = SingleFileExportOptionsWidget(self, "npy", "numpy files (*.npy)")
