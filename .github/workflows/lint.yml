@@ -16,8 +16,8 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
           activate-environment: ""
-          miniforge-variant: Mambaforge
-          use-mamba: true
+          miniforge-version: latest
+          conda-solver: libmamba
       - name: black check
         shell: bash -l {0}
         run: |
