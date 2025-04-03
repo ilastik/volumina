@@ -23,7 +23,7 @@ jobs:
           auto-update-conda: true
           environment-file: .github/workflows/etc/ilastik-env.yaml
           miniforge-version: latest
-          use-mamba: true
+          conda-solver: libmamba
       - name: linux test
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
@@ -69,16 +69,16 @@ jobs:
           environment-file: .github/workflows/etc/build-env.yaml
           auto-update-conda: true
           miniforge-version: latest
-          use-mamba: true
+          conda-solver: libmamba
       - name: linux conda build test
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
-        run: xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild --python=${{ matrix.python_version }} -c conda-forge conda-recipe
+        run: xvfb-run --server-args="-screen 0 1024x768x24" conda build --python=${{ matrix.python_version }} -c conda-forge conda-recipe
       - name: osx test
         if: startsWith(matrix.os, 'macos')
         shell: bash -l {0}
-        run: conda mambabuild -c conda-forge --python=${{ matrix.python_version }} conda-recipe
+        run: conda build -c conda-forge --python=${{ matrix.python_version }} conda-recipe
       - name: windows conda-build
         if: matrix.os == 'windows-latest'
         shell: cmd /C CALL {0}
-        run: conda mambabuild -c conda-forge --python=${{ matrix.python_version }} conda-recipe
+        run: conda build -c conda-forge --python=${{ matrix.python_version }} conda-recipe

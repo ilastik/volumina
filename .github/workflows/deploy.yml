@@ -17,8 +17,9 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
           activate-environment: ""
-          miniforge-variant: Mambaforge
-          use-mamba: true
+          channel-priority: strict
+          miniforge-version: latest
+          conda-solver: libmamba
       - name: linux conda build and upload
         shell: bash -l {0}
         env:
@@ -26,4 +27,4 @@ jobs:
         run: |
           conda install -n base -c conda-forge boa setuptools_scm anaconda-client -y
           conda config --set anaconda_upload yes
-          xvfb-run conda mambabuild -c conda-forge --user ilastik-forge conda-recipe
+          xvfb-run conda build -c conda-forge --user ilastik-forge conda-recipe
