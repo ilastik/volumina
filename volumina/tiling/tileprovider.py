@@ -421,8 +421,8 @@ class TileProvider(QObject):
 
                 if stack_id == self._current_stack_id and cache is self._cache:
                     self.sceneRectChanged.emit(tile_rect)
-        except BaseException:
-            raise
+        except BaseException as e:
+            logger.error(f"Error fetching tile:\n{e}", exc_info=True)
 
     def _onLayerDirty(self, dirtyImgSrc, dataRect):
         """
