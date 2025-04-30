@@ -1,10 +1,7 @@
-from __future__ import print_function
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2014, the ilastik developers
+#       Copyright (C) 2011-2025, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -22,16 +19,17 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-import re
-import os
 import collections
+import os
+import re
 
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
-from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
 from .hierarchicalFileExportOptionsWidget import HierarchicalFileExportOptionsWidget
+from .multiscaleFileExportOptionsWidget import MultiscaleFileExportOptionsWidget
+from .singleFileExportOptionsWidget import SingleFileExportOptionsWidget
 from .stackExportFileOptionsWidget import StackExportFileOptionsWidget
 
 try:
@@ -88,14 +86,19 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
             n5OptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
             self._format_option_editors[fmt] = n5OptionsWidget
 
-        # Zarr
-        for fmt in ("multi-scale OME-Zarr", "single-scale OME-Zarr"):
-            zarrOptionsWidget = HierarchicalFileExportOptionsWidget(self, (".zarr",), "Zarr files (*.zarr)")
-            zarrOptionsWidget.initSlots(
-                opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
-            )
-            zarrOptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
-            self._format_option_editors[fmt] = zarrOptionsWidget
+        # Zarr (multi-scale)
+        zarrMultiOptionsWidget = MultiscaleFileExportOptionsWidget(self)
+        zarrMultiOptionsWidget.initSlots(opDataExport.OutputFilenameFormat, opDataExport.ExportPath)
+        zarrMultiOptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
+        self._format_option_editors["multi-scale OME-Zarr"] = zarrMultiOptionsWidget
+
+        # Zarr (single-scale)
+        zarrSingleOptionsWidget = HierarchicalFileExportOptionsWidget(self, (".zarr",), "Zarr files (*.zarr)")
+        zarrSingleOptionsWidget.initSlots(
+            opDataExport.OutputFilenameFormat, opDataExport.OutputInternalPath, opDataExport.ExportPath
+        )
+        zarrSingleOptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
+        self._format_option_editors["single-scale OME-Zarr"] = zarrSingleOptionsWidget
 
         # Numpy
         npyOptionsWidget = SingleFileExportOptionsWidget(self, "npy", "numpy files (*.npy)")
