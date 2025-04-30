@@ -30,23 +30,17 @@
    <item row="0" column="1">
     <widget class="QLineEdit" name="filepathEdit"/>
    </item>
-   <item row="1" column="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>219</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
    <item row="0" column="2">
     <widget class="QPushButton" name="fileSelectButton">
      <property name="text">
       <string>Select...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="3">
+    <widget class="QLabel" name="scalesOutputLabel">
+     <property name="text">
+      <string>(Preview of scale shapes to be generated)</string>
      </property>
     </widget>
    </item>

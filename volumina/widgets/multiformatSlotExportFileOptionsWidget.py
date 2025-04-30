@@ -88,7 +88,9 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # Zarr (multi-scale)
         zarrMultiOptionsWidget = MultiscaleFileExportOptionsWidget(self)
-        zarrMultiOptionsWidget.initSlots(opDataExport.OutputFilenameFormat, opDataExport.ExportPath)
+        zarrMultiOptionsWidget.initSlots(
+            opDataExport.OutputFilenameFormat, opDataExport.ExportPath, opDataExport.TargetScales
+        )
         zarrMultiOptionsWidget.pathValidityChange.connect(self._handlePathValidityChange)
         self._format_option_editors["multi-scale OME-Zarr"] = zarrMultiOptionsWidget
 
