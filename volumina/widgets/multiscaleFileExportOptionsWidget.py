@@ -1,7 +1,7 @@
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2024, the ilastik developers
+#       Copyright (C) 2011-2025, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -20,68 +20,48 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import os
-from typing import Tuple
 
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent
 from PyQt5.QtWidgets import QWidget, QFileDialog
 
 
-class HierarchicalFileExportOptionsWidget(QWidget):
-    pathValidityChange = pyqtSignal(bool)
+class MultiscaleFileExportOptionsWidget(QWidget):
+    pathValidityChange = pyqtSignal(bool)  # Needed to satisfy expected interface
 
-    def __init__(self, parent, file_extensions: Tuple[str, ...], extension_description: str):
+    def __init__(self, parent):
         super().__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
-        self.file_extensions = file_extensions
-        self.default_extension = file_extensions[0]
-        self.extension_description = extension_description
-
-        self.settings_are_valid = True
+        self.file_extensions = (".zarr",)
+        self.default_extension = ".zarr"
+        self.extension_description = "Zarr files (*.zarr)"
 
         # We need to watch the textEdited signal because Qt has a bug that causes the OK button
         #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.
         # (That is, we can't just watch for FocusOut events and disable the button before the click.)
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
-        if self.default_extension == ".zarr":
-            self.datasetLabel.setVisible(False)
-            self.datasetEdit.setVisible(False)
-            self.datasetEdit.setEnabled(False)
-        else:
-            self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
 
-    def initSlots(self, filepathSlot, datasetNameSlot, fullPathOutputSlot):
+    def initSlots(self, filepathSlot, fullPathOutputSlot):
         self._filepathSlot = filepathSlot
-        self._datasetNameSlot = datasetNameSlot
         self._fullPathOutputSlot = fullPathOutputSlot
         self.fileSelectButton.clicked.connect(self._browseForFilepath)
 
         self.filepathEdit.installEventFilter(self)
-        self.datasetEdit.installEventFilter(self)
 
     def showEvent(self, event):
         super().showEvent(event)
         self.updateFromSlots()
 
     def eventFilter(self, watched, event):
-        # Apply the new path/dataset if the user presses 'enter'
-        #  or clicks outside the path/dataset edit box.
-        if event.type() == QEvent.FocusOut or (
-            event.type() == QEvent.KeyPress and (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return)
+        # Apply the new path if the user presses 'enter'
+        #  or clicks outside the path edit box.
+        if (
+            event.type() == QEvent.FocusOut
+            or (event.type() == QEvent.KeyPress and (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return))
+            and watched == self.filepathEdit
         ):
-            if watched == self.datasetEdit:
-                self._applyDataset()
-            if watched == self.filepathEdit:
-                self._applyFilepath()
+            self._applyFilepath()
         return False
-
-    def _applyDataset(self):
-        was_valid = self.settings_are_valid
-        datasetName = self.datasetEdit.text()
-        self._datasetNameSlot.setValue(str(datasetName))
-        self.settings_are_valid = str(datasetName) != ""
-        if self.settings_are_valid != was_valid:
-            self.pathValidityChange.emit(self.settings_are_valid)
 
     def _applyFilepath(self):
         filepath = self.filepathEdit.text()
@@ -89,18 +69,10 @@ class HierarchicalFileExportOptionsWidget(QWidget):
         # TODO: Check for valid path format and signal validity
 
     def _handleTextEdited(self, watched):
-        if watched == self.datasetEdit:
-            self._applyDataset()
         if watched == self.filepathEdit:
             self._applyFilepath()
 
     def updateFromSlots(self):
-        was_valid = self.settings_are_valid
-        if self._datasetNameSlot.ready():
-            dataset_name = self._datasetNameSlot.value
-            self.datasetEdit.setText(dataset_name)
-            self.path_is_valid = dataset_name != ""
-
         if self._filepathSlot.ready():
             file_path = self._filepathSlot.value
             file_path, ext = os.path.splitext(file_path)
@@ -112,9 +84,6 @@ class HierarchicalFileExportOptionsWidget(QWidget):
 
             # Re-configure the file slot in case we changed the extension
             self._filepathSlot.setValue(file_path)
-
-        if was_valid != self.path_is_valid:
-            self.pathValidityChange.emit(self.settings_are_valid)
 
     def _browseForFilepath(self):
         from lazyflow.utility import PathComponents
@@ -134,33 +103,3 @@ class HierarchicalFileExportOptionsWidget(QWidget):
         exportPath = dlg.selectedFiles()[0]
         self.filepathEdit.setText(exportPath)
         self._filepathSlot.setValue(exportPath)
-
-
-if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
-    from lazyflow.graph import Graph, Operator, InputSlot
-
-    class OpMock(Operator):
-        Filepath = InputSlot(value="~/something.h5")
-        DatasetName = InputSlot(value="volume/data")
-        FullPath = InputSlot(value="~/")
-
-        def setupOutputs(self):
-            pass
-
-        def execute(self, *args):
-            pass
-
-        def propagateDirty(self, *args):
-            pass
-
-    op = OpMock(graph=Graph())
-
-    app = QApplication([])
-    w = HierarchicalFileExportOptionsWidget(None, (".h5",), "H5 Files (*.h5)")
-    w.initSlots(op.Filepath, op.DatasetName, op.FullPath)
-    w.show()
-    app.exec_()
-
-    print("Selected Filepath: {}".format(op.Filepath.value))
-    print("Selected Dataset: {}".format(op.DatasetName.value))
