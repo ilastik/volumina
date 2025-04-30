@@ -41,9 +41,10 @@ class MultiscaleFileExportOptionsWidget(QWidget):
         # (That is, we can't just watch for FocusOut events and disable the button before the click.)
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
 
-    def initSlots(self, filepathSlot, fullPathOutputSlot):
+    def initSlots(self, filepathSlot, fullPathOutputSlot, targetScalesSlot):
         self._filepathSlot = filepathSlot
         self._fullPathOutputSlot = fullPathOutputSlot
+        self._targetScalesSlot = targetScalesSlot
         self.fileSelectButton.clicked.connect(self._browseForFilepath)
 
         self.filepathEdit.installEventFilter(self)
@@ -84,6 +85,18 @@ class MultiscaleFileExportOptionsWidget(QWidget):
 
             # Re-configure the file slot in case we changed the extension
             self._filepathSlot.setValue(file_path)
+
+        if self._targetScalesSlot.ready():
+            # scales are OrderedDict[str, OrderedDict[Axiskey, int]] (multiscalesStore.Multiscales)
+            scales = self._targetScalesSlot.value
+            scales_html = "<p>Scales generated:</p><ul>"
+            for scale_key, tagged_shape in scales.items():
+                scales_html += f"<li><b>{scale_key}</b>: "
+                for axis_key, axis_value in tagged_shape.items():
+                    scales_html += f"{axis_key}: {axis_value}, "
+                scales_html = scales_html[:-2] + "</li>"
+            scales_html += "</ul>"
+            self.scalesOutputLabel.setText(scales_html)
 
     def _browseForFilepath(self):
         from lazyflow.utility import PathComponents
