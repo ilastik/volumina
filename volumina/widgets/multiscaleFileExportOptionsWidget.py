@@ -41,10 +41,11 @@ class MultiscaleFileExportOptionsWidget(QWidget):
         # (That is, we can't just watch for FocusOut events and disable the button before the click.)
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
 
-    def initSlots(self, filepathSlot, fullPathOutputSlot, targetScalesSlot):
+    def initSlots(self, filepathSlot, fullPathOutputSlot, targetScalesSlot, exportImageSlot):
         self._filepathSlot = filepathSlot
         self._fullPathOutputSlot = fullPathOutputSlot
         self._targetScalesSlot = targetScalesSlot
+        self._exportImageSlot = exportImageSlot
         self.fileSelectButton.clicked.connect(self._browseForFilepath)
 
         self.filepathEdit.installEventFilter(self)
@@ -87,6 +88,14 @@ class MultiscaleFileExportOptionsWidget(QWidget):
             self._filepathSlot.setValue(file_path)
 
         if self._targetScalesSlot.ready():
+            interpolation_text = "Interpolation: Default (Linear)"
+            interpolation_order = self._exportImageSlot.meta.get("appropriate_interpolation_order")
+            if interpolation_order == 0:
+                interpolation_text = "Interpolation: Nearest-neighbor"
+            elif interpolation_order == 1:
+                interpolation_text = "Interpolation: Linear"
+            self.scalingInterpolationLabel.setText(interpolation_text)
+
             # scales are OrderedDict[str, OrderedDict[Axiskey, int]] (multiscalesStore.Multiscales)
             scales = self._targetScalesSlot.value
             scales_html = "<p>Scales generated:</p><ul>"
