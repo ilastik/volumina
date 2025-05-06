@@ -24,7 +24,7 @@ from typing import Tuple
 
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtWidgets import QWidget, QFileDialog
+from PyQt5.QtWidgets import QWidget, QFileDialog, QLabel
 
 
 class HierarchicalFileExportOptionsWidget(QWidget):
@@ -47,6 +47,10 @@ class HierarchicalFileExportOptionsWidget(QWidget):
             self.datasetLabel.setVisible(False)
             self.datasetEdit.setVisible(False)
             self.datasetEdit.setEnabled(False)
+            axisorder_label = QLabel(
+                'Axis order: OME-Zarr axes are always tczyx ("transpose" setting above is ignored)'
+            )
+            self.gridLayout.addWidget(axisorder_label, 2, 0, 1, 3)
         else:
             self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
 
