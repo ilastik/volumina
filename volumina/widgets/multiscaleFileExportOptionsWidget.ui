@@ -52,11 +52,19 @@
     </widget>
    </item>
    <item row="3" column="0" colspan="3">
-    <widget class="QLabel" name="scalesOutputLabel">
-     <property name="text">
-      <string>(Preview of scale shapes to be generated)</string>
+    <widget class="QScrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
      </property>
-    </widget>
+     <property name="styleSheet">
+      <string>QScrollArea { border: none; }</string>
+     </property>
+     <widget class="QLabel" name="scalesOutputLabel">
+      <property name="text">
+       <string>(Preview of scale shapes to be generated)</string>
+      </property>
+     </widget>
+   </widget>
    </item>
   </layout>
  </widget>
