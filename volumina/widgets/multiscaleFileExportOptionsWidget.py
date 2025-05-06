@@ -27,8 +27,6 @@ from PyQt5.QtWidgets import QWidget, QFileDialog
 
 
 class MultiscaleFileExportOptionsWidget(QWidget):
-    pathValidityChange = pyqtSignal(bool)  # Needed to satisfy expected interface
-
     def __init__(self, parent):
         super().__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
