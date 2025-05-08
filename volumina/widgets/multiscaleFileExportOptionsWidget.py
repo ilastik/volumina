@@ -47,6 +47,7 @@ class MultiscaleFileExportOptionsWidget(QWidget):
         self.fileSelectButton.clicked.connect(self._browseForFilepath)
 
         self.filepathEdit.installEventFilter(self)
+        self._exportImageSlot.notifyDirty(lambda *_, **__: self.updateFromSlots())
 
     def showEvent(self, event):
         super().showEvent(event)
