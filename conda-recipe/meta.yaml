@@ -15,10 +15,10 @@ requirements:
     - setuptools_scm
   run:
     - python >=3.7
-    - appdirs
     - cachetools
     - future
     - h5py
+    - platformdirs
     - pyopengl
     - pyqt >=5.6
     - pyqtgraph
