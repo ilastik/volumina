@@ -1,7 +1,7 @@
 channels:
   - conda-forge
   - ilastik-forge
+  - nodefaults
 dependencies:
   - conda-build
   - setuptools_scm
-  - boa
