@@ -217,11 +217,11 @@ class ImageView2D(QGraphicsView):
     def _panning(self):
         hBar = self.horizontalScrollBar()
         vBar = self.verticalScrollBar()
-        vBar.setValue(vBar.value() - self._deltaPan.y())
+        vBar.setValue(vBar.value() - int(self._deltaPan.y()))
         if self.isRightToLeft():
-            hBar.setValue(hBar.value() + self._deltaPan.x())
+            hBar.setValue(hBar.value() + int(self._deltaPan.x()))
         else:
-            hBar.setValue(hBar.value() - self._deltaPan.x())
+            hBar.setValue(hBar.value() - int(self._deltaPan.x()))
 
     def _deaccelerate(self, speed, a=1, maxVal=64):
         x = self._qBound(-maxVal, speed.x(), maxVal)

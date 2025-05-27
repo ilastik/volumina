@@ -32,7 +32,7 @@ import threading
 from pathlib import Path
 from typing import Any, Tuple, Union
 
-import appdirs
+import platformdirs
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ class Preferences:
         self.write(old_preferences)
 
 
-_preferences = Preferences(Path(appdirs.user_config_dir(appname="ilastik", appauthor=False)) / "preferences.json")
+_preferences = Preferences(Path(platformdirs.user_config_dir(appname="ilastik", appauthor=False)) / "preferences.json")
 
 
 def get(group: str, setting: str, default: Any = None) -> Any:

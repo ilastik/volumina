@@ -1,8 +1,9 @@
 channels:
   - conda-forge
   - ilastik-forge
+  - nodefaults
 dependencies:
-  - python 3.9.*
+  - python 3.11.*
   - ilastik-core
   - pyqt5-sip !=12.9.0,!=12.13.0
   - qimage2ndarray
