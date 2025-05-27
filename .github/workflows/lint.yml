@@ -18,6 +18,7 @@ jobs:
           activate-environment: ""
           miniforge-version: latest
           conda-solver: libmamba
+          conda-remove-defaults: true
       - name: black check
         shell: bash -l {0}
         run: |
