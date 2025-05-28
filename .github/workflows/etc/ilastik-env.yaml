@@ -1,7 +1,6 @@
 channels:
   - conda-forge
   - ilastik-forge
-  - nodefaults
 dependencies:
   - python 3.11.*
   - ilastik-core
