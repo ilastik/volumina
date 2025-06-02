@@ -321,15 +321,15 @@ class TileProvider(QObject):
         for i, (visible, layerOpacity, layerImageSource) in enumerate(reversed(self._sims)):
             image_type = layerImageSource.image_type()
             if issubclass(image_type, QGraphicsItem):
+                # Don't blend QGraphicsItem into the final tile.
+                # (The ImageScene will just draw it on top of everything.)
+                # But this is a convenient place to update the opacity/visible state.
                 with self._cache:
                     patch = self._cache.layerTile(stack_id, layerImageSource, tile_nr)
                 if patch is not None:
                     assert isinstance(
                         patch, image_type
                     ), "This ImageSource is producing a type of image that is not consistent with it's declared image_type()"
-                    # This is a QGraphicsItem, so we don't blend it into the final tile.
-                    # (The ImageScene will just draw it on top of everything.)
-                    # But this is a convenient place to update the opacity/visible state.
                     if patch.opacity() != layerOpacity or patch.isVisible() != visible:
                         patch.setOpacity(layerOpacity)
                         patch.setVisible(visible)
@@ -346,17 +346,14 @@ class TileProvider(QObject):
             with self._cache:
                 patch = self._cache.layerTile(stack_id, layerImageSource, tile_nr)
 
-            # patch might be a QGraphicsItem instead of QImage,
-            # in which case it is handled separately,
-            # not composited into the tile.
-
             if patch is not None:
                 assert isinstance(
                     patch, QImage
                 ), "Unknown tile layer type: {}. Expected QImage or QGraphicsItem".format(type(patch))
                 if qimg is None:
+                    # First actually available layer - init the QImage and painter for this tile
                     qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
-                    qimg.fill(0xFFFFFFFF)  # Use a hex constant instead.
+                    qimg.fill(0xFFFFFFFF)
                     p = QPainter(qimg)
                 p.setOpacity(layerOpacity)
                 p.drawImage(0, 0, patch)
