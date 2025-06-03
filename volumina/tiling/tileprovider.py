@@ -318,8 +318,12 @@ class TileProvider(QObject):
         Blend all of the QImage layers of the patch
         specified by (stack_id, tile_nr) into a single QImage.
         """
-        qimg = None
-        p = None
+        if all(not visible or layerOpacity == 0.0 for visible, layerOpacity, _ in self._sims):
+            # Don't create white "loading" tiles if there is nothing at all to display
+            return None
+        qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
+        qimg.fill(0xFFFFFFFF)
+        p = QPainter(qimg)
         for i, (visible, layerOpacity, layerImageSource) in enumerate(reversed(self._sims)):
             image_type = layerImageSource.image_type()
             if issubclass(image_type, QGraphicsItem):
@@ -352,11 +356,6 @@ class TileProvider(QObject):
                 assert isinstance(
                     patch, QImage
                 ), "Unknown tile layer type: {}. Expected QImage or QGraphicsItem".format(type(patch))
-                if qimg is None:
-                    # First actually available layer - init the QImage and painter for this tile
-                    qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
-                    qimg.fill(0xFFFFFFFF)
-                    p = QPainter(qimg)
                 p.setOpacity(layerOpacity)
                 p.drawImage(0, 0, patch)
 
