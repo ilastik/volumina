@@ -1,10 +1,7 @@
-from __future__ import print_function
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2014, the ilastik developers
+#       Copyright (C) 2011-2025, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -23,13 +20,13 @@ from __future__ import absolute_import
 # 		   http://ilastik.org/license/
 ###############################################################################
 import logging
-from builtins import range
+from typing import Tuple, Optional, Set
+
 from PyQt5.QtCore import QObject, pyqtSignal
-from .interface import DataSourceABC, PlanarSliceSourceABC, RequestABC
-import numpy as np
-import volumina
-from volumina.slicingtools import SliceProjection, is_pure_slicing, intersection, sl
+
 from volumina.config import CONFIG
+from volumina.slicingtools import SliceProjection, is_pure_slicing
+from .interface import DataSourceABC, PlanarSliceSourceABC, RequestABC
 
 projectionAlongTXC = SliceProjection(abscissa=2, ordinate=3, along=[0, 1, 4])
 projectionAlongTYC = SliceProjection(abscissa=1, ordinate=3, along=[0, 2, 4])
@@ -164,14 +161,16 @@ class PlanarSliceSource(QObject, PlanarSliceSourceABC):
 # S y n c e d S l i c e S o u r c e s                                          *
 # *******************************************************************************
 
+StackId = Tuple[Optional["SyncedSliceSources"], Tuple[Tuple[int, int], ...]]
+
 
 class SyncedSliceSources(QObject):
     throughChanged = pyqtSignal(tuple, tuple)  # old , new
     idChanged = pyqtSignal(object, object)
 
     @property
-    def id(self):
-        return (self, tuple(zip(self._sync_along, self._through)))
+    def id(self) -> StackId:
+        return self, tuple(zip(self._sync_along, self._through))
 
     @property
     def through(self):
@@ -213,7 +212,7 @@ class SyncedSliceSources(QObject):
                     % (str(len(initial_through)), str(len(self._sync_along)))
                 )
             self._through = initial_through
-        self._srcs = set()
+        self._srcs: Set[PlanarSliceSource] = set()
 
     def __len__(self):
         return len(self._srcs)

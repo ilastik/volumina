@@ -8,6 +8,8 @@ from typing import Any, Callable
 import numpy
 from PyQt5.QtWidgets import QGraphicsItem
 
+from volumina.pixelpipeline.imagepump import StackedImageSources
+
 logger = logging.getLogger()
 
 __all__ = ["TilesCache"]
@@ -123,7 +125,7 @@ class TilesCache:
                         is dirty, then the tile for that patch is dirty)
     """
 
-    def __init__(self, first_stack_id, sims, maxstacks):
+    def __init__(self, first_stack_id, sims: StackedImageSources, maxstacks):
         self._lock = threading.Lock()
         self._sims = sims
         self._maxstacks = maxstacks

@@ -29,10 +29,12 @@ from PyQt5.QtCore import QObject, QRect, QRectF, pyqtSignal
 from PyQt5.QtGui import QImage, QPainter, QTransform
 from PyQt5.QtWidgets import QGraphicsItem
 
+from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.pixelpipeline.interface import IndeterminateRequestError
 from volumina.utility import PrioritizedThreadPoolExecutor
 
 from .cache import TilesCache
+from .tiling import Tiling
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +113,7 @@ class TileProvider(QObject):
     def axesSwapped(self, value):
         self._axesSwapped = value
 
-    def __init__(self, tiling, stackedImageSources, cache_size: int = 100) -> None:
+    def __init__(self, tiling: Tiling, stackedImageSources: StackedImageSources, cache_size: int = 100) -> None:
         """
         Keyword Arguments:
         cache_size                -- maximal number of encountered stacks
