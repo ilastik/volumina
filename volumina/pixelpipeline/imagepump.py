@@ -1,7 +1,7 @@
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2014, the ilastik developers
+#       Copyright (C) 2011-2025, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -23,12 +23,9 @@
 from builtins import range
 from functools import partial
 
-# PyQt
-from PyQt5.QtCore import QObject, pyqtSignal, QRect
+from PyQt5.QtCore import QObject, pyqtSignal
 
-# volumina
-from volumina.pixelpipeline.slicesources import PlanarSliceSource, SyncedSliceSources
-from volumina.pixelpipeline.imagesources import AlphaModulatedImageSource, ColortableImageSource
+from volumina.pixelpipeline.slicesources import PlanarSliceSource, SyncedSliceSources, StackId
 
 
 class StackedImageSources(QObject):
@@ -60,7 +57,7 @@ class StackedImageSources(QObject):
     stackIdChanged = pyqtSignal(object, object)  # old id, new id
 
     @property
-    def stackId(self):
+    def stackId(self) -> StackId:
         return self._stackId
 
     @stackId.setter
