@@ -322,7 +322,7 @@ class TileProvider(QObject):
             # Don't create white "loading" tiles if there is nothing at all to display
             return None
         qimg = QImage(self.tiling.imageRects[tile_nr].size(), QImage.Format_ARGB32_Premultiplied)
-        qimg.fill(0xFFFFFFFF)
+        qimg.fill(0x00FFFFFF)
         p = QPainter(qimg)
         for i, (visible, layerOpacity, layerImageSource) in enumerate(reversed(self._sims)):
             image_type = layerImageSource.image_type()
