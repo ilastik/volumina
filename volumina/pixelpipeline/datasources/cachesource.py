@@ -24,7 +24,10 @@ class _Request:
         self._rq = self._cached_source._source.request(self._slicing)
 
     def wait(self):
-        if self._result is None:
+        if self._result is not None:
+            return self._result
+
+        try:
             res = self._rq.wait()
 
             self._result = cached_copy = res.copy()
@@ -39,8 +42,11 @@ class _Request:
                         self._cached_source._cache.maxsize,
                         self._cached_source._cache.getsizeof(cached_copy),
                     )
-                finally:
-                    self._cached_source._req.pop(self._key, None)
+        finally:
+            try:
+                self._cached_source._req.pop(self._key, None)
+            except KeyError:
+                pass  # already popped by another thread
 
         return self._result
 
