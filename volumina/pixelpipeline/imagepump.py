@@ -25,6 +25,8 @@ from functools import partial
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from volumina.layer import Layer
+from volumina.pixelpipeline.interface import ImageSourceABC
 from volumina.pixelpipeline.slicesources import PlanarSliceSource, SyncedSliceSources, StackId
 
 
@@ -172,7 +174,7 @@ class StackedImageSources(QObject):
     def viewImageSources(self):
         return StackedImageSources.ImageSourceView(self)
 
-    def register(self, layer, imageSource):
+    def register(self, layer: Layer, imageSource: ImageSourceABC):
         if self.isRegistered(layer):
             raise Exception("StackedImageSources.register(): layer %s already registered" % str(layer))
         if layer not in self._layerStackModel:

@@ -1,6 +1,7 @@
 import logging
 import threading
 import sys
+from typing import Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -16,7 +17,7 @@ ARRAY_CACHE = KVCache(CONFIG.cache_size, getsizeof=sys.getsizeof)
 
 
 class _Request:
-    def __init__(self, cached_source, slicing, key):
+    def __init__(self, cached_source: "CacheSource", slicing, key):
         self._cached_source = cached_source
         self._slicing = slicing
         self._key = key
@@ -69,7 +70,7 @@ class CacheSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
-    def __init__(self, source, cache=ARRAY_CACHE):
+    def __init__(self, source: "LazyflowSource", cache=ARRAY_CACHE):
         super().__init__()
         self._lock = threading.Lock()
 
@@ -94,7 +95,7 @@ class CacheSource(QObject, DataSourceABC):
 
         return "::".join(str(p) for p in parts)
 
-    def request(self, slicing):
+    def request(self, slicing) -> Union[_CachedRequest, _Request]:
         key = self.__cache_key(slicing)
 
         with self._lock:

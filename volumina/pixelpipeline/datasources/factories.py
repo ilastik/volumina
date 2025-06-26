@@ -20,6 +20,7 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 from functools import singledispatch
+from typing import Union, Tuple
 
 import numpy
 
@@ -105,7 +106,7 @@ def _numpy_ds(source, withShape=False):
 
 if hasLazyflow:
 
-    def _createDataSourceLazyflow(slot, withShape):
+    def _createDataSourceLazyflow(slot, withShape) -> Union[Tuple[LazyflowSource, Tuple[int]], LazyflowSource]:
         # has to handle Lazyflow source
         src = LazyflowSource(slot)
         shape = src._op5.Output.meta.shape
@@ -115,7 +116,7 @@ if hasLazyflow:
             return src
 
     @createDataSource.register(lazyflow.graph.OutputSlot)
-    def _lazyflow_out(slot, withShape=False):
+    def _lazyflow_out(slot, withShape=False) -> Union[Tuple[CacheSource, Tuple[int]], CacheSource]:
         if withShape:
             src, shape = _createDataSourceLazyflow(slot, withShape)
             return CacheSource(src), shape
