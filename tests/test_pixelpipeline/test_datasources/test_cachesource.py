@@ -1,4 +1,6 @@
 import sys
+import threading
+import time
 from unittest import mock
 
 import numpy as np
@@ -133,3 +135,52 @@ def test_cache_drops_errored_request(cached_error_source):
     res = cached_error_source.request(slicing).wait()
 
     assert_array_equal(np.array([[[42]]]), res)
+
+
+class RaceDetectingCache(KVCache):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._set_calls = 0
+        self._setting = False
+
+    def __setitem__(self, key, value):
+        if self._setting:
+            raise RuntimeError("Caught attempt to concurrently modify cache.")
+
+        self._setting = True
+        try:
+            time.sleep(0.05)  # Ensures threads don't avoid concurrency simply by being too fast
+            super().__setitem__(key, value)
+        finally:
+            self._setting = False
+            self._set_calls += 1
+
+
+def test_cache_not_written_concurrently(monkeypatch, cached_source):
+    def delay_wait():
+        """Prevents thread 1 from finishing and setting req._result before
+        thread 2 gets to checking `_result is None` in req.wait"""
+        time.sleep(0.05)
+        return np.array([[[42]]])
+
+    slicing = np.s_[2:3, 0:1, 2:3]
+    req = cached_source.request(slicing)
+    monkeypatch.setattr(cached_source, "_cache", RaceDetectingCache(1000, getsizeof=sys.getsizeof))
+    monkeypatch.setattr(req._rq, "wait", delay_wait)
+
+    def await_req():
+        try:
+            req.wait()
+        except Exception as e:
+            exceptions.append(e)
+
+    exceptions = []
+    thread1 = threading.Thread(target=await_req)
+    thread2 = threading.Thread(target=await_req)
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()
+
+    assert not exceptions
+    assert cached_source._cache._set_calls == 2, "cache.__setitem__ must be called by both threads to test concurrency"
