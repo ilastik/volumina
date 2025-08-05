@@ -87,12 +87,20 @@ class MultiscaleFileExportOptionsWidget(QWidget):
             self._filepathSlot.setValue(file_path)
 
         if self._targetScalesSlot.ready():
+            from lazyflow.operators.opResize import OpResize
+
+            slot_data_semantics = self._exportImageSlot.meta.get("data_semantics")
             interpolation_text = "Interpolation: Default (Linear)"
-            interpolation_order = self._exportImageSlot.meta.get("appropriate_interpolation_order")
-            if interpolation_order == 0:
-                interpolation_text = "Interpolation: Nearest-neighbor"
-            elif interpolation_order == 1:
-                interpolation_text = "Interpolation: Linear"
+            if slot_data_semantics:
+                interpolation_order = OpResize.semantics_to_interpolation[slot_data_semantics]
+                interpolation_to_text = {
+                    OpResize.Interpolation.NEAREST: "Interpolation: Nearest-neighbor",
+                    OpResize.Interpolation.LINEAR: "Interpolation: Linear",
+                }
+                if interpolation_order in interpolation_to_text:
+                    interpolation_text = interpolation_to_text[interpolation_order]
+                else:
+                    interpolation_text = f"Interpolation: order {str(interpolation_order)}"
             self.scalingInterpolationLabel.setText(interpolation_text)
 
             # scales are OrderedDict[str, OrderedDict[Axiskey, int]] (multiscalesStore.Multiscales)
