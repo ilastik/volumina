@@ -47,7 +47,7 @@ class MultiscaleFileExportOptionsWidget(QWidget):
         self.fileSelectButton.clicked.connect(self._browseForFilepath)
 
         self.filepathEdit.installEventFilter(self)
-        self._exportImageSlot.notifyDirty(lambda *_, **__: self.updateFromSlots())
+        self._targetScalesSlot.notifyDirty(lambda *_, **__: self.updateFromScalesSlot())
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -86,6 +86,9 @@ class MultiscaleFileExportOptionsWidget(QWidget):
             # Re-configure the file slot in case we changed the extension
             self._filepathSlot.setValue(file_path)
 
+        self.updateFromScalesSlot()
+
+    def updateFromScalesSlot(self):
         if self._targetScalesSlot.ready():
             from lazyflow.operators.opResize import OpResize
 
