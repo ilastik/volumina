@@ -34,9 +34,6 @@ class MultiscaleFileExportOptionsWidget(QWidget):
         self.default_extension = ".zarr"
         self.extension_description = "Zarr files (*.zarr)"
 
-        # We need to watch the textEdited signal because Qt has a bug that causes the OK button
-        #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.
-        # (That is, we can't just watch for FocusOut events and disable the button before the click.)
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
 
     def initSlots(self, filepathSlot, fullPathOutputSlot, targetScalesSlot, exportImageSlot):
