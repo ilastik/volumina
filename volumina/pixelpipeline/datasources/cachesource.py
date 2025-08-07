@@ -44,10 +44,7 @@ class _Request:
                         self._cached_source._cache.getsizeof(cached_copy),
                     )
         finally:
-            try:
-                self._cached_source._req.pop(self._key, None)
-            except KeyError:
-                pass  # already popped by another thread
+            self._cached_source._req.pop(self._key, None)
 
         return self._result
 
