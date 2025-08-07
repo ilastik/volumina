@@ -62,7 +62,7 @@ DIMS = SimpleNamespace(t=2, c=3, z=10, x=32, y=64)
 )
 def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shape, transpose):
     shape = select(DIMS, dims)
-    len_ = np.product(shape)
+    len_ = np.prod(shape)
 
     array = np.array(range(len_)).reshape(shape).view(vigra.VigraArray)
     array.axistags = vigra.defaultAxistags(dims)

@@ -1,6 +1,8 @@
 import logging
 import threading
 import sys
+import uuid
+from typing import Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -16,7 +18,7 @@ ARRAY_CACHE = KVCache(CONFIG.cache_size, getsizeof=sys.getsizeof)
 
 
 class _Request:
-    def __init__(self, cached_source, slicing, key):
+    def __init__(self, cached_source: "CacheSource", slicing, key):
         self._cached_source = cached_source
         self._slicing = slicing
         self._key = key
@@ -24,7 +26,10 @@ class _Request:
         self._rq = self._cached_source._source.request(self._slicing)
 
     def wait(self):
-        if self._result is None:
+        if self._result is not None:
+            return self._result
+
+        try:
             res = self._rq.wait()
 
             self._result = cached_copy = res.copy()
@@ -39,8 +44,8 @@ class _Request:
                         self._cached_source._cache.maxsize,
                         self._cached_source._cache.getsizeof(cached_copy),
                     )
-                finally:
-                    self._cached_source._req.pop(self._key, None)
+        finally:
+            self._cached_source._req.pop(self._key, None)
 
         return self._result
 
@@ -63,10 +68,11 @@ class CacheSource(QObject, DataSourceABC):
     isDirty = pyqtSignal(object)
     numberOfChannelsChanged = pyqtSignal(int)
 
-    def __init__(self, source, cache=ARRAY_CACHE):
+    def __init__(self, source: "LazyflowSource", cache=ARRAY_CACHE):
         super().__init__()
         self._lock = threading.Lock()
 
+        self._uniqueid = uuid.uuid4()  # id(self) wasn't unique enough
         self._source = source
         self._cache = cache
         self._req = {}
@@ -80,7 +86,7 @@ class CacheSource(QObject, DataSourceABC):
         self._req.clear()
 
     def __cache_key(self, slicing):
-        parts = [id(self)]
+        parts = [self._uniqueid]
 
         for el in slicing:
             _, key_part = el.__reduce__()
@@ -88,7 +94,7 @@ class CacheSource(QObject, DataSourceABC):
 
         return "::".join(str(p) for p in parts)
 
-    def request(self, slicing):
+    def request(self, slicing) -> Union[_CachedRequest, _Request]:
         key = self.__cache_key(slicing)
 
         with self._lock:
