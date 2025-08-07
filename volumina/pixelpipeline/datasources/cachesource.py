@@ -1,6 +1,7 @@
 import logging
 import threading
 import sys
+import uuid
 from typing import Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -71,6 +72,7 @@ class CacheSource(QObject, DataSourceABC):
         super().__init__()
         self._lock = threading.Lock()
 
+        self._uniqueid = uuid.uuid4()  # id(self) wasn't unique enough
         self._source = source
         self._cache = cache
         self._req = {}
@@ -84,7 +86,7 @@ class CacheSource(QObject, DataSourceABC):
         self._req.clear()
 
     def __cache_key(self, slicing):
-        parts = [id(self)]
+        parts = [self._uniqueid]
 
         for el in slicing:
             _, key_part = el.__reduce__()
