@@ -24,7 +24,7 @@ from typing import Tuple
 
 from PyQt5 import uic
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtWidgets import QWidget, QFileDialog
+from PyQt5.QtWidgets import QWidget, QFileDialog, QLabel
 
 
 class HierarchicalFileExportOptionsWidget(QWidget):
@@ -39,14 +39,15 @@ class HierarchicalFileExportOptionsWidget(QWidget):
 
         self.settings_are_valid = True
 
-        # We need to watch the textEdited signal because Qt has a bug that causes the OK button
-        #  to receive it's click event BEFORE the LineEdit receives its FocusOut event.
-        # (That is, we can't just watch for FocusOut events and disable the button before the click.)
         self.filepathEdit.textEdited.connect(lambda: self._handleTextEdited(self.filepathEdit))
         if self.default_extension == ".zarr":
             self.datasetLabel.setVisible(False)
             self.datasetEdit.setVisible(False)
             self.datasetEdit.setEnabled(False)
+            axisorder_label = QLabel(
+                'Axis order: OME-Zarr axes are always tczyx ("transpose" setting above is ignored)'
+            )
+            self.gridLayout.addWidget(axisorder_label, 1, 0, 1, 3)
         else:
             self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
 
