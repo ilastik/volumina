@@ -28,7 +28,7 @@ from volumina.layerstack import LayerStackModel
 from volumina.colortables import default16
 from volumina.volumeEditor import VolumeEditor
 
-from PyQt5.QtCore import QTimer, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, qApp
 from PyQt5.uic import loadUi
@@ -47,9 +47,11 @@ class ClickableSegmentationLayer(QObject):
     clickedValue = pyqtSignal(int, bool, QColor)
 
     def __init__(self, seg, viewer, name=None, direct=None, parent=None, colortable=None, reuseColors=True):
-        """ seg:         segmentation image/volume (5D)
+        """
+        Args:
+            seg: segmentation image/volume (5D)
             reuseColors: if True, colors are assigned based on the number of currently visible objects,
-                         if False, a segment with 'label' is assigned colortable[label] as color
+                if False, a segment with 'label' is assigned colortable[label] as color
         """
         super(ClickableSegmentationLayer, self).__init__(parent)
 
@@ -90,7 +92,7 @@ class ClickableSegmentationLayer(QObject):
         self.relabelingSource.clearRelabeling()
 
     def labelColor(self, label):
-        """ return the current color for object 'label' """
+        """return the current color for object 'label'"""
         color = self.layer.colorTable[label]
         color = QColor.fromRgba(color)
         return color
@@ -172,16 +174,6 @@ class Viewer(QMainWindow):
         self.actionCurrentView.setFont(f)
 
         self.editor = VolumeEditor(self.layerstack, parent=self)
-
-        # make sure the layer stack widget, which is the right widget
-        # managed by the splitter self.splitter shows up correctly
-        # TODO: find a proper way of doing this within the designer
-        def adjustSplitter():
-            s = self.splitter.sizes()
-            s = [int(0.66 * s[0]), s[0] - int(0.66 * s[0])]
-            self.splitter.setSizes(s)
-
-        QTimer.singleShot(0, adjustSplitter)
 
     @property
     def title(self):
