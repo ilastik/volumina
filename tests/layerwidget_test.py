@@ -25,9 +25,9 @@ import threading
 import unittest as ut
 
 import pytest
-from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import qApp, QApplication, QWidget, QHBoxLayout
-from PyQt5.QtGui import QScreen, QGuiApplication
+from qtpy.QtCore import QTimer
+from qtpy.QtWidgets import QApplication, QWidget, QHBoxLayout
+from qtpy.QtGui import QScreen, QGuiApplication
 
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
@@ -93,7 +93,7 @@ class TestLayerWidget(ut.TestCase):
             traceback.print_exc()
             TestLayerWidget.errors = True
 
-        qApp.quit()
+        QApplication.instance().quit()
 
     def test_repaint_after_visible_change(self):
         self.model = LayerStackModel()

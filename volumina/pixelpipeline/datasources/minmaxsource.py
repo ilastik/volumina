@@ -1,7 +1,7 @@
 from functools import partial
 
 import numpy as np
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+from qtpy.QtCore import QObject, Signal, QTimer
 
 from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
 from volumina.slicingtools import sl
@@ -28,14 +28,14 @@ class MinMaxSource(QObject, DataSourceABC):
     A datasource that serves as a normalizing decorator for other datasources.
     """
 
-    isDirty = pyqtSignal(object)
-    boundsChanged = pyqtSignal(
+    isDirty = Signal(object)
+    boundsChanged = Signal(
         object
     )  # When a new min/max is discovered in the result of a request, this signal is fired with the new (dmin, dmax)
-    numberOfChannelsChanged = pyqtSignal(int)
+    numberOfChannelsChanged = Signal(int)
 
     _delayedBoundsChange = (
-        pyqtSignal()
+        Signal()
     )  # Internal use only.  Allows non-main threads to start the delayedDirtySignal timer.
 
     def __init__(self, rawSource, parent=None):

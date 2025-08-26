@@ -24,8 +24,8 @@ from __future__ import division
 from past.utils import old_div
 import os, time
 
-from PyQt5 import uic
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox
+from qtpy import uic
+from qtpy.QtWidgets import QDialog, QDialogButtonBox
 
 
 class MultiStepProgressDialog(QDialog):
@@ -101,7 +101,7 @@ class MultiStepProgressDialog(QDialog):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     import vigra, numpy
 
     app = QApplication(list())

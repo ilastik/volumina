@@ -32,9 +32,9 @@ import copy
 import numpy
 
 # PyQt
-from PyQt5.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent, QTimer
-from PyQt5.QtGui import QKeySequence, QColor, QIcon
-from PyQt5.QtWidgets import (
+from qtpy.QtCore import Qt, QRectF, QEvent, QObject, QTimerEvent, QTimer
+from qtpy.QtGui import QKeySequence, QColor, QIcon
+from qtpy.QtWidgets import (
     QApplication,
     QWidget,
     QShortcut,

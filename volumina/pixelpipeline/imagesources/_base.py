@@ -1,7 +1,7 @@
 import functools
 
-from PyQt5.QtCore import QObject, QRect, pyqtSignal
-from PyQt5.QtGui import QImage
+from qtpy.QtCore import QObject, QRect, Signal
+from qtpy.QtGui import QImage
 
 from volumina import config
 from volumina.pixelpipeline.interface import ImageSourceABC
@@ -17,7 +17,7 @@ class ImageSource(QObject, ImageSourceABC):
 
     """
 
-    isDirty = pyqtSignal(QRect)
+    isDirty = Signal(QRect)
 
     def __init__(self, name, guarantees_opaqueness=False, parent=None, direct=False):
         """direct: whether this request will be computed synchronously in the GUI thread (direct=True)

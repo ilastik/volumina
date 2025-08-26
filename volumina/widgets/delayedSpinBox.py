@@ -1,6 +1,6 @@
 from __future__ import print_function
-from PyQt5.QtCore import pyqtSignal, QTimer
-from PyQt5.QtWidgets import QSpinBox
+from qtpy.QtCore import Signal, QTimer
+from qtpy.QtWidgets import QSpinBox
 
 
 class DelayedSpinBox(QSpinBox):
@@ -9,7 +9,7 @@ class DelayedSpinBox(QSpinBox):
     which waits for a bit before signaling with the user's new input.
     """
 
-    delayedValueChanged = pyqtSignal(int)
+    delayedValueChanged = Signal(int)
 
     def __init__(self, delay_ms, *args, **kwargs):
         super(DelayedSpinBox, self).__init__(*args, **kwargs)
@@ -49,7 +49,7 @@ class DelayedSpinBox(QSpinBox):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
+    from qtpy.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
 
     app = QApplication([])
 

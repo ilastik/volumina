@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 
-from PyQt5.QtCore import QRect
+from qtpy.QtCore import QRect
 from volumina.pixelpipeline import imagesources as imsrc
 from volumina.pixelpipeline.interface import ImageSourceABC, PlanarSliceSourceABC
 

@@ -19,8 +19,8 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from PyQt5.QtDesigner import QPyDesignerCustomWidgetPlugin
-from PyQt5.QtWidgets import QPixmap, QIcon
+from qtpy.QtDesigner import QPyDesignerCustomWidgetPlugin
+from qtpy.QtWidgets import QPixmap, QIcon
 
 import numpy
 

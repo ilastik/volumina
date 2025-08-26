@@ -21,8 +21,8 @@
 ###############################################################################
 import logging
 
-from PyQt5.QtCore import QRect, QRectF
-from PyQt5.QtGui import QTransform
+from qtpy.QtCore import QRect, QRectF
+from qtpy.QtGui import QTransform
 
 # volumina
 from volumina.patchAccessor import PatchAccessor

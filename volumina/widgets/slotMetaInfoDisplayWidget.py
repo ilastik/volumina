@@ -21,9 +21,9 @@
 ###############################################################################
 import os
 
-import sip
-from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget
+import qtpy.compat
+from qtpy import uic
+from qtpy.QtWidgets import QWidget
 
 
 class SlotMetaDisplayData:
@@ -60,7 +60,7 @@ class SlotMetaInfoDisplayWidget(QWidget):
 
     def update_labels(self, *args):
         labels = self._get_labels() if self._slot.ready() else SlotMetaDisplayData()
-        if not sip.isdeleted(self.shapeDisplay):
+        if qtpy.compat.isalive(self.shapeDisplay):
             self.shapeDisplay.setText(labels.shape)
             self.axisOrderDisplay.setText(labels.axes)
             self.dtypeDisplay.setText(labels.dtype)

@@ -4,8 +4,8 @@ import warnings
 
 import numpy as np
 from past.utils import old_div
-from PyQt5.QtCore import QRect
-from PyQt5.QtGui import QColor, QImage
+from qtpy.QtCore import QRect
+from qtpy.QtGui import QColor, QImage
 from qimage2ndarray import array2qimage, byte_view
 
 from volumina.pixelpipeline.interface import PlanarSliceSourceABC, RequestABC
@@ -28,7 +28,7 @@ class ColortableImageSource(ImageSource):
     logger = logging.getLogger(loggingName)
 
     def __init__(self, arraySource2D, layer):
-        """ colorTable: a list of QRgba values """
+        """colorTable: a list of QRgba values"""
 
         assert isinstance(arraySource2D, PlanarSliceSourceABC), "wrong type: %s" % str(type(arraySource2D))
         super(ColortableImageSource, self).__init__(layer.name, direct=layer.direct)
@@ -101,11 +101,11 @@ class ColortableImageRequest(RequestABC):
             scale = old_div((len(self._colorTable) - 1), float(nmax - nmin + 1e-35))  # if max==min
             if scale != 1.0:
                 a = a * scale
-            if len(self._colorTable) <= 2 ** 8:
+            if len(self._colorTable) <= 2**8:
                 a = np.asanyarray(a, dtype=np.uint8)
-            elif len(self._colorTable) <= 2 ** 16:
+            elif len(self._colorTable) <= 2**16:
                 a = np.asanyarray(a, dtype=np.uint16)
-            elif len(self._colorTable) <= 2 ** 32:
+            elif len(self._colorTable) <= 2**32:
                 a = np.asanyarray(a, dtype=np.uint32)
 
         # Use vigra if possible (much faster)

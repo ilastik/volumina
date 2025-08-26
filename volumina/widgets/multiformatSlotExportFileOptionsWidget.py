@@ -23,9 +23,9 @@ import collections
 import os
 import re
 
-from PyQt5 import uic
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget
+from qtpy import uic
+from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QWidget
 
 from .hierarchicalFileExportOptionsWidget import HierarchicalFileExportOptionsWidget
 from .multiscaleFileExportOptionsWidget import MultiscaleFileExportOptionsWidget
@@ -48,8 +48,8 @@ except ImportError:
 
 
 class MultiformatSlotExportFileOptionsWidget(QWidget):
-    formatValidityChange = pyqtSignal(str)  # str
-    pathValidityChange = pyqtSignal(bool)
+    formatValidityChange = Signal(str)  # str
+    pathValidityChange = Signal(bool)
 
     def __init__(self, parent):
         global _has_lazyflow
@@ -215,7 +215,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     from lazyflow.graph import Graph, Operator, InputSlot
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 

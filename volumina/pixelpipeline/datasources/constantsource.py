@@ -1,5 +1,5 @@
 import numpy as np
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, sl
 from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
@@ -23,8 +23,8 @@ class ConstantRequest(RequestABC):
 
 
 class ConstantSource(QObject, DataSourceABC):
-    isDirty = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)  # Never emitted
+    isDirty = Signal(object)
+    numberOfChannelsChanged = Signal(int)  # Never emitted
 
     @property
     def constant(self):

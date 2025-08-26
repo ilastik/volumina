@@ -21,7 +21,7 @@
 ###############################################################################
 import unittest
 import volumina.slicingtools as st
-from PyQt5.QtCore import QRect
+from qtpy.QtCore import QRect
 
 
 class SlicingToolsTest(unittest.TestCase):

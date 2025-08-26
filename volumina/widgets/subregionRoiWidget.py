@@ -20,8 +20,8 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import collections
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent
-from PyQt5.QtWidgets import QSpinBox, QTableWidget, QTableWidgetItem
+from qtpy.QtCore import Qt, Signal, QEvent
+from qtpy.QtWidgets import QSpinBox, QTableWidget, QTableWidgetItem
 
 DEFAULT_MAX_EXTENT = 999999
 
@@ -79,7 +79,7 @@ class SubregionRoiWidget(QTableWidget):
     """
 
     #: emit(tuple, tuple), tuples may contain 'None' to indicate 'full range'
-    roiChanged = pyqtSignal(object, object)
+    roiChanged = Signal(object, object)
 
     def __init__(self, parent):
         super(SubregionRoiWidget, self).__init__(parent)
@@ -201,7 +201,7 @@ class SubregionRoiWidget(QTableWidget):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
 
     app = QApplication([])
 

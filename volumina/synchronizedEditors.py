@@ -19,8 +19,8 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from PyQt5.QtWidgets import QWidget, QGridLayout, QSizePolicy
-from PyQt5.QtCore import Qt
+from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
+from qtpy.QtCore import Qt
 from imageEditorComponents import PositionModelImage
 
 
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # make the program quit on Ctrl+C
     import sys
     import signal
-    from PyQt5.QtWidgets import QApplication, QPushButton, QVBoxLayout
+    from qtpy.QtWidgets import QApplication, QPushButton, QVBoxLayout
     from imageEditorWidget import TestWidget
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)

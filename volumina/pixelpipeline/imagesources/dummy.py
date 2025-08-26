@@ -1,9 +1,9 @@
 import logging
 from contextlib import contextmanager
 
-from PyQt5.QtCore import QRect, QRectF, QSize, Qt
-from PyQt5.QtGui import QColor, QImage, QPen
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem
+from qtpy.QtCore import QRect, QRectF, QSize, Qt
+from qtpy.QtGui import QColor, QImage, QPen
+from qtpy.QtWidgets import QGraphicsItem, QGraphicsLineItem
 
 from volumina.pixelpipeline.interface import RequestABC
 from volumina.slicingtools import rect2slicing
@@ -94,7 +94,7 @@ class DummyRasterRequest(RequestABC):
         if array_data.handedness_switched:  # array_data should be of type slicingtools.ProjectedArray
             rectf = QRectF(rectf.height(), rectf.width())
 
-        from PyQt5.QtWidgets import QPainter
+        from qtpy.QtWidgets import QPainter
 
         img = QImage(QSize(self.rectf.width(), self.rectf.height()), QImage.Format_ARGB32_Premultiplied)
         img.fill(0xFFFFFFFF)

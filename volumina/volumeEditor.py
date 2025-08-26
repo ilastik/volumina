@@ -29,8 +29,17 @@ from functools import partial
 import numpy
 
 # PyQt
-from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtWidgets import QApplication, QWidget, QUndoStack
+from qtpy.QtCore import Signal, QObject
+from qtpy.QtWidgets import QApplication
+
+import qtpy
+
+if qtpy.API_NAME in ("PyQt5", "PySide2"):
+    from qtpy.QtWidgets import QUndoStack
+elif qtpy.API_NAME in ("PyQt6", "PySide6"):
+    from qtpy.QtGui import QUndoStack
+else:
+    raise NotImplementedError(f"Invalid QT_API: '{qtpy.API_NAME}'")
 
 # volumina
 import volumina.pixelpipeline.imagepump
@@ -57,8 +66,8 @@ logger = logging.getLogger(__name__)
 
 
 class VolumeEditor(QObject):
-    newImageView2DFocus = pyqtSignal()
-    shapeChanged = pyqtSignal()
+    newImageView2DFocus = Signal()
+    shapeChanged = Signal()
 
     @property
     def showDebugPatches(self):

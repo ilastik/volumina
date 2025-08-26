@@ -23,8 +23,8 @@ from builtins import range
 import colorsys
 import numpy
 
-from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer
-from PyQt5.QtGui import QColor, QPen
+from qtpy.QtCore import Qt, QObject, Signal, QTimer
+from qtpy.QtGui import QColor, QPen
 
 from volumina.interpreter import ClickInterpreter
 from volumina.pixelpipeline.slicesources import PlanarSliceSource
@@ -55,13 +55,13 @@ class Layer(QObject):
 
     """changed is emitted whenever one of the more specialized
     somethingChanged signals is emitted."""
-    changed = pyqtSignal()
+    changed = Signal()
 
-    visibleChanged = pyqtSignal(bool)
-    opacityChanged = pyqtSignal(float)
-    nameChanged = pyqtSignal(object)
-    channelChanged = pyqtSignal(int)
-    numberOfChannelsChanged = pyqtSignal(int)
+    visibleChanged = Signal(bool)
+    opacityChanged = Signal(float)
+    nameChanged = Signal(object)
+    channelChanged = Signal(int)
+    numberOfChannelsChanged = Signal(int)
 
     @property
     def normalize(self):
@@ -279,7 +279,7 @@ class NormalizableLayer(Layer):
     int -- upper threshold
     """
 
-    normalizeChanged = pyqtSignal()
+    normalizeChanged = Signal()
 
     @property
     def normalize(self):
@@ -373,7 +373,7 @@ class GrayscaleLayer(NormalizableLayer):
         return self._window_leveling != other_layer._window_leveling
 
     def __init__(self, datasource, normalize=None, direct=False, window_leveling=False):
-        assert isinstance(datasource, DataSourceABC)
+        # assert isinstance(datasource, DataSourceABC)
         super().__init__([datasource], normalize, direct=direct)
         self._window_leveling = window_leveling
 
@@ -388,7 +388,7 @@ class GrayscaleLayer(NormalizableLayer):
 
 
 class AlphaModulatedLayer(NormalizableLayer):
-    tintColorChanged = pyqtSignal()
+    tintColorChanged = Signal()
 
     @property
     def tintColor(self):
@@ -447,7 +447,7 @@ def generateRandomColors(M=256, colormodel="hsv", clamp=None, zeroIsTransparent=
 
 
 class ColortableLayer(NormalizableLayer):
-    colorTableChanged = pyqtSignal()
+    colorTableChanged = Signal()
 
     @property
     def colorTable(self):
@@ -502,7 +502,7 @@ class ColortableLayer(NormalizableLayer):
 
 
 class ClickableColortableLayer(ClickableLayer):
-    colorTableChanged = pyqtSignal()
+    colorTableChanged = Signal()
 
     def __init__(self, editor, clickFunctor, datasource, colorTable, direct=False, right=True):
         assert isinstance(datasource, DataSourceABC)
@@ -609,7 +609,7 @@ class SegmentationEdgesLayer(Layer):
     (See imagesources.SegmentationEdgesItem.)
     """
 
-    hoverIdChanged = pyqtSignal(object)
+    hoverIdChanged = Signal(object)
 
     DEFAULT_PEN = QPen()
     DEFAULT_PEN.setCosmetic(True)
@@ -670,7 +670,7 @@ class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
     Shows a set of user-labeled edges.
     """
 
-    labelsChanged = pyqtSignal(dict)  # { id_pair, label_class }
+    labelsChanged = Signal(dict)  # { id_pair, label_class }
 
     def __init__(
         self, datasource, label_class_pens, initial_labels={}, delay_ms=100, *, isClickable=True, isHoverable=True

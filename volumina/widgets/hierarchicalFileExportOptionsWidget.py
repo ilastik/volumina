@@ -22,13 +22,13 @@
 import os
 from typing import Tuple
 
-from PyQt5 import uic
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtWidgets import QWidget, QFileDialog, QLabel
+from qtpy import uic
+from qtpy.QtCore import Signal, Qt, QEvent
+from qtpy.QtWidgets import QWidget, QFileDialog, QLabel
 
 
 class HierarchicalFileExportOptionsWidget(QWidget):
-    pathValidityChange = pyqtSignal(bool)
+    pathValidityChange = Signal(bool)
 
     def __init__(self, parent, file_extensions: Tuple[str, ...], extension_description: str):
         super().__init__(parent)
@@ -138,7 +138,7 @@ class HierarchicalFileExportOptionsWidget(QWidget):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     from lazyflow.graph import Graph, Operator, InputSlot
 
     class OpMock(Operator):

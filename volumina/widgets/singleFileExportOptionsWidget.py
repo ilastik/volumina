@@ -24,9 +24,9 @@ from __future__ import print_function
 import os
 import sys
 
-from PyQt5 import uic
-from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtWidgets import QWidget, QFileDialog
+from qtpy import uic
+from qtpy.QtCore import Qt, QEvent
+from qtpy.QtWidgets import QWidget, QFileDialog
 
 
 class SingleFileExportOptionsWidget(QWidget):
@@ -85,7 +85,7 @@ class SingleFileExportOptionsWidget(QWidget):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     from lazyflow.graph import Graph
     from lazyflow.operators.ioOperators import OpNpyWriter
 

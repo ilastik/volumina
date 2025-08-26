@@ -25,8 +25,8 @@ from functools import partial
 import typing
 
 # Qt
-from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtWidgets import QMessageBox
+from qtpy.QtCore import Signal, QObject
+from qtpy.QtWidgets import QMessageBox
 
 # volumina
 from .dataExportOptionsDlg import DataExportOptionsDlg
@@ -85,9 +85,7 @@ def _get_stacked_data_sources(layer: Layer) -> OpMultiArrayStacker:
     opStackChannels = lazyflow.operators.OpMultiArrayStacker(dataSlots[0].operator.parent)
     for slot in dataSlots:
         assert isinstance(slot, lazyflow.graph.Slot), f"slot is of type {type(slot)!r}"
-        assert isinstance(
-            slot.operator, lazyflow.graph.Operator
-        ), f"slot's operator is of type {type(slot.operator)!r}"
+        assert isinstance(slot.operator, lazyflow.graph.Operator), f"slot's operator is of type {type(slot.operator)!r}"
     opStackChannels.AxisFlag.setValue("c")
     opStackChannels.Images.resize(len(dataSlots))
     for i, islot in enumerate(opStackChannels.Images):
@@ -148,7 +146,7 @@ class ExportHelper(QObject):
 
     # This signal is used to ensure that request
     #  callbacks are executed in the gui thread
-    _forwardingSignal = pyqtSignal(object)
+    _forwardingSignal = Signal(object)
 
     def _handleForwardedCall(self, fn):
         # Execute the callback

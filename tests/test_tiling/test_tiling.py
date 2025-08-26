@@ -26,8 +26,8 @@ import unittest as ut
 
 import numpy as np
 
-from PyQt5.QtCore import QRectF, QPoint, QRect
-from PyQt5.QtGui import QTransform
+from qtpy.QtCore import QRectF, QPoint, QRect
+from qtpy.QtGui import QTransform
 from qimage2ndarray import byte_view
 
 from volumina.tiling import TileProvider, Tiling

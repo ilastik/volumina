@@ -1,8 +1,8 @@
 from os.path import split, join
 
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
-from PyQt5.uic import loadUiType
+from qtpy.QtWidgets import QWidget
+from qtpy.QtCore import Signal, Slot
+from qtpy.uic import loadUiType
 
 
 class Overview3D(QWidget):
@@ -28,9 +28,9 @@ class Overview3D(QWidget):
         dock_status_changed: indicates that the dock button was toggled
     """
 
-    slice_changed = pyqtSignal()
-    reinitialized = pyqtSignal()  # TODO: this should not be necessary: remove
-    dock_status_changed = pyqtSignal(bool)
+    slice_changed = Signal()
+    reinitialized = Signal()  # TODO: this should not be necessary: remove
+    dock_status_changed = Signal(bool)
 
     def __init__(self, is_3d_widget_visible=False, *args, **kwargs):
         """
@@ -38,7 +38,7 @@ class Overview3D(QWidget):
 
         :param is_3d_widget_visible: if True, the 3D widget will be visible
         """
-        super(QWidget, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         cls, _ = loadUiType(join(split(__file__)[0], "ui/view3d.ui"))
         self._ui = cls()
         self._ui.setupUi(self)
@@ -129,9 +129,9 @@ class Overview3D(QWidget):
         """
         return set(self._view.visible_meshes)
 
-    @pyqtSlot(bool, name="on_toggle_slice_x_clicked")
-    @pyqtSlot(bool, name="on_toggle_slice_y_clicked")
-    @pyqtSlot(bool, name="on_toggle_slice_z_clicked")
+    @Slot(bool, name="on_toggle_slice_x_clicked")
+    @Slot(bool, name="on_toggle_slice_y_clicked")
+    @Slot(bool, name="on_toggle_slice_z_clicked")
     def _on_toggle_slice(self, down):
         """
         The slot for the slice plane toggle button presses.
@@ -141,7 +141,7 @@ class Overview3D(QWidget):
         sender = self.sender()
         self._view.toggle_slice(str(sender.objectName()[-1]), down)
 
-    @pyqtSlot(bool, name="on_dock_clicked")
+    @Slot(bool, name="on_dock_clicked")
     def _on_dock_status_changed(self, status):
         """
         The slot for the dock status button.
@@ -160,7 +160,7 @@ class Overview3D(QWidget):
         """
         self._progress.setVisible(busy)
 
-    @pyqtSlot(int, name="on_show_3D_view_stateChanged")
+    @Slot(int, name="on_show_3D_view_stateChanged")
     def _on_toggle_3d_view(self, state):
         """
         Toggles the 3D widget.

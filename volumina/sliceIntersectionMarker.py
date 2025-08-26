@@ -22,9 +22,9 @@ from __future__ import division
 # 		   http://ilastik.org/license/
 ###############################################################################
 from past.utils import old_div
-from PyQt5.QtCore import Qt, QRectF, QPointF
-from PyQt5.QtWidgets import QGraphicsItem, QApplication
-from PyQt5.QtGui import QPen, QCursor
+from qtpy.QtCore import Qt, QRectF, QPointF
+from qtpy.QtWidgets import QGraphicsItem, QApplication
+from qtpy.QtGui import QPen, QCursor
 
 # *******************************************************************************
 # S l i c e I n t e r s e c t i o n M a r k e r                                *

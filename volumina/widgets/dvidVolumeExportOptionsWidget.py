@@ -24,7 +24,7 @@ from __future__ import print_function
 import os
 import sys
 
-from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
+from qtpy.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
 from libdvid.gui.contents_browser import ContentsBrowser
 from lazyflow.utility import isUrl
 
@@ -82,7 +82,7 @@ class DvidVolumeExportOptionsWidget(QWidget):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     from lazyflow.graph import Graph
 
     from lazyflow.operators.ioOperators import OpExportDvidVolume

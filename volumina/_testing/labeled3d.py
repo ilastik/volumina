@@ -27,8 +27,8 @@ import signal
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-from PyQt5.QtCore import QRect, QPoint, Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QPainter, QImage, QBrush, QPen, QColor, QBrush
+from qtpy.QtCore import QRect, QPoint, Qt, QTimer
+from qtpy.QtWidgets import QApplication, QPainter, QImage, QBrush, QPen, QColor, QBrush
 
 import sys
 import qimage2ndarray, numpy

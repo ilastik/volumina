@@ -1,16 +1,17 @@
 """
 Wraps stdlib abc module to provide convenience classes for defining QObject interfaces
 """
+
 from abc import ABCMeta, abstractmethod
 
-from PyQt5.QtCore import QObject
+from qtpy.QtCore import QObject
 
 __all__ = ["QABC", "QABCMeta", "abstractmethod", "abstractsignal"]
 
 
 class abstractsignal:
     """
-    Should be used in place of pyqtSignal
+    Should be used in place of Signal
     NOTE: This class doesn't implement any typechecks as abc decorators also don't provide this capability
     """
 

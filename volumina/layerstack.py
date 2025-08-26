@@ -20,20 +20,20 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import functools
-from PyQt5.QtCore import QAbstractListModel, QItemSelectionModel, pyqtSignal, QModelIndex, Qt, QTimer
+from qtpy.QtCore import QAbstractListModel, QItemSelectionModel, Signal, QModelIndex, Qt, QTimer
 
 from volumina.layer import Layer
 
 
 class LayerStackModel(QAbstractListModel):
-    canMoveSelectedUp = pyqtSignal("bool")
-    canMoveSelectedDown = pyqtSignal("bool")
-    canDeleteSelected = pyqtSignal("bool")
+    canMoveSelectedUp = Signal("bool")
+    canMoveSelectedDown = Signal("bool")
+    canDeleteSelected = Signal("bool")
 
-    orderChanged = pyqtSignal()
-    layerAdded = pyqtSignal(Layer, int)  # is now in row
-    layerRemoved = pyqtSignal(Layer, int)  # was in row
-    stackCleared = pyqtSignal()
+    orderChanged = Signal()
+    layerAdded = Signal(Layer, int)  # is now in row
+    layerRemoved = Signal(Layer, int)  # was in row
+    stackCleared = Signal()
 
     def __init__(self, parent=None):
         QAbstractListModel.__init__(self, parent)
@@ -317,7 +317,7 @@ class LayerStackModel(QAbstractListModel):
         """Select layer and move it to the top or bottom of the stack.
 
         Layer goes to the top unless it's already there.
-        Top layer goes to the bottom.        
+        Top layer goes to the bottom.
         """
         index = self.layerIndex(layer)
         self.selectRow(index)

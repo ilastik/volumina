@@ -22,8 +22,8 @@
 
 from typing import Iterable
 
-from PyQt5.QtCore import QEvent, QObject
-from PyQt5.QtWidgets import QGraphicsView
+from qtpy.QtCore import QEvent, QObject
+from qtpy.QtWidgets import QGraphicsView
 from volumina.utility.qabc import QABC, abstractmethod
 
 
@@ -38,7 +38,7 @@ class InterpreterABC(QABC):
 
     @abstractmethod
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Necessary to act as a Qt event filter. """
+        """Necessary to act as a Qt event filter."""
 
 
 class EventSwitch(QObject):

@@ -96,8 +96,8 @@ if __name__ == "__main__":
 
     #######
     from scipy.misc import imshow
-    from PyQt5.QtCore import QTimer
-    from PyQt5.QtWidgets import QApplication, QLabel, QPixmap, QImage
+    from qtpy.QtCore import QTimer
+    from qtpy.QtWidgets import QApplication, QLabel, QPixmap, QImage
     from qimage2ndarray import gray2qimage
     #make the program quit on Ctrl+C
     import signal

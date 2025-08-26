@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 import numpy as np
-from PyQt5.QtGui import QColor, QPen
+from qtpy.QtGui import QColor, QPen
 from itertools import count
 
 from volumina import layer

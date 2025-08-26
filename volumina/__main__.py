@@ -5,7 +5,7 @@ import sys
 
 import numpy
 import xarray
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 
 from volumina import __version__
 from volumina.api import Viewer

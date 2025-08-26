@@ -33,7 +33,7 @@ not wrapped in a sequence.
 """
 from builtins import range
 import numpy as np
-from PyQt5.QtCore import QRect
+from qtpy.QtCore import QRect
 import itertools
 
 
@@ -62,7 +62,7 @@ def box(sl, seq=tuple):
 
     No effect on any other object.
 
-   """
+    """
     if isinstance(sl, slice):
         return seq((sl,))
     else:
@@ -82,7 +82,7 @@ def unbox(slicing, axis=0):
 
 
 def is_bounded(slicing):
-    """For all dimensions: stop value of slice is not None """
+    """For all dimensions: stop value of slice is not None"""
     slicing = box(slicing)
     return all((sl.stop != None for sl in slicing))
 

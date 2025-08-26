@@ -6,15 +6,15 @@ from unittest import mock
 import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 from volumina.pixelpipeline.datasources.cachesource import CacheSource
 from volumina.utility.cache import KVCache
 
 
 class DummySource(QObject):
-    isDirty = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)
+    isDirty = Signal(object)
+    numberOfChannelsChanged = Signal(int)
 
     class _Req:
         def __init__(self, arr):

@@ -21,9 +21,9 @@
 ###############################################################################
 import os
 
-from PyQt5 import uic
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtWidgets import QWidget, QFileDialog
+from qtpy import uic
+from qtpy.QtCore import Signal, Qt, QEvent
+from qtpy.QtWidgets import QWidget, QFileDialog
 
 
 class MultiscaleFileExportOptionsWidget(QWidget):

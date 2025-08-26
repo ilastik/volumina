@@ -4,7 +4,7 @@ import sys
 import uuid
 from typing import Union
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 from volumina.pixelpipeline.interface import DataSourceABC
 from volumina.slicingtools import is_pure_slicing
@@ -65,8 +65,8 @@ class _CachedRequest:
 
 
 class CacheSource(QObject, DataSourceABC):
-    isDirty = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)
+    isDirty = Signal(object)
+    numberOfChannelsChanged = Signal(int)
 
     def __init__(self, source: "LazyflowSource", cache=ARRAY_CACHE):
         super().__init__()

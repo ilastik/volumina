@@ -140,7 +140,7 @@
   <customwidget>
    <class>GLView</class>
    <extends>QGraphicsView</extends>
-   <header location="global">volumina.view3d.glview</header>
+   <header>volumina.view3d.glview</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -2,8 +2,8 @@ import logging
 import time
 
 import numpy as np
-from PyQt5.QtCore import QRect
-from PyQt5.QtGui import QImage
+from qtpy.QtCore import QRect
+from qtpy.QtGui import QImage
 from qimage2ndarray import array2qimage, byte_view
 
 from volumina.pixelpipeline.interface import PlanarSliceSourceABC, RequestABC

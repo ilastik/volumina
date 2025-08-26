@@ -25,8 +25,8 @@ from builtins import range
 from past.utils import old_div
 import numpy, math
 
-from PyQt5.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, pyqtSignal, QTimer
-from PyQt5.QtWidgets import (
+from qtpy.QtCore import QRect, QRectF, QPointF, Qt, QSizeF, QLineF, QObject, Signal, QTimer
+from qtpy.QtWidgets import (
     QGraphicsScene,
     QGraphicsItem,
     QGraphicsItemGroup,
@@ -35,7 +35,7 @@ from PyQt5.QtWidgets import (
     QGraphicsPolygonItem,
     QGraphicsRectItem,
 )
-from PyQt5.QtGui import QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QPainterPath
+from qtpy.QtGui import QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QPainterPath
 
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
@@ -44,6 +44,7 @@ from volumina.pixelpipeline.imagepump import StackedImageSources
 import datetime
 import threading
 from collections import defaultdict
+
 
 # *******************************************************************************
 # D i r t y I n d i c a t o r                                                  *
@@ -127,8 +128,8 @@ class ImageScene2D(QGraphicsScene):
     an overlay stack, together with a 2D cursor.
     """
 
-    axesChanged = pyqtSignal(int, bool)
-    dirtyChanged = pyqtSignal()
+    axesChanged = Signal(int, bool)
+    dirtyChanged = Signal()
 
     @property
     def is_swapped(self):
@@ -214,7 +215,7 @@ class ImageScene2D(QGraphicsScene):
         self.axesChanged.emit(self._rotation, self._swapped)
 
     def rot90(self, direction):
-        """ direction: left ==> -1, right ==> +1"""
+        """direction: left ==> -1, right ==> +1"""
         assert direction in [-1, 1]
         self._rotation = (self._rotation + direction) % 4
         self._newAxes()

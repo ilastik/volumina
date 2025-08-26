@@ -23,9 +23,9 @@ from __future__ import division
 ###############################################################################
 from builtins import range
 from past.utils import old_div
-from PyQt5.QtCore import QPointF, QRectF, QLineF, Qt
-from PyQt5.QtGui import QPen, QColor
-from PyQt5.QtWidgets import QGraphicsObject, QGraphicsRectItem, QGraphicsLineItem
+from qtpy.QtCore import QPointF, QRectF, QLineF, Qt
+from qtpy.QtGui import QPen, QColor
+from qtpy.QtWidgets import QGraphicsObject, QGraphicsRectItem, QGraphicsLineItem
 
 from volumina.skeletons.qGraphicsSkeletonNode import QGraphicsSkeletonNode
 

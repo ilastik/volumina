@@ -25,8 +25,8 @@ import time
 
 import pytest
 
-from PyQt5.QtGui import QImage, QPainter
-from PyQt5.QtWidgets import QStyleOptionGraphicsItem
+from qtpy.QtGui import QImage, QPainter
+from qtpy.QtWidgets import QStyleOptionGraphicsItem
 
 from qimage2ndarray import byte_view
 import numpy as np

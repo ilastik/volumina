@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from PyQt5.QtCore import QPointF, QRectF
+from qtpy.QtCore import QPointF, QRectF
 
 import numpy
 

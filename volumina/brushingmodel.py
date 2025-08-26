@@ -21,9 +21,9 @@
 ###############################################################################
 #!/usr/bin/env python
 from __future__ import division
-from PyQt5.QtCore import pyqtSignal, QObject, Qt, QSize, QPointF, QRectF, QRect, QPoint, QSizeF
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsLineItem
-from PyQt5.QtGui import QPen, QColor, QImage, QPainter, QBrush
+from qtpy.QtCore import Signal, QObject, Qt, QSize, QPointF, QRectF, QRect, QPoint, QSizeF
+from qtpy.QtWidgets import QGraphicsScene, QGraphicsLineItem
+from qtpy.QtGui import QPen, QColor, QImage, QPainter, QBrush
 
 import numpy, math
 import qimage2ndarray
@@ -34,10 +34,10 @@ import qimage2ndarray
 
 
 class BrushingModel(QObject):
-    brushSizeChanged = pyqtSignal(int)
-    brushColorChanged = pyqtSignal(QColor)
-    brushStrokeAvailable = pyqtSignal(QPointF, object)
-    drawnNumberChanged = pyqtSignal(int)
+    brushSizeChanged = Signal(int)
+    brushColorChanged = Signal(QColor)
+    brushStrokeAvailable = Signal(QPointF, object)
+    drawnNumberChanged = Signal(int)
 
     minBrushSize = 1
     maxBrushSize = 61

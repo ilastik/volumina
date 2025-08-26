@@ -19,7 +19,7 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 import numpy
 from colorsys import hsv_to_rgb
 from threading import current_thread
@@ -153,6 +153,8 @@ class RenderingManager(object):
     def invalidateObject(self, name):
         self._overview_scene.invalidate_object(name)
 
-    def clear(self,):
+    def clear(
+        self,
+    ):
         self._volume[:] = 0
         self.labelmgr.free()

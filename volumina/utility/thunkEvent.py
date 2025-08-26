@@ -23,8 +23,8 @@ from __future__ import print_function
 from future import standard_library
 
 standard_library.install_aliases()
-from PyQt5.QtCore import QObject, QEvent
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtCore import QObject, QEvent
+from qtpy.QtWidgets import QApplication
 from functools import partial
 
 
@@ -142,8 +142,8 @@ if __name__ == "__main__":
     from functools import partial
     from volumina.utility import execute_in_main_thread
 
-    from PyQt5.QtCore import QTimer
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtCore import QTimer
+    from qtpy.QtWidgets import QApplication
 
     app = QApplication([])
 
