@@ -22,7 +22,7 @@ Open an `.npy` image and display it:
 
 ```bash
 # Usage: volumina image axisorder
-volumina <myimage.npy> yx
+volumina <myimage.npy> --axistags yx
 ```
 
 axisorder should correspond to the data. Only `t` (time), `c` (channel), and the spacial axes `x`, `y`, `z` are valid.
