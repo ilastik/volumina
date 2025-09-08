@@ -41,6 +41,26 @@ from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
 
 
+@pytest.fixture(autouse=True)
+def patch_threadpool():
+    """
+    Clean up the Render pool after every test
+
+    avoids test hangs starting with python 3.10
+    """
+    import volumina.tiling.tileprovider
+
+    if not volumina.tiling.tileprovider.USE_LAZYFLOW_THREADPOOL:
+        from volumina.utility.prioritizedThreadPool import PrioritizedThreadPoolExecutor
+
+        volumina.tiling.tileprovider.renderer_pool = PrioritizedThreadPoolExecutor(2)
+        yield
+        volumina.tiling.tileprovider.renderer_pool.shutdown()
+        volumina.tiling.tileprovider.renderer_pool = None
+    else:
+        yield
+
+
 @pytest.mark.usefixtures("qapp")
 class DirtyIndicatorTest(ut.TestCase):
     def testPaintDelay(self):
