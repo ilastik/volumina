@@ -38,7 +38,7 @@ from functools import partial
 from collections import defaultdict
 
 import sys
-from numbers import Number
+from numbers import Real
 from typing import Tuple
 
 
@@ -301,10 +301,10 @@ class NormalizableLayer(Layer):
         self._normalize[datasourceIdx] = value
         self.normalizeChanged.emit()
 
-    def get_datasource_default_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
+    def get_datasource_default_range(self, datasourceIdx: int) -> Tuple[Real, Real]:
         return self._datasources[datasourceIdx]._bounds
 
-    def get_datasource_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
+    def get_datasource_range(self, datasourceIdx: int) -> Tuple[Real, Real]:
         if isinstance(self._normalize[datasourceIdx], tuple):
             return self._normalize[datasourceIdx]
         return self.get_datasource_default_range(datasourceIdx)

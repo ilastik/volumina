@@ -32,6 +32,7 @@ from functools import partial
 from typing import Callable
 from pathlib import Path
 
+from volumina.layer import NormalizableLayer
 from volumina.widgets.thresholdingWidget import ThresholdingWidget
 
 import logging
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class LayerDialog(QDialog):
-    def __init__(self, ui_file_name: str, layer, parent=None):
+    def __init__(self, ui_file_name: str, layer: NormalizableLayer, parent=None):
         super().__init__(parent)
         base_path = Path(__file__).resolve().parent
         ui_path = base_path.joinpath("ui").joinpath(ui_file_name)
@@ -56,7 +57,7 @@ class LayerDialog(QDialog):
         thresholding_widget.setRange(normalization_range[0], normalization_range[1])
 
         normalization_value = self.layer.get_datasource_range(datasourceIdx)
-        thresholding_widget.setValue(normalization_value[0], normalization_value[1])
+        thresholding_widget.setValue(int(normalization_value[0]), int(normalization_value[1]))
 
         thresholding_widget.valueChanged.connect(handleRangeChanged)
 

@@ -21,17 +21,22 @@
 ###############################################################################
 from os import path
 from typing import Tuple
-from numbers import Number
 
 from qtpy import uic
 from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QWidget, QButtonGroup
+from qtpy.QtWidgets import QLabel, QSlider, QSpinBox, QWidget
 
 # ===----------------------------------------------------------------------------------------------------------------===
 
 
 class ThresholdingWidget(QWidget):
     valueChanged = Signal(int, int)
+
+    _minSlider: QSlider
+    _maxSlider: QSlider
+    _minSpin: QSpinBox
+    _maxSpin: QSpinBox
+    _layerLabel: QLabel
 
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
@@ -77,13 +82,13 @@ class ThresholdingWidget(QWidget):
         self._minSpin.setValue(minimum)
         self._maxSpin.setValue(maximum)
 
-    def setValue(self, minimum, maximum):
+    def setValue(self, minimum: int, maximum: int):
         self._minSlider.setValue(minimum)
         self._maxSlider.setValue(maximum)
         self._minSpin.setValue(minimum)
         self._maxSpin.setValue(maximum)
 
-    def getRange(self) -> Tuple[Number, Number]:
+    def getRange(self) -> Tuple[int, int]:
         return (self._minSpin.value(), self._maxSpin.value())
 
 
