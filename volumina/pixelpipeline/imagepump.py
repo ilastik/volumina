@@ -23,7 +23,7 @@
 from builtins import range
 from functools import partial
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 from volumina.layer import Layer
 from volumina.pixelpipeline.interface import ImageSourceABC
@@ -51,12 +51,12 @@ class StackedImageSources(QObject):
 
     """
 
-    layerDirty = pyqtSignal(object, object)
-    visibleChanged = pyqtSignal(object, bool)
-    opacityChanged = pyqtSignal(object, float)
-    sizeChanged = pyqtSignal()
-    orderChanged = pyqtSignal()
-    stackIdChanged = pyqtSignal(object, object)  # old id, new id
+    layerDirty = Signal(object, object)
+    visibleChanged = Signal(object, bool)
+    opacityChanged = Signal(object, float)
+    sizeChanged = Signal()
+    orderChanged = Signal()
+    stackIdChanged = Signal(object, object)  # old id, new id
 
     @property
     def stackId(self) -> StackId:

@@ -23,9 +23,9 @@ import os
 import sys
 import re
 
-from PyQt5 import uic
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtWidgets import QWidget, QFileDialog
+from qtpy import uic
+from qtpy.QtCore import Signal, Qt, QEvent
+from qtpy.QtWidgets import QWidget, QFileDialog
 
 try:
     from lazyflow.operators.ioOperators import OpStackWriter
@@ -36,7 +36,7 @@ except:
 
 
 class StackExportFileOptionsWidget(QWidget):
-    pathValidityChange = pyqtSignal(bool)
+    pathValidityChange = Signal(bool)
 
     def __init__(self, parent, extension):
         global _has_lazyflow
@@ -133,7 +133,7 @@ class StackExportFileOptionsWidget(QWidget):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     from lazyflow.graph import Graph
     from lazyflow.operators.ioOperators import OpFormattedDataExport
 

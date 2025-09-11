@@ -24,7 +24,7 @@
 #
 
 from volumina.api import Viewer
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 import numpy
 import h5py
 from volumina.skeletons import Skeletons, SkeletonInterpreter

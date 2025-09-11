@@ -6,7 +6,7 @@ from volumina.colortables import default16_new
 from volumina.pixelpipeline.datasources import ArraySinkSource, ArraySource
 from volumina.layer import ColortableLayer, GrayscaleLayer
 
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 
 SHAPE = (1, 600, 800, 1, 1)  # volumina expects 5d txyzc
 

@@ -32,9 +32,9 @@ import sys
 import numpy
 
 # PyQt
-from PyQt5.QtCore import QRect
-from PyQt5.QtGui import QImage, QColor
-from PyQt5.QtWidgets import QGraphicsItem
+from qtpy.QtCore import QRect
+from qtpy.QtGui import QImage, QColor
+from qtpy.QtWidgets import QGraphicsItem
 
 import qimage2ndarray
 
@@ -530,7 +530,7 @@ class TestGraphicsItems(ut.TestCase):
 
         DEBUG = False
         if DEBUG:
-            from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
+            from qtpy.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
 
             app = QApplication([])
             scene = QGraphicsScene()

@@ -4,7 +4,7 @@ import weakref
 from functools import wraps, partial
 
 import numpy as np
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 from future.utils import raise_with_traceback
 from lazyflow.graph import Slot
 from lazyflow.operators import opReorderAxes
@@ -90,8 +90,8 @@ def weakref_setDirtyLF(wref, *args, **kwargs):
 
 
 class LazyflowSource(QObject, DataSourceABC):
-    isDirty = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)
+    isDirty = Signal(object)
+    numberOfChannelsChanged = Signal(int)
 
     @property
     def dataSlot(self):

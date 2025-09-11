@@ -24,10 +24,10 @@ from __future__ import absolute_import
 import numpy
 from functools import partial
 
-import sip
-from PyQt5.QtCore import pyqtSignal, QObject, QEvent, QPointF, Qt, QTimer
-from PyQt5.QtGui import QPen, QBrush, QMouseEvent
-from PyQt5.QtWidgets import QApplication, QGraphicsLineItem, QUndoStack, QUndoCommand
+import qtpy.compat
+from qtpy.QtCore import Signal, QObject, QEvent, QPointF, Qt, QTimer
+from qtpy.QtGui import QPen, QBrush, QMouseEvent
+from qtpy.QtWidgets import QApplication, QGraphicsLineItem, QUndoCommand
 
 from volumina.eventswitch import InterpreterABC
 from .navigationController import NavigationInterpreter
@@ -142,7 +142,7 @@ class BrushingInterpreter(QObject, InterpreterABC):
             # after updating python to 3.9 we encountered exceptions when shutting
             #  ilastik down. Since we don't own the view or the scene, those could
             # get deleted then accessing those would raise.
-            if sip.isdeleted(view):
+            if not qtpy.compat.isalive(view):
                 continue
             if not (view.scene() and view.scene().allow_brushing):
                 return self._navIntr.eventFilter(watched, event)
@@ -295,7 +295,7 @@ class BrushingInterpreter(QObject, InterpreterABC):
 
 
 class BrushingController(QObject):
-    wroteToSink = pyqtSignal()
+    wroteToSink = Signal()
 
     def __init__(self, brushingModel, positionModel, dataSink, *, undoStack):
         QObject.__init__(self, parent=None)

@@ -25,8 +25,8 @@ import time
 
 import pytest
 
-from PyQt5.QtGui import QImage, QPainter
-from PyQt5.QtWidgets import QStyleOptionGraphicsItem
+from qtpy.QtGui import QImage, QPainter
+from qtpy.QtWidgets import QStyleOptionGraphicsItem
 
 from qimage2ndarray import byte_view
 import numpy as np
@@ -39,6 +39,26 @@ from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.tiling import Tiling
 from volumina.layerstack import LayerStackModel
 from volumina.layer import GrayscaleLayer
+
+
+@pytest.fixture(autouse=True)
+def patch_threadpool():
+    """
+    Clean up the Render pool after every test
+
+    avoids test hangs starting with python 3.10
+    """
+    import volumina.tiling.tileprovider
+
+    if not volumina.tiling.tileprovider.USE_LAZYFLOW_THREADPOOL:
+        from volumina.utility.prioritizedThreadPool import PrioritizedThreadPoolExecutor
+
+        volumina.tiling.tileprovider.renderer_pool = PrioritizedThreadPoolExecutor(2)
+        yield
+        volumina.tiling.tileprovider.renderer_pool.shutdown()
+        volumina.tiling.tileprovider.renderer_pool = None
+    else:
+        yield
 
 
 @pytest.mark.usefixtures("qapp")

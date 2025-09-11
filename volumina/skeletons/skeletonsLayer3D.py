@@ -22,7 +22,7 @@ from __future__ import print_function
 # 		   http://ilastik.org/license/
 ###############################################################################
 from builtins import range
-from PyQt5.QtCore import QObject
+from qtpy.QtCore import QObject
 
 from volumina.skeletons.skeletonsLayer import SkeletonsLayer
 from volumina.skeletons.skeletonNode import SkeletonNode

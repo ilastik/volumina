@@ -5,10 +5,10 @@ import logging
 
 import numpy as np
 
-from PyQt5.Qt import pyqtSignal
-from PyQt5.QtCore import Qt, QObject, QRectF, QPointF, QPoint
-from PyQt5.QtWidgets import QApplication, QGraphicsObject, QGraphicsPathItem, QGraphicsSceneHoverEvent
-from PyQt5.QtGui import QPainterPath, QPen, QColor, QPainterPathStroker, QPainter
+from qtpy.QtCore import Signal
+from qtpy.QtCore import Qt, QObject, QRectF, QPointF, QPoint
+from qtpy.QtWidgets import QApplication, QGraphicsObject, QGraphicsPathItem, QGraphicsSceneHoverEvent
+from qtpy.QtGui import QPainterPath, QPen, QColor, QPainterPathStroker, QPainter
 
 from volumina.utility import SignalingDict, edge_coords_nd, simplify_line_segments
 
@@ -20,8 +20,8 @@ class SegmentationEdgesItem(QGraphicsObject):
     A parent item for a collection of SingleEdgeItems.
     """
 
-    edgeClicked = pyqtSignal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
-    edgeSwiped = pyqtSignal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
+    edgeClicked = Signal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
+    edgeSwiped = Signal(tuple, object)  # id_pair, QGraphicsSceneMouseEvent
 
     def __init__(self, path_items, edge_pen_table, default_pen, *, hoverIdChanged=None, parent=None, isClickable=False):
         """
@@ -114,7 +114,6 @@ try:
             point_list = line_segments.reshape(-1, 2)
             painter_paths[edge_id] = arrayToQPath(point_list[:, 0], point_list[:, 1], connect="pairs")
         return painter_paths
-
 
 except ImportError:
     painter_paths_for_labels = painter_paths_for_labels_PURE_PYTHON
@@ -304,7 +303,7 @@ class defaultdict_with_key(defaultdict):
 ##
 ## Copied from PyQtGraph with slight modifications
 ##
-from PyQt5 import QtWidgets, QtCore
+from qtpy import QtWidgets, QtCore
 import struct
 
 
@@ -399,8 +398,8 @@ def arrayToQPath(x, y, connect="all"):
 if __name__ == "__main__":
     import time
     import numpy as np
-    from PyQt5.QtGui import QTransform
-    from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
+    from qtpy.QtGui import QTransform
+    from qtpy.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
 
     app = QApplication([])
 

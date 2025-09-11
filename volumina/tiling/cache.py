@@ -6,7 +6,7 @@ import logging
 from typing import Any, Callable
 
 import numpy
-from PyQt5.QtWidgets import QGraphicsItem
+from qtpy.QtWidgets import QGraphicsItem
 
 from volumina.pixelpipeline.imagepump import StackedImageSources
 

@@ -28,10 +28,10 @@ from volumina.layerstack import LayerStackModel
 from volumina.colortables import default16
 from volumina.volumeEditor import VolumeEditor
 
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, qApp
-from PyQt5.uic import loadUi
+from qtpy.QtCore import QTimer, Signal
+from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import QMainWindow, QApplication, QAction
+from qtpy.uic import loadUi
 
 import os
 import random
@@ -44,7 +44,7 @@ import random
 class ClickableSegmentationLayer(QObject):
 
     # whether label (int) is shown (true) or hidden (false)
-    clickedValue = pyqtSignal(int, bool, QColor)
+    clickedValue = Signal(int, bool, QColor)
 
     def __init__(self, seg, viewer, name=None, direct=None, parent=None, colortable=None, reuseColors=True):
         """
@@ -159,7 +159,7 @@ class Viewer(QMainWindow):
         self._viewerInitialized = False
         self.editor = None
         self.viewingWidget = None
-        self.actionQuit.triggered.connect(qApp.quit)
+        self.actionQuit.triggered.connect(QApplication.instance().quit)
 
         # when connecting in renderScreenshot to a partial(...) function,
         # we need to remember the created function to be able to disconnect
@@ -391,7 +391,7 @@ if __name__ == "__main__":
             segmentation_zyx.transpose(), "segmentation edges", default_pen=segmentation_pen
         )
 
-    # from PyQt5.QtWidgets import QGraphicsView
+    # from qtpy.QtWidgets import QGraphicsView
     # viewer.editor.imageViews[2].setOptimizationFlag(QGraphicsView.DontAdjustForAntialiasing, True)
 
     #     try:

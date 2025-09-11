@@ -1,6 +1,6 @@
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QVector4D
-from PyQt5.QtWidgets import QLabel
+from qtpy.QtCore import Signal
+from qtpy.QtGui import QVector4D
+from qtpy.QtWidgets import QLabel
 
 from volumina.utility import preferences
 import volumina.config
@@ -31,7 +31,7 @@ if volumina.config.CONFIG.show_3d_widget:
             slice_changed: emitted when the user dragged one of the slicing planes
         """
 
-        slice_changed = pyqtSignal()
+        slice_changed = Signal()
 
         def __init__(self, parent=None):
             GLViewWidget.__init__(self, parent)
@@ -205,7 +205,7 @@ if volumina.config.CONFIG.show_3d_widget:
 else:
 
     class GLViewMock(QLabel):
-        slice_changed = pyqtSignal()
+        slice_changed = Signal()
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)

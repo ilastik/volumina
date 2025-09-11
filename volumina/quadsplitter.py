@@ -23,12 +23,12 @@
 from __future__ import division
 from builtins import range
 import sys
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer
-from PyQt5.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
+from qtpy.QtCore import Qt, Signal, QEvent, QTimer
+from qtpy.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter, QApplication
 
 
 class ImageView2DFloatingWindow(QWidget):
-    onCloseClick = pyqtSignal()
+    onCloseClick = Signal()
 
     def __init__(self):
         QWidget.__init__(self)
@@ -39,9 +39,9 @@ class ImageView2DFloatingWindow(QWidget):
 
 
 class ImageView2DDockWidget(QWidget):
-    onDockButtonClicked = pyqtSignal()
-    onMaxButtonClicked = pyqtSignal()
-    onMinButtonClicked = pyqtSignal()
+    onDockButtonClicked = Signal()
+    onMaxButtonClicked = Signal()
+    onMinButtonClicked = Signal()
 
     def __init__(self, graphicsView):
         QWidget.__init__(self)

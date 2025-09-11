@@ -9,7 +9,7 @@ source:
 
 requirements:
   host:
-    - python >=3.7
+    - python >=3.9
     - pip
     - setuptools >=40.0
     - setuptools_scm
@@ -23,6 +23,7 @@ requirements:
     - pyqt >=5.6
     - pyqtgraph
     - qimage2ndarray
+    - qtpy
     - typing_extensions
     - vigra
     - xarray
@@ -58,7 +59,7 @@ test:
     - pytest
     - pytest-qt
     - pyqt >=5.11
-    - python 3.8.*
+    - python 3.11.*
   commands:
     - pytest .
     - volumina --help

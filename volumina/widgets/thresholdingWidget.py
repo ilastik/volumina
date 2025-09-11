@@ -23,15 +23,15 @@ from os import path
 from typing import Tuple
 from numbers import Number
 
-from PyQt5 import uic
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget, QButtonGroup
+from qtpy import uic
+from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QWidget, QButtonGroup
 
 # ===----------------------------------------------------------------------------------------------------------------===
 
 
 class ThresholdingWidget(QWidget):
-    valueChanged = pyqtSignal(int, int)
+    valueChanged = Signal(int, int)
 
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
@@ -92,7 +92,7 @@ class ThresholdingWidget(QWidget):
 # ===----------------------------------------------------------------------------------------------------------------===
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
 
     app = QApplication([])
     w = ThresholdingWidget()

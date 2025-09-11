@@ -25,9 +25,9 @@ from __future__ import print_function
 import os
 
 # PyQt
-from PyQt5 import uic
-from PyQt5.QtWidgets import QDialog
-from PyQt5.QtCore import Qt
+from qtpy import uic
+from qtpy.QtWidgets import QDialog
+from qtpy.QtCore import Qt
 from functools import partial
 from typing import Callable
 from pathlib import Path
@@ -106,7 +106,7 @@ class RGBALayerDialog(LayerDialog):
 if __name__ == "__main__":
     import optparse
     import sys
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
 
     parser = optparse.OptionParser()
     parser.add_option("--gray", action="store_true")

@@ -24,7 +24,7 @@ from abc import ABCMeta, ABC, abstractmethod, abstractproperty
 from typing import Optional
 
 import numpy as np
-from PyQt5.QtCore import pyqtSignal
+from qtpy.QtCore import Signal
 
 from volumina.utility.qabc import QABC, abstractsignal
 
@@ -88,25 +88,19 @@ class DataSourceABC(QABC):
     numberOfChannelsChanged = abstractsignal(int)
 
     @abstractproperty
-    def numberOfChannels(self) -> int:
-        ...
+    def numberOfChannels(self) -> int: ...
 
     @abstractmethod
-    def request(self, slicing) -> RequestABC:
-        ...
+    def request(self, slicing) -> RequestABC: ...
 
     @abstractmethod
-    def dtype(self):
-        ...
+    def dtype(self): ...
 
     @abstractmethod
-    def __eq__(self, other: DataSourceABC):
-        ...
+    def __eq__(self, other: DataSourceABC): ...
 
     @abstractmethod
-    def __ne__(self, other: DataSourceABC):
-        ...
+    def __ne__(self, other: DataSourceABC): ...
 
     @abstractmethod
-    def clean_up(self) -> None:
-        ...
+    def clean_up(self) -> None: ...

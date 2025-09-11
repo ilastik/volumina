@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
+from qtpy.QtWidgets import QApplication, QWidget, QMainWindow
 
 
 def getMainWindow() -> QMainWindow:

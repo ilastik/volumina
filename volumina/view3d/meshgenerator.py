@@ -5,9 +5,9 @@ from numpy import where
 from pyqtgraph.opengl import MeshData, GLMeshItem
 from pyqtgraph.opengl.shaders import ShaderProgram, VertexShader, FragmentShader
 
-from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtWidgets import QDialog
-from PyQt5.uic import loadUiType
+from qtpy.QtCore import QThread, Signal
+from qtpy.QtWidgets import QDialog
+from qtpy.uic import loadUiType
 
 
 try:
@@ -96,7 +96,7 @@ class MeshGenerator(QThread):
         mesh_generated: emitted when the generation finished, passes the label/name and generated mesh
     """
 
-    mesh_generated = pyqtSignal(object, object)
+    mesh_generated = Signal(object, object)
 
     def __init__(self, receiver, labeling, labels, name_mapping=None):
         """
@@ -137,7 +137,7 @@ class MeshGeneratorDialog(QDialog):
         finished: emitted when the export is finished. Passes the generated MeshData
     """
 
-    finished = pyqtSignal(object)
+    finished = Signal(object)
 
     def __init__(self, parent=None):
         super(MeshGeneratorDialog, self).__init__(parent)

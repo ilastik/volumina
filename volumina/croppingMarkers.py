@@ -19,18 +19,18 @@ from builtins import range
 from past.utils import old_div
 import copy
 import contextlib
-from PyQt5.QtCore import pyqtSignal, Qt, QObject, QRectF, QPointF
-from PyQt5.QtGui import QPen, QCursor, QBrush, QColor
-from PyQt5.QtWidgets import QGraphicsItem, QApplication
+from qtpy.QtCore import Signal, Qt, QObject, QRectF, QPointF
+from qtpy.QtGui import QPen, QCursor, QBrush, QColor
+from qtpy.QtWidgets import QGraphicsItem, QApplication
 
 
 class CropExtentsModel(QObject):
-    changed = pyqtSignal(object)  # list of start/stop coords indexed by axis
+    changed = Signal(object)  # list of start/stop coords indexed by axis
     # Note: There is no required ordering for start/stop
     #       (i.e. start could be greater than stop)
-    colorChanged = pyqtSignal(QColor)
-    editableChanged = pyqtSignal(bool)
-    mouseRelease = pyqtSignal()
+    colorChanged = Signal(QColor)
+    editableChanged = Signal(bool)
+    mouseRelease = Signal()
 
     @property
     def editable(self):
@@ -262,10 +262,10 @@ class CroppingMarkers(QGraphicsItem):
 
     def mousePressEvent(self, event):
         """
-            Moving a corner or line, in this priority order.
-            The line(s) indices that started the move are stored in:
-            self.mouseMoveStartH and
-            self.mouseMoveStartV
+        Moving a corner or line, in this priority order.
+        The line(s) indices that started the move are stored in:
+        self.mouseMoveStartH and
+        self.mouseMoveStartV
         """
         if self.crop_extents_model._editable:
             position = self.scene().data2scene.map(event.scenePos())
@@ -570,7 +570,7 @@ class CropLine(QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         """
-            Moving a line.
+        Moving a line.
         """
         if self._parent.crop_extents_model._editable:
             new_pos = self.scene().data2scene.map(event.scenePos())
@@ -625,7 +625,7 @@ class CropLine(QGraphicsItem):
 
     def mousePressEvent(self, event):
         """
-            Selecting a line.
+        Selecting a line.
         """
 
         if self._parent.crop_extents_model._editable:

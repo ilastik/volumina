@@ -26,9 +26,9 @@ from builtins import range
 from functools import partial
 
 # Qt
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem
-from PyQt5.QtGui import QColor
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QMenu, QAction, QDialog, QHBoxLayout, QTableWidget, QSizePolicy, QTableWidgetItem
+from qtpy.QtGui import QColor
 
 # volumina
 from volumina.layer import ColortableLayer, GrayscaleLayer, RGBALayer, ClickableColortableLayer, SegmentationEdgesLayer

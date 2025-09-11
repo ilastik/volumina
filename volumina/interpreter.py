@@ -20,15 +20,15 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 
-from PyQt5.QtCore import QObject, pyqtSignal, QEvent, Qt, QPoint
+from qtpy.QtCore import QObject, Signal, QEvent, Qt, QPoint
 
 from volumina.eventswitch import InterpreterABC
 
 
 class ClickReportingInterpreter(QObject, InterpreterABC):
-    rightClickReceived = pyqtSignal(object, QPoint)  # list of indexes, global window coordinate of click
-    leftClickReceived = pyqtSignal(object, QPoint)  # ditto
-    toolTipReceived = pyqtSignal(object, QPoint)
+    rightClickReceived = Signal(object, QPoint)  # list of indexes, global window coordinate of click
+    leftClickReceived = Signal(object, QPoint)  # ditto
+    toolTipReceived = Signal(object, QPoint)
 
     def __init__(self, navigationInterpreter, positionModel):
         QObject.__init__(self)
@@ -72,16 +72,16 @@ class ClickReportingInterpreter(QObject, InterpreterABC):
 
 class ClickInterpreter(QObject, InterpreterABC):
     """Intercepts mouse clicks (right clicks by default) and double
-       click events on a layer and calls a given functor with the
-       clicked position.
+    click events on a layer and calls a given functor with the
+    clicked position.
 
     """
 
     def __init__(self, editor, layer, onClickFunctor, parent=None, right=True, double=True):
-        """ editor:         VolumeEditor object
-            layer:          Layer instance on which was clicked
-            onClickFunctor: a function f(layer, position5D, windowPosition)
-            right: If True, intercept right clicks, otherwise intercept left clicks.
+        """editor:         VolumeEditor object
+        layer:          Layer instance on which was clicked
+        onClickFunctor: a function f(layer, position5D, windowPosition)
+        right: If True, intercept right clicks, otherwise intercept left clicks.
         """
         QObject.__init__(self, parent)
         self.baseInterpret = editor.navInterpret

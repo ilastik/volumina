@@ -21,7 +21,7 @@
 ###############################################################################
 import logging
 
-from PyQt5.QtCore import QRect
+from qtpy.QtCore import QRect
 
 from volumina.pixelpipeline.interface import RequestABC
 from volumina.slicingtools import rect2slicing

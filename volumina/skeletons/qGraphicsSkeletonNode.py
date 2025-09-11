@@ -23,9 +23,9 @@ from __future__ import division
 # 		   http://ilastik.org/license/
 ###############################################################################
 from past.utils import old_div
-from PyQt5.QtCore import QPointF, Qt, QRectF
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsItem, QMenu
-from PyQt5.QtGui import QPen, QBrush, QColor
+from qtpy.QtCore import QPointF, Qt, QRectF
+from qtpy.QtWidgets import QGraphicsRectItem, QGraphicsItem, QMenu
+from qtpy.QtGui import QPen, QBrush, QColor
 
 #######################################################################################################################
 # ResizeHandle                                                                                                        #

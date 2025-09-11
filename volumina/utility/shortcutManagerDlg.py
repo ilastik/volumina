@@ -2,7 +2,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 import collections
 
-from PyQt5.QtWidgets import (
+from qtpy.QtWidgets import (
     QDialog,
     QScrollArea,
     QHBoxLayout,
@@ -46,7 +46,7 @@ class ShortcutManagerDlg(QDialog):
         shortcutEdits = collections.OrderedDict()
         for group, targets in list(action_descriptions.items()):
             groupItem = QTreeWidgetItem(treeWidget, [group])
-            for (name, description) in targets:
+            for name, description in targets:
                 edit = QLineEdit(target_keyseqs[(group, name)])
                 shortcutEdits[(group, name)] = edit
                 item = QTreeWidgetItem(groupItem, [description])
@@ -93,11 +93,11 @@ class ShortcutManagerDlg(QDialog):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QShortcut
-    from PyQt5.QtGui import QKeySequence
+    from qtpy.QtWidgets import QShortcut
+    from qtpy.QtGui import QKeySequence
     from functools import partial
 
-    from PyQt5.QtWidgets import QApplication, QPushButton, QWidget
+    from qtpy.QtWidgets import QApplication, QPushButton, QWidget
 
     app = QApplication([])
 

@@ -2,15 +2,14 @@ from unittest import mock
 
 import pytest
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 from volumina.utility import qabc
 
 
 class TestQAbc:
     class IObject(qabc.QABC):
         @qabc.abstractmethod
-        def foo(self):
-            ...
+        def foo(self): ...
 
     class ISignal(qabc.QABC):
         signal = qabc.abstractsignal()
@@ -26,7 +25,7 @@ class TestQAbc:
 
     def test_implemented_signal_doesnt_raise_type_error(self):
         class MySignal(self.ISignal):
-            signal = pyqtSignal(int)
+            signal = Signal(int)
 
         MySignal()
 

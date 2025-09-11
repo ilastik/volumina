@@ -25,9 +25,9 @@ from functools import partial
 
 import volumina
 from past.utils import old_div
-from PyQt5.QtCore import QCoreApplication, QEvent, QPointF, QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QBrush, QColor, QFont, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QTransform
-from PyQt5.QtWidgets import (
+from qtpy.QtCore import QCoreApplication, QEvent, QPointF, QSize, Qt, Signal
+from qtpy.QtGui import QBrush, QColor, QFont, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QTransform
+from qtpy.QtWidgets import (
     QAbstractSpinBox,
     QCheckBox,
     QFrame,
@@ -64,7 +64,7 @@ def _load_icon(filename, backgroundColor, width, height):
 # TODO: replace with QPushButton. in __init__(), read icon and give
 # correct background color.
 class LabelButtons(QLabel):
-    clicked = pyqtSignal()
+    clicked = Signal()
 
     def __init__(self, style, parentView, backgroundColor, foregroundColor, width, height):
         QLabel.__init__(self)
@@ -142,7 +142,7 @@ class LabelButtons(QLabel):
 
 
 class SpinBoxImageView(QHBoxLayout):
-    valueChanged = pyqtSignal(int)
+    valueChanged = Signal(int)
 
     def __init__(self, parentView, parent, backgroundColor, foregroundColor, value, height, fontSize):
         QHBoxLayout.__init__(self)
@@ -247,14 +247,14 @@ class ZoomLevelIndicator(QLabel):
 
 
 class ImageView2DHud(QWidget):
-    dockButtonClicked = pyqtSignal()
-    zoomToFitButtonClicked = pyqtSignal()
-    resetZoomButtonClicked = pyqtSignal()
-    maximizeButtonClicked = pyqtSignal()
-    rotLeftButtonClicked = pyqtSignal()
-    rotRightButtonClicked = pyqtSignal()
-    swapAxesButtonClicked = pyqtSignal()
-    exportButtonClicked = pyqtSignal()
+    dockButtonClicked = Signal()
+    zoomToFitButtonClicked = Signal()
+    resetZoomButtonClicked = Signal()
+    maximizeButtonClicked = Signal()
+    rotLeftButtonClicked = Signal()
+    rotRightButtonClicked = Signal()
+    swapAxesButtonClicked = Signal()
+    exportButtonClicked = Signal()
 
     def __init__(self, parent):
         QWidget.__init__(self, parent)
@@ -456,7 +456,7 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
 
 
 class QuadStatusBar(QHBoxLayout):
-    positionChanged = pyqtSignal(int, int, int)  # x,y,z
+    positionChanged = Signal(int, int, int)  # x,y,z
 
     def __init__(self, parent=None):
         QHBoxLayout.__init__(self, parent)
@@ -705,7 +705,7 @@ class QuadStatusBar(QHBoxLayout):
 
 if __name__ == "__main__":
     import sys
-    from PyQt5.QtWidgets import QDialog, QApplication
+    from qtpy.QtWidgets import QDialog, QApplication
 
     # make the program quit on Ctrl+C
     import signal

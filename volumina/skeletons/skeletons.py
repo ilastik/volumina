@@ -24,8 +24,8 @@ from __future__ import division
 # 		   http://ilastik.org/license/
 ###############################################################################
 from past.utils import old_div
-from PyQt5.QtCore import QPointF, QObject, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsItem
+from qtpy.QtCore import QPointF, QObject, Signal
+from qtpy.QtWidgets import QGraphicsItem
 import numpy, copy
 
 from .skeletonNode import SkeletonNode
@@ -33,8 +33,8 @@ from .skeletonNode import SkeletonNode
 
 class Skeletons(QObject):
 
-    changed = pyqtSignal()
-    jumpRequested = pyqtSignal(object)
+    changed = Signal()
+    jumpRequested = Signal(object)
 
     SelectExclusive = 1
     SelectAdd = 2

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from past.utils import old_div
-from PyQt5.QtCore import Qt, QEvent, QObject, QPoint
+from qtpy.QtCore import Qt, QEvent, QObject, QPoint
 import numpy as np
 
 from volumina.eventswitch import InterpreterABC
@@ -39,8 +39,8 @@ class ThresholdingInterpreter(QObject, InterpreterABC):
         self._steps_delta = self._steps_mean * 2
         self._steps_scaling = 0.07
         self._range_max = (
-            4096.0
-        )  # hardcoded, in the case drange is not set in the data file or in the dataSelectionDialogue
+            4096.0  # hardcoded, in the case drange is not set in the data file or in the dataSelectionDialogue
+        )
         self._range_min = -4096.0
         self._range = np.abs(self._range_max - self._range_min)
         self._channel_range = dict()

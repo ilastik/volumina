@@ -29,7 +29,7 @@ from volumina.layerstack import LayerStackModel
 from volumina.widgets.layerwidget import LayerWidget
 from volumina.viewer import Viewer, ClickableSegmentationLayer
 
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 import sys
 
 

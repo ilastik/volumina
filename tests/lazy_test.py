@@ -38,8 +38,8 @@ if has_dependencies:
     import os
     import time
 
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QImage, QPainter
+    from qtpy.QtCore import Qt
+    from qtpy.QtGui import QImage, QPainter
 
     from qimage2ndarray import byte_view
     import numpy

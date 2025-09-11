@@ -19,9 +19,9 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from PyQt5.QtCore import QPoint, QPointF, QTimer, pyqtSignal, Qt
-from PyQt5.QtGui import QCursor, QPainter
-from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox, QOpenGLWidget
+from qtpy.QtCore import QPoint, QPointF, QTimer, Signal, Qt
+from qtpy.QtGui import QCursor, QPainter
+from qtpy.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox, QOpenGLWidget
 
 import numpy
 
@@ -38,7 +38,7 @@ import volumina.config
 
 
 class ImageView2D(QGraphicsView):
-    focusChanged = pyqtSignal()
+    focusChanged = Signal()
 
     """
     Shows a ImageScene2D to the user and allows for interactive
@@ -238,7 +238,7 @@ class ImageView2D(QGraphicsView):
         return QPointF(x, y)
 
     def _qBound(self, minVal, current, maxVal):
-        """PyQt5 does not wrap the qBound function from Qt's global namespace
+        """qtpy does not wrap the qBound function from Qt's global namespace
         This is equivalent."""
         return max(min(current, maxVal), minVal)
 
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     import signal
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    from PyQt5.QtWidgets import QMainWindow
+    from qtpy.QtWidgets import QMainWindow
     from scipy.misc import lena
 
     def checkerboard(shape, squareSize):

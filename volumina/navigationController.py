@@ -25,8 +25,8 @@ import sys
 from functools import partial
 
 import volumina
-from PyQt5.QtCore import QEvent, QObject, QPointF, Qt, QTimer, pyqtSignal
-from PyQt5.QtGui import QColor, QCursor
+from qtpy.QtCore import QEvent, QObject, QPointF, Qt, QTimer, Signal
+from qtpy.QtGui import QColor, QCursor
 from volumina.eventswitch import InterpreterABC
 from volumina.imageScene2D import DirtyIndicator
 from volumina.sliceIntersectionMarker import SliceIntersectionMarker
@@ -284,7 +284,7 @@ class NavigationController(QObject):
     enableNavigation -- whether the position is allowed to be changed
     """
 
-    navigationEnabled = pyqtSignal(bool)
+    navigationEnabled = Signal(bool)
 
     @property
     def axisColors(self):

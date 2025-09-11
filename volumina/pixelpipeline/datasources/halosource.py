@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 from volumina.pixelpipeline.interface import DataSourceABC
 
@@ -10,8 +10,8 @@ class HaloAdjustedDataSource(QObject, DataSourceABC):
     and forwards the expanded request to the underlying datasouce object.
     """
 
-    isDirty = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)
+    isDirty = Signal(object)
+    numberOfChannelsChanged = Signal(int)
 
     def __init__(self, rawSource, halo_start_delta, halo_stop_delta, parent=None):
         """

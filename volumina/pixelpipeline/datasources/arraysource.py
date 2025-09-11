@@ -1,5 +1,5 @@
 import numpy as np
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
 from volumina.slicingtools import is_pure_slicing, index2slice
@@ -24,8 +24,8 @@ class ArrayRequest(RequestABC):
 
 
 class ArraySource(QObject, DataSourceABC):
-    isDirty = pyqtSignal(object)
-    numberOfChannelsChanged = pyqtSignal(int)  # Never emitted
+    isDirty = Signal(object)
+    numberOfChannelsChanged = Signal(int)  # Never emitted
 
     def __init__(self, array):
         super(ArraySource, self).__init__()
@@ -88,7 +88,7 @@ class RelabelingArraySource(ArraySource):
     """Applies a relabeling to each request before passing it on
     Currently, it casts everything to uint8, so be careful."""
 
-    isDirty = pyqtSignal(object)
+    isDirty = Signal(object)
 
     def __init__(self, array):
         super(RelabelingArraySource, self).__init__(array)

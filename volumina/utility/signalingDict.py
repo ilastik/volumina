@@ -1,6 +1,6 @@
 from __future__ import print_function
-from PyQt5.Qt import pyqtSignal
-from PyQt5.QtCore import QObject
+from qtpy.QtCore import Signal
+from qtpy.QtCore import QObject
 
 
 class SignalingDict(QObject):
@@ -18,7 +18,7 @@ class SignalingDict(QObject):
           - __missing__()
     """
 
-    updated = pyqtSignal(object)  # set(updated_keys)
+    updated = Signal(object)  # set(updated_keys)
 
     def __init__(self, parent):
         super(SignalingDict, self).__init__(parent)
@@ -115,7 +115,7 @@ class SignalingDict(QObject):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtCore import QCoreApplication
+    from qtpy.QtCore import QCoreApplication
 
     app = QCoreApplication([])
 

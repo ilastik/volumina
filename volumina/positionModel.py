@@ -21,7 +21,7 @@
 ###############################################################################
 import numpy
 from functools import partial
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+from qtpy.QtCore import QObject, Signal, QTimer
 
 # *******************************************************************************
 # P o s i t i o n M o d e l                                                    *
@@ -39,11 +39,11 @@ class PositionModel(QObject):
     viewer with a mouse.
     """
 
-    timeChanged = pyqtSignal(int)
-    channelChanged = pyqtSignal(int)
-    cursorPositionChanged = pyqtSignal(object, object)
-    slicingPositionChanged = pyqtSignal(object, object)
-    slicingPositionSettled = pyqtSignal(bool)
+    timeChanged = Signal(int)
+    channelChanged = Signal(int)
+    cursorPositionChanged = Signal(object, object)
+    slicingPositionChanged = Signal(object, object)
+    slicingPositionSettled = Signal(bool)
 
     # When the user does not scroll through the stack for more than 300 ms,
     # we call the position 'settled', and slicingPositionSettled will be

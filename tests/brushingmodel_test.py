@@ -25,7 +25,7 @@ from builtins import range
 import unittest as ut
 import numpy as np
 import pytest
-from PyQt5.QtCore import QPointF
+from qtpy.QtCore import QPointF
 from volumina.brushingmodel import BrushingModel
 
 

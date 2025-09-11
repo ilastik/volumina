@@ -25,10 +25,10 @@ from itertools import product
 from operator import mul, itemgetter
 import os
 
-from PyQt5 import uic
-from PyQt5.QtCore import Qt, QEvent, QRectF
-from PyQt5.QtGui import QImageWriter, QImage, QPainter, qRgb
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QColorDialog, QApplication
+from qtpy import uic
+from qtpy.QtCore import Qt, QEvent, QRectF
+from qtpy.QtGui import QImageWriter, QImage, QPainter, qRgb
+from qtpy.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QColorDialog, QApplication
 from functools import reduce
 
 try:

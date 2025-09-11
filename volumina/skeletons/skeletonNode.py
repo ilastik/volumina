@@ -23,12 +23,12 @@ from __future__ import division
 ###############################################################################
 from builtins import range
 from past.utils import old_div
-from PyQt5.QtCore import QPointF, QObject, pyqtSignal
-from PyQt5.QtGui import QColor
+from qtpy.QtCore import QPointF, QObject, Signal
+from qtpy.QtGui import QColor
 
 
 class SkeletonNode(QObject):
-    selected = pyqtSignal(bool)
+    selected = Signal(bool)
 
     def __init__(self, pos3D, axis, skeletons):
         super(SkeletonNode, self).__init__()

@@ -25,9 +25,9 @@ import time
 from contextlib import contextmanager
 from functools import partial
 
-from PyQt5.QtCore import QObject, QRect, QRectF, pyqtSignal
-from PyQt5.QtGui import QImage, QPainter, QTransform
-from PyQt5.QtWidgets import QGraphicsItem
+from qtpy.QtCore import QObject, QRect, QRectF, Signal
+from qtpy.QtGui import QImage, QPainter, QTransform
+from qtpy.QtWidgets import QGraphicsItem
 
 from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.pixelpipeline.interface import IndeterminateRequestError
@@ -103,7 +103,7 @@ class TileProvider(QObject):
     )  # How 'complete' the composite tile is
     # (depending on how many layers are still dirty)
 
-    sceneRectChanged = pyqtSignal(QRectF)
+    sceneRectChanged = Signal(QRectF)
 
     @property
     def axesSwapped(self):

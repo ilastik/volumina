@@ -22,7 +22,7 @@
 import logging
 from typing import Tuple, Optional, Set
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 from volumina.config import CONFIG
 from volumina.slicingtools import SliceProjection, is_pure_slicing
@@ -68,9 +68,9 @@ class PlanarSliceRequest(RequestABC):
 
 
 class PlanarSliceSource(QObject, PlanarSliceSourceABC):
-    isDirty = pyqtSignal(object)
-    throughChanged = pyqtSignal(tuple, tuple)  # old, new
-    idChanged = pyqtSignal(object, object)  # old, new
+    isDirty = Signal(object)
+    throughChanged = Signal(tuple, tuple)  # old, new
+    idChanged = Signal(object, object)  # old, new
 
     @property
     def id(self):
@@ -165,8 +165,8 @@ StackId = Tuple[Optional["SyncedSliceSources"], Tuple[Tuple[int, int], ...]]
 
 
 class SyncedSliceSources(QObject):
-    throughChanged = pyqtSignal(tuple, tuple)  # old , new
-    idChanged = pyqtSignal(object, object)
+    throughChanged = Signal(tuple, tuple)  # old , new
+    idChanged = Signal(object, object)
 
     @property
     def id(self) -> StackId:

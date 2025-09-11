@@ -48,9 +48,9 @@
 #    authors and should not be interpreted as representing official policies, either expressed
 #    or implied, of their employers.
 
-from PyQt5.QtCore import Qt, QPointF, QRectF
-from PyQt5.QtGui import QPen
-from PyQt5.QtWidgets import QGraphicsItem
+from qtpy.QtCore import Qt, QPointF, QRectF
+from qtpy.QtGui import QPen
+from qtpy.QtWidgets import QGraphicsItem
 
 # *******************************************************************************
 # C r o s s H a i r C u r s o r                                                *
@@ -139,7 +139,7 @@ class CrossHairCursor(QGraphicsItem):
 
     def showXYPosition(self, x, y):
         """mark the (x,y) position by displaying a cross hair cursor
-           including a circle indicating the current brush size"""
+        including a circle indicating the current brush size"""
         self.setVisible(True)
         self.mode = self.modeXYPosition
         self.setPos(x, y)

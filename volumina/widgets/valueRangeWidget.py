@@ -22,7 +22,7 @@
 import os
 from functools import partial
 
-from PyQt5.QtWidgets import (
+from qtpy.QtWidgets import (
     QWidget,
     QDoubleSpinBox,
     QHBoxLayout,
@@ -32,13 +32,13 @@ from PyQt5.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
 )
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5 import uic
+from qtpy.QtCore import Qt, Signal
+from qtpy import uic
 import numpy
 
 
 class ValueRangeWidget(QWidget):
-    changedSignal = pyqtSignal()
+    changedSignal = Signal()
 
     def __init__(self, parent=None, dtype=numpy.float32):
         super(ValueRangeWidget, self).__init__(parent)
@@ -197,7 +197,7 @@ class CombinedValueRangeWidget(QWidget):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     import numpy
 
     app = QApplication(list())

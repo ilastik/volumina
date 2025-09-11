@@ -4,9 +4,9 @@ import logging
 from functools import partial
 from typing import Dict, Tuple
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QShortcut
-from PyQt5.QtGui import QKeySequence
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication, QShortcut
+from qtpy.QtGui import QKeySequence
 from volumina.utility import Singleton, preferences, getMainWindow
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ class ShortcutManager(metaclass=Singleton):
         _d = _d or self._keyseq_target_actions
         reversemap = {}
         for keyseq, targets in list(_d.items()):
-            for (group, name) in targets:
+            for group, name in targets:
                 reversemap[(group, name)] = keyseq
         return reversemap
 
@@ -183,7 +183,7 @@ class ShortcutManager(metaclass=Singleton):
         self._global_shortcuts[keytext] = QShortcut(
             QKeySequence(keyseq),
             getMainWindow(),
-            member=partial(self._handle_shortcut_pressed, keytext),
+            partial(self._handle_shortcut_pressed, keytext),
             context=Qt.ApplicationShortcut,
         )
 
@@ -347,9 +347,9 @@ class ObjectWithToolTipABC(metaclass=abc.ABCMeta):
 
 
 if __name__ == "__main__":
-    from PyQt5.QtCore import Qt, QEvent, QTimer
-    from PyQt5.QtWidgets import QApplication, QWidget, QLabel
-    from PyQt5.QtGui import QKeyEvent
+    from qtpy.QtCore import Qt, QEvent, QTimer
+    from qtpy.QtWidgets import QApplication, QWidget, QLabel
+    from qtpy.QtGui import QKeyEvent
 
     app = QApplication([])
 

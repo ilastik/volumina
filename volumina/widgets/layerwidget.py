@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -25,15 +22,15 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 import warnings
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QRect, QSize, QTimer, QPoint, QItemSelectionModel
-from PyQt5.QtGui import QPainter, QFontMetrics, QFont, QPalette, QMouseEvent, QPixmap
-from PyQt5.QtWidgets import QStyledItemDelegate, QWidget, QListView, QStyle, QLabel, QGridLayout, QSpinBox, QApplication
+from qtpy.QtCore import Signal, Qt, QEvent, QRect, QSize, QTimer, QPoint, QItemSelectionModel
+from qtpy.QtGui import QPainter, QFontMetrics, QFont, QPalette, QMouseEvent, QPixmap
+from qtpy.QtWidgets import QStyledItemDelegate, QWidget, QListView, QStyle, QLabel, QGridLayout, QSpinBox, QApplication
 
 
 from volumina.layer import Layer
 from volumina.layerstack import LayerStackModel
 from volumina.utility import ShortcutManager
-from .layercontextmenu import layercontextmenu
+from volumina.widgets.layercontextmenu import layercontextmenu
 
 
 NEXT_CHANNEL_SEQ = "Ctrl+N"
@@ -41,7 +38,7 @@ PREV_CHANNEL_SEQ = "Ctrl+P"
 
 
 class FractionSelectionBar(QWidget):
-    fractionChanged = pyqtSignal(float)
+    fractionChanged = Signal(float)
 
     def __init__(self, initial_fraction=1.0, parent=None):
         super(FractionSelectionBar, self).__init__(parent=parent)
@@ -128,7 +125,7 @@ class FractionSelectionBar(QWidget):
 
 
 class ToggleEye(QLabel):
-    activeChanged = pyqtSignal(bool)
+    activeChanged = Signal(bool)
 
     def __init__(self, parent=None):
         super(ToggleEye, self).__init__(parent=parent)
@@ -482,7 +479,7 @@ if __name__ == "__main__":
 
     import sys, numpy
 
-    from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout
+    from qtpy.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout
     from volumina.pixelpipeline.datasources import ArraySource, ConstantSource
 
     app = QApplication(sys.argv)
