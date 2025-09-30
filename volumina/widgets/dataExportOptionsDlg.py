@@ -20,8 +20,9 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import os
-import collections
+from collections import OrderedDict
 from functools import partial
+from typing import Optional
 
 import numpy
 
@@ -101,7 +102,9 @@ if _has_lazyflow:
 # DataExportOptionsDlg
 # **************************************************************************
 class DataExportOptionsDlg(QDialog):
-    def __init__(self, parent, opDataExport, defaultExportPath=None):
+    def __init__(
+        self, parent, opDataExport, defaultExportPath: str = None, exportSubregionMax: OrderedDict[str, int] = None
+    ):
         """
         Constructor.
 
@@ -109,6 +112,8 @@ class DataExportOptionsDlg(QDialog):
         :param opDataExport: The operator to configure.  The operator is manipulated LIVE, so supply a
                              temporary operator that can be discarded in case the user clicked 'cancel'.
                              If the user clicks 'OK', then copy the slot settings from the temporary op to your real one.
+        :param defaultExportPath: Default value for the "export path" text input (on init and on reset)
+        :param exportSubregionMax: Upper limits for the subregion input spinboxes as { axis: max }
         """
         global _has_lazyflow
         assert _has_lazyflow, "This widget requires lazyflow."
@@ -128,7 +133,7 @@ class DataExportOptionsDlg(QDialog):
 
         # Init child widgets
         self._initMetaInfoWidgets()
-        self._initSubregionWidget()
+        self._initSubregionWidget(exportSubregionMax)
         self._initDtypeConversionWidgets()
         self._initRenormalizationWidgets()
         self._initAxisOrderWidgets()
@@ -172,20 +177,25 @@ class DataExportOptionsDlg(QDialog):
     # Subregion roi
     # **************************************************************************
 
-    def _initSubregionWidget(self):
+    def _initSubregionWidget(self, exportSubregionMax: Optional[OrderedDict[str, int]]):
         opDataExport = self._opDataExport
-        inputAxes = opDataExport.Input.meta.getAxisKeys()
+        assert (
+            exportSubregionMax or opDataExport.Input.ready()
+        ), "cannot determine subregion settings: export is not ready"
 
-        shape = opDataExport.Input.meta.shape
+        axes = list(exportSubregionMax.keys()) if exportSubregionMax else opDataExport.Input.meta.getAxisKeys()
+        shape = tuple(exportSubregionMax.values()) if exportSubregionMax else opDataExport.Input.meta.shape
         start = (None,) * len(shape)
         stop = (None,) * len(shape)
 
         if opDataExport.RegionStart.ready():
-            start = opDataExport.RegionStart.value
+            preset_tagged_start = dict(zip(opDataExport.Input.meta.getAxisKeys(), opDataExport.RegionStart.value))
+            start = tuple(preset_tagged_start[a] if a in preset_tagged_start else None for a in axes)
         if opDataExport.RegionStop.ready():
-            stop = opDataExport.RegionStop.value
+            preset_tagged_stop = dict(zip(opDataExport.Input.meta.getAxisKeys(), opDataExport.RegionStop.value))
+            stop = tuple(preset_tagged_stop[a] if a in preset_tagged_stop else None for a in axes)
 
-        self.roiWidget.initWithExtents(inputAxes, shape, start, stop)
+        self.roiWidget.initWithExtents(axes, shape, start, stop)  # SubregionRoiWidget
 
         def _handleRoiChange(newstart, newstop):
             if not self.isVisible() or not opDataExport.Input.ready():
@@ -200,7 +210,7 @@ class DataExportOptionsDlg(QDialog):
             tagged_output_shape = opDataExport.ImageToExport.meta.getTaggedShape()
             missing_axes = set(tagged_input_shape.keys()) - set(tagged_output_shape.keys())
             for axis in missing_axes:
-                index = list(tagged_input_shape.keys()).index(axis)
+                index = list(axes).index(axis)
                 if (stop[index] is None and tagged_input_shape[axis] > 1) or (
                     stop[index] is not None and stop[index] - start[index] > 1
                 ):
