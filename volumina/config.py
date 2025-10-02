@@ -22,6 +22,8 @@
 import configparser
 import os
 
+from functools import cached_property
+
 default_config = """
 [volumina]
 pixelpipeline_verbose: false
@@ -43,19 +45,19 @@ class _Config:
         self._cfg = cfg
         self._env = os.environ
 
-    @property
+    @cached_property
     def verbose_pixelpipeline(self):
         return self._get_boolean("volumina", "pixelpipeline_verbose")
 
-    @property
+    @cached_property
     def show_3d_widget(self):
         return self._get_boolean("volumina", "show_3d_widget")
 
-    @property
+    @cached_property
     def enable_fallback_viewports(self):
         return self._get_boolean("volumina", "enable_fallback_viewports")
 
-    @property
+    @cached_property
     def cache_size(self):
         return self._cfg.getint("volumina", "cache_size", fallback=_256MB)
 
