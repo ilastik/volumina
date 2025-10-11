@@ -25,6 +25,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytest.importorskip("lazyflow")
+
 from volumina.pixelpipeline.slicesources import StackId
 from volumina.utility.lazyflowRequestBuffer import LazyflowRequestBuffer
 
