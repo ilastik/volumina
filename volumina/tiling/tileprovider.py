@@ -104,6 +104,19 @@ class TileTime(object):
     seconds = 0.0
 
 
+class TrueInc:
+    _count = 0
+    _lock = RLock()
+
+    def inc(self):
+        with self._lock:
+            self._count += 1
+            return self._count
+
+
+_Counter = TrueInc()
+
+
 class TileProvider(QObject):
     """
     Note: Throughout this class, the terms 'layer', 'ImageSource', and 'ims' are used interchangeably.
@@ -304,7 +317,7 @@ class TileProvider(QObject):
                     logger.debug("Failed to create layer tile request", exc_info=True)
                     continue
 
-                timestamp = time.time()
+                timestamp = _Counter.inc()
                 fetch_fn = partial(
                     self._fetch_layer_tile, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache
                 )
