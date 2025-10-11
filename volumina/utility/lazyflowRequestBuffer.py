@@ -19,8 +19,8 @@
 #          http://ilastik.org/license.html
 ###############################################################################
 import logging
+import heapq
 from itertools import chain
-from queue import Empty, PriorityQueue
 from threading import Lock
 from typing import TYPE_CHECKING, Callable, Final, List, Tuple
 
@@ -106,7 +106,7 @@ class LazyflowRequestBuffer:
         self._lock = Lock()
         self._cleared_tasks: int = 0
         self._n_concurrent_tasks: Final[int] = n_concurrent_tasks
-        self._queue: PriorityQueue[PrioTask] = PriorityQueue()
+        self._queue: List[PrioTask] = []
         self._active: int = 0
         self._failed: int = 0
 
@@ -121,15 +121,16 @@ class LazyflowRequestBuffer:
     ):
         root_priority = [1] + list(priority)
         req = Request(func, root_priority)
-        self._queue.put(PrioTask(req, priority, viewport_ref, stack_id, tile_no))
+        with self._lock:
+            heapq.heappush(self._queue, PrioTask(req, priority, viewport_ref, stack_id, tile_no))
         self.run()
 
     def run(self):
         with self._lock:
             while self._active < self._n_concurrent_tasks:
                 try:
-                    req = self._queue.get_nowait()
-                except Empty:
+                    req = heapq.heappop(self._queue)
+                except IndexError:
                     return
 
                 if req:
@@ -146,13 +147,10 @@ class LazyflowRequestBuffer:
 
     def clear(self):
         with self._lock:
-            while True:
-                try:
-                    task = self._queue.get_nowait()
-                    task.cancel()
-                    self._cleared_tasks += 1
-                except Empty:
-                    break
+            for task in self._queue:
+                task.cancel()
+                self._cleared_tasks += 1
+            self._queue = []
 
     def clear_vp_res(self, viewport: "TileProvider", stack_id: StackId, keep_tiles: list[int]):
         """Remove waiting tiles no longer visible
@@ -167,12 +165,7 @@ class LazyflowRequestBuffer:
         tmp_queue: dict[Tuple[StackId, int], PrioTask] = {}
         tmp_queue_other_vp: List[PrioTask] = []
         with self._lock:
-            while True:
-                try:
-                    task = self._queue.get_nowait()
-                except Empty:
-                    break
-
+            for task in self._queue:
                 # don't touch tasks outside the current viewport
                 if task.vp != viewport:
                     tmp_queue_other_vp.append(task)
@@ -200,5 +193,5 @@ class LazyflowRequestBuffer:
 
                 tmp_queue[(stack_id, task.tile_no)] = task
 
-            for task in chain(tmp_queue.values(), tmp_queue_other_vp):
-                self._queue.put(task)
+            self._queue = list(chain(tmp_queue.values(), tmp_queue_other_vp))
+            heapq.heapify(self._queue)
