@@ -1,3 +1,4 @@
+from typing import Callable
 from future import standard_library
 
 standard_library.install_aliases()
@@ -38,14 +39,14 @@ class PrioritizedThreadPoolExecutor(ThreadPoolExecutor):
         and can therefore be prioritized), not a generic _WorkItem
     """
 
-    def __init__(self, max_workers):
+    def __init__(self, max_workers: int):
         super(PrioritizedThreadPoolExecutor, self).__init__(max_workers)
-        self._work_queue = queue.PriorityQueue()
+        self._work_queue: queue.PriorityQueue[PrioritizedTask] = queue.PriorityQueue()
 
-    def submit(self, func, priority):
+    def submit(self, func: Callable[[], None], /, priority: tuple[float | int | bool, ...]):
         """
         Mostly copied from ThreadPoolExecutor.submit(), but here we replace '_WorkItem' with 'PrioritizedTask'.
-        Also, we pass the 'prefetch' and 'timestamp' parameters.
+        Also, we pass the 'prefetch' and 'timestamp' parameters in the priority argument.
         """
         with self._shutdown_lock:
             if self._shutdown:
@@ -57,3 +58,12 @@ class PrioritizedThreadPoolExecutor(ThreadPoolExecutor):
             self._work_queue.put(w)
             self._adjust_thread_count()
             return fut
+
+    def clear(self):
+        q = self._work_queue
+        while not q.empty():
+            try:
+                q.get(False)
+            except:
+                continue
+            q.task_done()
