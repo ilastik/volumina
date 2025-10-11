@@ -134,7 +134,7 @@ class TileProviderTest(ut.TestCase):
 
         tp.requestRefresh(QRectF(100, 100, 200, 200))
         tp.waitForTiles()
-        tiles = tp.getTiles(QRectF(100, 100, 200, 200))
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             aimg = byte_view(tile.qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY3))
@@ -145,7 +145,7 @@ class TileProviderTest(ut.TestCase):
         self.layer3.visible = False
         tp.requestRefresh(QRectF(100, 100, 200, 200))
         tp.waitForTiles()
-        tiles = tp.getTiles(QRectF(100, 100, 200, 200))
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             # If all tiles are invisible, then no tile is even rendered at all.
             assert tile.qimg is None
@@ -156,7 +156,7 @@ class TileProviderTest(ut.TestCase):
         self.layer3.visible = False
         tp.requestRefresh(QRectF(100, 100, 200, 200))
         tp.waitForTiles()
-        tiles = tp.getTiles(QRectF(100, 100, 200, 200))
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             aimg = byte_view(tile.qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY2))
@@ -188,7 +188,7 @@ class DirtyPropagationTest(ut.TestCase):
 
         tp.requestRefresh(QRectF(100, 100, 200, 200))
         tp.waitForTiles()
-        tiles = tp.getTiles(QRectF(100, 100, 200, 200))
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             aimg = byte_view(tile.qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == self.CONSTANT))
@@ -198,7 +198,7 @@ class DirtyPropagationTest(ut.TestCase):
         self.ds2.constant = NEW_CONSTANT
         tp.requestRefresh(QRectF(100, 100, 200, 200))
         tp.waitForTiles()
-        tiles = tp.getTiles(QRectF(100, 100, 200, 200))
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             aimg = byte_view(tile.qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == NEW_CONSTANT))
@@ -216,7 +216,7 @@ class DirtyPropagationTest(ut.TestCase):
 
         # Sanity check: Do we see the right data on the second
         # slice? (should be all 1s)
-        tiles = tp.getTiles(QRectF(100, 100, 200, 200))
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             aimg = byte_view(tile.qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == 1))
@@ -229,7 +229,7 @@ class DirtyPropagationTest(ut.TestCase):
 
         # Sanity check: Do we see the right data on the third
         # slice?(should be all 2s)
-        tiles = tp.getTiles(QRectF(100, 100, 200, 200))
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             aimg = byte_view(tile.qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == 2))
@@ -265,7 +265,7 @@ class DirtyPropagationTest(ut.TestCase):
         # tiling overlap_draw causes getTiles() to return
         # surrounding tiles that we haven't actually touched in
         # this test)
-        tiles = tp.getTiles(QRectF(101, 101, 198, 198))
+        tiles = tp.getTiles(QRectF(101, 101, 198, 198), QRectF())
 
         for tile in tiles:
             aimg = byte_view(tile.qimg)
