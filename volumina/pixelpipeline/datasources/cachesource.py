@@ -51,6 +51,7 @@ class _Request:
 
     def cancel(self):
         self._rq.cancel()
+        self._cached_source._req.pop(self._key, None)
 
 
 class _CachedRequest:
