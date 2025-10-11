@@ -299,7 +299,8 @@ class TileProvider(QObject):
                     # Tasks with 'smaller' priority values are processed first.
                     # We want non-prefetch tasks to take priority (False < True)
                     # and then more recent tasks to take priority (more recent -> process first)
-                    priority = (prefetch, -timestamp)
+                    layer_priority: int = getattr(ims, "request_priority", 0)
+                    priority = (prefetch, -layer_priority, -timestamp)
                     submit_to_threadpool(fetch_fn, priority)
 
             if need_reblend:
