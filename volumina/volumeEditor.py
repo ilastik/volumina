@@ -29,7 +29,7 @@ from functools import partial
 import numpy
 
 # PyQt
-from qtpy.QtCore import Signal, QObject
+from qtpy.QtCore import QRect, Signal, QObject
 from qtpy.QtWidgets import QApplication
 
 import qtpy
@@ -260,11 +260,19 @@ class VolumeEditor(QObject):
         }
         self.eventSwitch.interpreter = modes[name]
 
+    def clearPendingRequestQueueAndReferesh(self):
+        from volumina.tiling.tileprovider import renderer_pool
+
+        renderer_pool.clear()
+        QApplication.processEvents()
+        for v in self.imageViews:
+            v.repaint(QRect())
+
     def showCropLines(self, visible):
         for view in self.imageViews:
             view.showCropLines(visible)
 
-    def setTileWidth(self, tileWidth):
+    def setTileWidth(self, tileWidth: int):
         for i in self.imageScenes:
             i.setTileWidth(tileWidth)
 

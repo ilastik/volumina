@@ -79,8 +79,6 @@ class DirtyIndicator(QGraphicsItem):
 
         intersected = self._tiling.intersected(option.exposedRect)
 
-        # print "pies are painting at ", option.exposedRect
-
         progress = 0.0
         for i in intersected:
             progress += self._indicate[i]
@@ -103,8 +101,6 @@ class DirtyIndicator(QGraphicsItem):
             painter.drawPie(rectangle, startAngle, spanAngle)
 
         painter.restore()
-
-        # print "progress of %d tiles " % len(intersected), progress/float(len(intersected))
 
     def setTileProgress(self, tileId, progress):
         self._indicate[tileId] = progress
@@ -465,7 +461,7 @@ class ImageScene2D(QGraphicsScene):
         if self._showTileProgress:
             self._dirtyIndicator.setVisible(settled)
 
-    def drawBackground(self, painter, sceneRectF):
+    def drawBackground(self, painter: QPainter, sceneRectF: QRectF):
         if self._tileProvider is None:
             return
 
@@ -476,13 +472,15 @@ class ImageScene2D(QGraphicsScene):
         #        it needs to draw immediately after the ImageView's scrollbar is panned.
         #        As a workaround, we manually check the amount of the scene that needs to be drawn,
         #        instead of relying on the above sceneRectF parameter to be correct.
+        vp_rectF: QRectF = sceneRectF
         if self.views():
-            sceneRectF = self.views()[0].viewportRect().intersected(sceneRectF)
+            vp_rectF = self.views()[0].viewportRect()
+            sceneRectF = vp_rectF.intersected(sceneRectF)
 
         if not sceneRectF.isValid():
             return
 
-        tiles = self._tileProvider.getTiles(sceneRectF)
+        tiles = self._tileProvider.getTiles(sceneRectF, vp_rectF)
         allComplete = True
         for tile in tiles:
             # We always draw the tile, even though it might not be up-to-date
@@ -591,7 +589,7 @@ class ImageScene2D(QGraphicsScene):
                     sceneRectF = QRectF()  # invalid QRectF means 'get all tiles'
                 else:
                     sceneRectF = rect
-            self._tileProvider.waitForTiles(sceneRectF)
+            self._tileProvider.waitForTiles(sceneRectF, sceneRectF)
         else:
             self._allTilesCompleteEvent.wait()
 

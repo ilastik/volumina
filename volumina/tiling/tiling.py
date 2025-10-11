@@ -37,7 +37,13 @@ class Tiling(object):
     """
 
     def __init__(
-        self, sliceShape, data2scene=QTransform(), blockSize=512, overlap=0, overlap_draw=1e-3, name="Unnamed Tiling"
+        self,
+        sliceShape,
+        data2scene=QTransform(),
+        blockSize: int = 512,
+        overlap=0,
+        overlap_draw=1e-3,
+        name="Unnamed Tiling",
     ):
         """
         Args:
