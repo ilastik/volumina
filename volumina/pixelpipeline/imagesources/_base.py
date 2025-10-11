@@ -19,7 +19,7 @@ class ImageSource(QObject, ImageSourceABC):
 
     isDirty = Signal(QRect)
 
-    def __init__(self, name, guarantees_opaqueness=False, parent=None, direct=False):
+    def __init__(self, name, guarantees_opaqueness=False, parent=None, direct=False, priority: int = 0):
         """direct: whether this request will be computed synchronously in the GUI thread (direct=True)
         or whether the request will be put on a worker queue to be computed in a worker thread
         (direct=False).
@@ -28,6 +28,17 @@ class ImageSource(QObject, ImageSourceABC):
         self._opaque = guarantees_opaqueness
         self.direct = direct
         self.name = name
+        self._priority = priority
+
+    @property
+    def priority(self) -> int:
+        """Priority for requests from this image source
+
+        Larger values indicate higher priority.
+
+        See `tileProvider.TileProvider._refreshTile`
+        """
+        return self._priority
 
     def image_type(self):
         """

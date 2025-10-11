@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
@@ -19,6 +20,9 @@ try:
 except ImportError:
     _has_vigra = False
 
+if TYPE_CHECKING:
+    from volumina.layer import ColortableLayer
+
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +31,11 @@ class ColortableImageSource(ImageSource):
     loggingName = __name__ + ".ColortableImageSource"
     logger = logging.getLogger(loggingName)
 
-    def __init__(self, arraySource2D, layer):
+    def __init__(self, arraySource2D, layer: "ColortableLayer"):
         """colorTable: a list of QRgba values"""
 
         assert isinstance(arraySource2D, PlanarSliceSourceABC), "wrong type: %s" % str(type(arraySource2D))
-        super(ColortableImageSource, self).__init__(layer.name, direct=layer.direct)
+        super(ColortableImageSource, self).__init__(layer.name, direct=layer.direct, priority=layer.priority)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
 

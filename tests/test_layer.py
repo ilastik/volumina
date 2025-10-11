@@ -1,14 +1,14 @@
+import random
+from itertools import count
 from unittest import mock
 
-import pytest
 import numpy as np
+import pytest
 from qtpy.QtGui import QColor, QPen
-from itertools import count
 
 from volumina import layer
-from volumina.pixelpipeline.interface import DataSourceABC, PlanarSliceSourceABC
 from volumina.pixelpipeline import imagesources as imsrc
-
+from volumina.pixelpipeline.interface import DataSourceABC, PlanarSliceSourceABC
 
 _counter = count()
 
@@ -27,14 +27,23 @@ def planar_src():
 
 
 @pytest.fixture(scope="function")
-def layer_obj(request, src, planar_src):
+def priority():
+    # arbitrary limits
+    return random.randint(-1000, 1000)
+
+
+@pytest.fixture(scope="function")
+def layer_obj(request, src: DataSourceABC, priority: int):
     layer_cls = request.param
+
     if issubclass(layer_cls, layer.ColortableLayer):
-        l = layer_cls(src, colorTable=[QColor(0, 0, 0, 0).rgba(), QColor(255, 0, 0).rgba()])
+        l = layer_cls(src, colorTable=[QColor(0, 0, 0, 0).rgba(), QColor(255, 0, 0).rgba()], priority=priority)
     elif issubclass(layer_cls, layer.LabelableSegmentationEdgesLayer):
-        l = layer_cls(src, label_class_pens=[QPen()])
+        l = layer_cls(src, label_class_pens=[QPen()], priority=priority)
+    elif issubclass(layer_cls, (layer.Layer)):
+        l = layer_cls(src, priority=priority)
     else:
-        l = layer_cls(src)
+        raise NotImplementedError()
 
     l.name = "name%d" % next(_counter)
     return l
@@ -53,16 +62,19 @@ def layer_obj(request, src, planar_src):
     ],
     indirect=["layer_obj"],
 )
-def test_create_image_source_returns_correct_type(src, planar_src, layer_obj, expected_source_cls):
+def test_create_image_source_returns_correct_type_and_prio(
+    planar_src: PlanarSliceSourceABC, layer_obj: layer.Layer, expected_source_cls: type, priority: int
+):
     new_src = layer_obj.createImageSource([planar_src])
 
     assert isinstance(new_src, expected_source_cls)
+    assert new_src.priority == layer_obj.priority == priority
 
 
 @pytest.mark.parametrize(
     "layer_obj", [layer.AlphaModulatedLayer, layer.GrayscaleLayer, layer.ColortableLayer], indirect=["layer_obj"]
 )
-def test_reacts_on_name_change(planar_src, layer_obj):
+def test_reacts_on_name_change(planar_src: PlanarSliceSourceABC, layer_obj: layer.Layer):
     new_src = layer_obj.createImageSource([planar_src])
     assert new_src.objectName() == layer_obj.name
 
@@ -70,7 +82,7 @@ def test_reacts_on_name_change(planar_src, layer_obj):
     assert new_src.objectName() == "newName"
 
 
-def test_create_rgba_sourse(src, planar_src):
+def test_create_rgba_sourse(src: DataSourceABC, planar_src: PlanarSliceSourceABC):
     layer_obj = layer.RGBALayer(src, src, src, src)
     new_src = layer_obj.createImageSource([planar_src, planar_src, planar_src, planar_src])
     assert isinstance(new_src, imsrc.RGBAImageSource)
