@@ -51,8 +51,6 @@ except ImportError:
     USE_LAZYFLOW_THREADPOOL = False
 
 
-renderer_pool = None
-
 if USE_LAZYFLOW_THREADPOOL:
     from volumina.utility.lazyflowRequestBuffer import LazyflowRequestBuffer
 
@@ -88,7 +86,7 @@ else:
         _stack_id: StackId,
         _tile_no: int,
     ):
-        assert isinstance(renderer_pool, PrioritizedThreadPoolExecutor)
+        assert isinstance(renderer_pool, PrioritizedThreadPoolExecutor), type(renderer_pool)
         renderer_pool.submit(fn, priority)
 
 
