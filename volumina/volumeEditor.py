@@ -264,7 +264,7 @@ class VolumeEditor(QObject):
         for view in self.imageViews:
             view.showCropLines(visible)
 
-    def setTileWidth(self, tileWidth):
+    def setTileWidth(self, tileWidth: int):
         for i in self.imageScenes:
             i.setTileWidth(tileWidth)
 

@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
+from typing import List
 from qtpy.QtCore import QPointF, QRectF
 
 import numpy
@@ -28,7 +29,7 @@ import numpy
 # *******************************************************************************
 
 
-class PatchAccessor(object):
+class PatchAccessor:
     """
     Cut a given 2D shape into patches of given rectangular size
 
@@ -36,7 +37,7 @@ class PatchAccessor(object):
     then this block will be merged with the previous one
     """
 
-    def __init__(self, size_x, size_y, blockSize=128):
+    def __init__(self, size_x: int, size_y: int, blockSize=128):
         """
         (size_x, size_y) -- 2D shape
         blockSize        -- maximum width/height of patches
@@ -72,7 +73,7 @@ class PatchAccessor(object):
     def __len__(self):
         return self.patchCount
 
-    def getPatchBounds(self, blockNum, overlap=0):
+    def getPatchBounds(self, blockNum: int, overlap: int = 0) -> List[int]:
         rest = blockNum % (self._cX * self._cY)
         y = int(numpy.floor(rest / self._cX))
         x = rest % self._cX
@@ -89,21 +90,21 @@ class PatchAccessor(object):
 
         return [startx, endx, starty, endy]
 
-    def patchRectF(self, blockNum, overlap=0):
+    def patchRectF(self, blockNum: int, overlap: int = 0) -> QRectF:
         startx, endx, starty, endy = self.getPatchBounds(blockNum, overlap)
         return QRectF(QPointF(startx, starty), QPointF(endx, endy))
 
-    def getPatchesForRect(self, startx, starty, endx, endy):
+    def getPatchesForRect(self, startx: float, starty: float, endx: float, endy: float) -> List[int]:
         """
         Looks up patches for specified block
         x in [startx, endx)
         y in [starty, endy)
         :returns: list of patch ids
         """
-        sx = int(numpy.floor(1.0 * startx / self._blockSize))
-        ex = int(numpy.ceil(1.0 * endx / self._blockSize))
-        sy = int(numpy.floor(1.0 * starty / self._blockSize))
-        ey = int(numpy.ceil(1.0 * endy / self._blockSize))
+        sx = int(numpy.floor(startx / self._blockSize))
+        ex = int(numpy.ceil(endx / self._blockSize))
+        sy = int(numpy.floor(starty / self._blockSize))
+        ey = int(numpy.ceil(endy / self._blockSize))
 
         # Clip to rect bounds
         ex = min(ex, self._cX)

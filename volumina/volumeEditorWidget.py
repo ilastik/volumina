@@ -27,6 +27,7 @@ from __future__ import absolute_import
 from builtins import range
 from functools import partial
 import copy
+from typing import List, Tuple, Union
 
 # SciPy
 import numpy
@@ -73,7 +74,7 @@ _timerEater = __TimerEventEater()
 
 
 class VolumeEditorWidget(QWidget):
-    def __init__(self, parent=None, editor=None):
+    def __init__(self, parent=None, editor: Union[None, VolumeEditor] = None):
         super(VolumeEditorWidget, self).__init__(parent=parent)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -132,7 +133,7 @@ class VolumeEditorWidget(QWidget):
             self.editor.navCtrl.changeSliceAbsolute(cropMidPos[i], i)
         self.editor.navCtrl.changeTime(self.editor.cropModel._crop_times[0])
 
-    def init(self, volumina):
+    def init(self, volumina: VolumeEditor):
         self.editor = volumina
 
         self.hudsShown = [True] * 3
@@ -331,7 +332,7 @@ class VolumeEditorWidget(QWidget):
         tile_width = self._getTileWidth()
         self.editor.setTileWidth(tile_width)
 
-    def _getTileWidthConfigKeyDefault(self):
+    def _getTileWidthConfigKeyDefault(self) -> Tuple[str, int]:
         singletons_spacial = sum(1 for dim in self.editor.posModel.shape if dim == 1)
         assert singletons_spacial in range(2)
         if singletons_spacial == 0:
@@ -344,12 +345,12 @@ class VolumeEditorWidget(QWidget):
             default = 512
         return key, default
 
-    def _getTileWidth(self):
+    def _getTileWidth(self) -> int:
         key, default = self._getTileWidthConfigKeyDefault()
         tile_width = preferences.get("ImageScene2D", key, default=default)
         return tile_width
 
-    def _setTileWidth(self, value):
+    def _setTileWidth(self, value: int):
         key, _ = self._getTileWidthConfigKeyDefault()
         preferences.set("ImageScene2D", key, value)
         self._updateTileWidth()
@@ -486,7 +487,7 @@ class VolumeEditorWidget(QWidget):
                 ),
             )
 
-    def _updateInfoLabels(self, pos):
+    def _updateInfoLabels(self, pos: List[Union[int, float]]):
         self.quadViewStatusBar.setMouseCoords(*pos)
 
     def eventFilter(self, watched, event):
@@ -501,7 +502,7 @@ class VolumeEditorWidget(QWidget):
             return True
         return False
 
-    def getViewMenu(self, debug_mode=False):
+    def getViewMenu(self, debug_mode: bool = False):
         """
         Return a QMenu with a set of actions for our editor.
         """
@@ -718,7 +719,6 @@ class VolumeEditorWidget(QWidget):
 # i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
 # *******************************************************************************
 if __name__ == "__main__":
-
     import sys
     from .layerstack import LayerStackModel
     from volumina.layer import GrayscaleLayer
