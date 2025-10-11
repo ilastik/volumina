@@ -29,7 +29,9 @@ class GrayscaleImageSource(ImageSource):
 
     def __init__(self, arraySource2D, layer):
         assert isinstance(arraySource2D, PlanarSliceSourceABC), "wrong type: %s" % str(type(arraySource2D))
-        super(GrayscaleImageSource, self).__init__(layer.name, guarantees_opaqueness=True, direct=layer.direct)
+        super(GrayscaleImageSource, self).__init__(
+            layer.name, guarantees_opaqueness=True, direct=layer.direct, request_priority=layer.request_priority
+        )
         self._arraySource2D = arraySource2D
 
         self._layer = layer
