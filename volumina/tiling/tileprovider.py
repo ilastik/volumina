@@ -53,8 +53,9 @@ except ImportError:
 
 if USE_LAZYFLOW_THREADPOOL:
     from volumina.utility.lazyflowRequestBuffer import LazyflowRequestBuffer
+    from lazyflow.request import Request
 
-    renderer_pool = LazyflowRequestBuffer(9)
+    renderer_pool = LazyflowRequestBuffer(Request.global_thread_pool.num_workers)
 
     def clear_threadpool_vp(vp: "TileProvider", stack_id: StackId, keep_tiles: list[int]):
         renderer_pool.clear_vp_res(vp, stack_id, keep_tiles)
