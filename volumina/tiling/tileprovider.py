@@ -53,12 +53,11 @@ except ImportError:
 
 if USE_LAZYFLOW_THREADPOOL:
     from volumina.utility.lazyflowRequestBuffer import LazyflowRequestBuffer
-    from lazyflow.request import Request
 
     renderer_pool = LazyflowRequestBuffer(Request.global_thread_pool.num_workers)
 
-    def clear_threadpool_vp(vp: "TileProvider", stack_id: StackId, keep_tiles: list[int]):
-        renderer_pool.clear_vp_res(vp, stack_id, keep_tiles)
+    def clear_non_relevant_tasks_from_queue(vp: "TileProvider", stack_id: StackId, keep_tiles: list[int]):
+        renderer_pool.clear_non_relevant_tasks_from_queue(vp, stack_id, keep_tiles)
 
     def submit_to_threadpool(
         fn: Callable[[], None],
@@ -68,8 +67,6 @@ if USE_LAZYFLOW_THREADPOOL:
         tile_no: int,
     ):
         # Tiling requests are less prioritized than most requests.
-        root_priority = [1] + list(priority)
-        req = Request(fn, root_priority)
         # somehow this for the request thing
         assert isinstance(renderer_pool, LazyflowRequestBuffer)
         renderer_pool.submit(fn, priority, viewport, stack_id, tile_no)
@@ -77,7 +74,7 @@ if USE_LAZYFLOW_THREADPOOL:
 else:
     renderer_pool = PrioritizedThreadPoolExecutor(6)
 
-    def clear_threadpool_vp(*args, **kwargs):
+    def clear_non_relevant_tasks_from_queue(*args, **kwargs):
         pass
 
     def submit_to_threadpool(
@@ -190,7 +187,7 @@ class TileProvider(QObject):
         tile_nos = self.tiling.intersected(rectF)
         stack_id = self._current_stack_id
         keep_tiles = self.tiling.intersected(vp_rectF)
-        clear_threadpool_vp(self, stack_id, keep_tiles)
+        clear_non_relevant_tasks_from_queue(self, stack_id, keep_tiles)
         self.requestRefresh(rectF)
 
         for tile_no in tile_nos:

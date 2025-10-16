@@ -106,12 +106,16 @@ class Context(NamedTuple):
 
 @pytest.fixture
 def default_context() -> Context:
-    """Some default context that is reused in many tests"""
+    """Some default context that is reused in many tests
+
+    deviations from these default values are also an indicator of what aspect
+    is tested.
+    """
     return Context(MagicMock(), (object(), ((0, 0))), 0, (-100,))
 
 
 @pytest.fixture
-def finished_evt() -> TimeoutRaisingEvent:
+def buffer_finished_evt() -> TimeoutRaisingEvent:
     """Fixture that is both used in the `request_buffer` fixture
 
     Separate fixture to avoid unpacking in every test.
@@ -158,7 +162,9 @@ def default_waiting_func():
 
 
 @pytest.fixture
-def request_buffer(finished_evt: TimeoutRaisingEvent, default_context: Context, default_waiting_func: WaitingFunc):
+def request_buffer(
+    buffer_finished_evt: TimeoutRaisingEvent, default_context: Context, default_waiting_func: WaitingFunc
+):
     """Default request buffer
 
     Already preloaded with one running WaitingFunc task with the default context.
@@ -166,7 +172,7 @@ def request_buffer(finished_evt: TimeoutRaisingEvent, default_context: Context, 
     Hint use `default_waiting_func` fixture in tests to interact with this blocking task.
     """
     buffer = LazyflowRequestBuffer(1)
-    _ = install_finish_even(buffer, "decr", event=finished_evt)
+    _ = install_finish_even(buffer, "decr", event=buffer_finished_evt)
     buffer.submit(
         default_waiting_func,
         priority=default_context.priority,
@@ -193,12 +199,12 @@ def test_raises_on_init(n_concurrent_tasks: int):
 
 
 def test_task_calls_decr(
-    request_buffer: LazyflowRequestBuffer, finished_evt: TimeoutRaisingEvent, default_waiting_func: WaitingFunc
+    request_buffer: LazyflowRequestBuffer, buffer_finished_evt: TimeoutRaisingEvent, default_waiting_func: WaitingFunc
 ):
     assert request_buffer._active == 1  # pyright: ignore [reportPrivateUsage]
 
     default_waiting_func.req_continue.set()
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
     assert not default_waiting_func.running
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]
     assert request_buffer._failed == 0  # pyright: ignore [reportPrivateUsage]
@@ -207,8 +213,8 @@ def test_task_calls_decr(
 @pytest.mark.qt_no_exception_capture
 def test_task_calls_decr_on_error(default_context: Context):
     # can't use default fixture - need to ensure patched function is called twice before emitting signal
-    request_buffer = buffer = LazyflowRequestBuffer(1)
-    finished_evt = install_finish_even(buffer, "decr", n_calls=1)
+    request_buffer = LazyflowRequestBuffer(1)
+    buffer_finished_evt = install_finish_even(request_buffer, "decr", n_calls=1)
     waiting_func1 = WaitingFunc(side_effect=ValueError("AARGH"))
 
     request_buffer.submit(
@@ -222,7 +228,7 @@ def test_task_calls_decr_on_error(default_context: Context):
 
     waiting_func1.req_continue.set()
 
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]
     assert not waiting_func1.running
     assert request_buffer._failed == 1  # pyright: ignore [reportPrivateUsage]
@@ -230,8 +236,8 @@ def test_task_calls_decr_on_error(default_context: Context):
 
 def test_queuing(default_context: Context):
     # can't use default fixture - need to ensure patched function is called twice before emitting signal
-    request_buffer = buffer = LazyflowRequestBuffer(1)
-    finished_evt = install_finish_even(buffer, "decr", n_calls=2)
+    request_buffer = LazyflowRequestBuffer(1)
+    buffer_finished_evt = install_finish_even(request_buffer, "decr", n_calls=2)
 
     waiting_func1 = WaitingFunc()
     waiting_func2 = WaitingFunc()
@@ -243,7 +249,7 @@ def test_queuing(default_context: Context):
         stack_id=default_context.stack_id,
         tile_no=default_context.tile_no,
     )
-    # submit with higher priority for good measure
+    # submit with higher priority than the default_context (-100) for good measure
     request_buffer.submit(
         waiting_func2,
         priority=(-120,),
@@ -262,12 +268,12 @@ def test_queuing(default_context: Context):
     waiting_func2.started.wait_raise()
     assert waiting_func2.running
 
-    assert not finished_evt.is_set()
+    assert not buffer_finished_evt.is_set()
     waiting_func2.req_continue.set()
     waiting_func2.done.wait_raise()
     assert not waiting_func2.running
 
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
 
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]
     assert request_buffer._cleared_tasks == 0  # pyright: ignore [reportPrivateUsage]
@@ -276,12 +282,15 @@ def test_queuing(default_context: Context):
 def test_requests_are_cancelled_bc_keep_tiles(
     request_buffer: LazyflowRequestBuffer,
     default_waiting_func: WaitingFunc,
-    finished_evt: TimeoutRaisingEvent,
+    buffer_finished_evt: TimeoutRaisingEvent,
     default_context: Context,
 ):
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[]
+    )
     assert default_waiting_func.running
     for _ in range(10):
+        # Submit with different tile number than in the default_context (0)
         request_buffer.submit(
             lambda: None,
             default_context.priority,
@@ -290,13 +299,15 @@ def test_requests_are_cancelled_bc_keep_tiles(
             tile_no=1,
         )
     assert request_buffer._cleared_tasks == 0  # pyright: ignore [reportPrivateUsage]
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[]
+    )
     assert request_buffer._cleared_tasks == 10  # pyright: ignore [reportPrivateUsage]
     assert default_waiting_func.running
     default_waiting_func.req_continue.set()
     default_waiting_func.done.wait_raise()
     assert not default_waiting_func.running
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
     assert default_context.view_port.setTileDirty.call_count == 10
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]
 
@@ -304,11 +315,13 @@ def test_requests_are_cancelled_bc_keep_tiles(
 def test_requests_are_cancelled_bc_keep_different_stack(
     request_buffer: LazyflowRequestBuffer,
     default_waiting_func: WaitingFunc,
-    finished_evt: TimeoutRaisingEvent,
+    buffer_finished_evt: TimeoutRaisingEvent,
     default_context: Context,
 ):
     stack_id2 = (object(), ((0, 0)))
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[]
+    )
     assert default_waiting_func.running
     for _ in range(10):
         request_buffer.submit(
@@ -319,25 +332,29 @@ def test_requests_are_cancelled_bc_keep_different_stack(
             tile_no=default_context.tile_no,
         )
     assert request_buffer._cleared_tasks == 0  # pyright: ignore [reportPrivateUsage]
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[0])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[0]
+    )
     assert request_buffer._cleared_tasks == 10  # pyright: ignore [reportPrivateUsage]
     assert default_waiting_func.running
     default_waiting_func.req_continue.set()
     default_waiting_func.done.wait_raise()
     assert not default_waiting_func.running
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
     assert default_context.view_port.setTileDirty.call_count == 10
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]
 
 
-def test_requests_other_vp_not_cancelled(
+def test_clear_keeps_requests_from_other_vp(
     request_buffer: LazyflowRequestBuffer,
     default_waiting_func: WaitingFunc,
-    finished_evt: TimeoutRaisingEvent,
+    buffer_finished_evt: TimeoutRaisingEvent,
     default_context: Context,
 ):
     viewPort2 = MagicMock()
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[]
+    )
     assert default_waiting_func.running
     for _ in range(10):
         request_buffer.submit(
@@ -348,13 +365,15 @@ def test_requests_other_vp_not_cancelled(
             tile_no=default_context.tile_no,
         )
     assert request_buffer._cleared_tasks == 0  # pyright: ignore [reportPrivateUsage]
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[0])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[0]
+    )
     assert request_buffer._cleared_tasks == 0  # pyright: ignore [reportPrivateUsage]
     assert default_waiting_func.running
     default_waiting_func.req_continue.set()
     default_waiting_func.done.wait()
     assert not default_waiting_func.running
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
     assert default_context.view_port.setTileDirty.call_count == 0
     assert viewPort2.setTileDirty.call_count == 0
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]
@@ -363,10 +382,12 @@ def test_requests_other_vp_not_cancelled(
 def test_requests_are_cancelled_bc_priority(
     request_buffer: LazyflowRequestBuffer,
     default_waiting_func: WaitingFunc,
-    finished_evt: TimeoutRaisingEvent,
+    buffer_finished_evt: TimeoutRaisingEvent,
     default_context: Context,
 ):
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[]
+    )
     assert default_waiting_func.running
     for i in range(10):
         request_buffer.submit(
@@ -377,7 +398,7 @@ def test_requests_are_cancelled_bc_priority(
             tile_no=default_context.tile_no,
         )
     assert request_buffer._cleared_tasks == 0  # pyright: ignore [reportPrivateUsage]
-    request_buffer.clear_vp_res(
+    request_buffer.clear_non_relevant_tasks_from_queue(
         default_context.view_port, default_context.stack_id, keep_tiles=[default_context.tile_no]
     )
     # Note: we expect one task to be  left in the queue. The overall assumption is that control
@@ -390,7 +411,7 @@ def test_requests_are_cancelled_bc_priority(
     default_waiting_func.req_continue.set()
     default_waiting_func.done.wait()
     assert not default_waiting_func.running
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
     assert default_context.view_port.setTileDirty.call_count == 0
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]
 
@@ -398,11 +419,13 @@ def test_requests_are_cancelled_bc_priority(
 def test_clear(
     request_buffer: LazyflowRequestBuffer,
     default_waiting_func: WaitingFunc,
-    finished_evt: TimeoutRaisingEvent,
+    buffer_finished_evt: TimeoutRaisingEvent,
     default_context: Context,
 ):
     """Test clearing of the whole queue, irrespective of stack_ids, viewports, and so on"""
-    request_buffer.clear_vp_res(default_context.view_port, default_context.stack_id, keep_tiles=[])
+    request_buffer.clear_non_relevant_tasks_from_queue(
+        default_context.view_port, default_context.stack_id, keep_tiles=[]
+    )
     assert default_waiting_func.running
     for i in range(10):
         # priorities, stack_ids, viewport_refs tile_no all does not matter
@@ -416,6 +439,6 @@ def test_clear(
     default_waiting_func.req_continue.set()
     default_waiting_func.done.wait()
     assert not default_waiting_func.running
-    finished_evt.wait_raise()
+    buffer_finished_evt.wait_raise()
     assert default_context.view_port.setTileDirty.call_count == 0  # pyright: ignore [reportPrivateUsage]
     assert request_buffer._active == 0  # pyright: ignore [reportPrivateUsage]

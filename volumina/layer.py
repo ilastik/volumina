@@ -481,7 +481,7 @@ class ColortableLayer(NormalizableLayer):
         which is used to normalize the data before the colorable is applied.
         """
 
-        if normalize is "auto":
+        if normalize == "auto":
             normalize = None
         super().__init__([datasource], normalize=normalize, direct=direct)
         self.data = datasource

@@ -91,7 +91,7 @@ class LazyflowRequestBuffer:
     The LazyflowRequestBuffer acts in between the `TileProvider` and the lazyflow
     request system. Requests are submitted only up to an upper limit defined by
     `n_concurrent_tasks`. The other tasks are queued and can be cleared, see
-    `clear_vp_res`.
+    `clear_non_relevant_tasks_from_queue`.
     """
 
     def __init__(self, n_concurrent_tasks: int = 8):
@@ -152,10 +152,13 @@ class LazyflowRequestBuffer:
                 self._cleared_tasks += 1
             self._queue = []
 
-    def clear_vp_res(self, viewport: "TileProvider", stack_id: StackId, keep_tiles: list[int]):
-        """Remove waiting tiles no longer visible
+    def clear_non_relevant_tasks_from_queue(self, viewport: "TileProvider", stack_id: StackId, keep_tiles: list[int]):
+        """Remove waiting tiles no longer visible or outdated for the current viewport
 
-        Moves tasks that are still valid to a temporary queue
+        Cancellation criteria are:
+          * same tile, but older request
+          * task in a different 2d slice
+          * tasks in the same slice, but outside the field of view
 
         Args:
           viewport: The viewport that requests new tiles to be rendered
@@ -172,21 +175,15 @@ class LazyflowRequestBuffer:
                     continue
 
                 # Remove older requests of the same tile in the current 2d_slice
-                # task_o = tmp_queue.get((stack_id, task.tile_no))
-                # if task_o and task_o < task:
                 if (stack_id, task.tile_no) in tmp_queue:
                     task.cancel(set_dirty=False)
                     self._cleared_tasks += 1
                     continue
 
-                # Remove task outside current 2d slice from the queue
-                if task.vp == viewport and task.stack_id != stack_id:
-                    task.cancel()
-                    self._cleared_tasks += 1
-                    continue
-
-                # Remove task in the current slice, but no longer visible (not in keep_tiles)
-                if task.vp == viewport and task.stack_id == stack_id and task.tile_no not in keep_tiles:
+                # Remove
+                # * tasks outside current 2d slice from the queue
+                # * tasks in the current slice, but no longer visible (not in keep_tiles)
+                if task.stack_id != stack_id or task.tile_no not in keep_tiles:
                     task.cancel()
                     self._cleared_tasks += 1
                     continue
