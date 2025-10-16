@@ -19,6 +19,7 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
+from typing import Optional
 import unittest as ut
 import datetime
 import time
@@ -160,7 +161,7 @@ class ImageScene2D_RenderTest(ut.TestCase):
         self.scene.stackedImageSources = self.sims
         self.scene.dataShape = (310, 290)
 
-    def renderScene(self, s, exportFilename=None):
+    def renderScene(self, s: ImageScene2D, exportFilename: Optional[str] = None):
         img = QImage(310, 290, QImage.Format_ARGB32_Premultiplied)
         img.fill(0)
         p = QPainter(img)

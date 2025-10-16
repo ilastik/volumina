@@ -21,16 +21,19 @@
 ###############################################################################
 import collections
 import logging
+from threading import RLock
 import time
 from contextlib import contextmanager
 from functools import partial
 
+from typing import Callable, Union
 from qtpy.QtCore import QObject, QRect, QRectF, Signal
 from qtpy.QtGui import QImage, QPainter, QTransform
 from qtpy.QtWidgets import QGraphicsItem
 
 from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.pixelpipeline.interface import IndeterminateRequestError
+from volumina.pixelpipeline.slicesources import StackId
 from volumina.utility import PrioritizedThreadPoolExecutor
 
 from .cache import TilesCache
@@ -38,38 +41,51 @@ from .tiling import Tiling
 
 logger = logging.getLogger(__name__)
 
-
 # If lazyflow is installed, use that threadpool.
 try:
     from lazyflow.request import Request
 
     USE_LAZYFLOW_THREADPOOL = True
+
 except ImportError:
     USE_LAZYFLOW_THREADPOOL = False
 
 
-def submit_to_threadpool(fn, priority):
-    if USE_LAZYFLOW_THREADPOOL:
+if USE_LAZYFLOW_THREADPOOL:
+    from volumina.utility.lazyflowRequestBuffer import LazyflowRequestBuffer
+
+    renderer_pool = LazyflowRequestBuffer(Request.global_thread_pool.num_workers)
+
+    def clear_non_relevant_tasks_from_queue(vp: "TileProvider", stack_id: StackId, keep_tiles: list[int]):
+        renderer_pool.clear_non_relevant_tasks_from_queue(vp, stack_id, keep_tiles)
+
+    def submit_to_threadpool(
+        fn: Callable[[], None],
+        priority: tuple[bool, float],
+        viewport: "TileProvider",
+        stack_id: StackId,
+        tile_no: int,
+    ):
         # Tiling requests are less prioritized than most requests.
-        root_priority = [1] + list(priority)
-        req = Request(fn, root_priority)
-        req.submit()
-    else:
-        get_render_pool().submit(fn, priority)
+        # somehow this for the request thing
+        assert isinstance(renderer_pool, LazyflowRequestBuffer)
+        renderer_pool.submit(fn, priority, viewport, stack_id, tile_no)
 
+else:
+    renderer_pool = PrioritizedThreadPoolExecutor(6)
 
-renderer_pool = None
+    def clear_non_relevant_tasks_from_queue(*args, **kwargs):
+        pass
 
-
-def get_render_pool():
-    """
-    Return the global thread pool for requesting layer data from ImageSource objects.
-    (Create it first if necessary.)
-    """
-    global renderer_pool
-    if renderer_pool is None:
-        renderer_pool = PrioritizedThreadPoolExecutor(6)
-    return renderer_pool
+    def submit_to_threadpool(
+        fn: Callable[[], None],
+        priority: tuple[bool, float],
+        _viewport: "TileProvider",
+        _stack_id: StackId,
+        _tile_no: int,
+    ):
+        assert isinstance(renderer_pool, PrioritizedThreadPoolExecutor), type(renderer_pool)
+        renderer_pool.submit(fn, priority)
 
 
 @contextmanager
@@ -84,6 +100,19 @@ def TileTimer():
 
 class TileTime(object):
     seconds = 0.0
+
+
+class TrueInc:
+    _count = 0
+    _lock = RLock()
+
+    def inc(self):
+        with self._lock:
+            self._count += 1
+            return self._count
+
+
+_Counter = TrueInc()
 
 
 class TileProvider(QObject):
@@ -146,7 +175,7 @@ class TileProvider(QObject):
     def set_cache_size(self, new_size):
         self._cache.set_maxstacks(new_size)
 
-    def getTiles(self, rectF):
+    def getTiles(self, rectF: QRectF, vp_rectF: QRectF):
         """Get tiles in rect and request a refresh.
 
         Returns tiles intersecting with rectF immediately and requests
@@ -155,9 +184,11 @@ class TileProvider(QObject):
         until the rendering is fully complete, call join().
 
         """
-        self.requestRefresh(rectF)
         tile_nos = self.tiling.intersected(rectF)
         stack_id = self._current_stack_id
+        keep_tiles = self.tiling.intersected(vp_rectF)
+        clear_non_relevant_tasks_from_queue(self, stack_id, keep_tiles)
+        self.requestRefresh(rectF)
 
         for tile_no in tile_nos:
             with self._cache:
@@ -165,7 +196,7 @@ class TileProvider(QObject):
                 qgraphicsitems = self._cache.graphicsitem_layers(stack_id, tile_no)
             yield TileProvider.Tile(tile_no, qimg, qgraphicsitems, QRectF(self.tiling.imageRects[tile_no]), progress)
 
-    def waitForTiles(self, rectF=QRectF()):
+    def waitForTiles(self, rectF=QRectF(), sceneRectF=QRectF()):
         """
         This function is for testing purposes only.
         Block until all tiles intersecting the given rect are complete.
@@ -173,7 +204,7 @@ class TileProvider(QObject):
         finished = False
         while not finished:
             finished = True
-            tiles = self.getTiles(rectF)
+            tiles = self.getTiles(rectF, sceneRectF)
             for tile in tiles:
                 finished &= tile.progress >= 1.0
 
@@ -186,6 +217,7 @@ class TileProvider(QObject):
         """
         stack_id = stack_id or self._current_stack_id
         tile_nos = self.tiling.intersected(rectF)
+
         for tile_no in tile_nos:
             self._refreshTile(stack_id, tile_no, prefetch, layer_indexes)
 
@@ -259,7 +291,6 @@ class TileProvider(QObject):
                     self._cache.setTile(
                         stack_id, tile_no, tile_img, self._sims.viewVisible(), self._sims.viewOccluded()
                     )
-
             # refresh dirty layer tiles
             need_reblend = False
             for ims in layers:
@@ -284,7 +315,7 @@ class TileProvider(QObject):
                     logger.debug("Failed to create layer tile request", exc_info=True)
                     continue
 
-                timestamp = time.time()
+                timestamp = _Counter.inc()
                 fetch_fn = partial(
                     self._fetch_layer_tile, timestamp, ims, transform, tile_no, stack_id, ims_req, self._cache
                 )
@@ -300,7 +331,7 @@ class TileProvider(QObject):
                     # We want non-prefetch tasks to take priority (False < True)
                     # and then more recent tasks to take priority (more recent -> process first)
                     priority = (prefetch, -timestamp)
-                    submit_to_threadpool(fetch_fn, priority)
+                    submit_to_threadpool(fetch_fn, priority, self, stack_id, tile_no)
 
             if need_reblend:
                 # We synchronously fetched at least one direct layer.
@@ -312,6 +343,10 @@ class TileProvider(QObject):
                     )
         except KeyError:
             pass
+
+    def setTileDirty(self, stack_id, tile_no):
+        with self._cache:
+            self._cache.setTileDirty(stack_id, tile_no, True)
 
     def _blendTile(self, stack_id, tile_nr):
         """
