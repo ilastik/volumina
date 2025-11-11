@@ -23,6 +23,7 @@ import collections
 import os
 import re
 
+from qtpy.QtWidgets import QMessageBox
 from qtpy import uic
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QWidget
@@ -164,6 +165,14 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # Determine starting format
         index = self.formatCombo.findText(opDataExport.OutputFormat.value)
+        if index == -1:
+            QMessageBox.warning(
+                self,
+                "Unknown export format",
+                f'The format "{opDataExport.OutputFormat.value}" is not supported in this version of ilastik. '
+                f'Resetting the export format to "compressed hdf5". Please make sure this is ok before you save the project.',
+            )
+            index = self.formatCombo.findText("compressed hdf5")
         self.formatCombo.setCurrentIndex(index)
         self._handleFormatChange(index)
 
