@@ -23,6 +23,7 @@ import collections
 import os
 import re
 
+from qtpy.QtWidgets import QMessageBox
 from qtpy import uic
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QWidget
@@ -164,6 +165,14 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         # Determine starting format
         index = self.formatCombo.findText(opDataExport.OutputFormat.value)
+        if index == -1:
+            QMessageBox.warning(
+                self,
+                "Unknown export format",
+                f'The format "{opDataExport.OutputFormat.value}" is not supported in this version of ilastik. '
+                f'Resetting the export format to "compressed hdf5". Please make sure this is ok before you save the project.',
+            )
+            index = self.formatCombo.findText("compressed hdf5")
         self.formatCombo.setCurrentIndex(index)
         self._handleFormatChange(index)
 
@@ -212,44 +221,3 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
 
         if old_valid != self._valid_path:
             self.pathValidityChange.emit(self._valid_path)
-
-
-if __name__ == "__main__":
-    from qtpy.QtWidgets import QApplication
-    from lazyflow.graph import Graph, Operator, InputSlot
-    from lazyflow.operators.ioOperators import OpFormattedDataExport
-
-    class OpMock(Operator):
-        OutputFilenameFormat = InputSlot(value="~/something.h5")
-        OutputInternalPath = InputSlot(value="volume/data")
-        OutputFormat = InputSlot(value="hdf5")
-        FormatSelectionErrorMsg = InputSlot(value=True)  # Normally an output slot
-
-        def setupOutputs(self):
-            pass
-
-        def execute(self, *args):
-            pass
-
-        def propagateDirty(self, *args):
-            pass
-
-    import numpy as np
-    import vigra
-
-    data = np.zeros((100, 200, 3), dtype=np.uint8)
-    data = vigra.taggedView(data, "yxc")
-    op = OpFormattedDataExport(graph=Graph())
-
-    op.Input.setValue(data)
-    op.TransactionSlot.setValue(True)
-
-    app = QApplication([])
-    w = MultiformatSlotExportFileOptionsWidget(None)
-    w.initExportOp(op)
-    w.show()
-    w.raise_()
-    app.exec_()
-
-    print("Selected Filepath: {}".format(op.OutputFilenameFormat.value))
-    print("Selected Dataset: {}".format(op.OutputInternalPath.value))
