@@ -20,6 +20,7 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import functools
+from typing import List
 from qtpy.QtCore import QAbstractListModel, QItemSelectionModel, Signal, QModelIndex, Qt, QTimer
 
 from volumina.layer import Layer
@@ -37,7 +38,7 @@ class LayerStackModel(QAbstractListModel):
 
     def __init__(self, parent=None):
         QAbstractListModel.__init__(self, parent)
-        self._layerStack = []
+        self._layerStack: List[Layer] = []
         self.selectionModel = QItemSelectionModel(self)
         self.selectionModel.selectionChanged.connect(self.updateGUI)
         self.selectionModel.selectionChanged.connect(self._onSelectionChanged)
@@ -61,13 +62,13 @@ class LayerStackModel(QAbstractListModel):
     def __repr__(self):
         return "<LayerStackModel: layerStack='%r'>" % (self._layerStack,)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int):
         return self._layerStack[i]
 
     def __iter__(self):
         return self._layerStack.__iter__()
 
-    def layerIndex(self, layer):
+    def layerIndex(self, layer: Layer):
         # note that the 'index' function already has a different implementation
         # from Qt side
         return self._layerStack.index(layer)

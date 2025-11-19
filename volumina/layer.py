@@ -19,7 +19,6 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from builtins import range
 import colorsys
 import numpy
 
@@ -37,9 +36,8 @@ from volumina.utility import SignalingDict
 from functools import partial
 from collections import defaultdict
 
-import sys
 from numbers import Number
-from typing import Tuple
+from typing import List, Tuple
 
 
 class Layer(QObject):
@@ -83,11 +81,11 @@ class Layer(QObject):
             self.visible = not self._visible
 
     @property
-    def opacity(self):
+    def opacity(self) -> float:
         return self._opacity
 
     @opacity.setter
-    def opacity(self, value):
+    def opacity(self, value: float):
         if value != self._opacity:
             self._opacity = value
             self.opacityChanged.emit(value)
@@ -97,18 +95,18 @@ class Layer(QObject):
         return self._name
 
     @name.setter
-    def name(self, n):
+    def name(self, n: str):
         assert isinstance(n, str)
         if self._name != n:
             self._name = n
             self.nameChanged.emit(n)
 
     @property
-    def numberOfChannels(self):
+    def numberOfChannels(self) -> int:
         return self._numberOfChannels
 
     @numberOfChannels.setter
-    def numberOfChannels(self, n):
+    def numberOfChannels(self, n: int):
         if self._numberOfChannels == n:
             return
         if self._channel >= n and n > 0:
@@ -119,11 +117,11 @@ class Layer(QObject):
         self.numberOfChannelsChanged.emit(n)
 
     @property
-    def channel(self):
+    def channel(self) -> int:
         return self._channel
 
     @channel.setter
-    def channel(self, n):
+    def channel(self, n: int):
         if self._channel == n:
             return
         if n < self.numberOfChannels:
@@ -162,10 +160,10 @@ class Layer(QObject):
     def setToolTip(self, tip):
         self._toolTip = tip
 
-    def createImageSource(self, data_sources):
+    def createImageSource(self, data_sources: List[DataSourceABC]):
         raise NotImplementedError
 
-    def isDifferentEnough(self, other_layer):
+    def isDifferentEnough(self, other_layer: "Layer"):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
         if type(other_layer) != type(self):
             return True
