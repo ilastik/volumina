@@ -26,10 +26,9 @@ def planar_src():
     return mock.Mock(spec=PlanarSliceSourceABC)
 
 
-@pytest.fixture(scope="function")
-def priority():
-    # arbitrary limits
-    return random.randint(-1000, 1000)
+@pytest.fixture(scope="function", params=range(-10, 10))
+def priority(request) -> int:
+    return request.param
 
 
 @pytest.fixture(scope="function")

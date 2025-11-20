@@ -26,7 +26,7 @@ import time
 from contextlib import contextmanager
 from functools import partial
 
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from qtpy.QtCore import QObject, QRect, QRectF, Signal
 from qtpy.QtGui import QImage, QPainter, QTransform
 from qtpy.QtWidgets import QGraphicsItem
@@ -333,7 +333,7 @@ class TileProvider(QObject):
                     # We want non-prefetch tasks to take priority (False < True)
                     # and then more recent tasks to take priority (more recent -> process first)
                     layer_priority = ims.priority
-                    priority = (prefetch, -layer_priority, -timestamp)
+                    priority: Priority = (prefetch, -layer_priority, -timestamp)
                     submit_to_threadpool(fetch_fn, priority, self, stack_id, tile_no)
 
             if need_reblend:
