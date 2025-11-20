@@ -26,7 +26,7 @@ import time
 from contextlib import contextmanager
 from functools import partial
 
-from typing import Callable, Union
+from typing import Callable, Optional
 from qtpy.QtCore import QObject, QRect, QRectF, Signal
 from qtpy.QtGui import QImage, QPainter, QTransform
 from qtpy.QtWidgets import QGraphicsItem
@@ -51,6 +51,8 @@ except ImportError:
     USE_LAZYFLOW_THREADPOOL = False
 
 
+Priority = tuple[bool, int, float]
+
 if USE_LAZYFLOW_THREADPOOL:
     from volumina.utility.lazyflowRequestBuffer import LazyflowRequestBuffer
 
@@ -61,7 +63,7 @@ if USE_LAZYFLOW_THREADPOOL:
 
     def submit_to_threadpool(
         fn: Callable[[], None],
-        priority: tuple[bool, float],
+        priority: Priority,
         viewport: "TileProvider",
         stack_id: StackId,
         tile_no: int,
@@ -79,7 +81,7 @@ else:
 
     def submit_to_threadpool(
         fn: Callable[[], None],
-        priority: tuple[bool, float],
+        priority: Priority,
         _viewport: "TileProvider",
         _stack_id: StackId,
         _tile_no: int,
@@ -208,7 +210,7 @@ class TileProvider(QObject):
             for tile in tiles:
                 finished &= tile.progress >= 1.0
 
-    def requestRefresh(self, rectF, stack_id=None, prefetch=False, layer_indexes=None):
+    def requestRefresh(self, rectF: QRectF, stack_id: Optional[StackId] = None, prefetch=False, layer_indexes=None):
         """Requests tiles to be refreshed.
 
         Returns immediately. Call join() to wait for
@@ -242,7 +244,7 @@ class TileProvider(QObject):
 
         self.requestRefresh(rectF, stack_id, prefetch=True, layer_indexes=layer_indexes)
 
-    def _refreshTile(self, stack_id, tile_no, prefetch=False, layer_indexes=None):
+    def _refreshTile(self, stack_id: StackId, tile_no: int, prefetch=False, layer_indexes=None):
         """
         Trigger a refresh of a particular tile.
 
@@ -330,7 +332,8 @@ class TileProvider(QObject):
                     # Tasks with 'smaller' priority values are processed first.
                     # We want non-prefetch tasks to take priority (False < True)
                     # and then more recent tasks to take priority (more recent -> process first)
-                    priority = (prefetch, -timestamp)
+                    layer_priority = ims.priority
+                    priority: Priority = (prefetch, -layer_priority, -timestamp)
                     submit_to_threadpool(fetch_fn, priority, self, stack_id, tile_no)
 
             if need_reblend:
@@ -503,7 +506,7 @@ class TileProvider(QObject):
         if visibleAndNotOccluded:
             self.sceneRectChanged.emit(QRectF(sceneRect))
 
-    def _onStackIdChanged(self, oldId, newId):
+    def _onStackIdChanged(self, oldId: StackId, newId: StackId):
         """
         When the current 'stacked image source' has changed it's 'stack id'.
         The 'stack id' changes when the user scrolls to a new plane.

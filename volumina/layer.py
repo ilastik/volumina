@@ -19,7 +19,6 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from builtins import range
 import colorsys
 import numpy
 
@@ -37,9 +36,8 @@ from volumina.utility import SignalingDict
 from functools import partial
 from collections import defaultdict
 
-import sys
 from numbers import Number
-from typing import Tuple
+from typing import List, Tuple
 
 
 class Layer(QObject):
@@ -51,6 +49,7 @@ class Layer(QObject):
     name -- str
     numberOfChannels -- int
     layerId -- any object that can uniquely identify this layer within a layerstack (by default, same as name)
+    priority -- higher value means that image sources from this layer will be more eagerly requested compared to other layers ; read-only
     """
 
     """changed is emitted whenever one of the more specialized
@@ -83,11 +82,11 @@ class Layer(QObject):
             self.visible = not self._visible
 
     @property
-    def opacity(self):
+    def opacity(self) -> float:
         return self._opacity
 
     @opacity.setter
-    def opacity(self, value):
+    def opacity(self, value: float):
         if value != self._opacity:
             self._opacity = value
             self.opacityChanged.emit(value)
@@ -97,18 +96,18 @@ class Layer(QObject):
         return self._name
 
     @name.setter
-    def name(self, n):
+    def name(self, n: str):
         assert isinstance(n, str)
         if self._name != n:
             self._name = n
             self.nameChanged.emit(n)
 
     @property
-    def numberOfChannels(self):
+    def numberOfChannels(self) -> int:
         return self._numberOfChannels
 
     @numberOfChannels.setter
-    def numberOfChannels(self, n):
+    def numberOfChannels(self, n: int):
         if self._numberOfChannels == n:
             return
         if self._channel >= n and n > 0:
@@ -119,11 +118,11 @@ class Layer(QObject):
         self.numberOfChannelsChanged.emit(n)
 
     @property
-    def channel(self):
+    def channel(self) -> int:
         return self._channel
 
     @channel.setter
-    def channel(self, n):
+    def channel(self, n: int):
         if self._channel == n:
             return
         if n < self.numberOfChannels:
@@ -148,6 +147,16 @@ class Layer(QObject):
     def layerId(self, lid):
         self._layerId = lid
 
+    @property
+    def priority(self):
+        """Priority for requests from created image sources
+
+        Larger values indicate higher priority.
+
+        See `tileProvider.TileProvider._refreshTile`
+        """
+        return self._priority
+
     def setActive(self, active):
         """This function is called whenever the layer is selected (active = True) or deselected (active = False)
         by the user.
@@ -162,10 +171,10 @@ class Layer(QObject):
     def setToolTip(self, tip):
         self._toolTip = tip
 
-    def createImageSource(self, data_sources):
+    def createImageSource(self, data_sources: List[DataSourceABC]):
         raise NotImplementedError
 
-    def isDifferentEnough(self, other_layer):
+    def isDifferentEnough(self, other_layer: "Layer"):
         """This ugly function is here to support the updateAllLayers function in the layerViewerGui in ilastik"""
         if type(other_layer) != type(self):
             return True
@@ -175,10 +184,10 @@ class Layer(QObject):
             return True
         return False
 
-    def __init__(self, datasources, direct=False):
+    def __init__(self, datasources: List[DataSourceABC], direct: bool = False, priority: int = 0):
         super(Layer, self).__init__()
         self._name = "Unnamed Layer"
-        self._visible = True
+        self._visible: bool = True
         self._opacity = 1.0
         self._datasources = datasources
         self._layerId = None
@@ -188,6 +197,7 @@ class Layer(QObject):
         self.direct = direct
         self._toolTip = ""
         self._cleaned_up = False
+        self._priority = priority
 
         self._updateNumberOfChannels()
         for datasource in [_f for _f in self._datasources if _f]:
@@ -238,8 +248,8 @@ class ClickableLayer(Layer):
     """A layer that, when being activated/selected, switches to an interpreter than can intercept
     right click events"""
 
-    def __init__(self, datasource, editor, clickFunctor, direct=False, right=True):
-        super(ClickableLayer, self).__init__([datasource], direct=direct)
+    def __init__(self, datasource, editor, clickFunctor, direct=False, right=True, priority: int = 0):
+        super(ClickableLayer, self).__init__([datasource], direct=direct, priority=priority)
         self._editor = editor
         self._clickInterpreter = ClickInterpreter(editor, self, clickFunctor, right=right)
         self._inactiveInterpreter = self._editor.eventSwitch.interpreter
@@ -309,7 +319,7 @@ class NormalizableLayer(Layer):
             return self._normalize[datasourceIdx]
         return self.get_datasource_default_range(datasourceIdx)
 
-    def __init__(self, datasources, normalize=None, direct=False):
+    def __init__(self, datasources, normalize=None, direct=False, priority: int = 0):
         """
         datasources - a list of raw data sources
         normalize - If normalize is a tuple (dmin, dmax), the data is normalized from (dmin, dmax) to (0,255) before it is displayed.
@@ -331,7 +341,7 @@ class NormalizableLayer(Layer):
                 wrapped_datasources[i] = mmSource
                 self._mmSources.append(mmSource)
 
-        super(NormalizableLayer, self).__init__(wrapped_datasources, direct=direct)
+        super(NormalizableLayer, self).__init__(wrapped_datasources, direct=direct, priority=priority)
 
         for i, datasource in enumerate(self.datasources):
             if datasource is not None:
@@ -372,9 +382,9 @@ class GrayscaleLayer(NormalizableLayer):
             return True
         return self._window_leveling != other_layer._window_leveling
 
-    def __init__(self, datasource, normalize=None, direct=False, window_leveling=False):
+    def __init__(self, datasource, normalize=None, direct=False, window_leveling=False, priority: int = 0):
         # assert isinstance(datasource, DataSourceABC)
-        super().__init__([datasource], normalize, direct=direct)
+        super().__init__([datasource], normalize, direct=direct, priority=priority)
         self._window_leveling = window_leveling
 
     def createImageSource(self, data_sources):
@@ -400,9 +410,9 @@ class AlphaModulatedLayer(NormalizableLayer):
             self._tintColor = c
             self.tintColorChanged.emit()
 
-    def __init__(self, datasource, tintColor=QColor(255, 0, 0), normalize=None):
+    def __init__(self, datasource, tintColor=QColor(255, 0, 0), normalize=None, priority: int = 0):
         assert isinstance(datasource, DataSourceABC)
-        super().__init__([datasource], normalize=normalize)
+        super().__init__([datasource], normalize=normalize, priority=priority)
         self._tintColor = tintColor
         self.tintColorChanged.connect(self.changed)
 
@@ -470,7 +480,7 @@ class ColortableLayer(NormalizableLayer):
             return True
         return False
 
-    def __init__(self, datasource, colorTable, normalize=False, direct=False):
+    def __init__(self, datasource, colorTable, normalize=False, direct=False, priority: int = 0):
         assert isinstance(datasource, DataSourceABC)
 
         """
@@ -483,7 +493,7 @@ class ColortableLayer(NormalizableLayer):
 
         if normalize == "auto":
             normalize = None
-        super().__init__([datasource], normalize=normalize, direct=direct)
+        super().__init__([datasource], normalize=normalize, direct=direct, priority=priority)
         self.data = datasource
         self._colorTable = colorTable
 
@@ -504,9 +514,11 @@ class ColortableLayer(NormalizableLayer):
 class ClickableColortableLayer(ClickableLayer):
     colorTableChanged = Signal()
 
-    def __init__(self, editor, clickFunctor, datasource, colorTable, direct=False, right=True):
+    def __init__(self, editor, clickFunctor, datasource, colorTable, direct=False, right=True, priority: int = 0):
         assert isinstance(datasource, DataSourceABC)
-        super(ClickableColortableLayer, self).__init__(datasource, editor, clickFunctor, direct=direct, right=right)
+        super(ClickableColortableLayer, self).__init__(
+            datasource, editor, clickFunctor, direct=direct, right=right, priority=priority
+        )
         self._colorTable = colorTable
         self.data = datasource
 
@@ -550,12 +562,13 @@ class RGBALayer(NormalizableLayer):
         normalizeG=None,
         normalizeB=None,
         normalizeA=None,
+        priority: int = 0,
     ):
         assert red is None or isinstance(red, DataSourceABC)
         assert green is None or isinstance(green, DataSourceABC)
         assert blue is None or isinstance(blue, DataSourceABC)
         assert alpha is None or isinstance(alpha, DataSourceABC)
-        super(RGBALayer, self).__init__([red, green, blue, alpha])
+        super(RGBALayer, self).__init__([red, green, blue, alpha], priority=priority)
         self._color_missing_value = color_missing_value
         self._alpha_missing_value = alpha_missing_value
 
@@ -588,19 +601,19 @@ class RGBALayer(NormalizableLayer):
 ## GraphicsItem layers
 ##
 class DummyGraphicsItemLayer(Layer):
-    def __init__(self, datasource):
-        super(DummyGraphicsItemLayer, self).__init__([datasource])
+    def __init__(self, datasource, priority: int = 0):
+        super(DummyGraphicsItemLayer, self).__init__([datasource], priority=priority)
 
     def createImageSource(self, data_sources):
-        return imsrc.DummyItemSource(data_sources[0])
+        return imsrc.DummyItemSource(data_sources[0], priority=self.priority)
 
 
 class DummyRasterItemLayer(Layer):
-    def __init__(self, datasource):
-        super(DummyRasterItemLayer, self).__init__([datasource])
+    def __init__(self, datasource, priority: int = 0):
+        super(DummyRasterItemLayer, self).__init__([datasource], priority=priority)
 
     def createImageSource(self, data_sources):
-        return imsrc.DummyRasterItemSource(data_sources[0])
+        return imsrc.DummyRasterItemSource(data_sources[0], priority=self.priority)
 
 
 class SegmentationEdgesLayer(Layer):
@@ -627,12 +640,21 @@ class SegmentationEdgesLayer(Layer):
         """
         return self._pen_table
 
-    def __init__(self, datasource, default_pen=DEFAULT_PEN, direct=False, *, isClickable=False, isHoverable=False):
+    def __init__(
+        self,
+        datasource,
+        default_pen=DEFAULT_PEN,
+        direct=False,
+        *,
+        isClickable=False,
+        isHoverable=False,
+        priority: int = 0
+    ):
         """
         datasource: A single-channel label image.
         default_pen: The initial pen style for each edge.
         """
-        super(SegmentationEdgesLayer, self).__init__([datasource], direct=direct)
+        super(SegmentationEdgesLayer, self).__init__([datasource], direct=direct, priority=priority)
 
         # Changes to this colortable will be detected automatically in the QGraphicsItem
         self._pen_table = SignalingDict(self)
@@ -673,11 +695,23 @@ class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
     labelsChanged = Signal(dict)  # { id_pair, label_class }
 
     def __init__(
-        self, datasource, label_class_pens, initial_labels={}, delay_ms=100, *, isClickable=True, isHoverable=True
+        self,
+        datasource,
+        label_class_pens,
+        initial_labels={},
+        delay_ms=100,
+        *,
+        isClickable=True,
+        isHoverable=True,
+        priority: int = 0
     ):
         # Class 0 (no label) is the default pen
         super(LabelableSegmentationEdgesLayer, self).__init__(
-            datasource, default_pen=label_class_pens[0], isClickable=isClickable, isHoverable=isHoverable
+            datasource,
+            default_pen=label_class_pens[0],
+            isClickable=isClickable,
+            isHoverable=isHoverable,
+            priority=priority,
         )
         self._delay_ms = delay_ms
         self._label_class_pens = label_class_pens

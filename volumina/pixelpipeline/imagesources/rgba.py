@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import QRect
@@ -16,12 +17,14 @@ try:
 except ImportError:
     _has_vigra = False
 
+if TYPE_CHECKING:
+    from volumina.layer import RGBALayer
 
 logger = logging.getLogger(__name__)
 
 
 class RGBAImageSource(ImageSource):
-    def __init__(self, red, green, blue, alpha, layer, guarantees_opaqueness=False):
+    def __init__(self, red, green, blue, alpha, layer: "RGBALayer", guarantees_opaqueness=False):
         """
         If you don't want to set all the channels,
         a ConstantSource may be used as a replacement for
@@ -35,7 +38,9 @@ class RGBAImageSource(ImageSource):
         for channel in channels:
             assert isinstance(channel, PlanarSliceSourceABC), "channel has wrong type: %s" % str(type(channel))
 
-        super(RGBAImageSource, self).__init__(layer.name, guarantees_opaqueness=guarantees_opaqueness)
+        super(RGBAImageSource, self).__init__(
+            layer.name, guarantees_opaqueness=guarantees_opaqueness, priority=layer.priority
+        )
         self._channels = channels
         for arraySource in self._channels:
             arraySource.isDirty.connect(self.setDirty)

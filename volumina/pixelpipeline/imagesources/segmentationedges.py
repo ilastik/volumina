@@ -1,7 +1,7 @@
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
-#       Copyright (C) 2011-2014, the ilastik developers
+#       Copyright (C) 2011-2025, the ilastik developers
 #                                <team@ilastik.org>
 #
 # This program is free software; you can redistribute it and/or
@@ -20,6 +20,7 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import logging
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QRect
 
@@ -30,16 +31,19 @@ from volumina.utility.segmentationEdgesItem import SegmentationEdgesItem, genera
 
 from ._base import ImageSource
 
+if TYPE_CHECKING:
+    from volumina.layer import SegmentationEdgesLayer
+
 logger = logging.getLogger(__name__)
 
 
 class SegmentationEdgesItemSource(ImageSource):
-    def __init__(self, layer, arraySource2D, hoverIdChanged=None, isClickable=False):
+    def __init__(self, layer: "SegmentationEdgesLayer", arraySource2D, hoverIdChanged=None, isClickable=False):
         from volumina.layer import SegmentationEdgesLayer
 
         assert isinstance(layer, SegmentationEdgesLayer)
 
-        super(SegmentationEdgesItemSource, self).__init__(layer.name)
+        super(SegmentationEdgesItemSource, self).__init__(layer.name, priority=layer.priority)
         self._arraySource2D = arraySource2D
         self._arraySource2D.isDirty.connect(self.setDirty)
         self._layer = layer

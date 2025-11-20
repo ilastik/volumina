@@ -20,12 +20,14 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 # Python
-from builtins import range
 from functools import partial
+from typing import Dict
 
-from qtpy.QtCore import QObject, Signal
+from qtpy.QtCore import QObject, QRect, Signal
 
 from volumina.layer import Layer
+from volumina.layerstack import LayerStackModel
+from volumina.pixelpipeline.imagesources._base import ImageSource
 from volumina.pixelpipeline.interface import ImageSourceABC
 from volumina.pixelpipeline.slicesources import PlanarSliceSource, SyncedSliceSources, StackId
 
@@ -63,13 +65,13 @@ class StackedImageSources(QObject):
         return self._stackId
 
     @stackId.setter
-    def stackId(self, v):
+    def stackId(self, v: StackId):
         old = self._stackId
         self._stackId = v
         self.stackIdChanged.emit(old, v)
 
     class _ViewBase(object):
-        def __init__(self, sims):
+        def __init__(self, sims: "StackedImageSources"):
             self.sims = sims
 
         def __len__(self):
@@ -79,7 +81,7 @@ class StackedImageSources(QObject):
         def __iter__(self):
             return (layer.visible for layer in self.sims._layerStackModel if self.sims.isRegistered(layer))
 
-        def __getitem__(self, row):
+        def __getitem__(self, row: int):
             return self.sims._getLayer(row).visible
 
     class OccludedView(_ViewBase):
@@ -90,14 +92,14 @@ class StackedImageSources(QObject):
                 if self.sims.isRegistered(layer)
             )
 
-        def __getitem__(self, row):
+        def __getitem__(self, row: int):
             return self.sims._imsOccluded[self.sims._layerToIms[self.sims._getLayer(row)]]
 
     class OpacityView(_ViewBase):
         def __iter__(self):
             return (layer.opacity for layer in self.sims._layerStackModel if self.sims.isRegistered(layer))
 
-        def __getitem__(self, row):
+        def __getitem__(self, row: int) -> float:
             return self.sims._getLayer(row).opacity
 
     class ImageSourceView(_ViewBase):
@@ -106,10 +108,10 @@ class StackedImageSources(QObject):
                 self.sims._layerToIms[layer] for layer in self.sims._layerStackModel if self.sims.isRegistered(layer)
             )
 
-        def __getitem__(self, row):
+        def __getitem__(self, row: int) -> ImageSource:
             return self.sims._layerToIms[self.sims._getLayer(row)]
 
-    def __init__(self, layerStackModel):
+    def __init__(self, layerStackModel: LayerStackModel):
         super(StackedImageSources, self).__init__()
         self._layerStackModel = layerStackModel
 
@@ -121,9 +123,9 @@ class StackedImageSources(QObject):
         # to the layer's specification.
         # Note, that we don't maintain our own imagesource stack. We just observe
         # the layerStackModel and mirror the stack order there
-        self._layerToIms = {}  # look up layer -> corresponding image source
-        self._imsToLayer = {}  # look up image source -> corresponding layer
-        self._imsOccluded = {}
+        self._layerToIms: Dict[Layer, ImageSource] = {}  # look up layer -> corresponding image source
+        self._imsToLayer: Dict[ImageSource, Layer] = {}  # look up image source -> corresponding layer
+        self._imsOccluded: Dict[ImageSource, bool] = {}
         self._firstOpaqueIdx = None
 
         layerStackModel.orderChanged.connect(self._onOrderChanged)
@@ -238,14 +240,14 @@ class StackedImageSources(QObject):
         else:
             raise KeyError()
 
-    def _onImageSourceDirty(self, imageSource, rect):
+    def _onImageSourceDirty(self, imageSource: ImageSource, rect: QRect):
         self.layerDirty.emit(imageSource, rect)
 
-    def _onOpacityChanged(self, layer, opacity):
+    def _onOpacityChanged(self, layer: Layer, opacity: float):
         self._updateOcclusionInfo()
         self.opacityChanged.emit(self._layerToIms[layer], opacity)
 
-    def _onVisibleChanged(self, layer, visible):
+    def _onVisibleChanged(self, layer: Layer, visible: bool):
         self._updateOcclusionInfo()
         self.visibleChanged.emit(self._layerToIms[layer], visible)
 
@@ -253,15 +255,15 @@ class StackedImageSources(QObject):
         self._updateOcclusionInfo()
         self.orderChanged.emit()
 
-    def _onLayerRemoved(self, layer, row):
+    def _onLayerRemoved(self, layer: Layer, row: int):
         if self.isRegistered(layer):
             self.deregister(layer)
             assert not self.isRegistered(layer)
 
-    def _getLayer(self, ims_row):
+    def _getLayer(self, ims_row: int):
         return [layer for layer in self._layerStackModel if self.isRegistered(layer)][ims_row]
 
-    def _removeLayer(self, layer):
+    def _removeLayer(self, layer: Layer):
         if layer not in self._layerToIms:
             raise Exception(
                 "StackedImageSources._removeLayer(): layer %s is not registered; can't be removed" % str(layer)

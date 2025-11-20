@@ -67,8 +67,8 @@ class DummyItemRequest(RequestABC):
 
 
 class DummyItemSource(ImageSource):
-    def __init__(self, arraySource2D):
-        super(DummyItemSource, self).__init__("dummy item")
+    def __init__(self, arraySource2D, priority: int = 0):
+        super(DummyItemSource, self).__init__("dummy item", priority=priority)
         self._arraySource2D = arraySource2D
 
     def request(self, qrect, along_through=None):
@@ -105,8 +105,8 @@ class DummyRasterRequest(RequestABC):
 
 
 class DummyRasterItemSource(ImageSource):
-    def __init__(self, arraySource2D):
-        super().__init__("dummy item")
+    def __init__(self, arraySource2D, priority: int = 0):
+        super().__init__("dummy item", priority=priority)
         self._arraySource2D = arraySource2D
 
     def request(self, qrect, along_through=None):

@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import QRect
@@ -17,14 +18,17 @@ try:
 except ImportError:
     _has_vigra = False
 
+if TYPE_CHECKING:
+    from volumina.layer import AlphaModulatedLayer
+
 
 logger = logging.getLogger(__name__)
 
 
 class AlphaModulatedImageSource(ImageSource):
-    def __init__(self, arraySource2D, layer):
+    def __init__(self, arraySource2D, layer: "AlphaModulatedLayer"):
         assert isinstance(arraySource2D, PlanarSliceSourceABC), "wrong type: %s" % str(type(arraySource2D))
-        super(AlphaModulatedImageSource, self).__init__(layer.name)
+        super(AlphaModulatedImageSource, self).__init__(layer.name, priority=layer.priority)
         self._arraySource2D = arraySource2D
         self._layer = layer
 

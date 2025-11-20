@@ -20,11 +20,8 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 from __future__ import annotations
-from abc import ABCMeta, ABC, abstractmethod, abstractproperty
-from typing import Optional
+from abc import ABC, abstractmethod
 
-import numpy as np
-from qtpy.QtCore import Signal
 
 from volumina.utility.qabc import QABC, abstractsignal
 
@@ -53,6 +50,10 @@ class ImageSourceABC(QABC):
     @abstractmethod
     def setDirty(self, slicing):
         pass
+
+    @property
+    @abstractmethod
+    def priority(self) -> int: ...
 
 
 class PlanarSliceSourceABC(QABC):
@@ -87,7 +88,8 @@ class DataSourceABC(QABC):
     isDirty = abstractsignal(object)
     numberOfChannelsChanged = abstractsignal(int)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def numberOfChannels(self) -> int: ...
 
     @abstractmethod
