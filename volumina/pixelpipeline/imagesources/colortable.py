@@ -118,7 +118,6 @@ class ColortableImageRequest(RequestABC):
             tImg = time.time()
             img = QImage(a.shape[1], a.shape[0], QImage.Format_ARGB32)
             if not issubclass(a.dtype.type, np.integer):
-                raise NotImplementedError()
                 # FIXME: maybe this should be done in a better way using an operator before the colortable request which properly handles
                 # this problem
                 warnings.warn("Data for colortable layers cannot be float, casting", RuntimeWarning)
