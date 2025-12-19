@@ -82,7 +82,7 @@ if has_lazyflow:
             result[:] = self._data[key]
             return result
 
-        def setInSlot(self, slot, subindex, roi, value):
+        def _setInSlot(self, slot, subindex, roi, value):
             key = roi.toSlice()
             self._data[key] = value
             self.outputs["Data"].setDirty(key)
