@@ -73,7 +73,7 @@ class OpDataProvider5D(Operator):
         result[:] = old_div(result, 10)
         return result
 
-    def setInSlot(self, slot, subindex, roi, value):
+    def _setInSlot(self, slot, subindex, roi, value):
         key = roi.toSlice()
         self._data[key] = value
         self.outputs["Output"].setDirty(key)
