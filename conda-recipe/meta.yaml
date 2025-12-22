@@ -18,6 +18,9 @@ requirements:
     - cachetools
     - future
     - h5py
+    # temporary: to catch numpy-vigra incompatibility
+    # see https://github.com/conda-forge/vigra-feedstock/issues/155
+    - numpy <2.4.0
     - platformdirs
     - pyopengl
     - pyqt >=5.6
