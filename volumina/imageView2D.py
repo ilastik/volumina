@@ -20,16 +20,20 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 from qtpy.QtCore import QPoint, QPointF, QTimer, Signal, Qt
+from typing import TYPE_CHECKING, Tuple, Union
 from qtpy.QtGui import QCursor, QPainter
-from qtpy.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox, QOpenGLWidget
+from qtpy.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox, QOpenGLWidget, QWidget
 
 import numpy
 
 from .crossHairCursor import CrossHairCursor
 from .sliceIntersectionMarker import SliceIntersectionMarker
-from .croppingMarkers import CroppingMarkers
+from .croppingMarkers import CroppingMarkers, CropExtentsModel
 from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 import volumina.config
+
+if TYPE_CHECKING:
+    from .imageScene2D import ImageScene2D
 
 
 # *******************************************************************************
@@ -56,7 +60,7 @@ class ImageView2D(QGraphicsView):
         return self._sliceShape
 
     @sliceShape.setter
-    def sliceShape(self, s):
+    def sliceShape(self, s: Tuple[int, int]):
         self._sliceShape = s
         self.scene().dataShape = s
         self._crossHairCursor.dataShape = s
@@ -90,7 +94,10 @@ class ImageView2D(QGraphicsView):
 
         scene.axesChanged.connect(hud.setAxes)
 
-    def __init__(self, parent, cropModel, imagescene2d):
+    def scene(self) -> "ImageScene2D":
+        return super().scene()
+
+    def __init__(self, parent: Union[QWidget, None], cropModel: CropExtentsModel, imagescene2d: "ImageScene2D"):
         """
         Constructs a view upon a ImageScene2D
 
@@ -116,7 +123,7 @@ class ImageView2D(QGraphicsView):
         self._cursorBackup = None
 
         # these attributes are exposed as public properties above
-        self._sliceShape = None  # 2D shape of this view's shown image
+        self._sliceShape: Tuple[int, int] = (0, 0)  # 2D shape of this view's shown image
         self._slices = None  # number of slices that are stacked
         self._hud = None
 
@@ -192,7 +199,7 @@ class ImageView2D(QGraphicsView):
         self._ticker.stop()
         del self._ticker
 
-    def setZoomFactor(self, zoom):
+    def setZoomFactor(self, zoom: float):
         if self._hud is not None:
             self._hud.zoomLevelIndicator.updateLevel(zoom)
         self._zoomFactor = zoom
@@ -329,16 +336,16 @@ class ImageView2D(QGraphicsView):
     def focusOutEvent(self, event):
         self.setStyleSheet(".QFrame {}")
 
-    def changeViewPort(self, qRectf):
+    def changeViewPort(self, qRectf: QRectF):
         self.fitInView(qRectf, mode=Qt.KeepAspectRatio)
         width, height = self.size().width() / qRectf.width(), self.height() / qRectf.height()
         self.setZoomFactor(min(width, height))
 
-    def doScale(self, factor):
+    def doScale(self, factor: float):
         self.setZoomFactor(self._zoomFactor * factor)
         self.scale(factor, factor)
 
-    def doScaleTo(self, zoom=1):
+    def doScaleTo(self, zoom: float = 1.0):
         factor = (1 / self._zoomFactor) * zoom
         self.setZoomFactor(zoom)
         self.scale(factor, factor)

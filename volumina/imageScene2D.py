@@ -37,6 +37,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QTransform, QPen, QColor, QBrush, QPolygonF, QPainter, QPainterPath
 
+from volumina.positionModel import PositionModel
 from volumina.tiling import Tiling, TileProvider
 from volumina.layerstack import LayerStackModel
 from volumina.pixelpipeline.imagepump import StackedImageSources
@@ -375,7 +376,13 @@ class ImageScene2D(QGraphicsScene):
                     break
 
     def __init__(
-        self, posModel, along, preemptive_fetch_number=5, parent=None, name="Unnamed Scene", swapped_default=False
+        self,
+        posModel: PositionModel,
+        along,
+        preemptive_fetch_number=5,
+        parent=None,
+        name="Unnamed Scene",
+        swapped_default=False,
     ):
         """
         * preemptive_fetch_number -- number of prefetched slices; 0 turns the feature off
