@@ -121,6 +121,7 @@ def grab_imageview(image_view: ImageView2D) -> npt.NDArray:
     return img_np_rgb
 
 
+@pytest.mark.usefixtures("patch_threadpool")
 class TestImageRendering:
     def test_random_image_render(self, qtbot, image_view: ImageView2D, random_image: UInt8Array):
         """
