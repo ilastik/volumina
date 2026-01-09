@@ -229,3 +229,11 @@ class TestImageViewHelperFunctions:
         self.image_view.zoomOut()
         trafo_1 = self.image_view.transform()
         assert trafo_1.m11() == trafo_1.m22() == 0.9
+
+    def test_centerOn(self):
+        # resize the window so it's smaller than the image for sure
+        # otherwise centerOn has no effect.
+        self.image_view.setGeometry(0, 0, 20, 40)
+        self.image_view.centerOn(QPointF(42.0, 112.0))
+        trafo = self.image_view.transform()
+        assert False
