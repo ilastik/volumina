@@ -59,7 +59,7 @@ test:
     - pytest
     - pytest-qt
     - pyqt >=5.11
-    - python 3.11.*
+    - python {{ python }}
   commands:
     - pytest .
     - volumina --help
