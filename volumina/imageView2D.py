@@ -19,17 +19,20 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from qtpy.QtCore import QPoint, QPointF, QTimer, Signal, Qt
+from typing import TYPE_CHECKING, Tuple, Union
+from qtpy.QtCore import QPoint, QPointF, QRectF, QTimer, Signal, Qt
 from qtpy.QtGui import QCursor, QPainter
-from qtpy.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox, QOpenGLWidget
-
-import numpy
+from qtpy.QtWidgets import QGraphicsView, QVBoxLayout, QMessageBox, QOpenGLWidget, QWidget
 
 from .crossHairCursor import CrossHairCursor
 from .sliceIntersectionMarker import SliceIntersectionMarker
-from .croppingMarkers import CroppingMarkers
+from .croppingMarkers import CroppingMarkers, CropExtentsModel
 from volumina.widgets.wysiwygExportOptionsDlg import WysiwygExportOptionsDlg
 import volumina.config
+
+if TYPE_CHECKING:
+    from .imageScene2D import ImageScene2D
+    from .sliceSelectorHud import ImageView2DHud
 
 
 # *******************************************************************************
@@ -56,7 +59,7 @@ class ImageView2D(QGraphicsView):
         return self._sliceShape
 
     @sliceShape.setter
-    def sliceShape(self, s):
+    def sliceShape(self, s: Tuple[int, int]):
         self._sliceShape = s
         self.scene().dataShape = s
         self._crossHairCursor.dataShape = s
@@ -68,7 +71,7 @@ class ImageView2D(QGraphicsView):
         return self._hud
 
     @hud.setter
-    def hud(self, hud):
+    def hud(self, hud: "ImageView2DHud"):
         """
         Sets up a heads up display at the upper left corner of the view
 
@@ -90,7 +93,10 @@ class ImageView2D(QGraphicsView):
 
         scene.axesChanged.connect(hud.setAxes)
 
-    def __init__(self, parent, cropModel, imagescene2d):
+    def scene(self) -> "ImageScene2D":
+        return super().scene()
+
+    def __init__(self, parent: Union[QWidget, None], cropModel: CropExtentsModel, imagescene2d: "ImageScene2D"):
         """
         Constructs a view upon a ImageScene2D
 
@@ -116,7 +122,7 @@ class ImageView2D(QGraphicsView):
         self._cursorBackup = None
 
         # these attributes are exposed as public properties above
-        self._sliceShape = None  # 2D shape of this view's shown image
+        self._sliceShape: Tuple[int, int] = (0, 0)  # 2D shape of this view's shown image
         self._slices = None  # number of slices that are stacked
         self._hud = None
 
@@ -160,13 +166,9 @@ class ImageView2D(QGraphicsView):
         self._croppingMarkers = CroppingMarkers(self.axis, cropModel)
         self.scene().addItem(self._croppingMarkers)
 
-        # FIXME: this should be private, but is currently used from
-        #       within the image scene renderer
-        self.tempImageItems = []
-
         self._zoomFactor = 1.0
 
-        # for panning
+        # temporary variables for panning
         self._lastPanPoint = QPoint()
         self._dragMode = False
         self._deltaPan = QPointF(0, 0)
@@ -192,7 +194,7 @@ class ImageView2D(QGraphicsView):
         self._ticker.stop()
         del self._ticker
 
-    def setZoomFactor(self, zoom):
+    def setZoomFactor(self, zoom: float):
         if self._hud is not None:
             self._hud.zoomLevelIndicator.updateLevel(zoom)
         self._zoomFactor = zoom
@@ -329,78 +331,16 @@ class ImageView2D(QGraphicsView):
     def focusOutEvent(self, event):
         self.setStyleSheet(".QFrame {}")
 
-    def changeViewPort(self, qRectf):
+    def changeViewPort(self, qRectf: QRectF):
         self.fitInView(qRectf, mode=Qt.KeepAspectRatio)
         width, height = self.size().width() / qRectf.width(), self.height() / qRectf.height()
         self.setZoomFactor(min(width, height))
 
-    def doScale(self, factor):
+    def doScale(self, factor: float):
         self.setZoomFactor(self._zoomFactor * factor)
         self.scale(factor, factor)
 
-    def doScaleTo(self, zoom=1):
+    def doScaleTo(self, zoom: float = 1.0):
         factor = (1 / self._zoomFactor) * zoom
         self.setZoomFactor(zoom)
         self.scale(factor, factor)
-
-
-# *******************************************************************************
-# i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
-# *******************************************************************************
-if __name__ == "__main__":
-    import sys
-
-    # make the program quit on Ctrl+C
-    import signal
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    from qtpy.QtWidgets import QMainWindow
-    from scipy.misc import lena
-
-    def checkerboard(shape, squareSize):
-        cb = numpy.zeros(shape)
-        for i in range(shape[0] / squareSize):
-            for j in range(shape[1] / squareSize):
-                a = i * squareSize
-                b = min((i + 1) * squareSize, shape[0])
-                c = j * squareSize
-                d = min((j + 1) * squareSize, shape[1])
-                if i % 2 == j % 2:
-                    cb[a:b, c:d] = 255
-        return cb
-
-    def cross(shape, width):
-        c = numpy.zeros(shape)
-        w2 = shape[0] // 2
-        h2 = shape[1] // 2
-        c[0 : shape[0], h2 - width // 2 : h2 + width // 2] = 255
-        c[w2 - width // 2 : w2 + width // 2, 0 : shape[1]] = 255
-        return c
-
-    class ImageView2DTest(QMainWindow):
-        def __init__(self):
-            assert False, "I'm broken. Please fixme."
-            QMainWindow.__init__(self)
-
-            self.lena = lena().swapaxes(0, 1)
-            self.checkerboard = checkerboard(self.lena.shape, 20)
-            self.cross = cross(self.lena.shape, 30)
-
-            self.imageView2D = ImageView2D()
-            self.imageView2D.name = "ImageView2D:"
-            self.imageView2D.shape = self.lena.shape
-            self.imageView2D.slices = 1
-            self.setCentralWidget(self.imageView2D)
-
-            # imageSlice = OverlaySlice(self.lena, color = QColor("red"), alpha = 1.0, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-            # cbSlice    = OverlaySlice(self.checkerboard, color = QColor("green"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-            # crossSlice = OverlaySlice(self.cross, color = QColor("blue"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-
-            self.imageView2D.scene().setContent(
-                self.imageView2D.viewportRect(), None, (imageSlice, cbSlice, crossSlice)
-            )
-
-    app = QApplication(sys.argv)
-    i = ImageView2DTest()
-    i.show()
-    app.exec_()
