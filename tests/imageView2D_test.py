@@ -207,11 +207,13 @@ class TestImageRendering:
         qtbot.waitExposed(image_view)
         image_view._deltaPan = QPointF(-pan_x, -pan_y)
         image_view._panning()
+        qtbot.wait(300)
 
         rendered = grab_imageview(image_view)
 
-        numpy.testing.assert_array_equal(rendered[:, :, 0], random_image[int(pan_x): int(pan_x + vp_width), int(pan_y ): int(pan_y + vp_height)].T)
-
+        numpy.testing.assert_array_equal(
+            rendered[:, :, 0], random_image[int(pan_x) : int(pan_x + vp_width), int(pan_y) : int(pan_y + vp_height)].T
+        )
 
 
 class TestImageViewHelperFunctions:
@@ -266,7 +268,6 @@ class TestImageViewHelperFunctions:
         self.image_view.show()
         qtbot.waitExposed(self.image_view)
         vp_rect = self.image_view.viewportRect()
-        assert vp_rect == QRectF(center_x - vp_width / zoom / 2, center_y - vp_height / zoom / 2, 20.0 / zoom, 40.0 / zoom)
-
-
-
+        assert vp_rect == QRectF(
+            center_x - vp_width / zoom / 2, center_y - vp_height / zoom / 2, 20.0 / zoom, 40.0 / zoom
+        )
