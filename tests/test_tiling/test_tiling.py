@@ -40,26 +40,6 @@ from volumina.pixelpipeline.imagepump import StackedImageSources, ImagePump
 from volumina.slicingtools import SliceProjection
 
 
-@pytest.fixture(autouse=True)
-def patch_threadpool():
-    """
-    Clean up the Render pool after every test
-
-    avoids test hangs starting with python 3.10
-    """
-    import volumina.tiling.tileprovider
-
-    if not volumina.tiling.tileprovider.USE_LAZYFLOW_THREADPOOL:
-        from volumina.utility.prioritizedThreadPool import PrioritizedThreadPoolExecutor
-
-        volumina.tiling.tileprovider.renderer_pool = PrioritizedThreadPoolExecutor(2)
-        yield
-        volumina.tiling.tileprovider.renderer_pool.shutdown()
-        volumina.tiling.tileprovider.renderer_pool = None
-    else:
-        yield
-
-
 class TilingTest(ut.TestCase):
     def testNoneShape(self):
         t = Tiling((0, 0))
@@ -112,7 +92,7 @@ def test_Data2Scene(shape, trafo_scale, imageRect_shape, expected_tiles):
         assert (ir.size().width(), ir.size().height()) == imageRect_shape
 
 
-@pytest.mark.usefixtures("qapp")
+@pytest.mark.usefixtures("qapp", "patch_threadpool")
 class TileProviderTest(ut.TestCase):
     def setUp(self):
         self.GRAY1 = 60
@@ -183,7 +163,7 @@ class TileProviderTest(ut.TestCase):
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
 
-@pytest.mark.usefixtures("qapp")
+@pytest.mark.usefixtures("qapp", "patch_threadpool")
 class DirtyPropagationTest(ut.TestCase):
     def setUp(self):
         dataShape = (1, 900, 400, 10, 1)  # t,x,y,z,c

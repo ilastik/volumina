@@ -121,6 +121,7 @@ def grab_imageview(image_view: ImageView2D) -> npt.NDArray:
     return img_np_rgb
 
 
+@pytest.mark.usefixtures("patch_threadpool")
 class TestImageRendering:
     def test_random_image_render(self, qtbot, image_view: ImageView2D, random_image: UInt8Array):
         """
@@ -248,6 +249,7 @@ class TestImageViewHelperFunctions:
         trafo_1 = self.image_view.transform()
         assert trafo_1.m11() == trafo_1.m22() == 0.9
 
+    @pytest.mark.usefixtures("patch_threadpool")
     @pytest.mark.parametrize("zoom", (1.0, 2.0, 0.5, 10.0))
     def test_viewPortRect(self, qtbot, zoom):
         """
