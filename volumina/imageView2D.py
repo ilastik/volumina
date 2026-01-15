@@ -19,12 +19,10 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-from qtpy.QtCore import QPoint, QPointF, QTimer, Signal, Qt
 from typing import TYPE_CHECKING, Tuple, Union
+from qtpy.QtCore import QPoint, QPointF, QRectF, QTimer, Signal, Qt
 from qtpy.QtGui import QCursor, QPainter
-from qtpy.QtWidgets import QGraphicsView, QVBoxLayout, QApplication, QMessageBox, QOpenGLWidget, QWidget
-
-import numpy
+from qtpy.QtWidgets import QGraphicsView, QVBoxLayout, QMessageBox, QOpenGLWidget, QWidget
 
 from .crossHairCursor import CrossHairCursor
 from .sliceIntersectionMarker import SliceIntersectionMarker
@@ -346,65 +344,3 @@ class ImageView2D(QGraphicsView):
         factor = (1 / self._zoomFactor) * zoom
         self.setZoomFactor(zoom)
         self.scale(factor, factor)
-
-
-# *******************************************************************************
-# i f   _ _ n a m e _ _   = =   " _ _ m a i n _ _ "                            *
-# *******************************************************************************
-if __name__ == "__main__":
-    import sys
-
-    # make the program quit on Ctrl+C
-    import signal
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    from qtpy.QtWidgets import QMainWindow
-    from scipy.misc import lena
-
-    def checkerboard(shape, squareSize):
-        cb = numpy.zeros(shape)
-        for i in range(shape[0] / squareSize):
-            for j in range(shape[1] / squareSize):
-                a = i * squareSize
-                b = min((i + 1) * squareSize, shape[0])
-                c = j * squareSize
-                d = min((j + 1) * squareSize, shape[1])
-                if i % 2 == j % 2:
-                    cb[a:b, c:d] = 255
-        return cb
-
-    def cross(shape, width):
-        c = numpy.zeros(shape)
-        w2 = shape[0] // 2
-        h2 = shape[1] // 2
-        c[0 : shape[0], h2 - width // 2 : h2 + width // 2] = 255
-        c[w2 - width // 2 : w2 + width // 2, 0 : shape[1]] = 255
-        return c
-
-    class ImageView2DTest(QMainWindow):
-        def __init__(self):
-            assert False, "I'm broken. Please fixme."
-            QMainWindow.__init__(self)
-
-            self.lena = lena().swapaxes(0, 1)
-            self.checkerboard = checkerboard(self.lena.shape, 20)
-            self.cross = cross(self.lena.shape, 30)
-
-            self.imageView2D = ImageView2D()
-            self.imageView2D.name = "ImageView2D:"
-            self.imageView2D.shape = self.lena.shape
-            self.imageView2D.slices = 1
-            self.setCentralWidget(self.imageView2D)
-
-            # imageSlice = OverlaySlice(self.lena, color = QColor("red"), alpha = 1.0, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-            # cbSlice    = OverlaySlice(self.checkerboard, color = QColor("green"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-            # crossSlice = OverlaySlice(self.cross, color = QColor("blue"), alpha = 0.5, colorTable = None, min = None, max = None, autoAlphaChannel = False)
-
-            self.imageView2D.scene().setContent(
-                self.imageView2D.viewportRect(), None, (imageSlice, cbSlice, crossSlice)
-            )
-
-    app = QApplication(sys.argv)
-    i = ImageView2DTest()
-    i.show()
-    app.exec_()
