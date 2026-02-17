@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # for codecov
-          fetch-depth: 5
+          fetch-tags: true
+          fetch-depth: 0
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: ilastik-env
