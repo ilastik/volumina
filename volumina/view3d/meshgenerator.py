@@ -22,14 +22,14 @@ except ImportError:
 
 
 ShaderProgram(
-    "toon",
+    "headlight",
     [
         VertexShader(
             """
-        varying vec3 normal;
+        varying vec3 normal_cam;
 
         void main() {
-            normal = gl_Normal;
+            normal_cam = normalize(gl_NormalMatrix * gl_Normal);
             gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 
             gl_FrontColor = gl_Color;
@@ -39,16 +39,12 @@ ShaderProgram(
         ),
         FragmentShader(
             """
-        varying vec3 normal;
+        varying vec3 normal_cam;
 
         void main() {
-            vec3 light = normalize(vec3(1.0, -1.0, -1.0));
-            float intensity;
-
-            intensity = (dot(light, normalize(normal)) + 1.0) / 2.0;
-
-            //gl_FragColor = max(round(intensity * 3), 0.3) / 3 * gl_Color / 2;
-            gl_FragColor = intensity * gl_Color;
+            vec3 light_dir = vec3(0.0, 0.0, 1.0);
+            float intensity = max(dot(normalize(normal_cam), light_dir), 0.0);
+            gl_FragColor = vec4(gl_Color.rgb * intensity, gl_Color.a);
         }
     """
         ),
