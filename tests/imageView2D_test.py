@@ -139,10 +139,9 @@ class TestImageRendering:
             ),
         ),
     )
-    def test_random_image_render(self, qtbot, image_view: ImageView2D, random_image: UInt8Array, margin_factor: float):
-        """
-        test if image is rendered correctly in a viewport larger than the image at zoom=1
-        """
+    def test_renders_correctly_unzoomed_in_viewport_larger_than_image(
+        self, qtbot, image_view: ImageView2D, random_image: UInt8Array, margin_factor: float
+    ):
         image_view_width: int = 280
         image_view_height: int = 380
         image_view.setGeometry(0, 0, image_view_width, image_view_height)
@@ -240,7 +239,6 @@ class TestImageRendering:
         )
 
 
-@pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
 class TestImageViewHelperFunctions:
 
     @pytest.fixture(autouse=True)
@@ -276,6 +274,7 @@ class TestImageViewHelperFunctions:
         trafo_1 = self.image_view.transform()
         assert trafo_1.m11() == trafo_1.m22() == 0.9
 
+    @pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
     @pytest.mark.usefixtures("patch_threadpool")
     @pytest.mark.parametrize("zoom", (1.0, 2.0, 0.5, 10.0))
     def test_viewPortRect(self, qtbot, zoom):
