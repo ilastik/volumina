@@ -139,11 +139,12 @@ class WysiwygExportOptionsDlg(QDialog):
         start = [None] * len(self.shape)
         stop = [None] * len(self.shape)
         pos5d = self.view.scene()._posModel.slicingPos5D
-        rect = self.view.viewportRect()
+        rect = self.view.viewportRect().toRect()
         for i in range(len(self.shape)):
             if self.shape[i] > 1:
                 start[i] = pos5d[i]
                 stop[i] = pos5d[i] + 1
+
         start[self.sliceAxes[0]] = rect.left()
         stop[self.sliceAxes[0]] = rect.left() + rect.width()
         start[self.sliceAxes[1]] = rect.top()
@@ -393,7 +394,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
                 coords = 0
             file_names.append(self._filename(folder, pattern, fileExt, iter_coords, coords, filename_padding))
             self._saveImg(pos, rect, file_names[-1])
-            self.setStepProgress(100 * i / num_steps)
+            self.setStepProgress(int(100 * i / num_steps))
             yield
         self.setStepProgress(100)
         self.finishStep()
@@ -419,7 +420,7 @@ class WysiwygExportHelper(MultiStepProgressDialog):
                 folder, stack_pattern, fileExt, iter_coords, [t] + [0] * (len(iter_axes) - 1), filename_padding
             )
             self.combine_stack(stack_name, *chunk)
-            self.setStepProgress(100 * t / tsteps)
+            self.setStepProgress(int(100 * t / tsteps))
             yield
 
         self.setStepProgress(100)
