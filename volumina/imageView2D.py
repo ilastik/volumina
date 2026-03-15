@@ -126,7 +126,6 @@ class ImageView2D(QGraphicsView):
         self._slices = None  # number of slices that are stacked
         self._hud = None
 
-        self._crossHairCursor = None
         self._sliceIntersectionMarker = None
 
         self._ticker = QTimer(self)
@@ -303,7 +302,8 @@ class ImageView2D(QGraphicsView):
 
             exportHelper = WysiwygExportHelper(self, settingsDlg)
             exportHelper.prepareExport()
-            exportHelper.run()
+            with self._crossHairCursor.hidden():
+                exportHelper.run()
         else:
             # user didn't click OK button -> do nothing
             return

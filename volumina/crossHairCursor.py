@@ -48,6 +48,8 @@
 #    authors and should not be interpreted as representing official policies, either expressed
 #    or implied, of their employers.
 
+from contextlib import contextmanager
+from typing import Iterator
 from qtpy.QtCore import Qt, QPointF, QRectF
 from qtpy.QtGui import QPen
 from qtpy.QtWidgets import QGraphicsItem
@@ -183,3 +185,12 @@ class CrossHairCursor(QGraphicsItem):
     def setBrushSize(self, size):
         self.brushSize = size
         self.update()
+
+    @contextmanager
+    def hidden(self) -> Iterator["CrossHairCursor"]:
+        visible = self.isVisible()
+        self.setVisible(False)
+        try:
+            yield self
+        finally:
+            self.setVisible(visible)
