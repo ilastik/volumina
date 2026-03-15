@@ -9,6 +9,7 @@ on:
 jobs:
   test-w-ilastik-env:
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
@@ -54,6 +55,7 @@ jobs:
 
   test-w-conda-recipe:
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
         python_version: ["3.10", "3.11", "3.12", "3.13"]
