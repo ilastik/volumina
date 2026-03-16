@@ -48,6 +48,8 @@
 #    authors and should not be interpreted as representing official policies, either expressed
 #    or implied, of their employers.
 
+from contextlib import contextmanager
+from typing import Iterator
 from qtpy.QtCore import Qt, QPointF, QRectF
 from qtpy.QtGui import QPen
 from qtpy.QtWidgets import QGraphicsItem
@@ -63,10 +65,6 @@ class CrossHairCursor(QGraphicsItem):
     A cross hair cursor usually follows the mouse cursor and has a color
     and marks the size of the current brush.
     """
-
-    modeYPosition = 0
-    modeXPosition = 1
-    modeXYPosition = 2
 
     def boundingRect(self):
         return self.scene().data2scene.mapRect(QRectF(0, 0, self._width, self._height))
@@ -87,7 +85,6 @@ class CrossHairCursor(QGraphicsItem):
         self.y = 0
         self.brushSize = 0
 
-        self.mode = self.modeXYPosition
         self._enabled = True
 
     @property
@@ -125,23 +122,10 @@ class CrossHairCursor(QGraphicsItem):
         self.penSolid.setCosmetic(True)
         self.update()
 
-    def showXPosition(self, x, y):
-        """only mark the x position by displaying a line f(y) = x"""
-        self.setVisible(True)
-        self.mode = self.modeXPosition
-        self.setPos(x, y - int(y))
-
-    def showYPosition(self, y, x):
-        """only mark the y position by displaying a line f(x) = y"""
-        self.setVisible(True)
-        self.mode = self.modeYPosition
-        self.setPos(x - int(x), y)
-
     def showXYPosition(self, x, y):
         """mark the (x,y) position by displaying a cross hair cursor
         including a circle indicating the current brush size"""
         self.setVisible(True)
-        self.mode = self.modeXYPosition
         self.setPos(x, y)
 
     def paint(self, painter, option, widget=None):
@@ -151,27 +135,22 @@ class CrossHairCursor(QGraphicsItem):
 
         painter.setPen(self.penDotted)
 
-        if self.mode == self.modeXPosition:
-            painter.drawLine(QPointF(self.x + 0.5, 0), QPointF(self.x + 0.5, self._height))
-        elif self.mode == self.modeYPosition:
-            painter.drawLine(QPointF(0, self.y), QPointF(self.width, self.y))
-        else:
-            painter.drawLine(
-                QPointF(self.x - 0.5 * self.brushSize - 3, self.y), QPointF(self.x - 0.5 * self.brushSize, self.y)
-            )
-            painter.drawLine(
-                QPointF(self.x + 0.5 * self.brushSize, self.y), QPointF(self.x + 0.5 * self.brushSize + 3, self.y)
-            )
+        painter.drawLine(
+            QPointF(self.x - 0.5 * self.brushSize - 3, self.y), QPointF(self.x - 0.5 * self.brushSize, self.y)
+        )
+        painter.drawLine(
+            QPointF(self.x + 0.5 * self.brushSize, self.y), QPointF(self.x + 0.5 * self.brushSize + 3, self.y)
+        )
 
-            painter.drawLine(
-                QPointF(self.x, self.y - 0.5 * self.brushSize - 3), QPointF(self.x, self.y - 0.5 * self.brushSize)
-            )
-            painter.drawLine(
-                QPointF(self.x, self.y + 0.5 * self.brushSize), QPointF(self.x, self.y + 0.5 * self.brushSize + 3)
-            )
+        painter.drawLine(
+            QPointF(self.x, self.y - 0.5 * self.brushSize - 3), QPointF(self.x, self.y - 0.5 * self.brushSize)
+        )
+        painter.drawLine(
+            QPointF(self.x, self.y + 0.5 * self.brushSize), QPointF(self.x, self.y + 0.5 * self.brushSize + 3)
+        )
 
-            painter.setPen(self.penSolid)
-            painter.drawEllipse(QPointF(self.x, self.y), 0.5 * self.brushSize, 0.5 * self.brushSize)
+        painter.setPen(self.penSolid)
+        painter.drawEllipse(QPointF(self.x, self.y), 0.5 * self.brushSize, 0.5 * self.brushSize)
 
         painter.restore()
 
@@ -183,3 +162,12 @@ class CrossHairCursor(QGraphicsItem):
     def setBrushSize(self, size):
         self.brushSize = size
         self.update()
+
+    @contextmanager
+    def hidden(self) -> Iterator["CrossHairCursor"]:
+        visible = self.isVisible()
+        self.setVisible(False)
+        try:
+            yield self
+        finally:
+            self.setVisible(visible)

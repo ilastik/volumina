@@ -72,7 +72,7 @@ class MultiStepProgressDialog(QDialog):
 
         self.overallProgress.setValue(self._currentStep)
 
-    def setStepProgress(self, x):
+    def setStepProgress(self, x: int):
         oldx = self.currentStepProgress.value()
         self.time2 = time.time()
         self.currentStepProgress.setValue(x)

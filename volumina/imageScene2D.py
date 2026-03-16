@@ -68,7 +68,7 @@ class DirtyIndicator(QGraphicsItem):
         self._zeroProgressTimestamp = [datetime.datetime.now()] * len(tiling)
         self._last_zero = False
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         return self._tiling.boundingRectF()
 
     def paint(self, painter, option, widget):
