@@ -121,7 +121,7 @@ class Tiling(object):
             self.imageRects[patchNr] = imageRect
             self.tileRects[patchNr] = patchRect
 
-    def boundingRectF(self):
+    def boundingRectF(self) -> QRectF:
         if self.tileRectFs:
             p = self.tileRectFs[-1]
             br = QRectF(0, 0, p.x() + p.width(), p.y() + p.height())
