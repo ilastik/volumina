@@ -28,8 +28,8 @@ import pytest
 
 from qtpy.QtGui import QImage, QPainter
 from qtpy.QtWidgets import QStyleOptionGraphicsItem
+import qimage2ndarray
 
-from qimage2ndarray import byte_view
 import numpy as np
 
 from volumina.imageScene2D import ImageScene2D, DirtyIndicator
@@ -143,12 +143,14 @@ class ImageScene2DTest(ut.TestCase):
 
 @pytest.mark.usefixtures("qapp")
 class ImageScene2D_RenderTest(ut.TestCase):
+    WHITE = 0
+    GRAY = 201
+    TRANSPARENT = 0
+    OPAQUE = 255
 
     def setUp(self):
         self.layerstack = LayerStackModel()
         self.sims = StackedImageSources(self.layerstack)
-
-        self.GRAY = 201
         self.ds = ConstantSource(self.GRAY)
         self.layer = GrayscaleLayer(self.ds)
         self.layer.set_normalize(0, False)
@@ -171,27 +173,30 @@ class ImageScene2D_RenderTest(ut.TestCase):
         p.end()
         if exportFilename is not None:
             img.save(exportFilename)
-        return byte_view(img)
+
+        img_np_rgba = qimage2ndarray.byte_view(img).copy()
+
+        return img_np_rgba
 
     def testBasicImageRenderingCapability(self):
         aimg = self.renderScene(self.scene)
-        self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY))
-        self.assertTrue(np.all(aimg[:, :, 3] == 255))
+        np.testing.assert_array_equal(aimg[:, :, 0:3], self.GRAY)
+        np.testing.assert_array_equal(aimg[:, :, 3], self.OPAQUE)
 
     def testToggleVisibilityOfOneLayer(self):
         aimg = self.renderScene(self.scene)
-        self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY))
-        self.assertTrue(np.all(aimg[:, :, 3] == 255))
+        np.testing.assert_array_equal(aimg[:, :, 0:3], self.GRAY)
+        np.testing.assert_array_equal(aimg[:, :, 3], self.OPAQUE)
 
         self.layer.visible = False
         aimg = self.renderScene(self.scene)
-        self.assertTrue(np.all(aimg[:, :, 0:3] == 0))  # all white
-        self.assertTrue(np.all(aimg[:, :, 3] == 0))
+        np.testing.assert_array_equal(aimg[:, :, 0:3], self.WHITE)
+        np.testing.assert_array_equal(aimg[:, :, 3], self.TRANSPARENT)
 
         self.layer.visible = True
         aimg = self.renderScene(self.scene)
-        self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY))
-        self.assertTrue(np.all(aimg[:, :, 3] == 255))
+        np.testing.assert_array_equal(aimg[:, :, 0:3], self.GRAY)
+        np.testing.assert_array_equal(aimg[:, :, 3], self.OPAQUE)
 
 
 if __name__ == "__main__":
