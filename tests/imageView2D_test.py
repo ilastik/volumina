@@ -24,11 +24,10 @@ from typing import Tuple
 
 import numpy
 import pytest
-import qimage2ndarray
 from numpy import typing as npt
-from qtpy.QtWidgets import QApplication, QOpenGLWidget
 from qtpy.QtCore import QPointF, QRectF
 from qtpy.QtGui import QImage, QOpenGLFramebufferObject, QOpenGLFramebufferObjectFormat, QOpenGLPaintDevice, QPainter
+from qtpy.QtWidgets import QApplication, QOpenGLWidget
 
 from volumina.croppingMarkers import CropExtentsModel
 from volumina.imageScene2D import ImageScene2D
@@ -39,6 +38,8 @@ from volumina.pixelpipeline.datasources import ArraySource
 from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.pixelpipeline.slicesources import PlanarSliceSource
 from volumina.positionModel import PositionModel
+
+import qimage2ndarray
 
 UInt8Array = npt.NDArray[numpy.uint8]
 
@@ -115,11 +116,12 @@ def grab_imageview(image_view: ImageView2D) -> npt.NDArray:
     frame_buffer.bind()
     paint_device = QOpenGLPaintDevice(image_view.width(), image_view.height())
     painter = QPainter(paint_device)
+
     image_view.render(painter)
     painter.end()
 
     img = QImage(frame_buffer.toImage())
-    img_np_rgb = qimage2ndarray.rgb_view(img)
+    img_np_rgb = qimage2ndarray.rgb_view(img).copy()
     return img_np_rgb
 
 
