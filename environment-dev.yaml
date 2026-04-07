@@ -9,7 +9,7 @@ dependencies:
   - pip
   - platformdirs
   - pyopengl
-  - pyqt 5.15.*
+  - pyside6
   - pyqtgraph
   - pytest
   - pytest-qt
