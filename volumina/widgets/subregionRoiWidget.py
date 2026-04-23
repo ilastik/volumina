@@ -20,8 +20,8 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import collections
-from qtpy.QtCore import Qt, Signal, QEvent
-from qtpy.QtWidgets import QSpinBox, QTableWidget, QTableWidgetItem
+from qtpy.QtCore import Qt, Signal, QEvent, QSize
+from qtpy.QtWidgets import QApplication, QSpinBox, QTableWidget, QTableWidgetItem
 
 DEFAULT_MAX_EXTENT = 999999
 
@@ -95,6 +95,12 @@ class SubregionRoiWidget(QTableWidget):
     def roi(self):
         return self._roi
 
+    def _width(self) -> int:
+        return self.verticalHeader().width() + sum(self.columnWidth(i) for i in range(self.columnCount()))
+
+    def _height(self) -> int:
+        return self.horizontalHeader().height() + sum(self.rowHeight(i) for i in range(self.rowCount()))
+
     def initWithExtents(self, axes, shape, start, stop):
         self.setColumnCount(3)
         self.setHorizontalHeaderLabels(["range", "[start,", "stop)"])
@@ -148,6 +154,29 @@ class SubregionRoiWidget(QTableWidget):
 
         self._updateRoi()
         self.resizeColumnsToContents()
+        self.resizeRowsToContents()
+
+        self.resize(self._width(), self._height())
+        self.updateGeometry()
+
+    def sizeHint(self):
+        self.resizeColumnsToContents()
+        self.resizeRowsToContents()
+
+        width = self._width()
+        height = self._height()
+        style = QApplication.style()
+
+        if self.verticalScrollBar().isVisible():
+            width += style.pixelMetric(style.PM_ScrollBarExtent)
+
+        if self.horizontalScrollBar().isVisible():
+            height += style.pixelMetric(style.PM_ScrollBarExtent)
+
+        return QSize(width, height)
+
+    def minimumSizeHint(self):
+        return self.sizeHint()
 
     def _updateRoi(self):
         if len(self._boxes) == 0:
