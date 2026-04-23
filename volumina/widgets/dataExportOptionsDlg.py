@@ -119,6 +119,7 @@ class DataExportOptionsDlg(QDialog):
         assert _has_lazyflow, "This widget requires lazyflow."
         super(DataExportOptionsDlg, self).__init__(parent)
         uic.loadUi(os.path.splitext(__file__)[0] + ".ui", self)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         self._opDataExport = opDataExport
         assert isinstance(
