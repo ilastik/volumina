@@ -23,7 +23,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_6">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -68,60 +68,11 @@
       <item>
        <widget class="SubregionRoiWidget" name="roiWidget">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="rowCount">
-         <number>5</number>
-        </property>
-        <property name="columnCount">
-         <number>3</number>
-        </property>
-        <attribute name="verticalHeaderCascadingSectionResizes">
-         <bool>false</bool>
-        </attribute>
-        <row>
-         <property name="text">
-          <string>t</string>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string>x</string>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string>y</string>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string>z</string>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string>c</string>
-         </property>
-        </row>
-        <column>
-         <property name="text">
-          <string>range</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>[start,</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>stop)</string>
-         </property>
-        </column>
        </widget>
       </item>
       <item>
@@ -146,7 +97,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_3">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -286,7 +237,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -425,32 +376,12 @@
    <signal>accepted()</signal>
    <receiver>Dialog</receiver>
    <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
   </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
    <receiver>Dialog</receiver>
    <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
   </connection>
  </connections>
 </ui>
