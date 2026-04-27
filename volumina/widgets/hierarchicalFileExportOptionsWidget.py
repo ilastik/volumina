@@ -44,10 +44,6 @@ class HierarchicalFileExportOptionsWidget(QWidget):
             self.datasetLabel.setVisible(False)
             self.datasetEdit.setVisible(False)
             self.datasetEdit.setEnabled(False)
-            axisorder_label = QLabel(
-                'Axis order: OME-Zarr axes are always tczyx ("transpose" setting above is ignored)'
-            )
-            self.gridLayout.addWidget(axisorder_label, 1, 0, 1, 3)
         else:
             self.datasetEdit.textEdited.connect(lambda: self._handleTextEdited(self.datasetEdit))
 

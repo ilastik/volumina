@@ -482,6 +482,19 @@ class DataExportOptionsDlg(QDialog):
 
         self.exportFileOptionsWidget.formatValidityChange.connect(set_okay_from_format_error)
         self.exportFileOptionsWidget.pathValidityChange.connect(partial(self._set_okay_condition, "file path"))
+        self.exportFileOptionsWidget.formatChange.connect(self._handle_format_change)
+
+    def _handle_format_change(self, format: str):
+        if format in ["multi-scale OME-Zarr", "single-scale OME-Zarr"]:
+            self.axisOrderCheckbox.setEnabled(False)
+            self.outputAxisOrderEdit.setEnabled(False)
+            self.axisOrderCheckbox.setToolTip("OME-Zarr axes are always tczyx ('transpose' setting above is ignored)")
+            self.outputAxisOrderEdit.setToolTip("OME-Zarr axes are always tczyx ('transpose' setting above is ignored)")
+        else:
+            self.axisOrderCheckbox.setEnabled(True)
+            self.outputAxisOrderEdit.setEnabled(True)
+            self.axisOrderCheckbox.setToolTip("")
+            self.outputAxisOrderEdit.setToolTip("")
 
 
 # **************************************************************************
