@@ -51,6 +51,7 @@ except ImportError:
 class MultiformatSlotExportFileOptionsWidget(QWidget):
     formatValidityChange = Signal(str)  # str
     pathValidityChange = Signal(bool)
+    formatChange = Signal(str)
 
     def __init__(self, parent):
         global _has_lazyflow
@@ -202,6 +203,7 @@ class MultiformatSlotExportFileOptionsWidget(QWidget):
         self.stackedWidget.setCurrentWidget(option_widget)
 
         self._handlePathValidityChange()
+        self.formatChange.emit(file_format)
 
     def _handleFormatValidChange(self, *args):
         old_err = self._selection_error_msg

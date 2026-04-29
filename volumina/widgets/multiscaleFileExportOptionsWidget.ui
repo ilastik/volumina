@@ -37,20 +37,6 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0" colspan="3">
-    <widget class="QLabel">
-     <property name="text">
-      <string>Axis order: OME-Zarr axes are always tczyx ("transpose" setting above is ignored)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0" colspan="3">
-    <widget class="QLabel" name="scalingInterpolationLabel">
-     <property name="text">
-      <string>(Interpolation: Default)</string>
-     </property>
-    </widget>
-   </item>
    <item row="3" column="0" colspan="3">
     <widget class="QScrollArea">
      <property name="widgetResizable">

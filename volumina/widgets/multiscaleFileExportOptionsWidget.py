@@ -101,11 +101,10 @@ class MultiscaleFileExportOptionsWidget(QWidget):
                     interpolation_text = interpolation_to_text[interpolation_order]
                 else:
                     interpolation_text = f"Interpolation: order {str(interpolation_order)}"
-            self.scalingInterpolationLabel.setText(interpolation_text)
 
             # scales are OrderedDict[str, OrderedDict[Axiskey, int]] (multiscalesStore.Multiscales)
             scales = self._targetScalesSlot.value
-            scales_html = "<p>Scales generated:</p><ul>"
+            scales_html = f"<p>{interpolation_text}</p><p>Scales generated:</p><ul>"
             for scale_key, tagged_shape in scales.items():
                 scales_html += f"<li><b>{scale_key}</b>: "
                 for axis_key, axis_value in tagged_shape.items():
