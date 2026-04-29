@@ -488,8 +488,8 @@ class DataExportOptionsDlg(QDialog):
         if format in ["multi-scale OME-Zarr", "single-scale OME-Zarr"]:
             self.axisOrderCheckbox.setEnabled(False)
             self.outputAxisOrderEdit.setEnabled(False)
-            self.axisOrderCheckbox.setToolTip("OME-Zarr axes are always tczyx ('transpose' setting above is ignored)")
-            self.outputAxisOrderEdit.setToolTip("OME-Zarr axes are always tczyx ('transpose' setting above is ignored)")
+            self.axisOrderCheckbox.setToolTip("OME-Zarr axes are always tczyx")
+            self.outputAxisOrderEdit.setToolTip("OME-Zarr axes are always tczyx")
         else:
             self.axisOrderCheckbox.setEnabled(True)
             self.outputAxisOrderEdit.setEnabled(True)
