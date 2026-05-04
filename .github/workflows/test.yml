@@ -18,13 +18,13 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           activate-environment: ilastik-env
+          auto-activate: true
           auto-update-conda: true
           environment-file: .github/workflows/etc/ilastik-env.yaml
           miniforge-version: latest
-          conda-solver: libmamba
           conda-remove-defaults: true
       - name: linux test
         if: matrix.os == 'ubuntu-latest'
@@ -63,21 +63,29 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
-          activate-environment: build-env
-          environment-file: .github/workflows/etc/build-env.yaml
+          activate-environment: ""
+          auto-activate: true
           auto-update-conda: true
           miniforge-version: latest
-          conda-solver: libmamba
           conda-remove-defaults: true
+          conda-build-version: "*"
+      - name: install build dependencies (win)
+        if: matrix.os == 'windows-latest'
+        shell: cmd /C CALL {0}
+        run: conda install -c conda-forge setuptools_scm
+      - name: install build dependencies (macos, ubuntu)
+        if: matrix.os != 'windows-latest'
+        shell: bash -el {0}
+        run: conda install -c conda-forge setuptools_scm
       - name: linux conda build test
         if: matrix.os == 'ubuntu-latest'
-        shell: bash -l {0}
+        shell: bash -el {0}
         run: xvfb-run --server-args="-screen 0 1024x768x24" conda build --python=${{ matrix.python_version }} -c conda-forge conda-recipe
       - name: osx test
         if: startsWith(matrix.os, 'macos')
-        shell: bash -l {0}
+        shell: bash -el {0}
         run: conda build -c conda-forge --python=${{ matrix.python_version }} conda-recipe
       - name: windows conda-build
         if: matrix.os == 'windows-latest'
