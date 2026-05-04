@@ -1,0 +1,25 @@
+channels:
+  - conda-forge
+dependencies:
+  - python 3.11
+  - numpy 1.*
+  - cachetools
+  - future
+  - h5py
+  - pip
+  - platformdirs
+  - pyopengl
+  - pyqt 5.15.*
+  - pyqtgraph
+  - pytest
+  - pytest-qt
+  - qimage2ndarray
+  - qtpy
+  - typing_extensions
+  - vigra
+  - xarray
+variables:
+  # Slightly different behavior for developers:
+  # volumina.is_in_development_env() checks this flag and returns True if set
+  # used in TileProvider._fetch_layer_tile
+  ILASTIK_DEVELOPMENT_ENV: "1"

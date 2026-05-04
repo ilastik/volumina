@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -21,6 +19,8 @@ from __future__ import absolute_import
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
+from functools import lru_cache
+import os
 import sys
 import logging
 
@@ -48,6 +48,16 @@ if not has_handler(volumina_logger):
 
     volumina_logger.setLevel(logging.INFO)
     volumina_logging_handler.setLevel(logging.INFO)
+
+
+_IS_DEVELOPMENT_ENV = os.environ.get("ILASTIK_DEVELOPMENT_ENV", None)
+
+
+def is_in_development_env() -> bool:
+    if _IS_DEVELOPMENT_ENV:
+        return True
+
+    return False
 
 
 from . import api
