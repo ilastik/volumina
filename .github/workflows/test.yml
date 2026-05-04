@@ -74,13 +74,15 @@ jobs:
           conda-solver: libmamba
           conda-remove-defaults: true
       - name: test-is-dev-mode
+        if: matrix.os != 'windows-latest'
+        shell: bash -l {0}
         run: python -c "import sys; import os; sys.exit(0) if os.environ.get('ILASTIK_DEVELOPMENT_ENV', None) else sys.exit(42)"
       - name: linux test
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
         run: |
           pip install -e .
-          xvfb-run --server-args="-screen 0 1024x768x24" pytest --cov-report=xml --cov=volumina
+          xvfb-run --server-args="-screen 0 1024x768x24" pytest
       - name: osx test
         if: matrix.os == 'macos-latest'
         shell: bash -l {0}
