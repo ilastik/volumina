@@ -44,11 +44,13 @@ from qtpy.QtWidgets import (
 from volumina.utility import ShortcutManager
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
-TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0; }}"
+SPINBOX_CSS = "QSpinBox {{ color: {0}; background-color: {1}; border:0; }}"
+SPINBOX_CSS_BOLD = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0; }}"
 
 # Size multipliers relative to _em(). Tune these to adjust the overall
 # scale of the HUD without touching any other numbers.
 BUTTON_SIZE = 1.2  # icon button width and height
+SPACING_TN = 0.1  # tiny spacing between axis label and slice selector
 SPACING_SM = 0.2  # tight spacing between related elements
 SPACING_MD = 0.5  # spacing between groups
 SPACING_LG = 0.8  # spacing between major sections
@@ -73,7 +75,7 @@ def _phys(logical):
     return round(logical * _dpr())
 
 
-def _load_icon(filename, backgroundColor, width, height):
+def _load_icon(filename, width, height):
     dpr = _dpr()
 
     foreground = QPixmap()
@@ -82,7 +84,7 @@ def _load_icon(filename, backgroundColor, width, height):
 
     pixmap = QPixmap(foreground.size())
     pixmap.setDevicePixelRatio(dpr)
-    pixmap.fill(backgroundColor)
+    pixmap.fill(Qt.transparent)
 
     painter = QPainter()
     painter.begin(pixmap)
@@ -96,6 +98,18 @@ def _load_icon(filename, backgroundColor, width, height):
     )
     pixmap.setDevicePixelRatio(dpr)
     return pixmap
+
+
+class FilledFrame(QFrame):
+    def __init__(self, color, parent=None):
+        super().__init__(parent)
+        self._color = color
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), self._color)
+        super().paintEvent(event)
+        painter.end()
 
 
 # TODO: replace with QPushButton. in __init__(), read icon and give
@@ -119,6 +133,25 @@ class LabelButtons(QLabel):
         self.pixmapWidth = width
         self.pixmapHeight = height
 
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), self.backgroundColor)
+
+        pixmap = self.pixmap()
+        if pixmap and not pixmap.isNull():
+            # Center in physical pixels to avoid DPR rounding drift
+            dpr = _dpr()
+            pw = pixmap.width()  # physical pixels
+            ph = pixmap.height()
+            ww = int(self.width() * dpr)  # widget width in physical pixels
+            wh = int(self.height() * dpr)
+            x = (ww - pw) / (2 * dpr)
+            y = (wh - ph) / (2 * dpr)
+            painter.drawPixmap(QPointF(x, y), pixmap)
+
+        # Skip QLabel's own pixmap drawing
+        QFrame.paintEvent(self, event)
+
     # values: (icon path, tooltip)
     icons = {
         "export": (":icons/icons/export.png", "Export Current Composite View"),
@@ -140,13 +173,13 @@ class LabelButtons(QLabel):
         self.buttonStyle = style
         iconpath, tooltip = self.icons[style]
         self.setToolTip(tooltip)
-        pixmap = _load_icon(iconpath, self.backgroundColor, self.pixmapWidth, self.pixmapHeight)
+        pixmap = _load_icon(iconpath, self.pixmapWidth, self.pixmapHeight)
         self.setPixmap(pixmap)
         self._orig_pixmap = pixmap
 
         if style == "swap-axes":
             iconpath, _ = self.icons["swap-axes-swapped"]
-            self._pixmap_swapped = _load_icon(iconpath, self.backgroundColor, self.pixmapWidth, self.pixmapHeight)
+            self._pixmap_swapped = _load_icon(iconpath, self.pixmapWidth, self.pixmapHeight)
 
     def mousePressEvent(self, event):
         self.clicked.emit()
@@ -181,7 +214,7 @@ class LabelButtons(QLabel):
 class SpinBoxImageView(QHBoxLayout):
     valueChanged = Signal(int)
 
-    def __init__(self, parentView, parent, backgroundColor, foregroundColor, value, height, fontSize):
+    def __init__(self, parentView, parent, backgroundColor, foregroundColor, value, height):
         QHBoxLayout.__init__(self)
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
@@ -215,7 +248,7 @@ class SpinBoxImageView(QHBoxLayout):
     def do_draw(self):
         r, g, b, a = self.foregroundColor.getRgb()
         rgb = "rgb({0},{1},{2})".format(r, g, b)
-        sheet = TEMPLATE.format(rgb, self.backgroundColor.name())
+        sheet = SPINBOX_CSS.format(rgb, self.backgroundColor.name())
         self.spinBox.setStyleSheet(sheet)
 
     def spinBoxValueChanged(self, value):
@@ -271,9 +304,6 @@ class ZoomLevelIndicator(QLabel):
         self.setFrameShadow(QFrame.Raised)
         self.setText(" 100 %")
         self.setToolTip("Zoom Level")
-        font = self.font()
-        font.setBold(True)
-        self.setFont(font)
 
     def updateLevel(self, level):
         level = int(level * 100)
@@ -331,7 +361,7 @@ class ImageView2DHud(QWidget):
 
         self.axisLabel = self.createAxisLabel()
         self.sliceSelector = SpinBoxImageView(
-            self.parent(), self, backgroundColor, foregroundColor, value, self.labelsheight, None
+            self.parent(), self, backgroundColor, foregroundColor, value, self.labelsheight
         )
 
         self.buttons["slice"] = self.sliceSelector
@@ -341,10 +371,10 @@ class ImageView2DHud(QWidget):
         leftHudLayout.setContentsMargins(0, 0, 0, 0)
         leftHudLayout.setSpacing(0)
         leftHudLayout.addWidget(self.axisLabel)
-        leftHudLayout.addSpacing(int(_em() * SPACING_SM))
+        leftHudLayout.addSpacing(int(_em() * SPACING_TN))
         leftHudLayout.addLayout(self.sliceSelector)
 
-        leftHudFrame = QFrame()
+        leftHudFrame = FilledFrame(backgroundColor)
         leftHudFrame.setLayout(leftHudLayout)
         setupFrameStyle(leftHudFrame)
         self.leftHudFrame = leftHudFrame
@@ -488,13 +518,15 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     )
     pixmap.setDevicePixelRatio(dpr)
     label.setPixmap(pixmap)
+    label.setFixedSize(target, target)
+    label.setAlignment(Qt.AlignCenter)
 
     spinbox = DelayedSpinBox(750)
     spinbox.setAlignment(Qt.AlignCenter)
     spinbox.setToolTip("{0} Spin Box".format(name))
     spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
     spinbox.setMaximumHeight(target)
-    sheet = TEMPLATE.format(foregroundColor.name(), backgroundColor.name())
+    sheet = SPINBOX_CSS_BOLD.format(foregroundColor.name(), backgroundColor.name())
     spinbox.setStyleSheet(sheet)
     return label, spinbox
 
