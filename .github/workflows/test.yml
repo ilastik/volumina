@@ -53,6 +53,50 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+
+  test-w-dev-env:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: dev-env
+          auto-update-conda: true
+          environment-file: environment-dev.yaml
+          miniforge-version: latest
+          conda-solver: libmamba
+          conda-remove-defaults: true
+      - name: test-is-dev-mode
+        if: matrix.os != 'windows-latest'
+        shell: bash -l {0}
+        run: python -c "import sys; import os; sys.exit(0) if os.environ.get('ILASTIK_DEVELOPMENT_ENV', None) else sys.exit(42)"
+      - name: linux test
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash -l {0}
+        run: |
+          pip install -e .
+          xvfb-run --server-args="-screen 0 1024x768x24" pytest
+      - name: osx test
+        if: matrix.os == 'macos-latest'
+        shell: bash -l {0}
+        run: |
+          pip install -e .
+          pytest
+      - name: windows test
+        if: matrix.os == 'windows-latest'
+        shell: cmd /C CALL {0}
+        # auto activation of env does not seem to work on win
+        run: >-
+          pip install -e . && pytest
+
+
   test-w-conda-recipe:
     strategy:
       fail-fast: false

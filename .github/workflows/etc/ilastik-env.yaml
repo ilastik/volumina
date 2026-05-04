@@ -1,3 +1,4 @@
+name: ilastik-env
 channels:
   - conda-forge
   - ilastik-forge

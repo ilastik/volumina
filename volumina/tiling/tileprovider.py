@@ -35,6 +35,7 @@ from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.pixelpipeline.interface import IndeterminateRequestError
 from volumina.pixelpipeline.slicesources import StackId
 from volumina.utility import PrioritizedThreadPoolExecutor
+from volumina import is_in_development_env
 
 from .cache import TilesCache
 from .tiling import Tiling
@@ -458,8 +459,13 @@ class TileProvider(QObject):
 
                 if stack_id == self._current_stack_id and cache is self._cache:
                     self.sceneRectChanged.emit(tile_rect)
-        except BaseException:
-            raise
+        except BaseException as e:
+            if is_in_development_env():
+                raise
+            else:
+                # hide exceptions that seem to be the result of timing issues and (so far)
+                # don't seem to affect computations/results
+                logger.error(f"Error fetching tile:\n{e}", exc_info=True)
 
     def _onLayerDirty(self, dirtyImgSrc, dataRect):
         """
