@@ -29,6 +29,7 @@ from qtpy.QtCore import QCoreApplication, QEvent, QPointF, QSize, Qt, Signal
 from qtpy.QtGui import QBrush, QColor, QFont, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QTransform
 from qtpy.QtWidgets import (
     QAbstractSpinBox,
+    QApplication,
     QCheckBox,
     QFrame,
     QHBoxLayout,
@@ -43,22 +44,72 @@ from qtpy.QtWidgets import (
 from volumina.utility import ShortcutManager
 from volumina.widgets.delayedSpinBox import DelayedSpinBox
 
-TEMPLATE = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0;}}"
+SPINBOX_CSS = "QSpinBox {{ color: {0}; background-color: {1}; border:0; }}"
+SPINBOX_CSS_BOLD = "QSpinBox {{ color: {0}; font: bold; background-color: {1}; border:0; }}"
+
+# Size multipliers relative to _em(). Tune these to adjust the overall
+# scale of the HUD without touching any other numbers.
+BUTTON_SIZE = 1.2  # icon button width and height
+SPACING_TN = 0.1  # tiny spacing between axis label and slice selector
+SPACING_SM = 0.2  # tight spacing between related elements
+SPACING_MD = 0.5  # spacing between groups
+SPACING_LG = 0.8  # spacing between major sections
+SLIDER_MIN = 0.6  # minimum width of the time slider (in em units)
+SLIDER_MAX = 13.0  # maximum width of the time slider (in em units)
+INDICATOR_MAX = 13.0  # maximum width of the busy indicator (in em units)
 
 
-def _load_icon(filename, backgroundColor, width, height):
+def _em():
+    """Base UI unit.
+    Already accounts for DPI and the user's configured font size,
+    so all other sizing should be expressed as multiples of this."""
+    return QApplication.instance().fontMetrics().ascent()
+
+
+def _dpr():
+    return QApplication.instance().devicePixelRatio()
+
+
+def _phys(logical):
+    """Convert a logical pixel value to physical pixels on this device."""
+    return round(logical * _dpr())
+
+
+def _load_icon(filename, width, height):
+    dpr = _dpr()
+
     foreground = QPixmap()
     foreground.load(filename)
+    foreground.setDevicePixelRatio(dpr)
+
     pixmap = QPixmap(foreground.size())
-    pixmap.fill(backgroundColor)
+    pixmap.setDevicePixelRatio(dpr)
+    pixmap.fill(Qt.transparent)
 
     painter = QPainter()
     painter.begin(pixmap)
     painter.drawPixmap(QPointF(0, 0), foreground)
     painter.end()
 
-    pixmap = pixmap.scaled(QSize(width, height), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    pixmap = pixmap.scaled(
+        QSize(_phys(width), _phys(height)),
+        Qt.KeepAspectRatio,
+        Qt.SmoothTransformation,
+    )
+    pixmap.setDevicePixelRatio(dpr)
     return pixmap
+
+
+class FilledFrame(QFrame):
+    def __init__(self, color, parent=None):
+        super().__init__(parent)
+        self._color = color
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), self._color)
+        super().paintEvent(event)
+        painter.end()
 
 
 # TODO: replace with QPushButton. in __init__(), read icon and give
@@ -82,6 +133,25 @@ class LabelButtons(QLabel):
         self.pixmapWidth = width
         self.pixmapHeight = height
 
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), self.backgroundColor)
+
+        pixmap = self.pixmap()
+        if pixmap and not pixmap.isNull():
+            # Center in physical pixels to avoid DPR rounding drift
+            dpr = _dpr()
+            pw = pixmap.width()  # physical pixels
+            ph = pixmap.height()
+            ww = int(self.width() * dpr)  # widget width in physical pixels
+            wh = int(self.height() * dpr)
+            x = (ww - pw) / (2 * dpr)
+            y = (wh - ph) / (2 * dpr)
+            painter.drawPixmap(QPointF(x, y), pixmap)
+
+        # Skip QLabel's own pixmap drawing
+        QFrame.paintEvent(self, event)
+
     # values: (icon path, tooltip)
     icons = {
         "export": (":icons/icons/export.png", "Export Current Composite View"),
@@ -103,13 +173,13 @@ class LabelButtons(QLabel):
         self.buttonStyle = style
         iconpath, tooltip = self.icons[style]
         self.setToolTip(tooltip)
-        pixmap = _load_icon(iconpath, self.backgroundColor, self.pixmapWidth, self.pixmapHeight)
+        pixmap = _load_icon(iconpath, self.pixmapWidth, self.pixmapHeight)
         self.setPixmap(pixmap)
         self._orig_pixmap = pixmap
 
         if style == "swap-axes":
             iconpath, _ = self.icons["swap-axes-swapped"]
-            self._pixmap_swapped = _load_icon(iconpath, self.backgroundColor, self.pixmapWidth, self.pixmapHeight)
+            self._pixmap_swapped = _load_icon(iconpath, self.pixmapWidth, self.pixmapHeight)
 
     def mousePressEvent(self, event):
         self.clicked.emit()
@@ -144,7 +214,7 @@ class LabelButtons(QLabel):
 class SpinBoxImageView(QHBoxLayout):
     valueChanged = Signal(int)
 
-    def __init__(self, parentView, parent, backgroundColor, foregroundColor, value, height, fontSize):
+    def __init__(self, parentView, parent, backgroundColor, foregroundColor, value, height):
         QHBoxLayout.__init__(self)
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
@@ -173,15 +243,12 @@ class SpinBoxImageView(QHBoxLayout):
         self.spinBox.setMaximum(value)
         self.spinBox.setMaximumHeight(height)
         self.spinBox.setSuffix("/" + str(value))
-        font = self.spinBox.font()
-        font.setPixelSize(fontSize)
-        self.spinBox.setFont(font)
         self.do_draw()
 
     def do_draw(self):
         r, g, b, a = self.foregroundColor.getRgb()
         rgb = "rgb({0},{1},{2})".format(r, g, b)
-        sheet = TEMPLATE.format(rgb, self.backgroundColor.name())
+        sheet = SPINBOX_CSS.format(rgb, self.backgroundColor.name())
         self.spinBox.setStyleSheet(sheet)
 
     def spinBoxValueChanged(self, value):
@@ -218,26 +285,23 @@ class SpinBoxImageView(QHBoxLayout):
 
 
 def setupFrameStyle(frame):
-    # Use this function to add a consistent frame style to all HUD
-    # elements
+    # Use this function to add a consistent frame style to all HUD elements
     frame.setFrameShape(QFrame.Box)
     frame.setFrameShadow(QFrame.Raised)
     frame.setLineWidth(2)
 
 
 class ZoomLevelIndicator(QLabel):
-    def __init__(self, parent, backgroundColor, foregroundColor, font, height):
+    def __init__(self, parent, backgroundColor, foregroundColor, height):
         QLabel.__init__(self, parent)
         p = self.palette()
         p.setColor(self.backgroundRole(), backgroundColor)
         p.setColor(self.foregroundRole(), foregroundColor)
         self.setPalette(p)
-        self.setFont(font)
         self.setAutoFillBackground(True)
         self.setFixedHeight(height)
         self.setFrameShape(QFrame.Box)
         self.setFrameShadow(QFrame.Raised)
-        # self.setLineWidth( 2 )
         self.setText(" 100 %")
         self.setToolTip("Zoom Level")
 
@@ -262,7 +326,7 @@ class ImageView2DHud(QWidget):
 
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
-        self.layout.setContentsMargins(0, 4, 0, 0)
+        self.layout.setContentsMargins(0, int(_em() * SPACING_SM), 0, 0)
         self.layout.setSpacing(0)
 
         self.buttons = {}
@@ -284,42 +348,39 @@ class ImageView2DHud(QWidget):
         button.clicked.connect(handler)
         setupFrameStyle(button)
         self.layout.addWidget(button)
-        self.layout.addSpacing(4)
+        self.layout.addSpacing(int(_em() * SPACING_SM))
 
     def createImageView2DHud(self, axis, value, backgroundColor, foregroundColor):
         self.axis = axis
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
-        self.labelsWidth = 20
-        self.labelsheight = 20
+        self.labelsWidth = int(_em() * BUTTON_SIZE)
+        self.labelsheight = int(_em() * BUTTON_SIZE)
 
-        self.layout.addSpacing(4)
-        fontsize = 12
+        self.layout.addSpacing(int(_em() * SPACING_SM))
 
         self.axisLabel = self.createAxisLabel()
         self.sliceSelector = SpinBoxImageView(
-            self.parent(), self, backgroundColor, foregroundColor, value, self.labelsheight, fontsize
+            self.parent(), self, backgroundColor, foregroundColor, value, self.labelsheight
         )
 
         self.buttons["slice"] = self.sliceSelector
 
-        # Add left-hand items into a sub-layout so we can draw a frame
-        # around them
+        # Add left-hand items into a sub-layout so we can draw a frame around them
         leftHudLayout = QHBoxLayout()
         leftHudLayout.setContentsMargins(0, 0, 0, 0)
         leftHudLayout.setSpacing(0)
         leftHudLayout.addWidget(self.axisLabel)
-        leftHudLayout.addSpacing(1)
+        leftHudLayout.addSpacing(int(_em() * SPACING_TN))
         leftHudLayout.addLayout(self.sliceSelector)
 
-        leftHudFrame = QFrame()
+        leftHudFrame = FilledFrame(backgroundColor)
         leftHudFrame.setLayout(leftHudLayout)
         setupFrameStyle(leftHudFrame)
         self.leftHudFrame = leftHudFrame
 
         self.layout.addWidget(leftHudFrame)
-
-        self.layout.addSpacing(12)
+        self.layout.addSpacing(int(_em() * SPACING_LG))
 
         for name, handler in [
             ("rotate-left", self.on_rotLeftButton),
@@ -334,13 +395,12 @@ class ImageView2DHud(QWidget):
             self.parent(),
             backgroundColor,
             foregroundColor,
-            self.sliceSelector.spinBox.font(),
             self.buttons["rotate-left"].sizeHint().height(),
         )
 
         self.buttons["zoomlevel"] = self.zoomLevelIndicator
         self.layout.addWidget(self.zoomLevelIndicator)
-        self.layout.addSpacing(4)
+        self.layout.addSpacing(int(_em() * SPACING_SM))
 
         for name, handler in [
             ("export", self.on_exportButton),
@@ -396,21 +456,29 @@ class ImageView2DHud(QWidget):
         return axisLabel
 
     def createAxisLabelPixmap(self):
-        pixmap = QPixmap(250, 250)
+        dpr = _dpr()
+        canvas = 250
+        target = int(_em() * BUTTON_SIZE)
+        pixmap = QPixmap(canvas, canvas)
         pixmap.fill(self.backgroundColor)
         painter = QPainter()
         painter.begin(pixmap)
         font = QFont()
         font.setBold(True)
-        font.setPixelSize(250 - 30)
+        font.setPixelSize(canvas - 30)
         path = QPainterPath()
-        path.addText(QPointF(50, 250 - 50), font, self.axis)
+        path.addText(QPointF(50, canvas - 50), font, self.axis)
         brush = QBrush(self.foregroundColor)
         painter.setBrush(brush)
         painter.drawPath(path)
         painter.setFont(font)
         painter.end()
-        pixmap = pixmap.scaled(QSize(self.labelsWidth, self.labelsheight), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = pixmap.scaled(
+            QSize(_phys(target), _phys(target)),
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+        pixmap.setDevicePixelRatio(dpr)
         return pixmap
 
     def setAxes(self, rotation, swapped):
@@ -419,10 +487,14 @@ class ImageView2DHud(QWidget):
 
 
 def _get_pos_widget(name, backgroundColor, foregroundColor):
+    dpr = _dpr()
+    target = int(_em() * BUTTON_SIZE)
+
     label = QLabel()
     label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
-    pixmap = QPixmap(25 * 10, 25 * 10)
+    canvas = 250
+    pixmap = QPixmap(canvas, canvas)
     pixmap.fill(backgroundColor)
     painter = QPainter()
     painter.begin(pixmap)
@@ -431,26 +503,30 @@ def _get_pos_widget(name, backgroundColor, foregroundColor):
     painter.setRenderHint(QPainter.Antialiasing)
     font = QFont()
     font.setBold(True)
-    font.setPixelSize(25 * 10 - 30)
+    font.setPixelSize(canvas - 30)
     path = QPainterPath()
-    path.addText(QPointF(50, 25 * 10 - 50), font, name)
+    path.addText(QPointF(50, canvas - 50), font, name)
     brush = QBrush(foregroundColor)
     painter.setBrush(brush)
     painter.drawPath(path)
     painter.setFont(font)
     painter.end()
-    pixmap = pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    pixmap = pixmap.scaled(
+        QSize(_phys(target), _phys(target)),
+        Qt.KeepAspectRatio,
+        Qt.SmoothTransformation,
+    )
+    pixmap.setDevicePixelRatio(dpr)
     label.setPixmap(pixmap)
+    label.setFixedSize(target, target)
+    label.setAlignment(Qt.AlignCenter)
 
     spinbox = DelayedSpinBox(750)
     spinbox.setAlignment(Qt.AlignCenter)
     spinbox.setToolTip("{0} Spin Box".format(name))
     spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
-    spinbox.setMaximumHeight(20)
-    font = spinbox.font()
-    font.setPixelSize(14)
-    spinbox.setFont(font)
-    sheet = TEMPLATE.format(foregroundColor.name(), backgroundColor.name())
+    spinbox.setMaximumHeight(target)
+    sheet = SPINBOX_CSS_BOLD.format(foregroundColor.name(), backgroundColor.name())
     spinbox.setStyleSheet(sheet)
     return label, spinbox
 
@@ -460,9 +536,8 @@ class QuadStatusBar(QHBoxLayout):
 
     def __init__(self, parent=None):
         QHBoxLayout.__init__(self, parent)
-        self.setContentsMargins(0, 4, 0, 0)
+        self.setContentsMargins(0, int(_em() * SPACING_SM), 0, 0)
         self.setSpacing(0)
-        self.timeControlFontSize = 12
 
     def showXYCoordinates(self):
         self.zLabel.setHidden(True)
@@ -508,7 +583,7 @@ class QuadStatusBar(QHBoxLayout):
         self.addWidget(self.zLabel)
         self.addWidget(self.zSpinBox)
 
-        self.addSpacing(10)
+        self.addSpacing(int(_em() * SPACING_MD))
 
         self.crosshairsCheckbox = QCheckBox()
         self.crosshairsCheckbox.setChecked(False)
@@ -516,10 +591,10 @@ class QuadStatusBar(QHBoxLayout):
         self.crosshairsCheckbox.setText("Crosshairs")
         self.addWidget(self.crosshairsCheckbox)
 
-        self.addSpacing(10)
+        self.addSpacing(int(_em() * SPACING_MD))
 
         self.busyIndicator = QProgressBar()
-        self.busyIndicator.setMaximumWidth(200)
+        self.busyIndicator.setMaximumWidth(int(_em() * INDICATOR_MAX))
         self.busyIndicator.setMaximum(0)
         self.busyIndicator.setMinimum(0)
         self.busyIndicator.setVisible(False)
@@ -529,7 +604,7 @@ class QuadStatusBar(QHBoxLayout):
 
         self.addStretch()
 
-        self.addSpacing(20)
+        self.addSpacing(int(_em() * SPACING_LG))
 
         self.timeSpinBox = DelayedSpinBox(750)
 
@@ -539,17 +614,15 @@ class QuadStatusBar(QHBoxLayout):
         self.timeStartButton.setIcon(QIcon(icons_dir + "/skip-start.png"))
         self.addWidget(self.timeStartButton)
         self.timeStartButton.clicked.connect(self._onTimeStartButtonClicked)
-        # self.timeStartButton.setFixedWidth(4*self.timeControlFontSize)
 
         self.timePreviousButton = QToolButton()
         self.timePreviousButton.setIcon(QIcon(icons_dir + "/play-reverse.png"))
         self.addWidget(self.timePreviousButton)
         self.timePreviousButton.clicked.connect(self._onTimePreviousButtonClicked)
-        # self.timePreviousButton.setFixedWidth(4*self.timeControlFontSize)
 
         self.timeSlider = QSlider(Qt.Horizontal)
-        self.timeSlider.setMinimumWidth(10)
-        self.timeSlider.setMaximumWidth(200)
+        self.timeSlider.setMinimumWidth(int(_em() * SLIDER_MIN))
+        self.timeSlider.setMaximumWidth(int(_em() * SLIDER_MAX))
         self.setToolTipTimeSlider()
         self.addWidget(self.timeSlider)
         self.timeSlider.valueChanged.connect(self._onTimeSliderChanged)
@@ -558,11 +631,9 @@ class QuadStatusBar(QHBoxLayout):
         self.timeNextButton.setIcon(QIcon(icons_dir + "/play.png"))
         self.addWidget(self.timeNextButton)
         self.timeNextButton.clicked.connect(self._onTimeNextButtonClicked)
-        # self.timeNextButton.setFixedWidth(4*self.timeControlFontSize)
 
         self.timeEndButton = QToolButton()
         self.timeEndButton.setIcon(QIcon(icons_dir + "/skip-end.png"))
-        # self.timeEndButton.setFixedWidth(4*self.timeControlFontSize)
 
         self.setToolTipTimeButtons()
         self.addWidget(self.timeEndButton)
@@ -570,14 +641,6 @@ class QuadStatusBar(QHBoxLayout):
 
         self.timeLabel = QLabel("       Time:")
         self.addWidget(self.timeLabel)
-
-        timeControlFont = self.timeSpinBox.font()
-        if self.timeControlFontSize > timeControlFont.pointSize():
-            timeControlFont.setPixelSize(2 * self.timeControlFontSize)
-            self.timeStartButton.setFont(timeControlFont)
-            self.timeEndButton.setFont(timeControlFont)
-            self.timeLabel.setFont(timeControlFont)
-            self.timeSpinBox.setFont(timeControlFont)
 
         self.addWidget(self.timeSpinBox)
         self.timeSpinBox.delayedValueChanged.connect(self._onTimeSpinBoxChanged)
