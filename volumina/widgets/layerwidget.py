@@ -164,21 +164,19 @@ class ToggleEye(QToolButton):
         self.setToolButtonStyle(Qt.ToolButtonIconOnly)
         icon_size = round(line_height() * self._EYE_SIZE)
         self.setIconSize(QSize(icon_size, icon_size))
-        self.setStyleSheet(
-            """
-            QToolButton { background: transparent; padding: 1px; }
-            QToolButton:pressed { background: transparent; }
-            """
-        )
 
-        self.toggled.connect(self._update_icon)
-        self._update_icon(self.isChecked())
+        self.toggled.connect(self.activeChanged)
 
         self.setActive = self.setChecked  # legacy compatibility
 
-    def _update_icon(self, visible):
-        self.setIcon(self._eye_open_icon if visible else self._eye_closed_icon)
-        self.activeChanged.emit(visible)
+    def paintEvent(self, event):
+        # Ubuntu ignored styleSheet with `background: transparent`, so custom paintEvent it is.
+        painter = QPainter(self)
+        icon = self._eye_open_icon if self.isChecked() else self._eye_closed_icon
+        pixmap = icon.pixmap(self.iconSize())
+        x = (self.width() - pixmap.width()) // 2
+        y = (self.height() - pixmap.height()) // 2
+        painter.drawPixmap(x, y, pixmap)
 
 
 class LayerItemWidget(QWidget):
