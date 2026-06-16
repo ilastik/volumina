@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 ###############################################################################
 #   volumina: volume slicing and editing library
 #
@@ -32,6 +30,7 @@ from functools import partial
 from typing import Callable
 from pathlib import Path
 
+from volumina.layer import NormalizationType
 from volumina.widgets.thresholdingWidget import ThresholdingWidget
 
 import logging
@@ -61,7 +60,10 @@ class LayerDialog(QDialog):
         thresholding_widget.valueChanged.connect(handleRangeChanged)
 
         def handleAutoRangeChanged(state):
-            self.layer.set_normalize(datasourceIdx, None if state == Qt.Checked else thresholding_widget.getRange())
+            self.layer.set_normalize(
+                datasourceIdx,
+                NormalizationType.AUTO_NORMALIZE if state == Qt.Checked else thresholding_widget.getRange(),
+            )
             thresholding_widget.setEnabled(state == Qt.Unchecked)
 
         autorange_checkbox.stateChanged.connect(handleAutoRangeChanged)
