@@ -1,15 +1,15 @@
 import numpy as np
 from qtpy.QtCore import QObject, Signal
 
-from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
+from volumina.pixelpipeline.interface import DataRequestABC, DataSourceABC, Slice5D
 from volumina.slicingtools import is_pure_slicing, index2slice
 
 
-class ArrayRequest(RequestABC):
-    def __init__(self, array, slicing):
+class ArrayRequest(DataRequestABC):
+    def __init__(self, array, slicing: Slice5D):
         self._array = array
-        self._slicing = slicing
         self._result = None
+        self._slicing = slicing
 
     def wait(self):
         if self._result is None:
@@ -43,7 +43,7 @@ class ArraySource(QObject, DataSourceABC):
             return self._array.dtype
         return self._array.dtype.type
 
-    def request(self, slicing):
+    def request(self, slicing: Slice5D):
         if not is_pure_slicing(slicing):
             raise Exception("ArraySource: slicing is not pure")
         assert len(slicing) == len(
@@ -119,7 +119,7 @@ class RelabelingArraySource(ArraySource):
         if setDirty:
             self.setDirty(5 * (slice(None),))
 
-    def request(self, slicing):
+    def request(self, slicing: Slice5D):
         if not is_pure_slicing(slicing):
             raise Exception("ArraySource: slicing is not pure")
         assert len(slicing) == len(

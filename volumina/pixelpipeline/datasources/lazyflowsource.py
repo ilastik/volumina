@@ -7,10 +7,16 @@ import numpy as np
 from qtpy.QtCore import QObject, Signal
 from future.utils import raise_with_traceback
 from lazyflow.graph import Slot
+from lazyflow.operator import Operator
 from lazyflow.operators import opReorderAxes
 from lazyflow.roi import sliceToRoi, roiToSlice
 
-from volumina.pixelpipeline.interface import DataSourceABC, RequestABC, IndeterminateRequestError
+from volumina.pixelpipeline.interface import (
+    DataRequestABC,
+    DataSourceABC,
+    IndeterminateRequestError,
+    Slice5D,
+)
 from volumina.slicingtools import is_pure_slicing, slicing2shape, make_bounded
 from volumina.config import CONFIG
 
@@ -52,9 +58,9 @@ def translate_lf_exceptions(func):
     return wrapper
 
 
-class LazyflowRequest(RequestABC):
+class LazyflowRequest(DataRequestABC):
     @translate_lf_exceptions
-    def __init__(self, op, slicing, prio, objectName="Unnamed LazyflowRequest"):
+    def __init__(self, op: Operator, slicing: Slice5D, prio: int, objectName: str = "Unnamed LazyflowRequest"):
         shape = op.Output.meta.shape
         if shape is not None:
             slicing = make_bounded(slicing, shape)

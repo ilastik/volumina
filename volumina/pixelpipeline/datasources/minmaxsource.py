@@ -1,16 +1,24 @@
 from functools import partial
+from typing import Any, Callable
 
 import numpy as np
+from numpy import typing as npt
 from qtpy.QtCore import QObject, Signal, QTimer
 
-from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
+from volumina.pixelpipeline.interface import DataRequestABC, DataSourceABC, Slice5D
 from volumina.slicingtools import sl
 
 
-class MinMaxUpdateRequest(RequestABC):
-    def __init__(self, rawRequest, update_func):
+class MinMaxUpdateRequest(DataRequestABC):
+    def __init__(
+        self,
+        rawRequest: DataRequestABC,
+        update_func: Callable[[npt.NDArray[np.number[Any]]], None],
+        slicing: Slice5D,
+    ):
         self._rawRequest = rawRequest
         self._update_func = update_func
+        self._slicing = slicing
         self._result = None
 
     def wait(self):
@@ -38,7 +46,7 @@ class MinMaxSource(QObject, DataSourceABC):
         Signal()
     )  # Internal use only.  Allows non-main threads to start the delayedDirtySignal timer.
 
-    def __init__(self, rawSource, parent=None):
+    def __init__(self, rawSource: DataSourceABC, parent=None):
         """
         rawSource: The original datasource whose data will be normalized
         """
@@ -55,7 +63,7 @@ class MinMaxSource(QObject, DataSourceABC):
         self._delayedBoundsChange.connect(self._delayedDirtySignal.start)
 
     def reset_bounds(self):
-        self._bounds = [1e9, -1e9]
+        self._bounds: tuple[int | float, int | float] = (1e9, -1e9)
 
     @property
     def numberOfChannels(self):
@@ -74,9 +82,9 @@ class MinMaxSource(QObject, DataSourceABC):
     def dtype(self):
         return self._rawSource.dtype()
 
-    def request(self, slicing):
+    def request(self, slicing: Slice5D):
         rawRequest = self._rawSource.request(slicing)
-        return MinMaxUpdateRequest(rawRequest, self._getMinMax)
+        return MinMaxUpdateRequest(rawRequest, self._getMinMax, slicing=slicing)
 
     def setDirty(self, slicing):
         self.isDirty.emit(slicing)
@@ -104,8 +112,7 @@ class MinMaxSource(QObject, DataSourceABC):
             dirty = True
 
         if dirty:
-            self._bounds[0] = dmin
-            self._bounds[1] = dmax
+            self._bounds = (dmin, dmax)
             self.boundsChanged.emit(self._bounds)
 
             # Our min/max have changed, which means we must force the TileProvider to re-request all tiles.
