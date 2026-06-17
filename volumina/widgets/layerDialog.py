@@ -19,19 +19,12 @@
 # This information is also available on the ilastik web site at:
 # 		   http://ilastik.org/license/
 ###############################################################################
-# Python
-import os
-
-# PyQt
 from qtpy import uic
 from qtpy.QtWidgets import QDialog
 from qtpy.QtCore import Qt
-from functools import partial
-from typing import Callable
 from pathlib import Path
-
 from volumina.layer import NormalizationType
-from volumina.widgets.thresholdingWidget import ThresholdingWidget
+from volumina.widgets.thresholdHistogramWidget import ThresholdHistogramWidget, HistogramColormap
 
 import logging
 
@@ -47,28 +40,44 @@ class LayerDialog(QDialog):
         self.setLayername(layer.name)
         self.layer = layer
 
-    def initialize_range_widgets(self, datasourceIdx: int, thresholding_widget: ThresholdingWidget, autorange_checkbox):
-        def handleRangeChanged(a, b):
-            self.layer.set_normalize(datasourceIdx, (a, b))
+    def initialize_range_widgets(
+        self,
+        datasourceIdx: int,
+        thresholding_widget: ThresholdHistogramWidget,
+        autorange_checkbox,
+        colormap=HistogramColormap.GRAY,
+    ):
+        thresholding_widget.setColormap(colormap)
 
-        normalization_range = self.layer.get_datasource_default_range(datasourceIdx)
-        thresholding_widget.setRange(normalization_range[0], normalization_range[1])
+        def handleRangeChangedInUi(a, b):
+            if not self.layer._autoMinMax[datasourceIdx]:
+                self.layer.set_normalize(datasourceIdx, (a, b))
 
-        normalization_value = self.layer.get_datasource_range(datasourceIdx)
-        thresholding_widget.setValue(normalization_value[0], normalization_value[1])
+        def handleLayerRangeChanged():
+            normalization_range_min, normalization_range_max = self.layer.get_datasource_range(datasourceIdx)
+            thresholding_widget.setValue(normalization_range_min, normalization_range_max)
 
-        thresholding_widget.valueChanged.connect(handleRangeChanged)
+        handleLayerRangeChanged()
+        thresholding_widget.valueChanged.connect(handleRangeChangedInUi)
+        self.layer.normalizeChanged.connect(handleLayerRangeChanged)
 
         def handleAutoRangeChanged(state):
             self.layer.set_normalize(
                 datasourceIdx,
-                NormalizationType.AUTO_NORMALIZE if state == Qt.Checked else thresholding_widget.getRange(),
+                NormalizationType.AUTO_NORMALIZE if state == Qt.Checked else thresholding_widget.getValue(),
             )
             thresholding_widget.setEnabled(state == Qt.Unchecked)
 
         autorange_checkbox.stateChanged.connect(handleAutoRangeChanged)
         autorange_state = Qt.Checked if self.layer._autoMinMax[datasourceIdx] else Qt.Unchecked
         autorange_checkbox.setCheckState(autorange_state)
+
+        def update_hist():
+            bins, counts = self.layer.get_datasource_hist(datasourceIdx)
+            thresholding_widget.updatePlot(bins, counts)
+
+        self.layer.histogramChanged.connect(update_hist)
+        update_hist()
 
     def setLayername(self, name: str):
         self._layerLabel.setText(f"<b>{name}</b>")
@@ -82,6 +91,7 @@ class GrayscaleLayerDialog(LayerDialog):
             datasourceIdx=0,
             thresholding_widget=self.grayChannelThresholdingWidget,
             autorange_checkbox=self.grayAutoRange,
+            colormap=HistogramColormap.GRAY,
         )
 
 
@@ -89,20 +99,20 @@ class RGBALayerDialog(LayerDialog):
     def __init__(self, layer, parent=None):
         super().__init__(ui_file_name="rgbaLayerDialog.ui", layer=layer, parent=parent)
 
-        for idx, (t_widget, autorange_checkbox, channel) in enumerate(
+        for idx, (t_widget, autorange_checkbox, channel, colormap) in enumerate(
             [
-                (self.redChannelThresholdingWidget, self.redAutoRange, self.redChannel),
-                (self.greenChannelThresholdingWidget, self.greenAutoRange, self.greenChannel),
-                (self.blueChannelThresholdingWidget, self.blueAutoRange, self.blueChannel),
-                (self.alphaChannelThresholdingWidget, self.alphaAutoRange, self.alphaChannel),
+                (self.redChannelThresholdingWidget, self.redAutoRange, self.redChannel, HistogramColormap.RED),
+                (self.greenChannelThresholdingWidget, self.greenAutoRange, self.greenChannel, HistogramColormap.GREEN),
+                (self.blueChannelThresholdingWidget, self.blueAutoRange, self.blueChannel, HistogramColormap.BLUE),
+                (self.alphaChannelThresholdingWidget, self.alphaAutoRange, self.alphaChannel, HistogramColormap.GRAY),
             ]
         ):
             if layer.datasources[idx] == None:
                 channel.setVisible(False)
                 continue
-            self.initialize_range_widgets(idx, thresholding_widget=t_widget, autorange_checkbox=autorange_checkbox)
-
-        self.resize(self.minimumSize())
+            self.initialize_range_widgets(
+                idx, thresholding_widget=t_widget, autorange_checkbox=autorange_checkbox, colormap=colormap
+            )
 
 
 if __name__ == "__main__":

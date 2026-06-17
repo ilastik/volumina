@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>Dialog</class>
  <widget class="QDialog" name="Dialog">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>417</width>
-    <height>203</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>Grayscale Layer thresholds</string>
   </property>
@@ -20,6 +12,12 @@
       <widget class="QLabel" name="label">
        <property name="text">
         <string>Name:</string>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
       </widget>
      </item>
@@ -47,6 +45,12 @@
    </item>
    <item>
     <widget class="QGroupBox" name="_thresholdsGroup">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>threshold</string>
      </property>
@@ -54,7 +58,7 @@
       <item>
        <widget class="QWidget" name="abc" native="true">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -84,28 +88,16 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item>
-            <widget class="ThresholdingWidget" name="grayChannelThresholdingWidget"/>
+            <widget class="ThresholdHistogramWidget" name="grayChannelThresholdingWidget">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>1</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
           </layout>
-         </item>
-         <item>
-          <widget class="QWidget" name="widget" native="true">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>10</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">background: black</string>
-           </property>
-          </widget>
          </item>
         </layout>
        </widget>
@@ -113,26 +105,13 @@ p, li { white-space: pre-wrap; }
      </layout>
     </widget>
    </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>2</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ThresholdingWidget</class>
+   <class>ThresholdHistogramWidget</class>
    <extends>QWidget</extends>
-   <header>volumina.widgets.thresholdingWidget</header>
+   <header>volumina.widgets.thresholdHistogramWidget</header>
   </customwidget>
  </customwidgets>
  <resources/>

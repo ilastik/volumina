@@ -273,6 +273,7 @@ NormalizationRange = tuple[float | int, float | int] | tuple[Literal[False], Lit
 class NormalizableLayer(Layer):
 
     normalizeChanged = Signal()
+    histogramChanged = Signal()
 
     @property
     def normalize(self):
@@ -314,6 +315,10 @@ class NormalizableLayer(Layer):
             return self._normalize[datasourceIdx]
         return self.get_datasource_default_range(datasourceIdx)
 
+    def get_datasource_hist(self, datasourceIdx: int):
+        bins, counts = self._datasources[datasourceIdx].get_histogram()
+        return bins, numpy.log(counts)
+
     def __init__(
         self,
         datasources: List[DataSourceABC | None],
@@ -350,6 +355,7 @@ class NormalizableLayer(Layer):
             if datasource is not None:
                 self._normalize.append((False, False))
                 self.set_normalize(i, normalize)
+                datasource.histogramChanged.connect(self.histogramChanged)
             else:
                 self._normalize.append((0, 1))
                 self._autoMinMax.append(True)
