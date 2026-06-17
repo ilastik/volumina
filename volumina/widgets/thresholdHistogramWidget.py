@@ -27,6 +27,7 @@ from numpy.typing import NDArray
 from pyqtgraph import ColorMap, HistogramLUTItem, HistogramLUTWidget
 from qtpy.QtCore import QTimer, Signal
 from qtpy.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
+import qtpy.compat
 
 
 class HistogramColormap(Enum):
@@ -60,6 +61,8 @@ class ThresholdHistogramWidget(QWidget):
         self._delay_update_timer.setInterval(self.VALUE_CHANGE_DELAY_MS)
 
         def _update_limits():
+            if not qtpy.compat.isalive(self):
+                return
             if self._last_value is not None:
                 min, max = self._last_value
                 self.valueChanged.emit(min, max)
