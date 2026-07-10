@@ -300,11 +300,8 @@ class VolumeEditorWidget(QWidget):
         self.editor.showDebugPatches = show
 
     def _fitToScreen(self):
-        shape = self.editor.posModel.shape
         for i, v in enumerate(self.editor.imageViews):
-            s = list(copy.copy(shape))
-            del s[i]
-            v.changeViewPort(v.scene().data2scene.mapRect(QRectF(0, 0, *s)))
+            v.fitImage()
 
     def _fitImage(self):
         if self.editor._lastImageViewFocus is not None:
