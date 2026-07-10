@@ -295,3 +295,18 @@ class TestImageViewHelperFunctions:
         assert vp_rect == QRectF(
             center_x - vp_width / zoom / 2, center_y - vp_height / zoom / 2, 20.0 / zoom, 40.0 / zoom
         )
+
+    @pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
+    @pytest.mark.usefixtures("patch_threadpool")
+    def test_setChangeViewPort(self, qtbot):
+        self.image_view.show()
+        qtbot.waitExposed(self.image_view)
+
+        vp_rect = self.image_view.viewportRect()
+        assert vp_rect == QRectF(0.0, 0.0, 120.0, 240.0)
+
+        self.image_view.changeViewPort(QRectF(0.0, 0.0, 60.0, 120.0))
+        vp_rect = self.image_view.viewportRect()
+
+        assert self.image_view._zoomFactor == 2.0
+        assert vp_rect == QRectF(0.0, 0.0, 60.0, 120.0)

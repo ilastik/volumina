@@ -192,7 +192,3 @@ class ImageScene2D_RenderTest(ut.TestCase):
         aimg = self.renderScene(self.scene)
         self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY))
         self.assertTrue(np.all(aimg[:, :, 3] == 255))
-
-
-if __name__ == "__main__":
-    ut.main()
