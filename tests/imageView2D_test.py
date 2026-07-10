@@ -26,8 +26,8 @@ import numpy
 import pytest
 import qimage2ndarray
 from numpy import typing as npt
-from qtpy.QtWidgets import QApplication, QOpenGLWidget
-from qtpy.QtCore import QPointF, QRectF
+from qtpy.QtWidgets import QApplication, QOpenGLWidget, QFrame
+from qtpy.QtCore import QPointF, QRectF, Qt
 from qtpy.QtGui import QImage, QOpenGLFramebufferObject, QOpenGLFramebufferObjectFormat, QOpenGLPaintDevice, QPainter
 
 from volumina.croppingMarkers import CropExtentsModel
@@ -64,6 +64,11 @@ def image_view_empty(qtbot) -> ImageView2D:
     image_view._sliceIntersectionMarker.setVisible(False)
     image_view._crossHairCursor.setVisible(False)
     image_view.showCropLines(False)
+    image_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    image_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    image_view.setFrameShape(QFrame.NoFrame)
+    # 0px border makes results reproducible on all platforms, without only MacOSX passes
+    image_view.setStyleSheet("border: 0px")
     return image_view
 
 
@@ -96,8 +101,6 @@ def image_view(image_view_empty: ImageView2D, random_image: UInt8Array) -> Image
     image_view_width: int = random_image.shape[0]
     image_view_height: int = random_image.shape[1]
     image_view_empty.setGeometry(0, 0, image_view_width, image_view_height)
-    # 0px border makes results reproducible on all platforms, without only MacOSX passes
-    image_view_empty.setStyleSheet("border: 0px")
     return image_view_empty
 
 
@@ -296,7 +299,6 @@ class TestImageViewHelperFunctions:
             center_x - vp_width / zoom / 2, center_y - vp_height / zoom / 2, 20.0 / zoom, 40.0 / zoom
         )
 
-    @pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
     @pytest.mark.usefixtures("patch_threadpool")
     def test_setChangeViewPort(self, qtbot):
         self.image_view.show()
