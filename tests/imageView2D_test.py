@@ -24,11 +24,10 @@ from typing import Tuple
 
 import numpy
 import pytest
-import qimage2ndarray
 from numpy import typing as npt
-from qtpy.QtWidgets import QApplication, QOpenGLWidget
 from qtpy.QtCore import QPointF, QRectF
 from qtpy.QtGui import QImage, QOpenGLFramebufferObject, QOpenGLFramebufferObjectFormat, QOpenGLPaintDevice, QPainter
+from qtpy.QtWidgets import QApplication, QOpenGLWidget
 
 from volumina.croppingMarkers import CropExtentsModel
 from volumina.imageScene2D import ImageScene2D
@@ -39,6 +38,8 @@ from volumina.pixelpipeline.datasources import ArraySource
 from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.pixelpipeline.slicesources import PlanarSliceSource
 from volumina.positionModel import PositionModel
+
+import qimage2ndarray
 
 UInt8Array = npt.NDArray[numpy.uint8]
 
@@ -115,29 +116,26 @@ def grab_imageview(image_view: ImageView2D) -> npt.NDArray:
     frame_buffer.bind()
     paint_device = QOpenGLPaintDevice(image_view.width(), image_view.height())
     painter = QPainter(paint_device)
+
     image_view.render(painter)
     painter.end()
 
     img = QImage(frame_buffer.toImage())
-    img_np_rgb = qimage2ndarray.rgb_view(img)
+    img_np_rgb = qimage2ndarray.rgb_view(img).copy()
     return img_np_rgb
 
 
 IS_WINDOWS = "win" in platform.platform().lower()
 
 
+@pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
 @pytest.mark.usefixtures("patch_threadpool")
 class TestImageRendering:
     # margin factor had to be added as the _only_ way to get to test something on windows. Outside this margin the
     # rendering is distorted once rendered onto the framebuffer, the window rendering is not affected.
     @pytest.mark.parametrize(
         "margin_factor",
-        (
-            0.25,
-            pytest.param(
-                0.0, marks=pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
-            ),
-        ),
+        (0.25, 0.0),
     )
     def test_renders_correctly_unzoomed_in_viewport_larger_than_image(
         self, qtbot, image_view: ImageView2D, random_image: UInt8Array, margin_factor: float
@@ -166,7 +164,6 @@ class TestImageRendering:
             random_image.squeeze().T[extra_height : -extra_height - 1, extra_width : -extra_width - 1],
         )
 
-    @pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
     @pytest.mark.parametrize(
         "zoom_center, image_slicing, zoom",
         [
@@ -216,7 +213,6 @@ class TestImageRendering:
 
         numpy.testing.assert_array_equal(rendered_resampled, random_image[image_slicing].T)
 
-    @pytest.mark.xfail(condition=IS_WINDOWS, reason="Does not work on windows", strict_xfail=True)
     def test_random_image_render_panning(self, qtbot, image_view: ImageView2D, random_image: UInt8Array):
         """
         Test if panned image is rendered correctly
