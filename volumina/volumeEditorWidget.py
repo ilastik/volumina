@@ -120,7 +120,7 @@ class VolumeEditorWidget(QWidget):
         Position/coordinate information is read from the volumeEditor's positionModel.
 
         """
-        maxTime = self.editor.posModel.shape5D[0] - 1
+        maxTime = int(self.editor.posModel.shape5D[0] - 1)
         self.quadview.statusBar.timeLabel.setHidden(maxTime == 0)
         self.quadview.statusBar.timeSpinBox.setHidden(maxTime == 0)
         self.quadview.statusBar.timeSpinBox.setRange(0, maxTime)
@@ -255,7 +255,6 @@ class VolumeEditorWidget(QWidget):
             #  but we'll turn them off below if the dataset is 2D.
             for axis in [0, 1, 2]:
                 self.editor.imageViews[axis].hud.set3DButtonsVisible(True)
-
             singletonDims = [i_dim for i_dim in enumerate(self.editor.posModel.shape5D[1:4]) if i_dim[1] == 1]
             if len(singletonDims) == 1:
                 # Maximize the slicing view for this axis
