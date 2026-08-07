@@ -22,6 +22,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
+import numpy.typing as npt
 
 from volumina.utility.qabc import QABC, abstractsignal
 
@@ -29,10 +30,22 @@ from volumina.utility.qabc import QABC, abstractsignal
 __all__ = ["DataSourceABC", "RequestABC", "ImageSourceABC", "PlanarSliceSourceABC", "IndeterminateRequestError"]
 
 
+Slice5D = tuple[slice, slice, slice, slice, slice]
+
+
 class RequestABC(ABC):
     @abstractmethod
     def wait(self):
         """waits until completion and returns result"""
+
+
+class DataRequestABC(RequestABC):
+    _slicing: Slice5D  # should be set in init
+
+    @property
+    def slicing(self) -> Slice5D:
+        """5D slicing that was used to construct the request"""
+        return self._slicing
 
 
 class ImageSourceABC(QABC):
@@ -93,10 +106,10 @@ class DataSourceABC(QABC):
     def numberOfChannels(self) -> int: ...
 
     @abstractmethod
-    def request(self, slicing) -> RequestABC: ...
+    def request(self, slicing: Slice5D) -> DataRequestABC: ...
 
     @abstractmethod
-    def dtype(self): ...
+    def dtype(self) -> npt.DTypeLike: ...
 
     @abstractmethod
     def __eq__(self, other: DataSourceABC): ...

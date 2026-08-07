@@ -1,16 +1,29 @@
 from functools import partial
+from typing import Any, Callable
 
 import numpy as np
+from numpy import typing as npt
 from qtpy.QtCore import QObject, Signal, QTimer
 
-from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
+from volumina.pixelpipeline.interface import DataRequestABC, DataSourceABC, Slice5D
 from volumina.slicingtools import sl
+from volumina.utility.sparseLazyHistogram import SparseLazyHistogram
 
 
-class MinMaxUpdateRequest(RequestABC):
-    def __init__(self, rawRequest, update_func):
+class MinMaxUpdateRequest(DataRequestABC):
+    def __init__(
+        self,
+        rawRequest: DataRequestABC,
+        update_func: Callable[[npt.NDArray[np.number[Any]]], None],
+        commit_func: Callable[[Slice5D], None],
+        needs_update_func: Callable[[Any], bool],
+        slicing: Slice5D,
+    ):
         self._rawRequest = rawRequest
         self._update_func = update_func
+        self._commit_func = commit_func
+        self._needs_update_func = needs_update_func
+        self._slicing = slicing
         self._result = None
 
     def wait(self):
@@ -18,7 +31,9 @@ class MinMaxUpdateRequest(RequestABC):
 
         if self._result is None:
             self._result = rawData
-            self._update_func(rawData)
+            if self._needs_update_func(self.slicing):
+                self._commit_func(self.slicing)
+                self._update_func(rawData)
 
         return self._result
 
@@ -33,19 +48,20 @@ class MinMaxSource(QObject, DataSourceABC):
         object
     )  # When a new min/max is discovered in the result of a request, this signal is fired with the new (dmin, dmax)
     numberOfChannelsChanged = Signal(int)
+    histogramChanged = Signal()
 
     _delayedBoundsChange = (
         Signal()
     )  # Internal use only.  Allows non-main threads to start the delayedDirtySignal timer.
 
-    def __init__(self, rawSource, parent=None):
+    def __init__(self, rawSource: DataSourceABC, parent=None):
         """
         rawSource: The original datasource whose data will be normalized
         """
         super(MinMaxSource, self).__init__(parent)
 
         self._rawSource = rawSource
-        self._rawSource.isDirty.connect(self.isDirty)
+        self._rawSource.isDirty.connect(self._handle_dirty)
         self._rawSource.numberOfChannelsChanged.connect(self.numberOfChannelsChanged)
         self.reset_bounds()
         self._delayedDirtySignal = QTimer()
@@ -55,7 +71,13 @@ class MinMaxSource(QObject, DataSourceABC):
         self._delayedBoundsChange.connect(self._delayedDirtySignal.start)
 
     def reset_bounds(self):
-        self._bounds = [1e9, -1e9]
+        self._bounds: tuple[int | float, int | float] = (1e9, -1e9)
+        self._seen = []
+        self._hist = SparseLazyHistogram()
+
+    def _handle_dirty(self, key):
+        self.reset_bounds()
+        self.isDirty.emit(key)
 
     @property
     def numberOfChannels(self):
@@ -74,9 +96,18 @@ class MinMaxSource(QObject, DataSourceABC):
     def dtype(self):
         return self._rawSource.dtype()
 
-    def request(self, slicing):
+    def _needs_update(self, slicing: Slice5D):
+        return slicing not in self._seen
+
+    def request(self, slicing: Slice5D):
         rawRequest = self._rawSource.request(slicing)
-        return MinMaxUpdateRequest(rawRequest, self._getMinMax)
+        return MinMaxUpdateRequest(
+            rawRequest,
+            update_func=self._getMinMax,
+            commit_func=self._commit_func,
+            needs_update_func=self._needs_update,
+            slicing=slicing,
+        )
 
     def setDirty(self, slicing):
         self.isDirty.emit(slicing)
@@ -92,11 +123,18 @@ class MinMaxSource(QObject, DataSourceABC):
     def __ne__(self, other):
         return not (self == other)
 
-    def _getMinMax(self, data):
-        dmin = np.min(data)
-        dmax = np.max(data)
-        dmin = min(self._bounds[0], dmin)
-        dmax = max(self._bounds[1], dmax)
+    def get_histogram(self):
+        return self._hist.get_sparse_histogram()
+
+    def _commit_func(self, slicing: Slice5D):
+        self._seen.append(slicing)
+
+    def _getMinMax(self, data: npt.NDArray[np.number[Any]]):
+        self._hist.update(data)
+        dmin, dmax = self._hist.data_range
+        dmin = min(self._bounds[0], dmin) if dmin is not None else self._bounds[0]
+        dmax = max(self._bounds[1], dmax) if dmax is not None else self._bounds[1]
+
         dirty = False
         if (self._bounds[0] - dmin) > 1e-2:
             dirty = True
@@ -104,8 +142,7 @@ class MinMaxSource(QObject, DataSourceABC):
             dirty = True
 
         if dirty:
-            self._bounds[0] = dmin
-            self._bounds[1] = dmax
+            self._bounds = (dmin, dmax)
             self.boundsChanged.emit(self._bounds)
 
             # Our min/max have changed, which means we must force the TileProvider to re-request all tiles.
@@ -128,3 +165,5 @@ class MinMaxSource(QObject, DataSourceABC):
             # Now, that said, we can still give a slightly more snappy response to the OTHER tiles (not this one)
             # if we immediately tell the TileProvider we are dirty.  This duplicates some requests, but that shouldn't be a big deal.
             self.setDirty(sl[:, :, :, :, :])
+
+        self.histogramChanged.emit()

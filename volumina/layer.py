@@ -20,6 +20,7 @@
 # 		   http://ilastik.org/license/
 ###############################################################################
 import colorsys
+from enum import Enum
 import numpy
 
 from qtpy.QtCore import Qt, QObject, Signal, QTimer
@@ -37,7 +38,7 @@ from functools import partial
 from collections import defaultdict
 
 from numbers import Number
-from typing import List, Tuple
+from typing import List, Literal, Tuple
 
 
 class Layer(QObject):
@@ -261,54 +262,49 @@ class ClickableLayer(Layer):
             self._editor.eventSwitch.interpreter = self._inactiveInterpreter
 
 
-def dtype_to_range(dsource):
-    if dsource is not None:
-        dtype = dsource.dtype()
-    else:
-        dtype = numpy.uint8
+class NormalizationType(Enum):
+    AUTO_NORMALIZE = object()
+    DONT_NORMALIZE = object()
 
-    if dtype == numpy.bool_ or dtype == bool:
-        # Special hack for bool
-        rng = (0, 1)
-    elif issubclass(dtype, (int, int, numpy.integer)):
-        rng = (0, numpy.iinfo(dtype).max)
-    elif dtype == numpy.float32 or dtype == numpy.float64:
-        # Is there a way to get the min and max values of the actual dataset(s)?
-        # arbitrary range choice
-        rng = (-4096, 4096)
-    else:
-        # raise error
-        raise Exception("dtype_to_range: unknown dtype {}".format(dtype))
-    return rng
+
+NormalizationRange = tuple[float | int, float | int] | tuple[Literal[False], Literal[False]]
 
 
 class NormalizableLayer(Layer):
-    """
-    int -- datasource index
-    int -- lower threshold
-    int -- upper threshold
-    """
 
     normalizeChanged = Signal()
+    histogramChanged = Signal()
 
     @property
     def normalize(self):
         return self._normalize
 
-    def set_normalize(self, datasourceIdx, value):
+    def set_normalize(self, datasourceIdx: int, value: NormalizationRange | NormalizationType):
         """
-        value -- (nmin, nmax)
-        value -- None : grabs (min, max) from the MinMaxSource
+        Args:
+            datasourceIdx: index of the datasource
+            value: sets normalization to (min, max) tuple. For NormalizationType.AUTO_NORMALIZE
+              min and max are taken from MinMaxSource, for NormaliztionType.DONT_NORMALIZE,
+              limits are meant to be inferred (_normalize[i] will be (False, False)).
         """
         if self._datasources[datasourceIdx] is None:
             return
 
-        if value is None:
+        if value is NormalizationType.AUTO_NORMALIZE:
             value = self.get_datasource_default_range(datasourceIdx)
             self._autoMinMax[datasourceIdx] = True
+        elif value is NormalizationType.DONT_NORMALIZE:
+            value = (False, False)
         else:
             self._autoMinMax[datasourceIdx] = False
-        self._normalize[datasourceIdx] = value
+
+        assert isinstance(value, tuple), f"{type(value)=}: {value}"
+
+        if self._normalize[datasourceIdx] is not None and all(
+            a == b for a, b in zip(self._normalize[datasourceIdx], value)
+        ):
+            return
+        self._normalize[datasourceIdx] = (value[0], value[1])
         self.normalizeChanged.emit()
 
     def get_datasource_default_range(self, datasourceIdx: int) -> Tuple[Number, Number]:
@@ -319,23 +315,35 @@ class NormalizableLayer(Layer):
             return self._normalize[datasourceIdx]
         return self.get_datasource_default_range(datasourceIdx)
 
-    def __init__(self, datasources, normalize=None, direct=False, priority: int = 0):
+    def get_datasource_hist(self, datasourceIdx: int):
+        bins, counts = self._datasources[datasourceIdx].get_histogram()
+        return bins, numpy.log(counts)
+
+    def __init__(
+        self,
+        datasources: List[DataSourceABC | None],
+        normalize: NormalizationType = NormalizationType.AUTO_NORMALIZE,
+        direct=False,
+        priority: int = 0,
+    ):
         """
         datasources - a list of raw data sources
         normalize - If normalize is a tuple (dmin, dmax), the data is normalized from (dmin, dmax) to (0,255) before it is displayed.
-                    If normalize=None, then (dmin, dmax) is automatically determined before normalization.
-                    If normalize=False, then no normalization is applied before displaying the data.
+                    If normalize=NormalizationType.AUTO_NORMALIZE, then (dmin, dmax) is automatically determined before normalization.
+                    If normalize=NormalizationType.DONT_NORMALIZE, then no normalization is applied before displaying the data.
 
         """
-        self._normalize = []
-        self._autoMinMax = []
-        self._mmSources = []
+        self._normalize: list[NormalizationRange] = []
+        self._autoMinMax: list[bool] = []
+        self._mmSources: list[MinMaxSource] = []
 
         wrapped_datasources = [None] * len(datasources)
 
         for i, datasource in enumerate(datasources):
             if datasource is not None:
-                self._autoMinMax.append(normalize is None)  # Don't auto-set normalization if the caller provided one.
+                self._autoMinMax.append(
+                    normalize is NormalizationType.AUTO_NORMALIZE
+                )  # Don't auto-set normalization if the caller provided one.
                 mmSource = MinMaxSource(datasource)
                 mmSource.boundsChanged.connect(partial(self._bounds_changed, i))
                 wrapped_datasources[i] = mmSource
@@ -345,8 +353,9 @@ class NormalizableLayer(Layer):
 
         for i, datasource in enumerate(self.datasources):
             if datasource is not None:
-                self._normalize.append(normalize)
+                self._normalize.append((False, False))
                 self.set_normalize(i, normalize)
+                datasource.histogramChanged.connect(self.histogramChanged)
             else:
                 self._normalize.append((0, 1))
                 self._autoMinMax.append(True)
@@ -359,9 +368,10 @@ class NormalizableLayer(Layer):
             src.reset_bounds()
             self._bounds_changed(idx, None)
 
-    def _bounds_changed(self, datasourceIdx, range):
+    def _bounds_changed(self, datasourceIdx: int, range: tuple[float | int, float | int]):
         if self._autoMinMax[datasourceIdx]:
-            self.set_normalize(datasourceIdx, None)
+            self._normalize[datasourceIdx] = (range[0], range[1])
+            self.normalizeChanged.emit()
 
     def resetBounds(self):
         for mm in self._mmSources:
@@ -382,7 +392,14 @@ class GrayscaleLayer(NormalizableLayer):
             return True
         return self._window_leveling != other_layer._window_leveling
 
-    def __init__(self, datasource, normalize=None, direct=False, window_leveling=False, priority: int = 0):
+    def __init__(
+        self,
+        datasource,
+        normalize=NormalizationType.AUTO_NORMALIZE,
+        direct=False,
+        window_leveling=False,
+        priority: int = 0,
+    ):
         # assert isinstance(datasource, DataSourceABC)
         super().__init__([datasource], normalize, direct=direct, priority=priority)
         self._window_leveling = window_leveling
@@ -410,7 +427,9 @@ class AlphaModulatedLayer(NormalizableLayer):
             self._tintColor = c
             self.tintColorChanged.emit()
 
-    def __init__(self, datasource, tintColor=QColor(255, 0, 0), normalize=None, priority: int = 0):
+    def __init__(
+        self, datasource, tintColor=QColor(255, 0, 0), normalize=NormalizationType.AUTO_NORMALIZE, priority: int = 0
+    ):
         assert isinstance(datasource, DataSourceABC)
         super().__init__([datasource], normalize=normalize, priority=priority)
         self._tintColor = tintColor
@@ -480,19 +499,19 @@ class ColortableLayer(NormalizableLayer):
             return True
         return False
 
-    def __init__(self, datasource, colorTable, normalize=False, direct=False, priority: int = 0):
+    def __init__(
+        self, datasource, colorTable, normalize=NormalizationType.DONT_NORMALIZE, direct=False, priority: int = 0
+    ):
         assert isinstance(datasource, DataSourceABC)
 
         """
         By default, no normalization is performed on ColortableLayers.
-        If the normalize parameter is set to 'auto',
+        If the normalize parameter is set to NormalizationType.AUTO_NORMALIZE,
         your data will be automatically normalized to the length of your colorable.
         If a tuple (dmin, dmax) is passed, this specifies the range of your data,
         which is used to normalize the data before the colorable is applied.
         """
 
-        if normalize == "auto":
-            normalize = None
         super().__init__([datasource], normalize=normalize, direct=direct, priority=priority)
         self.data = datasource
         self._colorTable = colorTable
@@ -558,10 +577,10 @@ class RGBALayer(NormalizableLayer):
         alpha=None,
         color_missing_value=0,
         alpha_missing_value=255,
-        normalizeR=None,
-        normalizeG=None,
-        normalizeB=None,
-        normalizeA=None,
+        normalizeR=NormalizationType.AUTO_NORMALIZE,
+        normalizeG=NormalizationType.AUTO_NORMALIZE,
+        normalizeB=NormalizationType.AUTO_NORMALIZE,
+        normalizeA=NormalizationType.AUTO_NORMALIZE,
         priority: int = 0,
     ):
         assert red is None or isinstance(red, DataSourceABC)
@@ -648,7 +667,7 @@ class SegmentationEdgesLayer(Layer):
         *,
         isClickable=False,
         isHoverable=False,
-        priority: int = 0
+        priority: int = 0,
     ):
         """
         datasource: A single-channel label image.
@@ -703,7 +722,7 @@ class LabelableSegmentationEdgesLayer(SegmentationEdgesLayer):
         *,
         isClickable=True,
         isHoverable=True,
-        priority: int = 0
+        priority: int = 0,
     ):
         # Class 0 (no label) is the default pen
         super(LabelableSegmentationEdgesLayer, self).__init__(
