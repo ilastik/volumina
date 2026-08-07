@@ -17,11 +17,56 @@
 # See the files LICENSE.lgpl2 and LICENSE.lgpl3 for full text of the
 # GNU Lesser General Public License version 2.1 and 3 respectively.
 # This information is also available on the ilastik web site at:
-# 		   http://ilastik.org/license/
+#          http://ilastik.org/license/
 ###############################################################################
 import unittest
-import volumina.slicingtools as st
+
+import numpy as np
 from qtpy.QtCore import QRect
+
+import volumina.slicingtools as st
+
+
+class SlTest(unittest.TestCase):
+    def runTest(self):
+        self.assertEqual(st.sl[1, :34, :], (1, slice(34), slice(None)))
+
+
+class toolsTest(unittest.TestCase):
+    def testIntersection(self):
+        i = st.intersection(st.sl[5:8, 3:7, 2:9], st.sl[0:50, 0:50, 4:5])
+        self.assertEqual(i, st.sl[5:8, 3:7, 4:5])
+        ni = st.intersection(st.sl[5:8, 3:7, 2:9], st.sl[0:50, 0:50, 9:10])
+        self.assertEqual(ni, None)
+
+    def testIndex2slice(self):
+        pure = st.index2slice(st.sl[3:4, 5, :, 10])
+        self.assertEqual(pure, st.sl[3:4, 5:6, :, 10:11])
+
+
+class SliceProjectionTest(unittest.TestCase):
+    def testArgumentCheck(self):
+        st.SliceProjection(1, 2, [0, 3, 4])
+        st.SliceProjection(2, 1, [3, 0, 4])
+        self.assertRaises(ValueError, st.SliceProjection, 2, 1, [3, 0, 7])
+        self.assertRaises(ValueError, st.SliceProjection, 2, 1, [3, 1, 4])
+        self.assertRaises(ValueError, st.SliceProjection, 2, 5, [3, 1, 4])
+
+    def testDomain(self):
+        sp = st.SliceProjection(2, 1, [3, 0, 4])
+        unbounded = sp.domain([3, 23, 1])
+        self.assertEqual(unbounded, (slice(23, 24), slice(None), slice(None), slice(3, 4), slice(1, 2)))
+
+        bounded = sp.domain([3, 23, 1], slice(5, 9), slice(12, None))
+        self.assertEqual(bounded, (slice(23, 24), slice(12, None), slice(5, 9), slice(3, 4), slice(1, 2)))
+
+    def testSliceDomain(self):
+        sp = st.SliceProjection(2, 1, [3, 0, 4])
+        slicing = sp.domain([3, 7, 1], slice(1, 3), slice(0, None))
+        raw = np.random.randint(0, 100, (10, 3, 3, 128, 3))
+        domainArray = raw[slicing]
+        sl = sp(domainArray)
+        self.assertTrue(np.all(sl == raw[7, :, 1:3, 3, 1].swapaxes(0, 1)))
 
 
 class SlicingToolsTest(unittest.TestCase):
