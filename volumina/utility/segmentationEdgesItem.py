@@ -103,7 +103,7 @@ def painter_paths_for_labels_PURE_PYTHON(label_img, simplify_with_tolerance=None
 
 try:
     import vigra
-    from ilastiktools import line_segments_for_labels
+    from ilastik_carving_tools import line_segments_for_labels
 
     def painter_paths_for_labels(label_img, simplify_with_tolerance=None):
         if simplify_with_tolerance is not None:
@@ -119,7 +119,7 @@ except ImportError:
     painter_paths_for_labels = painter_paths_for_labels_PURE_PYTHON
 
 try:
-    from ilastiktools import edgeCoords2D
+    from ilastik_carving_tools import edgeCoords2D
 
     edge_coords_nd = edgeCoords2D
 except ImportError:
