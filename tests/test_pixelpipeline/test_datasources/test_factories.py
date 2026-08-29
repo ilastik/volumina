@@ -36,7 +36,7 @@ def make_source(request):
 
         def _make_source(shape):
             f = h5py.File("file", "w", driver="core", backing_store=False)
-            data = f.create_dataset("ds", shape)
+            data = f.create_dataset("ds", shape, dtype="float64")
             data[:] = rand(*shape)
             return data
 

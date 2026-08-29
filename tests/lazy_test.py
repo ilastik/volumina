@@ -127,7 +127,7 @@ if has_dependencies:
 
             if exportFilename is not None:
                 img.save(exportFilename)
-            return byte_view(img)
+            return byte_view(img).copy()
 
         def testLazy(self):
             for i in range(3):
