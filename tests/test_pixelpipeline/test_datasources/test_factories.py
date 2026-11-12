@@ -36,7 +36,7 @@ def make_source(request):
 
         def _make_source(shape):
             f = h5py.File("file", "w", driver="core", backing_store=False)
-            data = f.create_dataset("ds", shape)
+            data = f.create_dataset("ds", shape, dtype=float)
             data[:] = rand(*shape)
             return data
 
@@ -77,8 +77,7 @@ def test_lazyflow_tagged_shape_embedding(lazyflow_op, vigra, dims, expected_shap
     assert outsrc._op5.Output.meta.shape == expected_shape
 
     src_array = outsrc.request(np.s_[:, :, :, :, :]).wait()
-    expected_array = np.array(array[:]).transpose(*transpose)
-    expected_array.shape = src_array.shape
+    expected_array = np.array(array[:]).transpose(*transpose).reshape(src_array.shape)
     assert_array_equal(expected_array, src_array)
 
 
@@ -106,5 +105,5 @@ def test_array_untagged_shape_embedding(make_source, shape, expected_shape):
     assert src_shape == expected_shape
     src_array = source.request(np.s_[:, :, :, :, :]).wait()
     array = array[:]
-    array.shape = src_array.shape
+    array = array.reshape(src_array.shape)
     assert_array_equal(array, src_array)
