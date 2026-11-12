@@ -28,7 +28,7 @@ from functools import partial
 
 from typing import Callable, Optional
 from qtpy.QtCore import QObject, QRect, QRectF, Signal
-from qtpy.QtGui import QImage, QPainter, QTransform
+from qtpy.QtGui import QImage, QPainter, QPixmap, QTransform
 from qtpy.QtWidgets import QGraphicsItem
 
 from volumina.pixelpipeline.imagepump import StackedImageSources
@@ -127,7 +127,7 @@ class TileProvider(QObject):
         "Tile",
         [
             "id",  # tile number
-            "qimg",  # composited tile as a QImage
+            "qpixmap",  # composited tile as a QPixmap for display
             "qgraphicsitems",  # list of QGraphicsItems to be displayed over the tile
             "rectF",  # The patch dimensions (see Tiling class, above)
             "progress",
@@ -195,9 +195,9 @@ class TileProvider(QObject):
 
         for tile_no in tile_nos:
             with self._cache:
-                qimg, progress = self._cache.tile(stack_id, tile_no)
+                qpixmap, progress = self._cache.tile(stack_id, tile_no)
                 qgraphicsitems = self._cache.graphicsitem_layers(stack_id, tile_no)
-            yield TileProvider.Tile(tile_no, qimg, qgraphicsitems, QRectF(self.tiling.imageRects[tile_no]), progress)
+            yield TileProvider.Tile(tile_no, qpixmap, qgraphicsitems, QRectF(self.tiling.imageRects[tile_no]), progress)
 
     def waitForTiles(self, rectF=QRectF(), sceneRectF=QRectF()):
         """
@@ -289,10 +289,10 @@ class TileProvider(QObject):
 
                 # Blend all (available) layers into the composite tile
                 # and store it in the tile cache.
-                tile_img = self._blendTile(stack_id, tile_no)
+                tile_pixmap = self._blendTile(stack_id, tile_no)
                 with self._cache:
                     self._cache.setTile(
-                        stack_id, tile_no, tile_img, self._sims.viewVisible(), self._sims.viewOccluded()
+                        stack_id, tile_no, tile_pixmap, self._sims.viewVisible(), self._sims.viewOccluded()
                     )
             # refresh dirty layer tiles
             need_reblend = False
@@ -340,10 +340,10 @@ class TileProvider(QObject):
             if need_reblend:
                 # We synchronously fetched at least one direct layer.
                 # We can immediately re-blend the composite tile.
-                tile_img = self._blendTile(stack_id, tile_no)
+                tile_pixmap = self._blendTile(stack_id, tile_no)
                 with self._cache:
                     self._cache.setTile(
-                        stack_id, tile_no, tile_img, self._sims.viewVisible(), self._sims.viewOccluded()
+                        stack_id, tile_no, tile_pixmap, self._sims.viewVisible(), self._sims.viewOccluded()
                     )
         except KeyError:
             pass
@@ -352,10 +352,10 @@ class TileProvider(QObject):
         with self._cache:
             self._cache.setTileDirty(stack_id, tile_no, True)
 
-    def _blendTile(self, stack_id, tile_nr):
+    def _blendTile(self, stack_id, tile_nr) -> Optional[QPixmap]:
         """
         Blend all of the QImage layers of the patch
-        specified by (stack_id, tile_nr) into a single QImage.
+        specified by (stack_id, tile_nr) and return a QPixmap for display.
         """
         qimg = None
         p = None
@@ -402,7 +402,7 @@ class TileProvider(QObject):
         if p is not None:
             p.end()
 
-        return qimg
+        return QPixmap.fromImage(qimg) if qimg is not None else None
 
     def _fetch_layer_tile(self, timestamp, ims, transform, tile_nr, stack_id, ims_req, cache):
         """
