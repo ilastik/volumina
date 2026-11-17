@@ -27,7 +27,7 @@ import unittest as ut
 import numpy as np
 
 from qtpy.QtCore import QRectF, QPoint, QRect
-from qtpy.QtGui import QTransform
+from qtpy.QtGui import QImage, QPixmap, QTransform
 from qimage2ndarray import byte_view
 
 from volumina.tiling import TileProvider, Tiling
@@ -136,7 +136,8 @@ class TileProviderTest(ut.TestCase):
         tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY3))
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
@@ -148,7 +149,7 @@ class TileProviderTest(ut.TestCase):
         tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
             # If all tiles are invisible, then no tile is even rendered at all.
-            assert tile.qimg is None
+            assert tile.qpixmap is None
 
         self.layer1.visible = False
         self.layer2.visible = True
@@ -158,7 +159,8 @@ class TileProviderTest(ut.TestCase):
         tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == self.GRAY2))
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
@@ -190,7 +192,8 @@ class DirtyPropagationTest(ut.TestCase):
         tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == self.CONSTANT))
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
@@ -200,7 +203,8 @@ class DirtyPropagationTest(ut.TestCase):
         tp.waitForTiles()
         tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == NEW_CONSTANT))
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
@@ -218,7 +222,8 @@ class DirtyPropagationTest(ut.TestCase):
         # slice? (should be all 1s)
         tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == 1))
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
@@ -231,7 +236,8 @@ class DirtyPropagationTest(ut.TestCase):
         # slice?(should be all 2s)
         tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == 2))
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
@@ -239,8 +245,10 @@ class DirtyPropagationTest(ut.TestCase):
         self.pump.syncedSliceSources.through = [0, 1, 0]
         tp.requestRefresh(QRectF(100, 100, 200, 200))
         tp.waitForTiles()
+        tiles = tp.getTiles(QRectF(100, 100, 200, 200), QRectF())
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             self.assertTrue(np.all(aimg[:, :, 0:3] == 1))
             self.assertTrue(np.all(aimg[:, :, 3] == 255))
 
@@ -268,7 +276,8 @@ class DirtyPropagationTest(ut.TestCase):
         tiles = tp.getTiles(QRectF(101, 101, 198, 198), QRectF())
 
         for tile in tiles:
-            aimg = byte_view(tile.qimg)
+            qimg = tile.qpixmap.toImage()
+            aimg = byte_view(qimg)
             # Use any() because the tile borders may not be
             # perfectly aligned with the data we changed.
             self.assertTrue(np.any(aimg[:, :, 0:3] == 99))

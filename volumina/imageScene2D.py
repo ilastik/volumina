@@ -494,8 +494,8 @@ class ImageScene2D(QGraphicsScene):
             # In ilastik's live mode, the user sees the old result while adding
             # new brush strokes on top
             # See also ilastik issue #132 and tests/lazy_test.py
-            if tile.qimg is not None:
-                painter.drawImage(tile.rectF, tile.qimg)
+            if tile.qpixmap is not None:
+                painter.drawPixmap(tile.rectF, tile.qpixmap, QRectF(tile.qpixmap.rect()))
 
             # The tile also contains a list of any QGraphicsItems that were produced by the layers.
             # If there are any new ones, add them to the scene.
