@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
-from qtpy.QtCore import QRect
+from qtpy.QtCore import QRect, Signal
 from qtpy.QtGui import QImage
 from qimage2ndarray import byte_view, gray2qimage
 
@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class GrayscaleImageSource(ImageSource):
+    histogramChanged = Signal()
     loggingName = __name__ + ".GrayscaleImageSource"
     logger = logging.getLogger(loggingName)
 

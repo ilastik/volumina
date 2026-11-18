@@ -22,6 +22,8 @@
 # check for optional dependencies
 import pytest
 
+from volumina.layer import NormalizationType
+
 has_dependencies = True
 try:
     import vigra
@@ -101,7 +103,7 @@ if has_dependencies:
 
             self.ss = PlanarSliceSource(self.ds, projectionAlongTZC)
 
-            self.layer = GrayscaleLayer(self.ds, normalize=False)
+            self.layer = GrayscaleLayer(self.ds, normalize=NormalizationType.DONT_NORMALIZE)
             self.layerstack.append(self.layer)
             self.ims = self.layer.createImageSource([self.ss])
             self.sims.register(self.layer, self.ims)

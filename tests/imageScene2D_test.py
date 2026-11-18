@@ -39,7 +39,7 @@ from volumina.pixelpipeline.slicesources import PlanarSliceSource
 from volumina.pixelpipeline.imagepump import StackedImageSources
 from volumina.tiling import Tiling
 from volumina.layerstack import LayerStackModel
-from volumina.layer import GrayscaleLayer
+from volumina.layer import GrayscaleLayer, NormalizationType
 
 
 @pytest.fixture(autouse=True)
@@ -150,8 +150,7 @@ class ImageScene2D_RenderTest(ut.TestCase):
 
         self.GRAY = 201
         self.ds = ConstantSource(self.GRAY)
-        self.layer = GrayscaleLayer(self.ds)
-        self.layer.set_normalize(0, False)
+        self.layer = GrayscaleLayer(self.ds, normalize=NormalizationType.DONT_NORMALIZE)
         self.layerstack.append(self.layer)
         self.ims = self.layer.createImageSource([PlanarSliceSource(self.ds)])
         self.sims.register(self.layer, self.ims)

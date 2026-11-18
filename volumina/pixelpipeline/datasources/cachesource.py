@@ -6,7 +6,7 @@ from typing import Union
 
 from qtpy.QtCore import QObject, Signal
 
-from volumina.pixelpipeline.interface import DataSourceABC
+from volumina.pixelpipeline.interface import DataRequestABC, DataSourceABC, Slice5D
 from volumina.slicingtools import is_pure_slicing
 from volumina.utility.cache import KVCache
 from volumina.config import CONFIG
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 ARRAY_CACHE = KVCache(CONFIG.cache_size, getsizeof=sys.getsizeof)
 
 
-class _Request:
-    def __init__(self, cached_source: "CacheSource", slicing, key):
+class _Request(DataRequestABC):
+    def __init__(self, cached_source: "CacheSource", slicing: Slice5D, key):
         self._cached_source = cached_source
         self._slicing = slicing
         self._key = key
@@ -55,8 +55,9 @@ class _Request:
 
 
 class _CachedRequest:
-    def __init__(self, result):
+    def __init__(self, result, slicing):
         self._result = result
+        self._slicing = slicing
 
     def wait(self):
         return self._result
@@ -101,7 +102,7 @@ class CacheSource(QObject, DataSourceABC):
         with self._lock:
             result = self._cache.get(key)
             if result is not None:
-                return _CachedRequest(result)
+                return _CachedRequest(result, slicing)
 
             else:
                 if key not in self._req:

@@ -2,12 +2,13 @@ import numpy as np
 from qtpy.QtCore import QObject, Signal
 
 from volumina.slicingtools import is_pure_slicing, slicing2shape, is_bounded, sl
-from volumina.pixelpipeline.interface import DataSourceABC, RequestABC
+from volumina.pixelpipeline.interface import DataRequestABC, DataSourceABC, RequestABC, Slice5D
 
 
-class ConstantRequest(RequestABC):
-    def __init__(self, result):
+class ConstantRequest(DataRequestABC):
+    def __init__(self, result, slicing: Slice5D):
         self._result = result
+        self._slicing = slicing
 
     def wait(self):
         return self._result
@@ -62,7 +63,7 @@ class ConstantSource(QObject, DataSourceABC):
             result.setflags(write=False)
             self._cache[key] = result
 
-        return ConstantRequest(self._cache[key])
+        return ConstantRequest(self._cache[key], slicing)
 
     def setDirty(self, slicing):
         if not is_pure_slicing(slicing):
