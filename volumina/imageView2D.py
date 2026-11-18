@@ -332,9 +332,9 @@ class ImageView2D(QGraphicsView):
         self.setStyleSheet(".QFrame {}")
 
     def changeViewPort(self, qRectf: QRectF):
-        self.fitInView(qRectf, mode=Qt.KeepAspectRatio)
         width, height = self.size().width() / qRectf.width(), self.height() / qRectf.height()
-        self.setZoomFactor(min(width, height))
+        self.doScaleTo(min(width, height))
+        self.centerOn(qRectf.center())
 
     def doScale(self, factor: float):
         self.setZoomFactor(self._zoomFactor * factor)
