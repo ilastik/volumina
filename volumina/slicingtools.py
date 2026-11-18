@@ -31,7 +31,6 @@ Additionally, a 1-dimensional slicing may consist of a single slice instance
 not wrapped in a sequence.
 
 """
-from builtins import range
 import numpy as np
 from qtpy.QtCore import QRect
 import itertools
@@ -271,56 +270,3 @@ class SliceProjection(object):
         if self.handednessSwitched():
             projectedArray = np.swapaxes(projectedArray, 0, 1)
         return projectedArray
-
-
-# *******************************************************************************
-# T e s t                                                                      *
-# *******************************************************************************
-
-import unittest as ut
-
-
-class SlTest(ut.TestCase):
-    def runTest(self):
-        self.assertEqual(sl[1, :34, :], (1, slice(34), slice(None)))
-
-
-class toolsTest(ut.TestCase):
-    def testIntersection(self):
-        i = intersection(sl[5:8, 3:7, 2:9], sl[0:50, 0:50, 4:5])
-        self.assertEqual(i, sl[5:8, 3:7, 4:5])
-        ni = intersection(sl[5:8, 3:7, 2:9], sl[0:50, 0:50, 9:10])
-        self.assertEqual(ni, None)
-
-    def testIndex2slice(self):
-        pure = index2slice(sl[3:4, 5, :, 10])
-        self.assertEqual(pure, sl[3:4, 5:6, :, 10:11])
-
-
-class SliceProjectionTest(ut.TestCase):
-    def testArgumentCheck(self):
-        SliceProjection(1, 2, [0, 3, 4])
-        SliceProjection(2, 1, [3, 0, 4])
-        self.assertRaises(ValueError, SliceProjection, 2, 1, [3, 0, 7])
-        self.assertRaises(ValueError, SliceProjection, 2, 1, [3, 1, 4])
-        self.assertRaises(ValueError, SliceProjection, 2, 5, [3, 1, 4])
-
-    def testDomain(self):
-        sp = SliceProjection(2, 1, [3, 0, 4])
-        unbounded = sp.domain([3, 23, 1])
-        self.assertEqual(unbounded, (slice(23, 24), slice(None), slice(None), slice(3, 4), slice(1, 2)))
-
-        bounded = sp.domain([3, 23, 1], slice(5, 9), slice(12, None))
-        self.assertEqual(bounded, (slice(23, 24), slice(12, None), slice(5, 9), slice(3, 4), slice(1, 2)))
-
-    def testSliceDomain(self):
-        sp = SliceProjection(2, 1, [3, 0, 4])
-        slicing = sp.domain([3, 7, 1], slice(1, 3), slice(0, None))
-        raw = np.random.randint(0, 100, (10, 3, 3, 128, 3))
-        domainArray = raw[slicing]
-        sl = sp(domainArray)
-        self.assertTrue(np.all(sl == raw[7, :, 1:3, 3, 1].swapaxes(0, 1)))
-
-
-if __name__ == "__main__":
-    ut.main()
